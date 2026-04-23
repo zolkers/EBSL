@@ -3,8 +3,8 @@ package fr.riege.ebsl.pathfinding.debug;
 import fr.riege.ebsl.event.events.render.RenderWorldEvent;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.util.BlockPosUtil;
+import fr.riege.ebsl.render.EbslMeshRenderer;
 import fr.riege.ebsl.render.MinecraftRenderHandle;
-import fr.riege.ebsl.render.TemplateMeshRenderer;
 import fr.riege.ebsl.render.RenderHandle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
@@ -35,22 +35,16 @@ public final class PathVisualizer {
     private static final float[] COLOR_CAMERA_NODE = {0.57f, 0.57f, 0.57f, 0.55f};
     private static final float[] COLOR_CAMERA_NODE_ACTIVE = {1.0f, 0.47f, 1.0f, 0.95f};
 
-    private static final TemplateMeshRenderer MESH_RENDERER = new TemplateMeshRenderer();
+    private static final EbslMeshRenderer MESH_RENDERER = new EbslMeshRenderer();
 
-    private static boolean enabled = false;
-    private static List<Node> currentPath = Collections.emptyList();
-    private static int currentWaypointIndex = 0;
-    private static List<Vec3> cameraPath = Collections.emptyList();
-    private static int currentCameraRailIndex = -1;
+    private static volatile boolean enabled = false;
+    private static volatile List<Node> currentPath = Collections.emptyList();
+    private static volatile int currentWaypointIndex = 0;
+    private static volatile List<Vec3> cameraPath = Collections.emptyList();
+    private static volatile int currentCameraRailIndex = -1;
     private static final Set<Long> exploredNodes = Collections.synchronizedSet(new LinkedHashSet<>());
 
     private PathVisualizer() {
-    }
-
-    public static void register() {
-    }
-
-    public static void captureCamera(Minecraft mc) {
     }
 
     public static void endFrame() {
@@ -58,13 +52,15 @@ public final class PathVisualizer {
     }
 
     public static void setPath(List<Node> path, int wpIndex) {
-        currentPath = path != null ? path : Collections.emptyList();
-        currentWaypointIndex = wpIndex;
+        List<Node> snapshot = path != null ? List.copyOf(path) : Collections.emptyList();
+        currentPath = snapshot;
+        currentWaypointIndex = clampIndex(wpIndex, snapshot.size());
     }
 
     public static void setCameraPath(List<Vec3> path) {
-        cameraPath = path != null ? path : Collections.emptyList();
-        if (currentCameraRailIndex >= cameraPath.size()) {
+        List<Vec3> snapshot = path != null ? List.copyOf(path) : Collections.emptyList();
+        cameraPath = snapshot;
+        if (currentCameraRailIndex >= snapshot.size()) {
             currentCameraRailIndex = -1;
         }
     }
@@ -83,14 +79,14 @@ public final class PathVisualizer {
     }
 
     public static void updateExecution(int wpIndex, int camTargetIdx) {
-        currentWaypointIndex = wpIndex;
+        currentWaypointIndex = clampIndex(wpIndex, currentPath.size());
         if (camTargetIdx >= 0) {
-            currentCameraRailIndex = camTargetIdx;
+            currentCameraRailIndex = clampIndex(camTargetIdx, cameraPath.size());
         }
     }
 
     public static void updateCameraExecution(int camRailIdx) {
-        currentCameraRailIndex = camRailIdx;
+        currentCameraRailIndex = clampIndex(camRailIdx, cameraPath.size());
     }
 
     public static void clear() {
@@ -124,19 +120,18 @@ public final class PathVisualizer {
         );
 
         List<Node> path = currentPath;
+        List<Vec3> railPath = cameraPath;
+        int railIndex = currentCameraRailIndex;
         int limit = Math.min(path.size(), MAX_RENDER);
         if (limit == 0) {
-            renderCameraRail(handle);
+            renderCameraRail(handle, railPath, railIndex);
             return;
         }
         renderNodeBoxes(path, limit, handle, event.getCamX(), event.getCamY(), event.getCamZ());
         renderStartEnd(path, limit, handle, event.getCamX(), event.getCamY(), event.getCamZ());
         renderPathLine(path, limit, handle, event.getCamX(), event.getCamY(), event.getCamZ());
 
-        renderCameraRail(handle);
-    }
-
-    public static void renderWorld() {
+        renderCameraRail(handle, railPath, railIndex);
     }
 
     private static void renderNodeBoxes(List<Node> path, int limit, RenderHandle handle,
@@ -194,16 +189,16 @@ public final class PathVisualizer {
         handle.end(false);
     }
 
-    private static void renderCameraRail(RenderHandle handle) {
-        if (cameraPath.isEmpty()) {
+    private static void renderCameraRail(RenderHandle handle, List<Vec3> railPath, int railIndex) {
+        if (railPath.isEmpty()) {
             return;
         }
 
-        int limit = Math.min(cameraPath.size(), MAX_CAMERA_RENDER);
+        int limit = Math.min(railPath.size(), MAX_CAMERA_RENDER);
         for (int i = 0; i < limit - 1; i++) {
-            Vec3 a = cameraPath.get(i);
-            Vec3 b = cameraPath.get(i + 1);
-            float[] color = i < currentCameraRailIndex ? COLOR_CAMERA_LINE_DONE : COLOR_CAMERA_LINE;
+            Vec3 a = railPath.get(i);
+            Vec3 b = railPath.get(i + 1);
+            float[] color = i < railIndex ? COLOR_CAMERA_LINE_DONE : COLOR_CAMERA_LINE;
             handle.beginLines(color[0], color[1], color[2], color[3]);
             handle.emitLine(
                 a.x - handle.cameraX(), a.y - handle.cameraY(), a.z - handle.cameraZ(),
@@ -214,8 +209,8 @@ public final class PathVisualizer {
         }
 
         for (int i = 0; i < limit; i++) {
-            Vec3 point = cameraPath.get(i);
-            boolean active = i == currentCameraRailIndex;
+            Vec3 point = railPath.get(i);
+            boolean active = i == railIndex;
             drawBox(handle,
                 point.x - handle.cameraX(),
                 point.y - handle.cameraY(),
@@ -249,6 +244,13 @@ public final class PathVisualizer {
         handle.emitLine(x2, y1, z2, x2, y2, z2, 1.5f);
         handle.emitLine(x1, y1, z2, x1, y2, z2, 1.5f);
         handle.end(ignoreDepth);
+    }
+
+    private static int clampIndex(int index, int size) {
+        if (size <= 0) {
+            return -1;
+        }
+        return Math.max(0, Math.min(index, size - 1));
     }
 
 }

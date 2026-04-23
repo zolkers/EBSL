@@ -6,7 +6,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
-public final class TemplateMeshUniforms implements DynamicUniformStorage.DynamicUniform {
+public final class EbslMeshUniforms implements DynamicUniformStorage.DynamicUniform {
     static final int BLOCK_SIZE = 256;
 
     final Matrix4f projection = new Matrix4f();

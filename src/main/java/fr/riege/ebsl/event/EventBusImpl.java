@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class EventBusImpl implements EventBus {
-    private static final Logger LOGGER = LoggerFactory.getLogger("template-mod-eventbus");
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-eventbus");
 
     private final Map<Class<? extends Event>, List<Subscription>> byType = new ConcurrentHashMap<>();
     private final Map<Object, List<Subscription>> byOwner = new ConcurrentHashMap<>();
@@ -116,6 +116,7 @@ public final class EventBusImpl implements EventBus {
         if (subscriptions != null) {
             subscriptions.remove(subscription);
         }
+        byOwner.values().forEach(ownerSubscriptions -> ownerSubscriptions.remove(subscription));
     }
 
     @Override

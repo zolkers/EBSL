@@ -6,22 +6,22 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import fr.riege.ebsl.TemplateMod;
+import fr.riege.ebsl.EbslMod;
 import net.minecraft.resources.Identifier;
 
-public final class TemplateRenderPipelines {
+public final class EbslRenderPipelines {
     private static final Identifier POSITION_COLOR_SHADER =
-        Identifier.fromNamespaceAndPath(TemplateMod.MOD_ID, "core/pos_color");
+        Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "core/pos_color");
 
     static final RenderPipeline LINES_WITH_DEPTH = createLines(DepthTestFunction.LEQUAL_DEPTH_TEST, "lines_depth");
     static final RenderPipeline LINES_NO_DEPTH = createLines(DepthTestFunction.NO_DEPTH_TEST, "lines_no_depth");
 
-    private TemplateRenderPipelines() {
+    private EbslRenderPipelines() {
     }
 
     private static RenderPipeline createLines(DepthTestFunction depthTest, String name) {
         return RenderPipeline.builder()
-            .withLocation(Identifier.fromNamespaceAndPath(TemplateMod.MOD_ID, "pipelines/" + name))
+            .withLocation(Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "pipelines/" + name))
             .withVertexShader(POSITION_COLOR_SHADER)
             .withFragmentShader(POSITION_COLOR_SHADER)
             .withUniform("MeshData", UniformType.UNIFORM_BUFFER)

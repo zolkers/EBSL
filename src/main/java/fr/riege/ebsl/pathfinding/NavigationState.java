@@ -28,6 +28,12 @@ final class NavigationState {
         this.goalZ = goalZ;
     }
 
+    void updateGoal(int goalX, int goalY, int goalZ) {
+        this.goalX = goalX;
+        this.goalY = goalY;
+        this.goalZ = goalZ;
+    }
+
     void markIdle() {
         navigating = false;
         activeMode = NavigationMode.NONE;
@@ -85,6 +91,10 @@ final class NavigationState {
 
     void clearCurrentPathfinder() {
         currentPathfinder = null;
+    }
+
+    boolean isCurrentPathfinder(AStarPathfinder pathfinder) {
+        return currentPathfinder == pathfinder;
     }
 
     Entity rotationTarget() {

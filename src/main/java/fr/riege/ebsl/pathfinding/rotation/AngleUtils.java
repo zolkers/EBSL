@@ -10,16 +10,24 @@ public final class AngleUtils {
     private AngleUtils() {}
 
     public static float normalizeAngle(float angle) {
+        float original = angle;
         float a = angle % 360f;
         if (a >= 180f)  a -= 360f;
         if (a < -180f)  a += 360f;
+        if (Math.abs(original - a) > 0.001f) {
+            RotationDebug.log("angle", "normalize original=%.2f normalized=%.2f", original, a);
+        }
         return a;
     }
 
     public static float getRotationDelta(float from, float to) {
-        float delta = normalizeAngle(to) - normalizeAngle(from);
+        float normalizedTo = normalizeAngle(to);
+        float normalizedFrom = normalizeAngle(from);
+        float delta = normalizedTo - normalizedFrom;
         if (delta >  180f) delta -= 360f;
         if (delta < -180f) delta += 360f;
+        RotationDebug.log("angle", "delta from=%.2f to=%.2f normFrom=%.2f normTo=%.2f delta=%.2f",
+                from, to, normalizedFrom, normalizedTo, delta);
         return delta;
     }
 
@@ -30,6 +38,8 @@ public final class AngleUtils {
         double dist  = Math.sqrt(xDiff * xDiff + zDiff * zDiff);
         float  yaw   = (float) Math.toDegrees(Math.atan2(zDiff, xDiff)) - 90f;
         float  pitch = (float)-Math.toDegrees(Math.atan2(yDiff, dist));
+        RotationDebug.log("angle", "getRotation from=(%.2f,%.2f,%.2f) to=(%.2f,%.2f,%.2f) diff=(%.2f,%.2f,%.2f) yaw=%.2f pitch=%.2f",
+                from.x, from.y, from.z, to.x, to.y, to.z, xDiff, yDiff, zDiff, yaw, pitch);
         return new Rotation(yaw, pitch);
     }
 

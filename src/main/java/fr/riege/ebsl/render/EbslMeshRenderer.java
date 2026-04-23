@@ -17,13 +17,13 @@ import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
-public final class TemplateMeshRenderer implements AutoCloseable {
-    private DynamicUniformStorage<TemplateMeshUniforms> uniformStorage;
-    private final TemplateMeshUniforms uniforms = new TemplateMeshUniforms();
+public final class EbslMeshRenderer implements AutoCloseable {
+    private DynamicUniformStorage<EbslMeshUniforms> uniformStorage;
+    private final EbslMeshUniforms uniforms = new EbslMeshUniforms();
 
-    private DynamicUniformStorage<TemplateMeshUniforms> uniformStorage() {
+    private DynamicUniformStorage<EbslMeshUniforms> uniformStorage() {
         if (uniformStorage == null) {
-            uniformStorage = new DynamicUniformStorage<>("template_mod:mesh_data", TemplateMeshUniforms.BLOCK_SIZE, 256);
+            uniformStorage = new DynamicUniformStorage<>("ebsl:mesh_data", EbslMeshUniforms.BLOCK_SIZE, 256);
         }
         return uniformStorage;
     }
@@ -66,7 +66,7 @@ public final class TemplateMeshRenderer implements AutoCloseable {
 
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
         try (var pass = encoder.createRenderPass(
-            () -> "template-mod",
+            () -> "ebsl",
             target.getColorTextureView(), OptionalInt.empty(),
             target.getDepthTextureView(), OptionalDouble.empty())) {
             pass.setPipeline(pipeline);

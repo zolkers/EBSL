@@ -12,7 +12,7 @@ import org.joml.Vector4f;
 
 public final class MinecraftRenderHandle implements RenderHandle {
     private final Matrix4f projection;
-    private final TemplateMeshRenderer renderer;
+    private final EbslMeshRenderer renderer;
     private final double camX;
     private final double camY;
     private final double camZ;
@@ -23,7 +23,7 @@ public final class MinecraftRenderHandle implements RenderHandle {
     private RenderPipeline depthPipeline;
     private RenderPipeline noDepthPipeline;
 
-    public MinecraftRenderHandle(Matrix4f projection, TemplateMeshRenderer renderer, double camX, double camY, double camZ) {
+    public MinecraftRenderHandle(Matrix4f projection, EbslMeshRenderer renderer, double camX, double camY, double camZ) {
         this.projection = projection;
         this.renderer = renderer;
         this.camX = camX;
@@ -37,8 +37,8 @@ public final class MinecraftRenderHandle implements RenderHandle {
         color[1] = g;
         color[2] = b;
         color[3] = a;
-        depthPipeline = TemplateRenderPipelines.LINES_WITH_DEPTH;
-        noDepthPipeline = TemplateRenderPipelines.LINES_NO_DEPTH;
+        depthPipeline = EbslRenderPipelines.LINES_WITH_DEPTH;
+        noDepthPipeline = EbslRenderPipelines.LINES_NO_DEPTH;
         bufferBuilder = tesselator.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
     }
 

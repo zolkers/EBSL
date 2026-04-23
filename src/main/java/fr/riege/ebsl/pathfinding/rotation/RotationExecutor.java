@@ -1,6 +1,5 @@
 package fr.riege.ebsl.pathfinding.rotation;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -21,7 +20,7 @@ public final class RotationExecutor {
     private RotationExecutor() {}
 
     public static void rotateTo(Rotation endRot, IRotationStrategy strategy) {
-        debug("rotateTo request current=(yaw=%.2f,pitch=%.2f) target=(yaw=%.2f,pitch=%.2f) strat=%s",
+        RotationDebug.log("rotation", "rotateTo request current=(yaw=%.2f,pitch=%.2f) target=(yaw=%.2f,pitch=%.2f) strat=%s",
                 mc.player != null ? mc.player.getYRot() : 0.0f,
                 mc.player != null ? mc.player.getXRot() : 0.0f,
                 endRot.yaw,
@@ -35,14 +34,14 @@ public final class RotationExecutor {
         double sens = mc.options.sensitivity().get();
         double f    = sens * 0.6 + 0.2;
         cachedGcd   = f * f * f * 1.2;
-        debug("rotateTo cached gcd=%.5f sensitivity=%.3f", cachedGcd, sens);
+        RotationDebug.log("rotation", "rotateTo cached gcd=%.5f sensitivity=%.3f", cachedGcd, sens);
         strategy.onStart();
         isRotating  = true;
     }
 
     public static void stopRotating() {
         if (currStrat != null || isRotating) {
-            debug("stopRotating target=(yaw=%.2f,pitch=%.2f) strat=%s",
+            RotationDebug.log("rotation", "stopRotating target=(yaw=%.2f,pitch=%.2f) strat=%s",
                     targetYaw,
                     targetPitch,
                     currStrat != null ? currStrat.getClass().getSimpleName() : "null");
@@ -62,7 +61,7 @@ public final class RotationExecutor {
         if (player == null || !isRotating) return;
 
         if (currStrat != null) {
-            debug("update start current=(yaw=%.2f,pitch=%.2f) target=(yaw=%.2f,pitch=%.2f) strat=%s",
+            RotationDebug.log("rotation", "update start current=(yaw=%.2f,pitch=%.2f) target=(yaw=%.2f,pitch=%.2f) strat=%s",
                     player.getYRot(),
                     player.getXRot(),
                     targetYaw,
@@ -70,7 +69,7 @@ public final class RotationExecutor {
                     currStrat.getClass().getSimpleName());
             Rotation result = currStrat.onRotate(player, targetYaw, targetPitch);
             if (result == null) {
-                debug("update strategy finished current=(yaw=%.2f,pitch=%.2f)",
+                RotationDebug.log("rotation", "update strategy finished current=(yaw=%.2f,pitch=%.2f)",
                         player.getYRot(), player.getXRot());
                 stopRotating();
             } else {
@@ -79,7 +78,7 @@ public final class RotationExecutor {
                 float newYaw   = AngleUtils.normalizeAngle(applyGCD(result.yaw,   player.getYRot()));
                 float newPitch = Math.max(-90f, Math.min(90f,
                         applyGCD(result.pitch, player.getXRot(), -90f, 90f)));
-                debug("update apply raw=(yaw=%.2f,pitch=%.2f) prev=(yaw=%.2f,pitch=%.2f) final=(yaw=%.2f,pitch=%.2f)",
+                RotationDebug.log("rotation", "update apply raw=(yaw=%.2f,pitch=%.2f) prev=(yaw=%.2f,pitch=%.2f) final=(yaw=%.2f,pitch=%.2f)",
                         result.yaw, result.pitch, prevYaw, prevPitch, newYaw, newPitch);
                 player.setYRot(newYaw);
                 player.setXRot(newPitch);
@@ -109,7 +108,7 @@ public final class RotationExecutor {
         if (max != null && result > max) result -= (float) gcd;
         if (min != null && result < min) result += (float) gcd;
 
-        debug("applyGCD prev=%.2f target=%.2f delta=%.2f rounded=%.5f gcd=%.5f result=%.2f clamp=[%s,%s]",
+        RotationDebug.log("rotation", "applyGCD prev=%.2f target=%.2f delta=%.2f rounded=%.5f gcd=%.5f result=%.2f clamp=[%s,%s]",
                 prevRotation,
                 rotation,
                 delta,
@@ -125,12 +124,5 @@ public final class RotationExecutor {
     private static double computeGcd() {
         double f = mc.options.sensitivity().get() * 0.6 + 0.2;
         return f * f * f * 1.2;
-    }
-
-    private static void debug(String message, Object... args) {
-        if (!PathfinderConfig.SHOW_DEBUG.get()) {
-            return;
-        }
-        System.out.println("[rotation] " + String.format(message, args));
     }
 }

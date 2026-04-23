@@ -4,6 +4,7 @@ import fr.riege.ebsl.pathfinding.rotation.AngleUtils;
 import fr.riege.ebsl.pathfinding.rotation.EasingType;
 import fr.riege.ebsl.pathfinding.rotation.IRotationStrategy;
 import fr.riege.ebsl.pathfinding.rotation.Rotation;
+import fr.riege.ebsl.pathfinding.rotation.RotationDebug;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
@@ -39,12 +40,18 @@ public final class TimedEaseStrategy implements IRotationStrategy {
         startYaw   = player.getYRot();
         startPitch = player.getXRot();
         endTime    = System.currentTimeMillis() + duration;
+        RotationDebug.log("timed-rotation", "onStart start=(yaw=%.2f,pitch=%.2f) durationMs=%d endTime=%d",
+                startYaw, startPitch, duration, endTime);
     }
 
     @Override
     public Rotation onRotate(LocalPlayer player, float targetYaw, float targetPitch) {
         long now = System.currentTimeMillis();
-        if (now >= endTime) return new Rotation(targetYaw, targetPitch);  // hold at target
+        if (now >= endTime) {
+            RotationDebug.log("timed-rotation", "onRotate completed now=%d target=(yaw=%.2f,pitch=%.2f)",
+                    now, targetYaw, targetPitch);
+            return new Rotation(targetYaw, targetPitch);
+        }
 
         float progress = 1f - ((float)(endTime - now) / (float) duration);
         float t        = Math.max(0f, Math.min(1f, progress));
@@ -52,6 +59,8 @@ public final class TimedEaseStrategy implements IRotationStrategy {
         float yawDelta = AngleUtils.normalizeAngle(targetYaw - startYaw);
         float yaw      = yawEasing.apply(startYaw, startYaw + yawDelta, t);
         float pitch    = clampPitch(pitchEasing.apply(startPitch, clampPitch(targetPitch), t));
+        RotationDebug.log("timed-rotation", "onRotate now=%d progress=%.3f t=%.3f start=(yaw=%.2f,pitch=%.2f) target=(yaw=%.2f,pitch=%.2f) deltaYaw=%.2f out=(yaw=%.2f,pitch=%.2f)",
+                now, progress, t, startYaw, startPitch, targetYaw, targetPitch, yawDelta, yaw, pitch);
 
         return new Rotation(yaw, pitch);
     }

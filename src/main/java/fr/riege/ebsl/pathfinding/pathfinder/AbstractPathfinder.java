@@ -17,12 +17,15 @@ import fr.riege.ebsl.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.pathfinding.result.PathImpl;
 import fr.riege.ebsl.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractPathfinder implements Pathfinder {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-pathfinder");
 
     private static final Set<PathPosition> EMPTY_PATH_POSITIONS = new LinkedHashSet<>(0);
     private static final double TIE_BREAKER_WEIGHT = 1e-6;
@@ -146,6 +149,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
             return determinePostLoopResult(currentDepth, start, target, bestFallbackNode);
 
         } catch (Exception e) {
+            LOGGER.error("Pathfinding failed from {} to {}", start, target, e);
             return new PathfinderResultImpl(PathState.FAILED,
                     new PathImpl(start, target, EMPTY_PATH_POSITIONS));
         } finally {
@@ -171,6 +175,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
     private PathfinderResult handlePathingException(PathPosition start, PathPosition target,
                                                      Throwable throwable) {
+        LOGGER.error("Pathfinding task failed from {} to {}", start, target, throwable);
         return new PathfinderResultImpl(PathState.FAILED,
                 new PathImpl(start, target, EMPTY_PATH_POSITIONS));
     }

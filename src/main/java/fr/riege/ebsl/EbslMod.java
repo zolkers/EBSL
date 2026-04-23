@@ -10,8 +10,10 @@ import fr.riege.ebsl.event.events.game.TickEvent;
 import fr.riege.ebsl.event.events.render.RenderWorldEvent;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.goal.GoalCommands;
+import fr.riege.ebsl.pathfinding.goal.GoalRegistry;
+import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlers;
 import fr.riege.ebsl.pathfinding.goal.PathCommand;
-import fr.riege.ebsl.pathfinding.goal.PathGoals;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -19,8 +21,10 @@ import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TemplateMod implements ClientModInitializer {
-    public static final String MOD_ID = "template-mod";
+import java.util.List;
+
+public final class EbslMod implements ClientModInitializer {
+    public static final String MOD_ID = "ebsl";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static EventBus eventBus;
 
@@ -50,7 +54,9 @@ public class TemplateMod implements ClientModInitializer {
             PathVisualizer.renderWorld(event);
         });
 
-        LOGGER.info("[{}] Event bridge ready, pathfinding commands registered ({} goals).", MOD_ID, PathGoals.ALL.size());
+        GoalCommands.bootstrap();
+        GoalRequestHandlers.bootstrap();
+        LOGGER.info("[{}] Event bridge ready, pathfinding commands registered ({} goals).", MOD_ID, GoalRegistry.commands().size());
     }
 
     public static void onRenderWorld(Matrix4f projection, double camX, double camY, double camZ) {
@@ -68,7 +74,7 @@ public class TemplateMod implements ClientModInitializer {
         return eventBus;
     }
 
-    public static java.util.List<EventRegistry.Entry> registeredEvents() {
+    public static List<EventRegistry.Entry> registeredEvents() {
         return EventRegistry.all();
     }
 }

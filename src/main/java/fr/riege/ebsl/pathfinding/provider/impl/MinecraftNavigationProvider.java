@@ -184,6 +184,7 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
 
     private static boolean isSpecialWalkable(Block block) {
         return block instanceof AzaleaBlock
+            || block instanceof LeavesBlock
             || block instanceof LadderBlock
             || block instanceof VineBlock
             || block == Blocks.FARMLAND

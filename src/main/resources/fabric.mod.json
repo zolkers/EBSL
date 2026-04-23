@@ -1,26 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "template-mod",
+	"id": "ebsl",
 	"version": "${version}",
-	"name": "Template Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "EBSL",
+	"description": "EBSL client pathfinding and rendering toolkit.",
 	"authors": [
-		"Me!"
+		"riege"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/riege/ebsl",
+		"sources": "https://github.com/riege/ebsl"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/template-mod/icon.png",
-	"environment": "*",
+	"icon": "assets/ebsl/icon.png",
+	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"fr.riege.ebsl.TemplateMod"
+			"fr.riege.ebsl.EbslMod"
 		]
 	},
 	"mixins": [
-		"template-mod.mixins.json"
+		"ebsl.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.2",

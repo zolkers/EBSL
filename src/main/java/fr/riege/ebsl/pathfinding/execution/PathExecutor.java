@@ -2,26 +2,18 @@ package fr.riege.ebsl.pathfinding.execution;
 
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.Node.MoveType;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
-import fr.riege.ebsl.pathfinding.movement.types.MovementExecutionContext;
-import fr.riege.ebsl.pathfinding.movement.types.MovementRegistry;
-import fr.riege.ebsl.pathfinding.movement.types.WaterMovementContext;
-import fr.riege.ebsl.pathfinding.rotation.AngleUtils;
-import fr.riege.ebsl.pathfinding.rotation.EasingType;
-import fr.riege.ebsl.pathfinding.rotation.Rotation;
+import fr.riege.ebsl.pathfinding.check.PathCheckContext;
+import fr.riege.ebsl.pathfinding.check.PathCheckRegistry;
+import fr.riege.ebsl.pathfinding.check.PathCheckResult;
+import fr.riege.ebsl.pathfinding.check.PathProximitySnapshot;
+import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
-import fr.riege.ebsl.pathfinding.rotation.strategy.TimedEaseStrategy;
 import fr.riege.ebsl.util.ClientUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,10 +32,10 @@ public final class PathExecutor {
     private static final long   REPLAN_COOLDOWN_MS   = 5000;
 
     // Jump triggers
-    private static final double JUMP_TRIGGER_DIST      = 0.6;
-    private static final double STEP_UP_TRIGGER_DIST   = 1.0;
-    private static final int    JUMP_COOLDOWN_TICKS = 8;
-    private static final long   STALL_JUMP_PROGRESS_MS = 450;
+    static final double JUMP_TRIGGER_DIST      = 0.6;
+    static final double STEP_UP_TRIGGER_DIST   = 1.0;
+    static final int    JUMP_COOLDOWN_TICKS = 8;
+    static final long   STALL_JUMP_PROGRESS_MS = 450;
 
     // Anti-unstuck escalation
     private static final long   UNSTUCK_JUMP_MS    = 1200;  // try jumping after 1.2s
@@ -52,12 +44,13 @@ public final class PathExecutor {
     private static final long   PATH_REPLAN_STALE_MS = 1400;
     private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.75;
     private static final double PATH_PROGRESS_EPSILON = 0.08;
+    private static final long   GROUNDED_NO_PROGRESS_REPLAN_MS = 500;
     private static final long   PATH_REPLAN_HARD_STALE_MS = 4200;
 
-    private static final double WALK_TARGET_DEADZONE = 0.12;
-    private static final double WALK_FORWARD_DOT     = 0.18;
-    private static final double WALK_BACKWARD_DOT    = -0.45;
-    private static final double WALK_STRAFE_DOT      = 0.18;
+    static final double WALK_TARGET_DEADZONE = 0.28;
+    static final double WALK_FORWARD_DOT     = 0.18;
+    static final double WALK_BACKWARD_DOT    = -0.45;
+    static final double WALK_STRAFE_DOT      = 0.18;
 
     private static final long   COAST_TIMEOUT_MS    = 3000;
     private static final double LOOKAHEAD_WALK      = 3.0;
@@ -84,12 +77,8 @@ public final class PathExecutor {
     private static final double GOAL_REACHED_VDIST = 2.0;
 
     private State      state = State.IDLE;
-    private List<Node> path;
-    private int        pursuitSegment;
     private boolean    precise;
 
-    private Vec3 lastPos         = Vec3.ZERO;
-    private long lastProgressTime;
     private long lastReplanTime  = 0;
     private long coastStartTime  = 0;
     private int  jumpCooldown    = 0;
@@ -107,14 +96,11 @@ public final class PathExecutor {
     private double preciseGoalTolerance = 0.5;
     private Runnable onFinished;
     private int  debugTick       = 0;
-    private int  camTargetIdx    = -1;
     private int  backupTicksLeft = 0;
-
-    private List<Vec3> cameraPath = Collections.emptyList();
-    private int        cameraIndex = 0;
-    private Vec3       lastCameraCheckPos = null;
-    private double     bestPathProgress = Double.NEGATIVE_INFINITY;
-    private long       lastPathProgressTime = 0;
+    private boolean replanFromPlayerRequested = false;
+    private WalkMovementController movementController;
+    private final PathTracker pathTracker = new PathTracker();
+    private final PathRotationController rotationController = new PathRotationController();
 
     // --- Public API ----------------------------------------------------------
 
@@ -128,14 +114,12 @@ public final class PathExecutor {
 
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise,
                       Entity rotationTarget, Runnable onFinished) {
-        this.path             = path;
         this.goalX            = goalX;
         this.goalY            = goalY;
         this.goalZ            = goalZ;
         this.goalCenterX      = 0.5;
         this.goalCenterZ      = 0.5;
         this.precise          = precise;
-        this.pursuitSegment   = 0;
         this.rotationTarget   = rotationTarget;
         this.lookTargetPos    = null;
         this.allowReplan      = true;
@@ -147,14 +131,11 @@ public final class PathExecutor {
         this.onFinished       = onFinished;
         this.jumpCooldown     = 0;
         this.coastStartTime   = 0;
-        this.lastProgressTime = System.currentTimeMillis();
-        this.camTargetIdx     = -1;
         this.backupTicksLeft  = 0;
-        this.cameraPath         = USE_CAMERA_RAIL ? buildCameraRail(path) : Collections.emptyList();
-        this.cameraIndex        = 0;
-        this.lastCameraCheckPos = null;
-        this.bestPathProgress   = Double.NEGATIVE_INFINITY;
-        this.lastPathProgressTime = this.lastProgressTime;
+        this.replanFromPlayerRequested = false;
+        pathTracker.start(path);
+        rotationController.rebuild(path);
+        this.movementController = new WalkMovementController(path);
         state = State.WALKING;
     }
 
@@ -200,10 +181,38 @@ public final class PathExecutor {
     }
 
     public State getState() { return state; }
-    public int getWaypointIndex() { return pursuitSegment; }
-    public int getCamTargetIdx()  { return camTargetIdx; }
-    public List<Vec3> getCameraPath() { return cameraPath; }
-    public int getCameraIndex() { return cameraIndex; }
+    public int getWaypointIndex() { return pathTracker.getPursuitSegment(); }
+    public int getCamTargetIdx()  { return rotationController.getCamTargetIdx(); }
+    public List<Vec3> getCameraPath() { return rotationController.getCameraPath(); }
+    public List<Node> getPathSnapshot() { return pathTracker.getPathSnapshot(); }
+    public int getCameraIndex() { return rotationController.getCameraIndex(); }
+    void setJumpCooldown(int jumpCooldown) { this.jumpCooldown = jumpCooldown; }
+    public double getProgressRatio(Vec3 playerPos) {
+        return pathTracker.getProgressRatio(playerPos);
+    }
+
+    public double getRemainingDistance(Vec3 playerPos) {
+        return pathTracker.getRemainingDistance(playerPos);
+    }
+
+    public boolean consumeReplanFromPlayerRequest() {
+        boolean requested = replanFromPlayerRequested;
+        replanFromPlayerRequested = false;
+        return requested;
+    }
+
+    public void continueWith(List<Node> continuationPath, int goalX, int goalY, int goalZ) {
+        if (continuationPath == null || continuationPath.isEmpty()) {
+            return;
+        }
+        this.goalX = goalX;
+        this.goalY = goalY;
+        this.goalZ = goalZ;
+        pathTracker.continueWith(continuationPath);
+        List<Node> mergedPath = pathTracker.getPath();
+        rotationController.rebuild(mergedPath);
+        this.movementController = new WalkMovementController(mergedPath);
+    }
 
     public void tick(Minecraft mc) {
         if (mc.player == null) return;
@@ -224,6 +233,7 @@ public final class PathExecutor {
 
         Vec3 playerPos = mc.player.position();
 
+        List<Node> path = pathTracker.getPath();
         if (path == null || path.isEmpty()) {
             finish(mc);
             return;
@@ -243,48 +253,56 @@ public final class PathExecutor {
         }
 
         // -- Movement progress tracking -------------------------------------
-        double distMoved = playerPos.distanceTo(lastPos);
-        if (distMoved >= STUCK_DIST_THRESHOLD) {
-            lastProgressTime = System.currentTimeMillis();
-        }
-        lastPos = playerPos;
+        double distMoved = pathTracker.noteMovementProgress(playerPos, STUCK_DIST_THRESHOLD);
 
-        // -- Pure Pursuit: advance pursuitSegment monotonically ------------
-        // Player projection onto current segment; advance when t >= 1.0 (player past end).
         long now = System.currentTimeMillis();
-        while (pursuitSegment + 1 < path.size()) {
-            double ax = path.get(pursuitSegment).position.centeredX();
-            double az = path.get(pursuitSegment).position.centeredZ();
-            double bx = path.get(pursuitSegment + 1).position.centeredX();
-            double bz = path.get(pursuitSegment + 1).position.centeredZ();
-            double dx = bx - ax, dz = bz - az;
-            double lenSq = dx * dx + dz * dz;
-            if (lenSq < 1e-6) { pursuitSegment++; lastProgressTime = now; continue; }
-            double t = ((playerPos.x - ax) * dx + (playerPos.z - az) * dz) / lenSq;
-            if (t < 1.0) break;
-            pursuitSegment++;
-            lastProgressTime = now;
-        }
+        pathTracker.advancePursuit(playerPos, now);
 
-        double pathProgress = computePathProgress(playerPos);
-        if (pathProgress > bestPathProgress + PATH_PROGRESS_EPSILON) {
-            bestPathProgress = pathProgress;
-            lastPathProgressTime = now;
+        pathTracker.computeAndTrackPathProgress(playerPos, PATH_PROGRESS_EPSILON, now);
+
+        PathProximitySnapshot proximity = pathTracker.analyzePathProximity(playerPos);
+        pathTracker.updateSevereOffPathState(proximity, now);
+
+        PathCheckResult pathCheckResult = PathCheckRegistry.evaluate(new PathCheckContext(
+            playerPos,
+            path,
+            pathTracker.getPursuitSegment(),
+            goalX,
+            goalY,
+            goalZ,
+            pathTracker.getSevereOffPathDuration(now),
+            proximity,
+            pathTracker.checkpointSnapshot(playerPos, proximity, now)
+        ));
+        if (pathCheckResult.isForceReplan()) {
+            triggerReplan(mc, true, true, pathCheckResult.reason());
+            return;
+        }
+        if (pathCheckResult.isCutoff()) {
+            if (pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
+                path = pathTracker.getPath();
+                rotationController.rebuild(path);
+                movementController = new WalkMovementController(path);
+                PathVisualizer.setPath(path, 0);
+                PathVisualizer.setCameraPath(rotationController.getCameraPath());
+                PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
+                proximity = pathTracker.analyzePathProximity(playerPos);
+            }
         }
 
         // Periodic debug
-        if (PathfinderConfig.SHOW_DEBUG.get() && ++debugTick % 40 == 0 && pursuitSegment < path.size()) {
-            Node wp   = path.get(pursuitSegment);
+        if (PathfinderConfig.SHOW_DEBUG.get() && ++debugTick % 40 == 0 && pathTracker.getPursuitSegment() < path.size()) {
+            Node wp   = path.get(pathTracker.getPursuitSegment());
             double dx = wp.position.centeredX() - playerPos.x;
             double dz = wp.position.centeredZ() - playerPos.z;
             double hDist = Math.sqrt(dx * dx + dz * dz);
             ClientUtils.sendDebugMessage(mc, String.format(
                     "path seg=%d/%d hDist=%.2f",
-                    pursuitSegment, path.size(), hDist));
+                    pathTracker.getPursuitSegment(), path.size(), hDist));
         }
 
         // -- Goal reached / coasting ----------------------------------------
-        if (pursuitSegment >= path.size() - 1) {
+        if (pathTracker.getPursuitSegment() >= path.size() - 1) {
             if (!precise) {
                 // Approximate mode: release all keys immediately
                 finish(mc);
@@ -311,18 +329,23 @@ public final class PathExecutor {
         }
 
         // -- Stall + drift detection with escalating recovery ----------------
-        long    staleDuration = now - lastProgressTime;
-        long    pathStaleDuration = now - lastPathProgressTime;
+        long    staleDuration = now - pathTracker.getLastProgressTime();
+        long    pathStaleDuration = now - pathTracker.getLastPathProgressTime();
         boolean progressStale = staleDuration > STUCK_TIME_MS;
         boolean pathProgressStale = pathStaleDuration > PATH_REPLAN_STALE_MS;
-        double  hDistToPath   = minHorizDistToPath(playerPos);
+        double  hDistToPath   = proximity.horizontalDistance();
         boolean drifted       = hDistToPath > DRIFT_DISTANCE;
         boolean cooldownPassed = now - lastReplanTime > REPLAN_COOLDOWN_MS;
 
+        if (allowReplan
+                && mc.player.onGround()
+                && pathStaleDuration > GROUNDED_NO_PROGRESS_REPLAN_MS) {
+            triggerReplan(mc, true, true, String.format("grounded no progress stale=%d", pathStaleDuration));
+            return;
+        }
+
         if (allowReplan && pathStaleDuration > PATH_REPLAN_HARD_STALE_MS && cooldownPassed) {
-            System.out.printf("[Aether] PathExecutor replan: no path progress, stale=%d ms%n",
-                    pathStaleDuration);
-            triggerReplan(mc);
+            triggerReplan(mc, false, true, "hard stale path progress");
             return;
         }
 
@@ -347,7 +370,7 @@ public final class PathExecutor {
             // Try backing up briefly to unstick from block edges
             if (backupTicksLeft == 0 && mc.player.onGround()) {
                 backupTicksLeft = BACKUP_TICKS;
-                lastProgressTime = now; // reset stale timer after recovery action
+                pathTracker.noteMovementProgress(playerPos, 0.0);
                 return;
             }
         } else if (staleDuration > UNSTUCK_JUMP_MS && !drifted) {
@@ -361,80 +384,25 @@ public final class PathExecutor {
 
         if (allowReplan && pathProgressStale && cooldownPassed
                 && (hDistToPath > PATH_REPLAN_DRIFT_DISTANCE || distMoved >= STUCK_DIST_THRESHOLD)) {
-            System.out.printf("[Aether] PathExecutor replan: no path progress, drift=%.2f blk, stale=%d ms%n",
-                    hDistToPath, pathStaleDuration);
-            triggerReplan(mc);
+            triggerReplan(mc, false, true, String.format("path progress stale drift=%.2f", hDistToPath));
             return;
         }
 
         if (allowReplan && progressStale && drifted && cooldownPassed) {
-            System.out.printf("[Aether] PathExecutor replan: drift=%.2f blk, stale=%d ms%n",
-                    hDistToPath, staleDuration);
-            triggerReplan(mc);
+            triggerReplan(mc, false, true, String.format("drift stale=%.2f", hDistToPath));
             return;
         }
 
         // Replan if stuck for too long even without drift (true deadlock)
         if (staleDuration > STUCK_TIME_MS * 2 && cooldownPassed) {
-            System.out.printf("[Aether] PathExecutor replan: deadlock, stale=%d ms%n", staleDuration);
-            triggerReplan(mc);
+            triggerReplan(mc, false, true, String.format("deadlock stale=%d", staleDuration));
             return;
         }
 
         // -- Rotation: look at best visible waypoint ahead -------------
         if (allowRotation) {
-            int camTarget;
-            Vec3 rotTargetPos;
-            if (USE_CAMERA_RAIL && !cameraPath.isEmpty()) {
-                camTarget = pickCameraRailTarget(playerPos);
-                rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
-                camTargetIdx = Math.min(cameraPath.size() - 1, camTarget + 1);
-            } else {
-                camTarget = pickLegacyCamTarget(mc, playerPos);
-                camTargetIdx = camTarget;
-                Node rotTarget = path.get(camTarget);
-                rotTargetPos = new Vec3(
-                        rotTarget.position.centeredX(),
-                        rotTarget.position.flooredY() + LEGACY_CAMERA_EYE_Y,
-                        rotTarget.position.centeredZ());
-            }
-
-            debugRotation("target pick mode=%s camTarget=%d player=(%.2f,%.2f,%.2f) rotTarget=(%.2f,%.2f,%.2f)",
-                    USE_CAMERA_RAIL && !cameraPath.isEmpty() ? "camera_rail" : "legacy",
-                    camTarget,
-                    playerPos.x, playerPos.y, playerPos.z,
-                    rotTargetPos.x, rotTargetPos.y, rotTargetPos.z);
-
-            Rotation desiredRot = AngleUtils.getRotation(rotTargetPos);
-            float yawDrift = Math.abs(AngleUtils.getRotationDelta(
-                    RotationExecutor.getTargetYaw(), desiredRot.yaw));
-            float pitchDrift = Math.abs(AngleUtils.getRotationDelta(
-                    RotationExecutor.getTargetPitch(), desiredRot.pitch));
-
-            debugRotation("desired=(yaw=%.2f,pitch=%.2f) currentTarget=(yaw=%.2f,pitch=%.2f) drift=(yaw=%.2f,pitch=%.2f)",
-                    desiredRot.yaw,
-                    desiredRot.pitch,
-                    RotationExecutor.getTargetYaw(),
-                    RotationExecutor.getTargetPitch(),
-                    yawDrift,
-                    pitchDrift);
-
-            if (yawDrift > 1.5f || pitchDrift > 2.5f) {
-                long durationMs = 550;
-                EasingType easing;
-                if (USE_CAMERA_RAIL && !cameraPath.isEmpty()) {
-                    easing = EasingType.EASE_OUT_CUBIC;
-                } else {
-                    float difficulty = computePathDifficulty(mc);
-                    easing = difficulty < 0.4f ? EasingType.EASE_OUT_BACK : EasingType.EASE_OUT_CUBIC;
-                }
-                debugRotation("rotateTo dispatch easing=%s durationMs=%d wp=%d camTargetIdx=%d",
-                        easing, durationMs, pursuitSegment, camTargetIdx);
-                RotationExecutor.rotateTo(desiredRot, new TimedEaseStrategy(easing, durationMs));
-            } else {
-                debugRotation("rotateTo skipped small drift wp=%d camTargetIdx=%d",
-                        pursuitSegment, camTargetIdx);
-            }
+            rotationController.updateRotation(mc, playerPos, path, pathTracker.getPursuitSegment(), message -> {
+            });
         }
 
         // -- Distance to final goal -----------------------------------------
@@ -447,58 +415,9 @@ public final class PathExecutor {
             sneakLatched = true;
         }
 
-        // -- Movement key injection ----------------------------------------
         Node movementWp = getMovementWaypoint();
-        double dxWp = movementWp.position.centeredX() - playerPos.x;
-        double dzWp = movementWp.position.centeredZ() - playerPos.z;
-        boolean nearStepUp = MovementRegistry.get(movementWp.moveType).reducesSprintNearWaypoint()
-                && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
-
-        applyPathMovement(mc, playerPos, movementWp, distToFinal, nearStepUp);
-
-        // -- Jump handling --------------------------------------------------
-        if (allowJumps) {
-            if (!recoveryJump) {
-                handleJumps(mc, movementWp, playerPos);
-            }
-        } else {
-            mc.options.keyJump.setDown(false);
-        }
-
-        // -- Swim handling --------------------------------------------------
-        if (allowJumps && mc.player.isInWater()) {
-            Node nextWaypoint = path.get(Math.min(path.size() - 1, pursuitSegment + 2));
-            WaterMovementContext waterContext = new WaterMovementContext(
-                    mc, movementWp, nextWaypoint, playerPos, distToFinal);
-            MovementRegistry.get(movementWp.moveType).handleWaterMovement(waterContext);
-            if (waterContext.handled()) {
-                mc.options.keyJump.setDown(waterContext.jumpPressed());
-                if (!sneakLatched) {
-                    mc.options.keyShift.setDown(waterContext.shiftPressed());
-                }
-                mc.options.keySprint.setDown(waterContext.sprintPressed());
-            } else if (movementWp.position.flooredY() > mc.player.getBlockY()) {
-                mc.options.keyJump.setDown(true);
-            } else if (!sneakLatched) {
-                mc.options.keyShift.setDown(false);
-            }
-        }
-
-        // -- Ladder handling ------------------------------------------------
-        if (allowJumps && isOnClimbable(mc)) {
-            mc.options.keyUp.setDown(true);
-            mc.options.keyDown.setDown(false);
-            if (movementWp.position.flooredY() > mc.player.getBlockY()) {
-                mc.options.keyJump.setDown(true);
-            } else if (movementWp.position.flooredY() < mc.player.getBlockY()) {
-                mc.options.keyJump.setDown(false);
-                mc.options.keyShift.setDown(true);
-            }
-        } else {
-            if (!sneakLatched) {
-                mc.options.keyShift.setDown(false);
-            }
-        }
+        movementController.apply(this, mc, playerPos, movementWp, distToFinal,
+                allowJumps && !recoveryJump, sneakLatched, pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
 
         if (sneakLatched) {
             mc.options.keyShift.setDown(true);
@@ -518,225 +437,18 @@ public final class PathExecutor {
     // --- Internal helpers ----------------------------------------------------
 
     private Node getMovementWaypoint() {
-        int targetIdx = Math.min(path.size() - 1, pursuitSegment + 1);
-        return path.get(targetIdx);
+        return pathTracker.getMovementWaypoint();
     }
 
-    private void applyPathMovement(Minecraft mc, Vec3 playerPos, Node targetWp,
-                                   double distToFinal, boolean nearStepUp) {
-        if (mc.player == null) {
-            return;
-        }
-
-        double dx = targetWp.position.centeredX() - playerPos.x;
-        double dz = targetWp.position.centeredZ() - playerPos.z;
-        double hDist = Math.sqrt(dx * dx + dz * dz);
-
-        if (hDist < WALK_TARGET_DEADZONE && pursuitSegment + 2 < path.size()) {
-            targetWp = path.get(pursuitSegment + 2);
-            dx = targetWp.position.centeredX() - playerPos.x;
-            dz = targetWp.position.centeredZ() - playerPos.z;
-            hDist = Math.sqrt(dx * dx + dz * dz);
-        }
-
-        if (hDist < WALK_TARGET_DEADZONE) {
-            mc.options.keyUp.setDown(false);
-            mc.options.keyDown.setDown(false);
-            mc.options.keyLeft.setDown(false);
-            mc.options.keyRight.setDown(false);
-            mc.options.keySprint.setDown(false);
-            return;
-        }
-
-        double desiredX = dx / hDist;
-        double desiredZ = dz / hDist;
-        MovementInputController.applyRelativeMovement(
-                mc, desiredX, desiredZ, WALK_FORWARD_DOT, WALK_BACKWARD_DOT, WALK_STRAFE_DOT);
-        mc.options.keySprint.setDown(mc.options.keyUp.isDown()
-                && !mc.options.keyDown.isDown()
-                && distToFinal > 2.0
-                && !nearStepUp);
-    }
-
-    private void handleJumps(Minecraft mc, Node wp, Vec3 playerPos) {
-        boolean partialSupportAscent = isPartialSupportWaypoint(mc, wp);
-        boolean inStairSequence = isInStairSequence(mc);
-        double dx = wp.position.centeredX() - playerPos.x;
-        double dz = wp.position.centeredZ() - playerPos.z;
-        double dy = wp.position.flooredY() - mc.player.getY();
-        double hDist = Math.sqrt(dx * dx + dz * dz);
-        long millisSinceProgress = System.currentTimeMillis() - lastProgressTime;
-
-        MovementExecutionContext context = new MovementExecutionContext(
-                mc,
-                wp,
-                playerPos,
-                partialSupportAscent,
-                inStairSequence,
-                mc.player.onGround(),
-                jumpCooldown,
-                millisSinceProgress,
-                hDist,
-                dy,
-                STEP_UP_TRIGGER_DIST,
-                JUMP_TRIGGER_DIST,
-                1.2,
-                JUMP_COOLDOWN_TICKS,
-                STALL_JUMP_PROGRESS_MS
-        );
-        MovementRegistry.get(wp.moveType).handleJump(context);
-        mc.options.keyJump.setDown(context.jumpPressed());
-        if (context.jumpCooldownConsumed()) {
-            jumpCooldown = JUMP_COOLDOWN_TICKS;
-        }
-    }
-
-    /**
-     * Returns true if the next 2+ waypoints form a stair sequence
-     * (ascending or descending with partial support blocks).
-     */
-    private boolean isInStairSequence(Minecraft mc) {
-        if (mc.level == null) return false;
-        int stairCount = 0;
-        int checkEnd = Math.min(path.size(), pursuitSegment + 3);
-        for (int i = pursuitSegment; i < checkEnd; i++) {
-            Node wp = path.get(i);
-            if (MovementRegistry.get(wp.moveType).countsAsStairSequence()) {
-                if (isPartialSupportWaypoint(mc, wp)) {
-                    stairCount++;
-                }
-            }
-            // Also detect descent on stairs: Y decreases with partial support below
-            if (i > 0 && wp.position.flooredY() < path.get(i - 1).position.flooredY()) {
-                BlockPos belowWp = new BlockPos(
-                        wp.position.flooredX(),
-                        wp.position.flooredY() - 1,
-                        wp.position.flooredZ());
-                var belowState = mc.level.getBlockState(belowWp);
-                if (!belowState.isAir() && !belowState.isCollisionShapeFullBlock(mc.level, belowWp)) {
-                    stairCount++;
-                }
-            }
-        }
-        return stairCount >= 2;
-    }
-
-    private boolean isPartialSupportWaypoint(Minecraft mc, Node wp) {
-        if (mc.level == null) return false;
-        BlockPos support = new BlockPos(
-                wp.position.flooredX(),
-                wp.position.flooredY() - 1,
-                wp.position.flooredZ());
-        var supportState = mc.level.getBlockState(support);
-        var shape = supportState.getCollisionShape(mc.level, support);
-        if (shape.isEmpty()) return false;
-        return !supportState.isCollisionShapeFullBlock(mc.level, support);
-    }
-
-    private double minHorizDistToPath(Vec3 pos) {
-        double minSq = Double.MAX_VALUE;
-        int start = Math.max(0, pursuitSegment - 2);
-        int end   = Math.min(path.size(), pursuitSegment + 5);
-        for (int i = start; i < end; i++) {
-            Node n  = path.get(i);
-            double dx = n.position.centeredX() - pos.x;
-            double dz = n.position.centeredZ() - pos.z;
-            double dSq = dx * dx + dz * dz;
-            if (dSq < minSq) minSq = dSq;
-        }
-        return Math.sqrt(minSq);
-    }
-
-    /**
-     * Returns true if all intermediate path nodes between fromIdx (exclusive) and toIdx
-     * (exclusive) lie within CAM_MAX_LATERAL_DEV blocks of the straight line from
-     * (px, pz) to path[toIdx].
-     */
-    private boolean isStraightLineSafe(List<Node> path, int fromIdx, int toIdx,
-                                       double px, double pz) {
-        Node to   = path.get(toIdx);
-        double dx = to.position.centeredX() - px;
-        double dz = to.position.centeredZ() - pz;
-        double lenSq = dx * dx + dz * dz;
-        if (lenSq < 0.001) return true;
-        double maxPerpSq = CAM_MAX_LATERAL_DEV * CAM_MAX_LATERAL_DEV;
-        for (int j = fromIdx; j < toIdx; j++) {
-            Node n    = path.get(j);
-            double nx = n.position.centeredX() - px;
-            double nz = n.position.centeredZ() - pz;
-            double cross = nx * dz - nz * dx; // 2D cross product
-            if ((cross * cross) / lenSq > maxPerpSq) return false;
-        }
-        return true;
-    }
-
-    /** Returns true if any node between from and to (inclusive) has a different Y than path[from]. */
-    private boolean hasYChangeBetween(List<Node> path, int from, int to) {
-        int baseY = path.get(from).position.flooredY();
-        for (int i = from + 1; i <= to; i++) {
-            if (path.get(i).position.flooredY() != baseY) return true;
-        }
-        return false;
-    }
-
-    /** Returns total absolute turning angle (degrees) between path[from] and path[to]. */
-    private double cumulativeTurning(List<Node> path, int from, int to) {
-        if (to - from < 2) return 0;
-        double totalAngle = 0;
-        for (int i = from + 1; i < to; i++) {
-            Node prev = path.get(i - 1);
-            Node cur  = path.get(i);
-            Node next = path.get(i + 1 < path.size() ? i + 1 : i);
-            double dx1 = cur.position.centeredX() - prev.position.centeredX();
-            double dz1 = cur.position.centeredZ() - prev.position.centeredZ();
-            double dx2 = next.position.centeredX() - cur.position.centeredX();
-            double dz2 = next.position.centeredZ() - cur.position.centeredZ();
-            double len1 = Math.sqrt(dx1 * dx1 + dz1 * dz1);
-            double len2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
-            if (len1 > 0.001 && len2 > 0.001) {
-                double dot = (dx1 / len1) * (dx2 / len2) + (dz1 / len1) * (dz2 / len2);
-                totalAngle += Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, dot))));
-            }
-        }
-        return totalAngle;
-    }
-
-    private static boolean isWaypointVisible(Minecraft mc, Node wp) {
-        if (mc.player == null) return false;
-        Vec3 target = new Vec3(
-                wp.position.centeredX(),
-                wp.position.flooredY() + 1.0,
-                wp.position.centeredZ());
-        return ClientUtils.hasLineOfSight(mc.player, target);
-    }
-
-    private void triggerReplan(Minecraft mc) {
+    private void triggerReplan(Minecraft mc, boolean force, boolean fromPlayer, String reason) {
         releaseAll(mc);
         lastReplanTime = System.currentTimeMillis();
+        pathTracker.markReplanTriggered(lastReplanTime);
+        replanFromPlayerRequested = fromPlayer;
+        if (PathfinderConfig.SHOW_DEBUG.get()) {
+            ClientUtils.sendDebugMessage(mc, "Path replan: " + reason);
+        }
         state = State.REPLANNING;
-    }
-
-    private double computePathProgress(Vec3 playerPos) {
-        if (path == null || path.isEmpty()) {
-            return 0.0;
-        }
-        if (pursuitSegment + 1 >= path.size()) {
-            return path.size() - 1;
-        }
-
-        Node from = path.get(pursuitSegment);
-        Node to = path.get(pursuitSegment + 1);
-        double dx = to.position.centeredX() - from.position.centeredX();
-        double dz = to.position.centeredZ() - from.position.centeredZ();
-        double lenSq = dx * dx + dz * dz;
-        if (lenSq < 1.0e-6) {
-            return pursuitSegment;
-        }
-
-        double px = playerPos.x - from.position.centeredX();
-        double pz = playerPos.z - from.position.centeredZ();
-        double t = (px * dx + pz * dz) / lenSq;
-        return pursuitSegment + Math.max(0.0, Math.min(0.999, t));
     }
 
     private void applyGoalCenteringMovement(Minecraft mc, double dx, double dz) {
@@ -756,224 +468,4 @@ public final class PathExecutor {
         }
     }
 
-    private static boolean isOnClimbable(Minecraft mc) {
-        if (mc.player == null || mc.level == null) return false;
-        BlockPos pos = mc.player.blockPosition();
-        return mc.level.getBlockState(pos).is(BlockTags.CLIMBABLE);
-    }
-
-    /**
-     * Returns [0,1] representing how constrained the player's immediate surroundings are.
-     * 0 = open space, 1 = tight corridor / ascending step.
-     */
-    private float computePathDifficulty(Minecraft mc) {
-        if (mc.level == null || mc.player == null) return 0f;
-        BlockPos pos = mc.player.blockPosition();
-
-        int walls = 0;
-        for (Direction dir : new Direction[]{ Direction.EAST, Direction.WEST, Direction.NORTH, Direction.SOUTH }) {
-            BlockPos adj = pos.relative(dir);
-            if (mc.level.getBlockState(adj).canOcclude())        walls++;
-            if (mc.level.getBlockState(adj.above()).canOcclude()) walls++;
-        }
-        float tightness = walls / 8.0f;
-
-        boolean ascending = pursuitSegment < path.size()
-                && MovementRegistry.get(path.get(pursuitSegment).moveType).countsAsAscendingDifficulty();
-
-        return Math.min(1.0f, tightness + (ascending ? 0.4f : 0.0f));
-    }
-
-    private void debugRotation(String message, Object... args) {
-        if (!PathfinderConfig.SHOW_DEBUG.get()) {
-            return;
-        }
-        System.out.println("[path-rotation] " + String.format(message, args));
-    }
-
-    private int pickLegacyCamTarget(Minecraft mc, Vec3 playerPos) {
-        int camTarget = pursuitSegment;
-        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + CAMERA_LOOKAHEAD);
-        for (int i = camScanEnd; i >= pursuitSegment; i--) {
-            if (!isWaypointVisible(mc, path.get(i))) continue;
-            if (i > pursuitSegment
-                    && !isStraightLineSafe(path, pursuitSegment, i, playerPos.x, playerPos.z)) continue;
-            if (i > pursuitSegment && hasYChangeBetween(path, pursuitSegment, i)) continue;
-            if (i > pursuitSegment && cumulativeTurning(path, pursuitSegment, i) > 45.0) continue;
-            camTarget = i;
-            break;
-        }
-        return camTarget;
-    }
-
-    private int pickCameraRailTarget(Vec3 playerPos) {
-        if (cameraPath.isEmpty()) return 0;
-
-        if (lastCameraCheckPos == null) {
-            lastCameraCheckPos = playerPos;
-        }
-
-        double distMoved = lastCameraCheckPos.distanceTo(playerPos);
-        if (distMoved >= CAMERA_RAIL_REACHED_DIST * 0.5) {
-            lastCameraCheckPos = playerPos;
-
-            // Advance potentially multiple nodes per movement gate to avoid falling behind
-            // during fast movement or falls.
-            while (cameraIndex + 1 < cameraPath.size() && hasPassedCameraNode(playerPos, cameraIndex)) {
-                cameraIndex++;
-            }
-        }
-
-        return cameraIndex;
-    }
-
-    private Vec3 getCameraRailGuideTarget(Vec3 playerPos, int idx) {
-        int start = Math.max(0, Math.min(idx, cameraPath.size() - 1));
-        if (start + 1 >= cameraPath.size()) return cameraPath.getLast();
-
-        Vec3 a = cameraPath.get(start);
-        Vec3 b = cameraPath.get(start + 1);
-        double abx = b.x - a.x;
-        double aby = b.y - a.y;
-        double abz = b.z - a.z;
-        double lenSq = abx * abx + aby * aby + abz * abz;
-        double t = lenSq < 1.0e-6
-                ? 0.0
-                : ((playerPos.x - a.x) * abx + (playerPos.y - a.y) * aby + (playerPos.z - a.z) * abz) / lenSq;
-        t = Math.max(0.0, Math.min(1.0, t));
-
-        Vec3 cursor = lerp(a, b, t);
-        double remaining = CAMERA_RAIL_GUIDE_LOOKAHEAD_DIST;
-        int seg = start;
-
-        while (remaining > 0.0 && seg + 1 < cameraPath.size()) {
-            Vec3 from = (seg == start) ? cursor : cameraPath.get(seg);
-            Vec3 to = cameraPath.get(seg + 1);
-            double segLen = from.distanceTo(to);
-            if (segLen < 1.0e-6) {
-                seg++;
-                continue;
-            }
-            if (remaining <= segLen) {
-                return lerp(from, to, remaining / segLen);
-            }
-            remaining -= segLen;
-            seg++;
-        }
-
-        return cameraPath.getLast();
-    }
-
-    private boolean hasPassedCameraNode(Vec3 playerPos, int idx) {
-        Vec3 cur = cameraPath.get(idx);
-        double dx = cur.x - playerPos.x;
-        double dz = cur.z - playerPos.z;
-        if (Math.sqrt(dx * dx + dz * dz) <= CAMERA_RAIL_REACHED_DIST) return true;
-
-        if (idx + 1 >= cameraPath.size()) return false;
-        Vec3 next = cameraPath.get(idx + 1);
-        double dirX = next.x - cur.x;
-        double dirZ = next.z - cur.z;
-        double segLenSq = dirX * dirX + dirZ * dirZ;
-        if (segLenSq < 1.0e-6) return false;
-        double toPlayerX = playerPos.x - cur.x;
-        double toPlayerZ = playerPos.z - cur.z;
-        double dot = toPlayerX * dirX + toPlayerZ * dirZ;
-        return dot > segLenSq * 0.20;
-    }
-
-    private static Vec3 lerp(Vec3 a, Vec3 b, double t) {
-        return new Vec3(
-                a.x + (b.x - a.x) * t,
-                a.y + (b.y - a.y) * t,
-                a.z + (b.z - a.z) * t);
-    }
-
-
-    private static List<Vec3> buildCameraRail(List<Node> navPath) {
-        if (navPath == null || navPath.isEmpty()) return Collections.emptyList();
-
-        List<Vec3> anchors = new ArrayList<>(navPath.size());
-        for (Node n : navPath) {
-            anchors.add(new Vec3(
-                    n.position.flooredX() + 0.5,
-                    n.position.flooredY() + CAMERA_RAIL_EYE_Y,
-                    n.position.flooredZ() + 0.5));
-        }
-        if (anchors.size() <= 1) return anchors;
-
-        List<Vec3> out = new ArrayList<>(anchors.size() * 2);
-        appendCameraRailPoint(out, anchors.getFirst());
-
-        for (int i = 0; i < anchors.size() - 1; i++) {
-            Vec3 a = anchors.get(i);
-            Vec3 b = anchors.get(i + 1);
-
-            double segDist = a.distanceTo(b);
-            int byDistance = (int) Math.ceil(segDist / CAMERA_RAIL_MAX_STEP_DIST);
-
-            int byTurn = 1;
-            if (i > 0 && i + 2 < anchors.size()) {
-                Vec3 prev = anchors.get(i - 1);
-                Vec3 next = anchors.get(i + 2);
-                double cornerAngle = horizontalAngleDeg(prev, a, b, next);
-                byTurn = Math.max(1, (int) Math.ceil(cornerAngle / CAMERA_RAIL_MAX_TURN_DEG));
-            }
-
-            int rawSteps = Math.max(byDistance, byTurn);
-            int steps = (int) Math.ceil(rawSteps * CAMERA_RAIL_DENSITY_SCALE);
-            steps = Math.max(1, Math.min(CAMERA_RAIL_MAX_STEPS_PER_SEGMENT, steps));
-            for (int s = 1; s <= steps; s++) {
-                double t = (double) s / steps;
-                appendCameraRailPoint(out, new Vec3(
-                        a.x + (b.x - a.x) * t,
-                        a.y + (b.y - a.y) * t,
-                        a.z + (b.z - a.z) * t));
-            }
-        }
-
-        return compactCameraRail(out);
-    }
-
-    private static void appendCameraRailPoint(List<Vec3> out, Vec3 p) {
-        if (out.isEmpty()) {
-            out.add(p);
-            return;
-        }
-        Vec3 last = out.getLast();
-        double dx = p.x - last.x;
-        double dy = p.y - last.y;
-        double dz = p.z - last.z;
-        double distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq < CAMERA_RAIL_MIN_POINT_SPACING * CAMERA_RAIL_MIN_POINT_SPACING) return;
-
-        double horizSq = dx * dx + dz * dz;
-        if (horizSq < CAMERA_RAIL_MIN_HORIZONTAL_SPACING * CAMERA_RAIL_MIN_HORIZONTAL_SPACING) return;
-
-        out.add(p);
-    }
-
-    private static List<Vec3> compactCameraRail(List<Vec3> points) {
-        if (points.size() <= 1) return points;
-        List<Vec3> compact = new ArrayList<>(points.size());
-        for (Vec3 p : points) {
-            appendCameraRailPoint(compact, p);
-        }
-        if (compact.isEmpty()) compact.add(points.getFirst());
-        return compact;
-    }
-
-    private static double horizontalAngleDeg(Vec3 prev, Vec3 a, Vec3 b, Vec3 next) {
-        double inX = a.x - prev.x;
-        double inZ = a.z - prev.z;
-        double outX = next.x - b.x;
-        double outZ = next.z - b.z;
-
-        double inLen = Math.sqrt(inX * inX + inZ * inZ);
-        double outLen = Math.sqrt(outX * outX + outZ * outZ);
-        if (inLen < 1.0e-3 || outLen < 1.0e-3) return 0.0;
-
-        double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
-        return Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
-    }
 }

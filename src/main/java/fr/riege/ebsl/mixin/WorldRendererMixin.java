@@ -3,7 +3,7 @@ package fr.riege.ebsl.mixin;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
-import fr.riege.ebsl.TemplateMod;
+import fr.riege.ebsl.EbslMod;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public final class WorldRendererMixin {
 
     @Inject(method = "renderLevel", at = @At("RETURN"))
-    private void templateMod$onRenderLevel(GraphicsResourceAllocator graphicsResourceAllocator,
+    private void ebsl$onRenderLevel(GraphicsResourceAllocator graphicsResourceAllocator,
                                            DeltaTracker deltaTracker,
                                            boolean renderBlockOutline,
                                            Camera camera,
@@ -33,7 +33,7 @@ public final class WorldRendererMixin {
                                            CallbackInfo ci) {
         RenderSystem.getModelViewStack().pushMatrix().mul(modelView);
         Vec3 position = camera.position();
-        TemplateMod.onRenderWorld(new Matrix4f(projection), position.x, position.y, position.z);
+        EbslMod.onRenderWorld(new Matrix4f(projection), position.x, position.y, position.z);
         RenderSystem.getModelViewStack().popMatrix();
     }
 }
