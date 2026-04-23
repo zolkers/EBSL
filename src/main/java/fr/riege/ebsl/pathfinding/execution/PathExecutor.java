@@ -50,7 +50,7 @@ public final class PathExecutor {
     static final double WALK_TARGET_DEADZONE = 0.28;
     static final double WALK_FORWARD_DOT     = 0.18;
     static final double WALK_BACKWARD_DOT    = -0.45;
-    static final double WALK_STRAFE_DOT      = 0.18;
+    static final double WALK_STRAFE_DOT      = 0.32;
 
     private static final long   COAST_TIMEOUT_MS    = 3000;
     private static final double LOOKAHEAD_WALK      = 3.0;

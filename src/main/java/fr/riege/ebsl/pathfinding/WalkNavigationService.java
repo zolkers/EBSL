@@ -266,8 +266,13 @@ final class WalkNavigationService {
         PathVisualizer.setPath(processedPath.navigationPath(), 0);
         PathVisualizer.setCameraPath(Collections.emptyList());
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, x, y, z);
+        boolean longRangeActive = runtime.longRangeSession.isActive();
+        boolean longRangeFinalSegment = longRangeActive
+            && x == runtime.longRangeSession.finalGoalX()
+            && z == runtime.longRangeSession.finalGoalZ();
+        boolean longRangeIntermediateSegment = longRangeActive && !longRangeFinalSegment;
         Node segmentEnd = processedPath.navigationPath().getLast();
-        boolean continuationNeeded = runtime.longRangeSession.isActive()
+        boolean continuationNeeded = longRangeActive
             && (!runtime.longRangeSession.isFinalGoalReached(new Vec3(x + 0.5, y, z + 0.5)) || partial)
             && (x != runtime.longRangeSession.finalGoalX()
             || z != runtime.longRangeSession.finalGoalZ()
@@ -275,9 +280,10 @@ final class WalkNavigationService {
         runtime.longRangeSession.onSegmentStarted(
             segmentEnd.position.flooredX(),
             segmentEnd.position.flooredZ(),
-            continuationNeeded);
+            continuationNeeded,
+            partial);
 
-        String resultTypeStr = partial ? "§ePartial" : "§aFull";
+        String resultTypeStr = describeResultType(partial, longRangeIntermediateSegment);
         long elapsedMs = System.currentTimeMillis() - startMs;
         int pathLen = processedPath.rawNodes().size();
 
@@ -290,8 +296,7 @@ final class WalkNavigationService {
                     + " | time: " + elapsedMs + "ms",
                 false);
             fr.riege.ebsl.util.ClientUtils.sendMessage(mc,
-                (partial ? "§e" : "§a")
-                    + "Path found (" + pathLen + " waypoints). Walking...",
+                describeWalkingMessage(partial, longRangeIntermediateSegment, pathLen),
                 false);
         }
 
@@ -305,6 +310,22 @@ final class WalkNavigationService {
             runtime.walkOptions.onFinished());
         runtime.walkOptions.applyTo(runtime.executor);
         refreshWalkVisualizer();
+    }
+
+    private static String describeResultType(boolean partial, boolean longRangeIntermediateSegment) {
+        if (longRangeIntermediateSegment) {
+            return partial ? "§ePartial segment" : "§aSegment";
+        }
+        return partial ? "§ePartial" : "§aFull";
+    }
+
+    private static String describeWalkingMessage(boolean partial, boolean longRangeIntermediateSegment, int pathLen) {
+        if (longRangeIntermediateSegment) {
+            return (partial ? "§e" : "§a")
+                + "Long-range segment ready (" + pathLen + " waypoints). Continuing...";
+        }
+        return (partial ? "§e" : "§a")
+            + "Path found (" + pathLen + " waypoints). Walking...";
     }
 
     private void runPathTest(Minecraft mc, WalkabilityChecker checker,

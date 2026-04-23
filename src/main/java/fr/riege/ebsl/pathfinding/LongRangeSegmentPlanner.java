@@ -55,7 +55,18 @@ final class LongRangeSegmentPlanner {
             ? LongRangePathSession.SegmentAttachment.REPLACE_FROM_PLAYER
             : LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT;
         pathfinder.findPath(start, target).whenComplete((result, throwable) ->
-            mc.execute(() -> handleResult(mc, checker, config, pathfinder, requestSegmentId, result, throwable, attachment)));
+            mc.execute(() -> handleResult(
+                mc,
+                checker,
+                config,
+                pathfinder,
+                requestSegmentId,
+                result,
+                throwable,
+                attachment,
+                segmentGoal.x(),
+                goalY,
+                segmentGoal.z())));
     }
 
     private void handleResult(Minecraft mc, WalkabilityChecker checker,
@@ -64,7 +75,10 @@ final class LongRangeSegmentPlanner {
                               int requestSegmentId,
                               PathfinderResult result,
                               Throwable throwable,
-                              LongRangePathSession.SegmentAttachment attachment) {
+                              LongRangePathSession.SegmentAttachment attachment,
+                              int requestedX,
+                              int requestedY,
+                              int requestedZ) {
         if (!runtime.longRangeSession.isActive()
             || runtime.state.isAborted()
             || !runtime.longRangeSession.isCurrentCalculation(requestSegmentId)) {
@@ -100,7 +114,7 @@ final class LongRangeSegmentPlanner {
             ? ((List<PathPosition>) positions).getLast()
             : processedPath.rawNodes().getLast().position;
         boolean partial = PathResultClassifier.isPartialWalkResult(
-            result, positions, last.flooredX(), last.flooredY(), last.flooredZ());
+            result, positions, requestedX, requestedY, requestedZ);
         boolean needsContinuation = partial
             || last.flooredX() != runtime.longRangeSession.finalGoalX()
             || last.flooredZ() != runtime.longRangeSession.finalGoalZ();
@@ -111,6 +125,7 @@ final class LongRangeSegmentPlanner {
             processedPath.navigationPath().getLast().position.flooredY(),
             processedPath.navigationPath().getLast().position.flooredZ(),
             needsContinuation,
+            partial,
             pathfinder.getExploredCount(),
             attachment
         ));

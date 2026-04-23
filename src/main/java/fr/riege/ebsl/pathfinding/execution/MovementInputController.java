@@ -4,7 +4,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 
 final class MovementInputController {
-    private static final double RELEASE_HYSTERESIS = 0.10;
+    private static final double STRAFE_SUPPRESSION_FORWARD_DOT = 0.45;
+    private static final double STRAFE_SUPPRESSION_DOT = 0.55;
 
     private MovementInputController() {
     }
@@ -39,25 +40,15 @@ final class MovementInputController {
         double forwardDot = dx * forwardX + dz * forwardZ;
         double strafeDot = dx * rightX + dz * rightZ;
 
-        applyHysteresis(mc.options.keyUp, forwardDot, forwardThreshold, forwardThreshold - RELEASE_HYSTERESIS);
-        applyHysteresis(mc.options.keyDown, -forwardDot, -backwardThreshold, -backwardThreshold - RELEASE_HYSTERESIS);
-        applyHysteresis(mc.options.keyRight, strafeDot, strafeThreshold, strafeThreshold - RELEASE_HYSTERESIS);
-        applyHysteresis(mc.options.keyLeft, -strafeDot, strafeThreshold, strafeThreshold - RELEASE_HYSTERESIS);
+        mc.options.keyUp.setDown(forwardDot > forwardThreshold);
+        mc.options.keyDown.setDown(forwardDot < backwardThreshold);
 
-        if (mc.options.keyLeft.isDown() && mc.options.keyRight.isDown()) {
-            if (strafeDot >= 0.0) {
-                mc.options.keyLeft.setDown(false);
-            } else {
-                mc.options.keyRight.setDown(false);
-            }
-        }
-        if (mc.options.keyUp.isDown() && mc.options.keyDown.isDown()) {
-            if (forwardDot >= 0.0) {
-                mc.options.keyDown.setDown(false);
-            } else {
-                mc.options.keyUp.setDown(false);
-            }
-        }
+        boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT;
+        double effectiveStrafeThreshold = mostlyForward
+            ? Math.max(strafeThreshold, STRAFE_SUPPRESSION_DOT)
+            : strafeThreshold;
+        mc.options.keyRight.setDown(strafeDot > effectiveStrafeThreshold);
+        mc.options.keyLeft.setDown(strafeDot < -effectiveStrafeThreshold);
     }
 
     static void applyGoalCentering(Minecraft mc, double dx, double dz) {
@@ -75,14 +66,5 @@ final class MovementInputController {
         mc.options.keySprint.setDown(false);
         mc.options.keyJump.setDown(false);
         mc.options.keyShift.setDown(true);
-    }
-
-    private static void applyHysteresis(net.minecraft.client.KeyMapping key, double value,
-                                        double pressThreshold, double releaseThreshold) {
-        if (key.isDown()) {
-            key.setDown(value > releaseThreshold);
-            return;
-        }
-        key.setDown(value > pressThreshold);
     }
 }

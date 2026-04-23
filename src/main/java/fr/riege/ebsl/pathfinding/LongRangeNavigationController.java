@@ -102,7 +102,8 @@ final class LongRangeNavigationController {
         runtime.longRangeSession.onSegmentStarted(
             pendingSegment.goalX(),
             pendingSegment.goalZ(),
-            pendingSegment.needsContinuation());
+            pendingSegment.needsContinuation(),
+            pendingSegment.partial());
 
         if (mc.player != null) {
             fr.riege.ebsl.util.ClientUtils.sendMessage(mc,
