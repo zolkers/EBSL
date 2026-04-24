@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -19,6 +20,7 @@ final class WalkMovementController {
     private final List<Node> path;
     private Level checkerLevel;
     private WalkabilityChecker checker;
+    private static final double SLIME_ASCENT_JUMP_TRIGGER_DIST = 1.7;
 
     WalkMovementController(List<Node> path) {
         this.path = path;
@@ -130,6 +132,11 @@ final class WalkMovementController {
         );
         MovementRegistry.get(waypoint.moveType).handleJump(context);
         mc.options.keyJump.setDown(context.jumpPressed());
+        if (shouldAssistSlimeAscent(mc, waypoint, hDist, jumpCooldown)) {
+            mc.options.keyJump.setDown(true);
+            executor.setJumpCooldown(PathExecutor.JUMP_COOLDOWN_TICKS);
+            return;
+        }
         if (context.jumpCooldownConsumed()) {
             executor.setJumpCooldown(PathExecutor.JUMP_COOLDOWN_TICKS);
         }
@@ -202,6 +209,12 @@ final class WalkMovementController {
         if (mc.level == null) {
             return false;
         }
+        if (checker(mc).isLowPartialSupport(
+            wp.position.flooredX(),
+            wp.position.flooredY(),
+            wp.position.flooredZ())) {
+            return true;
+        }
         BlockPos support = new BlockPos(
             wp.position.flooredX(),
             wp.position.flooredY() - 1,
@@ -212,6 +225,24 @@ final class WalkMovementController {
             return false;
         }
         return !supportState.isCollisionShapeFullBlock(mc.level, support);
+    }
+
+    private boolean shouldAssistSlimeAscent(Minecraft mc, Node waypoint, double horizontalDistance, int jumpCooldown) {
+        return mc.player != null
+            && mc.player.onGround()
+            && jumpCooldown == 0
+            && isOnSlimeSupport(mc)
+            && waypoint.position.flooredY() > mc.player.getBlockY()
+            && horizontalDistance < SLIME_ASCENT_JUMP_TRIGGER_DIST;
+    }
+
+    private static boolean isOnSlimeSupport(Minecraft mc) {
+        if (mc.player == null || mc.level == null) {
+            return false;
+        }
+        BlockPos feet = mc.player.blockPosition();
+        return mc.level.getBlockState(feet).is(Blocks.SLIME_BLOCK)
+            || mc.level.getBlockState(feet.below()).is(Blocks.SLIME_BLOCK);
     }
 
     private static boolean isOnClimbable(Minecraft mc) {
