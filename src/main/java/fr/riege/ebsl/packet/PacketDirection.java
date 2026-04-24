@@ -1,8 +1,8 @@
 package fr.riege.ebsl.packet;
 
 public enum PacketDirection {
-    INBOUND("S -> C"),
-    OUTBOUND("C -> S");
+    INBOUND("S2C"),
+    OUTBOUND("C2S");
 
     private final String label;
 

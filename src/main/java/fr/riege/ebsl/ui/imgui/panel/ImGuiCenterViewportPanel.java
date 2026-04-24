@@ -124,6 +124,16 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             PacketCaptureLog.setEnabled(enabled.get());
         }
         ImGui.sameLine();
+        ImBoolean captureInbound = new ImBoolean(PacketCaptureLog.isCaptureInbound());
+        if (ImGui.checkbox("S2C", captureInbound)) {
+            PacketCaptureLog.setCaptureInbound(captureInbound.get());
+        }
+        ImGui.sameLine();
+        ImBoolean captureOutbound = new ImBoolean(PacketCaptureLog.isCaptureOutbound());
+        if (ImGui.checkbox("C2S", captureOutbound)) {
+            PacketCaptureLog.setCaptureOutbound(captureOutbound.get());
+        }
+        ImGui.sameLine();
         if (ImGui.button("Clear", 72.0f, 22.0f)) {
             PacketCaptureLog.clear();
         }
