@@ -153,6 +153,7 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOn(Level level, BlockState state, BlockPos pos) {
+        if (state.getFluidState().is(FluidTags.WATER)) return true;
         Block block = state.getBlock();
         if (state.isCollisionShapeFullBlock(level, pos)
                 && block != Blocks.MAGMA_BLOCK
@@ -164,20 +165,13 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOnCached(WalkabilityChecker checker, BlockState state, int x, int y, int z) {
+        if (checker.isWater(x, y, z)) return true;
         Block block = state.getBlock();
         if (checker.isFullWallBlock(x, y, z)
                 && block != Blocks.MAGMA_BLOCK
                 && block != Blocks.BUBBLE_COLUMN
                 && block != Blocks.HONEY_BLOCK) {
             return true;
-        }
-        // For non-full-block but still walkable: check canOcclude + collisionShapeFullBlock via checker
-        if (state.canOcclude() && block != Blocks.MAGMA_BLOCK
-                && block != Blocks.BUBBLE_COLUMN
-                && block != Blocks.HONEY_BLOCK) {
-            // isFullWallBlock already checks isCollisionShapeFullBlock, so if it returned false
-            // the block is not a full block. But canWalkOn originally checks isCollisionShapeFullBlock
-            // which isFullWallBlock already wraps. So we just need to check special walkables.
         }
         return isSpecialWalkable(block);
     }
