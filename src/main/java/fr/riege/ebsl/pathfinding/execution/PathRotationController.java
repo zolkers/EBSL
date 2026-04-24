@@ -59,21 +59,8 @@ final class PathRotationController {
             return;
         }
 
-        int camTarget;
-        Vec3 rotTargetPos;
-        if (USE_CAMERA_RAIL && !cameraPath.isEmpty()) {
-            camTarget = pickCameraRailTarget(playerPos);
-            rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
-            camTargetIdx = Math.min(cameraPath.size() - 1, camTarget + 1);
-        } else {
-            camTarget = targetSelector.pickLegacyCamTarget(mc, playerPos, path, pursuitSegment);
-            camTargetIdx = camTarget;
-            Node rotTarget = path.get(camTarget);
-            rotTargetPos = new Vec3(
-                rotTarget.position.centeredX(),
-                rotTarget.position.flooredY() + LEGACY_CAMERA_EYE_Y,
-                rotTarget.position.centeredZ());
-        }
+        RotationTarget rotationTarget = selectRotationTarget(mc, playerPos, path, pursuitSegment);
+        camTargetIdx = rotationTarget.visualizerIndex();
 
         if (lastRotationDebugCamTarget != camTargetIdx) {
             debug(debug, "cam target changed prev=%d current=%d pursuitSegment=%d",
@@ -82,12 +69,46 @@ final class PathRotationController {
         }
 
         debug(debug, "target pick mode=%s camTarget=%d player=(%.2f,%.2f,%.2f) rotTarget=(%.2f,%.2f,%.2f)",
-            USE_CAMERA_RAIL && !cameraPath.isEmpty() ? "camera_rail" : "legacy",
-            camTarget,
+            rotationTarget.mode(),
+            rotationTarget.targetIndex(),
             playerPos.x, playerPos.y, playerPos.z,
-            rotTargetPos.x, rotTargetPos.y, rotTargetPos.z);
+            rotationTarget.position().x, rotationTarget.position().y, rotationTarget.position().z);
 
-        Rotation desiredRot = AngleUtils.getRotation(rotTargetPos);
+        Rotation desiredRot = AngleUtils.getRotation(rotationTarget.position());
+        dispatchRotationIfNeeded(mc, path, pursuitSegment, debug, desiredRot);
+    }
+
+    List<Vec3> getCameraPath() {
+        return cameraPath;
+    }
+
+    int getCameraIndex() {
+        return cameraIndex;
+    }
+
+    int getCamTargetIdx() {
+        return camTargetIdx;
+    }
+
+    private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment) {
+        if (USE_CAMERA_RAIL && !cameraPath.isEmpty()) {
+            int camTarget = pickCameraRailTarget(playerPos);
+            Vec3 rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
+            int visualizerIndex = Math.min(cameraPath.size() - 1, camTarget + 1);
+            return new RotationTarget("camera_rail", camTarget, visualizerIndex, rotTargetPos);
+        }
+
+        int camTarget = targetSelector.pickLegacyCamTarget(mc, playerPos, path, pursuitSegment);
+        Node rotTarget = path.get(camTarget);
+        Vec3 rotTargetPos = new Vec3(
+            rotTarget.position.centeredX(),
+            rotTarget.position.flooredY() + LEGACY_CAMERA_EYE_Y,
+            rotTarget.position.centeredZ());
+        return new RotationTarget("legacy", camTarget, camTarget, rotTargetPos);
+    }
+
+    private void dispatchRotationIfNeeded(Minecraft mc, List<Node> path, int pursuitSegment,
+                                          Consumer<String> debug, Rotation desiredRot) {
         boolean alreadyRotating = RotationExecutor.isRotating();
         float referenceYaw = alreadyRotating ? RotationExecutor.getTargetYaw() : mc.player.getYRot();
         float referencePitch = alreadyRotating ? RotationExecutor.getTargetPitch() : mc.player.getXRot();
@@ -124,18 +145,6 @@ final class PathRotationController {
 
         debug(debug, "rotateTo skipped small drift wp=%d camTargetIdx=%d",
             pursuitSegment, camTargetIdx);
-    }
-
-    List<Vec3> getCameraPath() {
-        return cameraPath;
-    }
-
-    int getCameraIndex() {
-        return cameraIndex;
-    }
-
-    int getCamTargetIdx() {
-        return camTargetIdx;
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {
@@ -272,5 +281,8 @@ final class PathRotationController {
             a.x + (b.x - a.x) * t,
             a.y + (b.y - a.y) * t,
             a.z + (b.z - a.z) * t);
+    }
+
+    private record RotationTarget(String mode, int targetIndex, int visualizerIndex, Vec3 position) {
     }
 }
