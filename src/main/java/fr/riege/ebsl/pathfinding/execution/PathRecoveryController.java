@@ -25,6 +25,12 @@ final class PathRecoveryController {
             return RecoveryDecision.continueMovement();
         }
 
+        if (mc.player.isInWater()) {
+            backupTicksLeft = 0;
+            mc.options.keyJump.setDown(true);
+            mc.options.keyShift.setDown(false);
+        }
+
         if (allowReplan && mc.player.onGround()
             && progress.pathStale(GROUNDED_NO_PROGRESS_REPLAN_MS)) {
             return RecoveryDecision.replanFromPlayer("grounded no progress stale=" + progress.pathStaleMs());
@@ -40,7 +46,7 @@ final class PathRecoveryController {
         }
 
         boolean drifted = progress.drifted(PathExecutor.DRIFT_DISTANCE);
-        if (progress.movementStale(UNSTUCK_BACKUP_MS) && !drifted && mc.player.onGround()) {
+        if (!mc.player.isInWater() && progress.movementStale(UNSTUCK_BACKUP_MS) && !drifted && mc.player.onGround()) {
             backupTicksLeft = BACKUP_TICKS;
             executor.noteRecoveryMovement(playerPos);
             applyBackupTick(mc);

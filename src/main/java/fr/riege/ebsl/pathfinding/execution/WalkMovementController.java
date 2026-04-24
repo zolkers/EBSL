@@ -55,7 +55,7 @@ final class WalkMovementController {
         applyPathMovement(mc, playerPos, movementWaypoint, distToFinal, nearStepUp, pursuitSegment);
 
         if (!allowJumps) {
-            mc.options.keyJump.setDown(false);
+            mc.options.keyJump.setDown(mc.player != null && mc.player.isInWater());
             return;
         }
 
