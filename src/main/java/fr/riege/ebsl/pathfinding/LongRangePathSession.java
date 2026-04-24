@@ -11,6 +11,7 @@ final class LongRangePathSession {
     static final double HORIZON_TRIM_RATIO = 0.75;
     private static final double PREPARE_REMAINING_DISTANCE = 45.0;
     private static final double EMERGENCY_REMAINING_DISTANCE = 14.0;
+    private static final double PREPARED_SWITCH_REMAINING_DISTANCE = 24.0;
     private static final double FINAL_GOAL_XZ_TOLERANCE = 1.75;
     private static final double MAX_SEGMENT_DISTANCE = 150.0;
     private static final long SEGMENT_RETRY_COOLDOWN_MS = 1500;
@@ -141,6 +142,12 @@ final class LongRangePathSession {
 
     double recalcThresholdRatio() {
         return SEGMENT_RECALC_RATIO;
+    }
+
+    boolean shouldActivatePreparedSegment(double progressRatio, double remainingDistance, boolean walkExecutionDone) {
+        return walkExecutionDone
+            || progressRatio >= SEGMENT_RECALC_RATIO
+            || remainingDistance <= PREPARED_SWITCH_REMAINING_DISTANCE;
     }
 
     boolean shouldUsePlayerRecoveryStart(double progressRatio, boolean walkExecutionDone) {

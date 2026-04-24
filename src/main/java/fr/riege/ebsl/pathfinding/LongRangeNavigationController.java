@@ -73,8 +73,11 @@ final class LongRangeNavigationController {
         }
 
         if (runtime.longRangeSession.hasPreparedSegment()
-            && ((progressRatio >= runtime.longRangeSession.recalcThresholdRatio()
-                && runtime.executor.getState() == fr.riege.ebsl.pathfinding.execution.PathExecutor.State.WALKING)
+            && runtime.longRangeSession.shouldActivatePreparedSegment(
+                progressRatio,
+                remainingDistance,
+                walkExecutionDone)
+            && (runtime.executor.getState() == fr.riege.ebsl.pathfinding.execution.PathExecutor.State.WALKING
                 || walkExecutionDone)) {
             startPreparedSegment(mc);
         }
