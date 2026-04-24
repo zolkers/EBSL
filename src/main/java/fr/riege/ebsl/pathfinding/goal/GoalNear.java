@@ -1,6 +1,10 @@
 package fr.riege.ebsl.pathfinding.goal;
 
 public record GoalNear(int x, int y, int z, double radius) implements Goal {
+    public GoalNear {
+        GoalValidators.requireNonNegativeFiniteRadius(radius, "GoalNear radius");
+    }
+
     @Override
     public boolean isInGoal(int x, int y, int z) {
         double dx = this.x - x;

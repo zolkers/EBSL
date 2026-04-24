@@ -3,6 +3,16 @@ package fr.riege.ebsl.pathfinding.goal;
 import java.util.List;
 
 public record GoalCompositeAny(List<Goal> goals) implements Goal {
+    public GoalCompositeAny {
+        if (goals == null || goals.isEmpty()) {
+            throw new IllegalArgumentException("GoalCompositeAny requires at least one goal");
+        }
+        if (goals.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("GoalCompositeAny cannot contain null goals");
+        }
+        goals = List.copyOf(goals);
+    }
+
     @Override
     public boolean isInGoal(int x, int y, int z) {
         return goals.stream().anyMatch(goal -> goal.isInGoal(x, y, z));

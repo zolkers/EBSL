@@ -1,5 +1,7 @@
 package fr.riege.ebsl.pathfinding.goal;
 
+import java.util.Objects;
+
 public record NavigationRequest(
     Goal goal,
     NavigationModeType mode,
@@ -8,6 +10,14 @@ public record NavigationRequest(
     Runnable onFinished,
     Runnable onFailed
 ) {
+    public NavigationRequest {
+        goal = Objects.requireNonNull(goal, "goal");
+        mode = Objects.requireNonNull(mode, "mode");
+        if (!Double.isFinite(preciseGoalTolerance) || preciseGoalTolerance < 0.0) {
+            throw new IllegalArgumentException("preciseGoalTolerance must be finite and non-negative");
+        }
+    }
+
     public static Builder builder(Goal goal) {
         return new Builder(goal);
     }
@@ -25,11 +35,11 @@ public record NavigationRequest(
         private Runnable onFailed;
 
         private Builder(Goal goal) {
-            this.goal = goal;
+            this.goal = Objects.requireNonNull(goal, "goal");
         }
 
         public Builder mode(NavigationModeType mode) {
-            this.mode = mode;
+            this.mode = Objects.requireNonNull(mode, "mode");
             return this;
         }
 
