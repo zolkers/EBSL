@@ -105,6 +105,9 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         int    dz = pos.flooredZ() - prev.flooredZ();
 
         if (dy > maxJumpHeight) return false;
+        if (dy > DEFAULT_MOB_JUMP_HEIGHT && (prevPoint.isLiquid() || currentPoint.isLiquid())) {
+            return false;
+        }
 
         // Diagonal corner check: both intermediate corners must be traversable
         if (Math.abs(dx) == 1 && Math.abs(dz) == 1) {
@@ -138,7 +141,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                     : currentPoint.hasFloor() || prevPoint.hasFloor()
                    || currentPoint.isClimbable() || prevPoint.isClimbable();
             case  1 -> dy > 0.5      // jumping/climbing
-                    ? prevPoint.hasFloor() || currentPoint.isClimbable()
+                    ? hasJumpSupport(prevPoint) || currentPoint.isClimbable()
                     : currentPoint.hasFloor() || prevPoint.hasFloor()
                    || currentPoint.isClimbable() || prevPoint.isClimbable();
             default -> currentPoint.hasFloor() || prevPoint.hasFloor()
@@ -354,6 +357,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         Level level = mc.level;
         if (level == null) return false;
         return isFullWallBlockStatic(level, new BlockPos(x, y, z));
+    }
+
+    private static boolean hasJumpSupport(NavigationPoint point) {
+        return point.hasFloor() && !point.isLiquid();
     }
 
     private boolean isInsideSolidSpace(PathPosition pos) {
