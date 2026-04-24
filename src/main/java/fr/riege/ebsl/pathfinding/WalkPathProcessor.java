@@ -171,6 +171,8 @@ final class WalkPathProcessor {
             || a == Node.MoveType.PARKOUR || b == Node.MoveType.PARKOUR;
     }
 
+    // True if the node is in water, or if it is a non-solid block sitting one above a water column
+    // (player treading water at the surface, feet in air but standing block is water).
     private static boolean isSwimPosition(WalkabilityChecker checker, PathPosition pos) {
         int x = pos.flooredX(), y = pos.flooredY(), z = pos.flooredZ();
         if (checker.isWater(x, y, z)) return true;
