@@ -25,11 +25,8 @@ final class PathRecoveryController {
             return RecoveryDecision.continueMovement();
         }
 
-        if (mc.player.isInWater()) {
-            backupTicksLeft = 0;
-            mc.options.keyJump.setDown(true);
-            mc.options.keyShift.setDown(false);
-        }
+        boolean inWater = mc.player.isInWater();
+        keepSurfaceSwimming(mc, inWater);
 
         if (allowReplan && mc.player.onGround()
             && progress.pathStale(GROUNDED_NO_PROGRESS_REPLAN_MS)) {
@@ -46,15 +43,14 @@ final class PathRecoveryController {
         }
 
         boolean drifted = progress.drifted(PathExecutor.DRIFT_DISTANCE);
-        if (!mc.player.isInWater() && progress.movementStale(UNSTUCK_BACKUP_MS) && !drifted && mc.player.onGround()) {
+        if (shouldBackup(mc, progress, drifted, inWater)) {
             backupTicksLeft = BACKUP_TICKS;
             executor.noteRecoveryMovement(playerPos);
             applyBackupTick(mc);
             return RecoveryDecision.tickHandled();
         }
 
-        if (progress.movementStale(UNSTUCK_JUMP_MS) && !drifted
-            && mc.player.onGround() && jumpCooldown == 0) {
+        if (shouldJumpForRecovery(mc, progress, drifted, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
             return RecoveryDecision.recoveryJump();
         }
@@ -77,6 +73,30 @@ final class PathRecoveryController {
         }
 
         return RecoveryDecision.continueMovement();
+    }
+
+    private void keepSurfaceSwimming(Minecraft mc, boolean inWater) {
+        if (!inWater) {
+            return;
+        }
+        backupTicksLeft = 0;
+        mc.options.keyJump.setDown(true);
+        mc.options.keyShift.setDown(false);
+    }
+
+    private boolean shouldBackup(Minecraft mc, PathProgressSnapshot progress, boolean drifted, boolean inWater) {
+        return !inWater
+            && progress.movementStale(UNSTUCK_BACKUP_MS)
+            && !drifted
+            && mc.player.onGround();
+    }
+
+    private boolean shouldJumpForRecovery(Minecraft mc, PathProgressSnapshot progress,
+                                          boolean drifted, int jumpCooldown) {
+        return progress.movementStale(UNSTUCK_JUMP_MS)
+            && !drifted
+            && mc.player.onGround()
+            && jumpCooldown == 0;
     }
 
     private void applyBackupTick(Minecraft mc) {
