@@ -88,11 +88,14 @@ public final class WalkabilityChecker {
     /**
      * True if the block at y is a good standing position:
      * feet (y) is passable, head (y+1) is passable, floor (y-1) is solid.
+     * Low partial supports such as bottom slabs and bottom stairs occupy the
+     * feet block while still being valid standing positions.
      */
     public boolean isWalkable(int x, int y, int z) {
-        return isPassable(x, y, z)
+        boolean lowPartialFeet = isLowPartialSupport(x, y, z);
+        return (isPassable(x, y, z) || lowPartialFeet)
                 && isPassable(x, y + 1, z)
-                && hasWalkableTop(x, y - 1, z)   // uses getCollisionShape - handles stairs/slabs/walls
+                && (hasWalkableTop(x, y - 1, z) || lowPartialFeet)
                 && !isDangerous(x, y, z)
                 && !isDangerous(x, y + 1, z);
     }
