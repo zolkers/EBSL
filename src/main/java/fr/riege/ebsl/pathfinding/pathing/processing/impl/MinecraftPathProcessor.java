@@ -100,7 +100,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         if (level == null) return false;
 
         NavigationPoint prevPoint = provider.getNavigationPoint(prev, env);
-        double dy = pos.y - prev.y;
+        double dy = currentPoint.getFloorLevel() - prevPoint.getFloorLevel();
         int    dx = pos.flooredX() - prev.flooredX();
         int    dz = pos.flooredZ() - prev.flooredZ();
 
