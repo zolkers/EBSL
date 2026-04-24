@@ -21,7 +21,7 @@ final class PathTracker {
     private long severeOffPathSince;
 
     void start(List<Node> path) {
-        this.path = path == null ? Collections.emptyList() : path;
+        this.path = snapshot(path);
         this.pursuitSegment = 0;
         this.lastPos = Vec3.ZERO;
         this.lastProgressTime = System.currentTimeMillis();
@@ -88,7 +88,7 @@ final class PathTracker {
     }
 
     private void resetPath(List<Node> newPath) {
-        this.path = newPath;
+        this.path = snapshot(newPath);
         this.pursuitSegment = 0;
         this.bestPathProgress = Double.NEGATIVE_INFINITY;
         this.lastPathProgressTime = System.currentTimeMillis();
@@ -348,6 +348,10 @@ final class PathTracker {
         double dy = to.position.flooredY() - from.position.flooredY();
         double dz = to.position.centeredZ() - from.position.centeredZ();
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    private static List<Node> snapshot(List<Node> nodes) {
+        return nodes == null || nodes.isEmpty() ? Collections.emptyList() : List.copyOf(nodes);
     }
 
     private static void appendDistinct(List<Node> nodes, Node candidate) {
