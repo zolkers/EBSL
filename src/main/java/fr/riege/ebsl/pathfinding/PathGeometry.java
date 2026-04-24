@@ -1,5 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.pathing.heuristic.IHeuristicStrategy;
+import fr.riege.ebsl.pathfinding.pathing.heuristic.LinearHeuristicStrategy;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ClipContext;
@@ -10,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class PathGeometry {
-    private static final fr.riege.ebsl.pathfinding.pathing.heuristic.IHeuristicStrategy ZERO_HEURISTIC =
-        new fr.riege.ebsl.pathfinding.pathing.heuristic.LinearHeuristicStrategy();
+    private static final IHeuristicStrategy ZERO_HEURISTIC =
+        new LinearHeuristicStrategy();
 
     private static final double[][] LOS_OFFSETS = {
         {0.05, 0.05}, {0.05, 0.95}, {0.95, 0.05}, {0.95, 0.95}

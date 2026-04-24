@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 
-/**
- * Fly pathfinder: ignores gravity, floor, and headroom - only avoids solid blocks.
- * Uses 26-directional 3D neighbour strategy for smooth 3D paths.
- * Strongly prefers open space via a cached per-face wall-adjacency penalty.
- */
 public final class FlyPathfinder {
 
     private static final List<PathVector> OFFSETS_26;
