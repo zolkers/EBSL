@@ -19,7 +19,7 @@ final class WalkPathProcessor {
     static ProcessedPath processWalkPath(Collection<PathPosition> positions,
                                          PathfinderConfiguration config,
                                          WalkabilityChecker checker) {
-        List<Node> nodes = toNodeList(positions, config);
+        List<Node> nodes = toNodeList(positions, config, checker);
         List<Node> smoothed = PathSmoother.smooth(nodes, checker);
         List<Node> keynodes = collapseAscendingStacks(smoothed);
         for (Node node : keynodes) {
@@ -29,7 +29,8 @@ final class WalkPathProcessor {
         return new ProcessedPath(nodes, navigationPath, computePathLength(nodes));
     }
 
-    private static List<Node> toNodeList(Collection<PathPosition> positions, PathfinderConfiguration config) {
+    private static List<Node> toNodeList(Collection<PathPosition> positions, PathfinderConfiguration config,
+                                          WalkabilityChecker checker) {
         if (positions == null || positions.isEmpty()) {
             return Collections.emptyList();
         }
@@ -49,6 +50,10 @@ final class WalkPathProcessor {
                 effectiveConfig.heuristicWeights, effectiveConfig.heuristicStrategy, nodes.size());
             if (previous != null) {
                 node.moveType = PathGeometry.inferMoveType(previous, position);
+                // Water always wins — intentionally overrides FALL/JUMP for nodes entering a pool.
+                if (checker != null && isSwimPosition(checker, position)) {
+                    node.moveType = Node.MoveType.SWIM;
+                }
             }
             nodes.add(node);
             previous = position;
@@ -99,6 +104,9 @@ final class WalkPathProcessor {
                 }
                 Node intermediate = new Node(new PathPosition(ix, y, iz));
                 intermediate.moveType = from.moveType;
+                if (checker != null && isSwimPosition(checker, intermediate.position)) {
+                    intermediate.moveType = Node.MoveType.SWIM;
+                }
                 appendDistinct(result, intermediate);
             }
         }
@@ -161,5 +169,11 @@ final class WalkPathProcessor {
         return a == Node.MoveType.STEP_UP || b == Node.MoveType.STEP_UP
             || a == Node.MoveType.JUMP || b == Node.MoveType.JUMP
             || a == Node.MoveType.PARKOUR || b == Node.MoveType.PARKOUR;
+    }
+
+    private static boolean isSwimPosition(WalkabilityChecker checker, PathPosition pos) {
+        int x = pos.flooredX(), y = pos.flooredY(), z = pos.flooredZ();
+        if (checker.isWater(x, y, z)) return true;
+        return checker.isPassable(x, y, z) && checker.isWater(x, y - 1, z);
     }
 }
