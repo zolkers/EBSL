@@ -84,16 +84,20 @@ public final class PathExecutor {
 
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise,
                       Runnable onFinished) {
-        this.goalX      = goalX;
-        this.goalY      = goalY;
-        this.goalZ      = goalZ;
-        this.precise    = precise;
-        this.onFinished = onFinished;
+        start(new ExecutionPlan(path, goalX, goalY, goalZ, precise, onFinished));
+    }
+
+    public void start(ExecutionPlan plan) {
+        this.goalX      = plan.goalX();
+        this.goalY      = plan.goalY();
+        this.goalZ      = plan.goalZ();
+        this.precise    = plan.precise();
+        this.onFinished = plan.onFinished();
         resetConfig();
         resetTransientState();
-        pathTracker.start(path);
-        rotationController.rebuild(path);
-        movementController = new WalkMovementController(path);
+        pathTracker.start(plan.path());
+        rotationController.rebuild(plan.path());
+        movementController = new WalkMovementController(plan.path());
         state = State.WALKING;
     }
 
