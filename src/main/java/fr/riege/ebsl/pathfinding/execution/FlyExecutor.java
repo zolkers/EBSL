@@ -194,7 +194,7 @@ public final class FlyExecutor {
     }
 
     public void releaseAll(Minecraft mc) {
-        MovementInputController.releaseAll(mc, false);
+        InputApplier.releaseAll(mc, false);
     }
 
     // --- Internal helpers ----------------------------------------------------
@@ -227,7 +227,7 @@ public final class FlyExecutor {
     }
 
     private void applyStrafingMovement(Minecraft mc, double dx, double dz) {
-        MovementInputController.applyRelativeMovement(mc, dx, dz, 0.1, -0.1, 0.1);
+        InputApplier.applyRelativeMovement(mc, dx, dz, 0.1, -0.1, 0.1);
     }
 
     private void debugRotation(String message, Object... args) {

@@ -363,7 +363,7 @@ public final class PathExecutor {
     }
 
     public void releaseAll(Minecraft mc) {
-        MovementInputController.releaseAll(mc, sneakLatched);
+        InputApplier.releaseAll(mc, sneakLatched);
     }
 
     void noteRecoveryMovement(Vec3 playerPos) {
@@ -448,7 +448,7 @@ public final class PathExecutor {
             return;
         }
 
-        MovementInputController.applyGoalCentering(mc, dx, dz);
+        InputApplier.applyGoalCentering(mc, dx, dz);
     }
 
     private void finish(Minecraft mc) {

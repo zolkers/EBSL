@@ -3,11 +3,11 @@ package fr.riege.ebsl.pathfinding.execution;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 
-final class MovementInputController {
+final class InputApplier {
     private static final double STRAFE_SUPPRESSION_FORWARD_DOT = 0.45;
     private static final double STRAFE_SUPPRESSION_DOT = 0.55;
 
-    private MovementInputController() {
+    private InputApplier() {
     }
 
     static void releaseAll(Minecraft mc, boolean keepSneaking) {

@@ -92,7 +92,7 @@ final class WalkMovementController {
 
         double desiredX = dx / hDist;
         double desiredZ = dz / hDist;
-        MovementInputController.applyRelativeMovement(
+        InputApplier.applyRelativeMovement(
             mc, desiredX, desiredZ, PathExecutor.WALK_FORWARD_DOT,
             PathExecutor.WALK_BACKWARD_DOT, PathExecutor.WALK_STRAFE_DOT);
         mc.options.keySprint.setDown(mc.options.keyUp.isDown()
