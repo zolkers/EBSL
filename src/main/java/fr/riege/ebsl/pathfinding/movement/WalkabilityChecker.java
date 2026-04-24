@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos.MutableBlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -135,16 +134,16 @@ public final class WalkabilityChecker {
     }
 
     /**
-     * True for partial collision blocks that the player's feet can occupy while
-     * standing on their top surface, most notably bottom slabs.
+     * True for low partial collision blocks that the player's feet can occupy
+     * while standing on their top surface, most notably bottom slabs.
+     *
+     * Stairs are intentionally excluded. Their collision shape depends on
+     * facing/half and can include a raised side inside the same block, so they
+     * are handled as walkable support instead of as feet-occupiable space.
      */
     public boolean isLowPartialSupport(int x, int y, int z) {
         if (isBlacklisted(x, y, z)) {
             return false;
-        }
-        BlockState state = getState(x, y, z);
-        if (isBottomStair(state)) {
-            return true;
         }
         double topY = getTopY(x, y, z);
         return topY > 0.0 && topY <= 0.5;
@@ -357,8 +356,4 @@ public final class WalkabilityChecker {
         return PathfinderBlockBlacklistModule.isBlacklisted(state);
     }
 
-    private static boolean isBottomStair(BlockState state) {
-        return state.getBlock() instanceof StairBlock
-            && state.getValue(StairBlock.HALF) == Half.BOTTOM;
-    }
 }

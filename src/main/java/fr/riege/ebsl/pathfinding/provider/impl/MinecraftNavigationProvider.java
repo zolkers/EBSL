@@ -15,7 +15,6 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
@@ -171,9 +170,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean isLowPartialSupport(Level level, int x, int y, int z, BlockState state) {
-        if (isBottomStair(state)) {
-            return true;
-        }
         var shape = state.getCollisionShape(level, new BlockPos(x, y, z), CollisionContext.empty());
         return !shape.isEmpty() && shape.bounds().maxY <= 0.5;
     }
@@ -210,9 +206,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             return pos.getY() + 0.5;
         }
         var feetShape = level.getBlockState(pos).getCollisionShape(level, pos, CollisionContext.empty());
-        if (isBottomStair(level.getBlockState(pos))) {
-            return pos.getY() + 0.5;
-        }
         if (!feetShape.isEmpty() && feetShape.bounds().maxY <= 0.5) {
             return pos.getY() + feetShape.bounds().maxY;
         }
@@ -227,9 +220,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         BlockState feetState = checker.getState(x, y, z);
         if (!feetState.getFluidState().isEmpty()
                 && feetState.getFluidState().is(FluidTags.WATER)) {
-            return y + 0.5;
-        }
-        if (isBottomStair(feetState)) {
             return y + 0.5;
         }
         double feetTopY = checker.getTopY(x, y, z);
@@ -256,11 +246,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         }
         // Lava fluid state
         return state.getFluidState().is(FluidTags.LAVA);
-    }
-
-    private static boolean isBottomStair(BlockState state) {
-        return state.getBlock() instanceof StairBlock
-            && state.getValue(StairBlock.HALF) == Half.BOTTOM;
     }
 
 }

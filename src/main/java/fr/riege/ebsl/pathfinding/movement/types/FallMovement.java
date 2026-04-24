@@ -11,11 +11,6 @@ public final class FallMovement extends WalkMovement {
     }
 
     @Override
-    public boolean countsAsStairSequence() {
-        return true;
-    }
-
-    @Override
     public MovementValidationResult validate(MovementValidationContext context) {
         int fromX = context.from().position.flooredX();
         int fromY = context.from().position.flooredY();

@@ -25,7 +25,7 @@ public final class StepUpMovement implements PathMovement {
 
     @Override
     public void handleJump(MovementExecutionContext context) {
-        if (context.partialSupportAscent() || context.inStairSequence()) {
+        if (context.partialSupportAscent()) {
             context.releaseJump();
             return;
         }
