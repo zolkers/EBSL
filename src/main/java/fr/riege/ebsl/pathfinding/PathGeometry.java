@@ -78,6 +78,9 @@ final class PathGeometry {
         if (dy < 0) {
             return Node.MoveType.FALL;
         }
+        if ((dx == 0 || dz == 0) && dx + dz > 1) {
+            return Node.MoveType.PARKOUR;
+        }
         if (dx + dz >= 2) {
             return Node.MoveType.WALK_DIAGONAL;
         }

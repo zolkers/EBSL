@@ -83,13 +83,16 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             belowState = level.getBlockState(blockPos.below());
         }
 
-        boolean canPassFeet   = canWalkThrough(feetState);
+        boolean lowPartialFeet = checker != null
+            ? checker.isLowPartialSupport(x, y, z)
+            : isLowPartialSupport(level, x, y, z, feetState);
+        boolean canPassFeet   = lowPartialFeet || canWalkThrough(feetState);
         boolean canPassHead   = canWalkThrough(headState);
         boolean isLiquid      = !feetState.getFluidState().isEmpty();
         // When the feet are in liquid, the player is already supported; don't check below.
         // This prevents the air-above-water node (feet=air, below=water) from inheriting
         // hasFloor=true and opening up incorrect +2-block exits from water.
-        boolean hasFloor      = isLiquid || (checker != null
+        boolean hasFloor      = lowPartialFeet || isLiquid || (checker != null
                 ? canWalkOnCached(checker, belowState, x, y - 1, z)
                 : canWalkOn(level, belowState, new BlockPos(x, y - 1, z)));
         double  floorLevel    = checker != null
@@ -166,6 +169,11 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         return isSpecialWalkable(block);
     }
 
+    private static boolean isLowPartialSupport(Level level, int x, int y, int z, BlockState state) {
+        var shape = state.getCollisionShape(level, new BlockPos(x, y, z), CollisionContext.empty());
+        return !shape.isEmpty() && shape.bounds().maxY <= 0.5;
+    }
+
     private static boolean canWalkOnCached(WalkabilityChecker checker, BlockState state, int x, int y, int z) {
         Block block = state.getBlock();
         if (checker.isFullWallBlock(x, y, z)
@@ -197,6 +205,10 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         if (level.getFluidState(pos).is(FluidTags.WATER)) {
             return pos.getY() + 0.5;
         }
+        var feetShape = level.getBlockState(pos).getCollisionShape(level, pos, CollisionContext.empty());
+        if (!feetShape.isEmpty() && feetShape.bounds().maxY <= 0.5) {
+            return pos.getY() + feetShape.bounds().maxY;
+        }
         BlockPos    belowPos  = pos.below();
         BlockState  belowState = level.getBlockState(belowPos);
         var shape = belowState.getCollisionShape(level, belowPos, CollisionContext.empty());
@@ -209,6 +221,10 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         if (!feetState.getFluidState().isEmpty()
                 && feetState.getFluidState().is(FluidTags.WATER)) {
             return y + 0.5;
+        }
+        double feetTopY = checker.getTopY(x, y, z);
+        if (feetTopY > 0.0 && feetTopY <= 0.5) {
+            return y + feetTopY;
         }
         int belowY = y - 1;
         double topY = checker.getTopY(x, belowY, z);

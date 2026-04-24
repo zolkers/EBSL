@@ -108,6 +108,9 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         if (dy > DEFAULT_MOB_JUMP_HEIGHT && (prevPoint.isLiquid() || currentPoint.isLiquid())) {
             return false;
         }
+        if (isParkourOffset(dx, dz) && !isValidParkourMove(provider, env, prev, pos, prevPoint, currentPoint)) {
+            return false;
+        }
 
         // Diagonal corner check: both intermediate corners must be traversable
         if (Math.abs(dx) == 1 && Math.abs(dz) == 1) {
@@ -363,6 +366,35 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         return point.hasFloor() && !point.isLiquid();
     }
 
+    private static boolean isParkourOffset(int dx, int dz) {
+        int distance = Math.abs(dx) + Math.abs(dz);
+        return distance > 1 && (dx == 0 || dz == 0);
+    }
+
+    private boolean isValidParkourMove(fr.riege.ebsl.pathfinding.provider.NavigationPointProvider provider,
+                                       fr.riege.ebsl.pathfinding.pathing.context.EnvironmentContext env,
+                                       PathPosition from,
+                                       PathPosition to,
+                                       NavigationPoint fromPoint,
+                                       NavigationPoint toPoint) {
+        if (!hasJumpSupport(fromPoint) || !hasJumpSupport(toPoint) || toPoint.isLiquid()) {
+            return false;
+        }
+
+        int dx = Integer.signum(to.flooredX() - from.flooredX());
+        int dz = Integer.signum(to.flooredZ() - from.flooredZ());
+        int distance = Math.abs(to.flooredX() - from.flooredX())
+            + Math.abs(to.flooredZ() - from.flooredZ());
+        for (int step = 1; step < distance; step++) {
+            PathPosition bridge = from.add(dx * step, 0.0, dz * step);
+            NavigationPoint bridgePoint = provider.getNavigationPoint(bridge, env);
+            if (!bridgePoint.isTraversable() || bridgePoint.isLiquid()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean isInsideSolidSpace(PathPosition pos) {
         int fx = pos.flooredX();
         int fy = pos.flooredY();
@@ -381,6 +413,9 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     }
 
     private boolean isBlockingPlayerSpace(int x, int y, int z) {
+        if (checker.isLowPartialSupport(x, y, z)) {
+            return false;
+        }
         return !checker.isPassable(x, y, z) && checker.getTopY(x, y, z) > 0.0;
     }
 

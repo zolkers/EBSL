@@ -37,16 +37,22 @@ public final class NeighborStrategies {
 
     public static INeighborStrategy horizontalDiagonalAndVertical(int maxJumpHeight) {
         int cappedJumpHeight = Math.max(1, maxJumpHeight);
-        if (cappedJumpHeight == 1) {
-            return HORIZONTAL_DIAGONAL_AND_VERTICAL;
-        }
-
         List<PathVector> offsets = new ArrayList<>(HORIZONTAL_DIAGONAL_AND_VERTICAL_OFFSETS);
+        addParkourOffsets(offsets);
         for (int height = 2; height <= cappedJumpHeight; height++) {
             offsets.add(new PathVector(0, height, 0));
         }
 
         List<PathVector> immutableOffsets = List.copyOf(offsets);
         return () -> immutableOffsets;
+    }
+
+    private static void addParkourOffsets(List<PathVector> offsets) {
+        for (int distance = 2; distance <= 4; distance++) {
+            offsets.add(new PathVector( distance, 0,  0));
+            offsets.add(new PathVector(-distance, 0,  0));
+            offsets.add(new PathVector( 0, 0,  distance));
+            offsets.add(new PathVector( 0, 0, -distance));
+        }
     }
 }

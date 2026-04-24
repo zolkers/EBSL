@@ -127,6 +127,15 @@ public final class WalkabilityChecker {
     }
 
     /**
+     * True for partial collision blocks that the player's feet can occupy while
+     * standing on their top surface, most notably bottom slabs.
+     */
+    public boolean isLowPartialSupport(int x, int y, int z) {
+        double topY = getTopY(x, y, z);
+        return topY > 0.0 && topY <= 0.5;
+    }
+
+    /**
      * True if the block is solid AND has a full-height collision shape (maxY >= 0.95)
      * AND canOcclude + isCollisionShapeFullBlock.
      * Partial blocks such as slabs, stairs, and half-walls return false even when solid.

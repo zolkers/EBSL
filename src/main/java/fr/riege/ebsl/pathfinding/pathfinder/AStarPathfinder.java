@@ -212,6 +212,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         if (dy > 0)           return MoveType.STEP_UP;
         if (dy < -1)          return MoveType.FALL;
         if (dy < 0)           return MoveType.FALL;
+        if ((dx == 0 || dz == 0) && dx + dz > 1) return MoveType.PARKOUR;
         if (dx + dz >= 2)     return MoveType.WALK_DIAGONAL;
         return MoveType.WALK;
     }
