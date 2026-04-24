@@ -42,3 +42,10 @@ replay_*.log
 # worktrees
 
 .worktrees/
+
+# local tool state
+.claude/
+**/.claude/
+
+# runtime logs
+logs/
