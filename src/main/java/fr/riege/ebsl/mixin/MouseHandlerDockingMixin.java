@@ -5,6 +5,7 @@ import fr.riege.ebsl.ui.imgui.EbslImGuiOverlay;
 import fr.riege.ebsl.ui.viewport.DockedMouseCoordinates;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,6 +33,25 @@ public abstract class MouseHandlerDockingMixin {
             ypos(),
             window.getScreenWidth(),
             window.getScreenHeight())) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    private void ebsl$blockMinecraftClicksOutsideDockedViewport(long windowHandle, MouseButtonInfo button, int action,
+                                                                CallbackInfo ci) {
+        if (!EbslImGuiOverlay.isVisible()) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Window window = minecraft.getWindow();
+        if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(
+            xpos(),
+            ypos(),
+            window.getScreenWidth(),
+            window.getScreenHeight())) {
+            minecraft.mouseHandler.releaseMouse();
             ci.cancel();
         }
     }

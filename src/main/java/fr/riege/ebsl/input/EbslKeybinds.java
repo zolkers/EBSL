@@ -2,6 +2,7 @@ package fr.riege.ebsl.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import fr.riege.ebsl.EbslMod;
+import fr.riege.ebsl.ui.imgui.EbslImGuiOverlay;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -32,5 +33,21 @@ public final class EbslKeybinds {
         while (unfocusMinecraft.consumeClick()) {
             client.mouseHandler.releaseMouse();
         }
+        if (EbslImGuiOverlay.isVisible() && !client.mouseHandler.isMouseGrabbed()) {
+            releaseGameplayKeys(client);
+        }
+    }
+
+    private static void releaseGameplayKeys(Minecraft client) {
+        client.options.keyUp.setDown(false);
+        client.options.keyDown.setDown(false);
+        client.options.keyLeft.setDown(false);
+        client.options.keyRight.setDown(false);
+        client.options.keyJump.setDown(false);
+        client.options.keyShift.setDown(false);
+        client.options.keySprint.setDown(false);
+        client.options.keyAttack.setDown(false);
+        client.options.keyUse.setDown(false);
+        client.options.keyPickItem.setDown(false);
     }
 }
