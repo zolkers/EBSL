@@ -67,7 +67,6 @@ public final class PathExecutor {
     private boolean sneakLatched = false;
     private double preciseGoalTolerance = 0.5;
     private Runnable onFinished;
-    private int  debugTick       = 0;
     private boolean replanFromPlayerRequested = false;
     private PathRepairRequest repairRequest;
     private String lastRepairReason = "";
@@ -223,15 +222,9 @@ public final class PathExecutor {
 
         // -- Direct goal proximity check -------------------------------------
         // Catches cases where waypoint advancement gets stuck but player is at the goal.
-        {
-            double gx = goalX + 0.5, gz = goalZ + 0.5;
-            double gdx = gx - playerPos.x, gdz = gz - playerPos.z;
-            double gHDist = Math.sqrt(gdx * gdx + gdz * gdz);
-            double gVDist = Math.abs(goalY - playerPos.y);
-            if (gHDist <= GOAL_REACHED_HDIST && gVDist <= GOAL_REACHED_VDIST) {
-                finish(mc);
-                return;
-            }
+        if (isAtGoal(playerPos)) {
+            finish(mc);
+            return;
         }
 
         // -- Movement progress tracking -------------------------------------
@@ -287,7 +280,7 @@ public final class PathExecutor {
         }
 
         // Periodic debug
-        if (PathfinderConfig.SHOW_DEBUG.get() && ++debugTick % 40 == 0 && pathTracker.getPursuitSegment() < path.size()) {
+        if (PathfinderConfig.SHOW_DEBUG.get() && now % 2000 < 50 && pathTracker.getPursuitSegment() < path.size()) {
             Node wp   = path.get(pathTracker.getPursuitSegment());
             double dx = wp.position.centeredX() - playerPos.x;
             double dz = wp.position.centeredZ() - playerPos.z;
@@ -299,28 +292,7 @@ public final class PathExecutor {
 
         // -- Goal reached / coasting ----------------------------------------
         if (pathTracker.getPursuitSegment() >= path.size() - 1) {
-            if (!precise) {
-                // Approximate mode: release all keys immediately
-                finish(mc);
-                return;
-            }
-
-            // Precise mode: try to reach the exact block center horizontally.
-            if (coastStartTime == 0) coastStartTime = System.currentTimeMillis();
-            double dx = (goalX + goalCenterX) - playerPos.x;
-            double dz = (goalZ + goalCenterZ) - playerPos.z;
-            double hDist = Math.sqrt(dx * dx + dz * dz);
-
-            if (exactGoalCentering && hDist > preciseGoalTolerance) {
-                applyGoalCenteringMovement(mc, dx, dz);
-            } else {
-                releaseAll(mc);
-            }
-
-            if (hDist <= preciseGoalTolerance
-                    || System.currentTimeMillis() - coastStartTime > COAST_TIMEOUT_MS) {
-                finish(mc);
-            }
+            tickGoalCoasting(mc, playerPos);
             return;
         }
 
@@ -426,6 +398,33 @@ public final class PathExecutor {
             ClientUtils.sendDebugMessage(mc, "Path repair: " + reason);
         }
         state = State.REPLANNING;
+    }
+
+    private boolean isAtGoal(Vec3 playerPos) {
+        double dx = (goalX + 0.5) - playerPos.x;
+        double dz = (goalZ + 0.5) - playerPos.z;
+        return Math.sqrt(dx * dx + dz * dz) <= GOAL_REACHED_HDIST
+            && Math.abs(goalY - playerPos.y) <= GOAL_REACHED_VDIST;
+    }
+
+    private void tickGoalCoasting(Minecraft mc, Vec3 playerPos) {
+        if (!precise) {
+            finish(mc);
+            return;
+        }
+        if (coastStartTime == 0) coastStartTime = System.currentTimeMillis();
+        double dx = (goalX + goalCenterX) - playerPos.x;
+        double dz = (goalZ + goalCenterZ) - playerPos.z;
+        double hDist = Math.sqrt(dx * dx + dz * dz);
+        if (exactGoalCentering && hDist > preciseGoalTolerance) {
+            applyGoalCenteringMovement(mc, dx, dz);
+        } else {
+            releaseAll(mc);
+        }
+        if (hDist <= preciseGoalTolerance
+                || System.currentTimeMillis() - coastStartTime > COAST_TIMEOUT_MS) {
+            finish(mc);
+        }
     }
 
     private void applyGoalCenteringMovement(Minecraft mc, double dx, double dz) {
