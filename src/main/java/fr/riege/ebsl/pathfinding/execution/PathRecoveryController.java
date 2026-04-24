@@ -11,6 +11,7 @@ final class PathRecoveryController {
     private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.75;
     private static final long GROUNDED_NO_PROGRESS_REPLAN_MS = 1000;
     private static final long PATH_REPLAN_HARD_STALE_MS = 4200;
+    private static final double BACKUP_MAX_HORIZONTAL_SPEED = 0.22;
 
     private int backupTicksLeft;
 
@@ -35,6 +36,10 @@ final class PathRecoveryController {
 
         if (allowReplan && progress.pathStale(PATH_REPLAN_HARD_STALE_MS) && cooldownPassed) {
             return RecoveryDecision.replanFromPlayer("hard stale path progress");
+        }
+
+        if (backupTicksLeft > 0 && horizontalSpeed(mc) > BACKUP_MAX_HORIZONTAL_SPEED) {
+            backupTicksLeft = 0;
         }
 
         if (backupTicksLeft > 0) {
@@ -88,7 +93,8 @@ final class PathRecoveryController {
         return !inWater
             && progress.movementStale(UNSTUCK_BACKUP_MS)
             && !drifted
-            && mc.player.onGround();
+            && mc.player.onGround()
+            && horizontalSpeed(mc) <= BACKUP_MAX_HORIZONTAL_SPEED;
     }
 
     private boolean shouldJumpForRecovery(Minecraft mc, PathProgressSnapshot progress,
@@ -110,6 +116,11 @@ final class PathRecoveryController {
         if (backupTicksLeft == 0) {
             mc.options.keyDown.setDown(false);
         }
+    }
+
+    private static double horizontalSpeed(Minecraft mc) {
+        Vec3 velocity = mc.player.getDeltaMovement();
+        return Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     }
 
     record RecoveryDecision(Action action, String reason) {
