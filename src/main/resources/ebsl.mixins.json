@@ -3,7 +3,8 @@
 	"package": "fr.riege.ebsl.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"WorldRendererMixin"
+		"WorldRendererMixin",
+		"RenderTargetDockingMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

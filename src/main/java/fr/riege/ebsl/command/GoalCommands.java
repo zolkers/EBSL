@@ -1,4 +1,4 @@
-package fr.riege.ebsl.pathfinding.goal;
+package fr.riege.ebsl.command;
 
 public final class GoalCommands {
     private GoalCommands() {
@@ -11,6 +11,5 @@ public final class GoalCommands {
 
         NavigationGoalCommands.register();
         AreaGoalCommands.register();
-        UtilityGoalCommands.register();
     }
 }

@@ -1,10 +1,13 @@
-package fr.riege.ebsl.pathfinding.goal;
+package fr.riege.ebsl.command;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
+import fr.riege.ebsl.command.goal.GoalUiDefinition;
 
 public final class GoalRegistry {
     private static final Map<String, GoalCommandDefinition> COMMANDS = new LinkedHashMap<>();
@@ -21,6 +24,13 @@ public final class GoalRegistry {
 
     public static Collection<GoalCommandDefinition> commands() {
         return List.copyOf(COMMANDS.values());
+    }
+
+    public static List<GoalUiDefinition> uiDefinitions() {
+        return COMMANDS.values().stream()
+            .map(GoalCommandDefinition::uiDefinition)
+            .flatMap(Optional::stream)
+            .toList();
     }
 
     public static boolean isEmpty() {

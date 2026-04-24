@@ -68,9 +68,6 @@ final class WalkNavigationService {
             return;
         }
 
-        if (!PathVisualizer.isEnabled()) {
-            PathVisualizer.toggle();
-        }
         PathVisualizer.clear();
 
         WalkabilityChecker checker = new WalkabilityChecker(mc.level);

@@ -8,12 +8,14 @@ import fr.riege.ebsl.event.EventPhase;
 import fr.riege.ebsl.event.EventRegistry;
 import fr.riege.ebsl.event.events.game.TickEvent;
 import fr.riege.ebsl.event.events.render.RenderWorldEvent;
+import fr.riege.ebsl.command.GoalCommands;
+import fr.riege.ebsl.command.GoalRegistry;
+import fr.riege.ebsl.command.PathCommand;
+import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
-import fr.riege.ebsl.pathfinding.goal.GoalCommands;
-import fr.riege.ebsl.pathfinding.goal.GoalRegistry;
 import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlers;
-import fr.riege.ebsl.pathfinding.goal.PathCommand;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettingsStore;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -31,6 +33,8 @@ public final class EbslMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         eventBus = new EventBusImpl();
+        PathfinderSettingsStore.load();
+        BotModuleRegistry.bootstrap();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             PathCommand.register(dispatcher));
@@ -53,7 +57,6 @@ public final class EbslMod implements ClientModInitializer {
             RotationExecutor.update(client);
             PathVisualizer.renderWorld(event);
         });
-
         GoalCommands.bootstrap();
         GoalRequestHandlers.bootstrap();
         LOGGER.info("[{}] Event bridge ready, pathfinding commands registered ({} goals).", MOD_ID, GoalRegistry.commands().size());

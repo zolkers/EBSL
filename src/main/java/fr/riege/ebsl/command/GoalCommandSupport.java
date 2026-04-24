@@ -1,8 +1,9 @@
-package fr.riege.ebsl.pathfinding.goal;
+package fr.riege.ebsl.command;
 
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
+import fr.riege.ebsl.pathfinding.goal.NavigationRequest;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;

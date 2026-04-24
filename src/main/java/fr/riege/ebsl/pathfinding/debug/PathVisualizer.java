@@ -37,7 +37,6 @@ public final class PathVisualizer {
 
     private static final EbslMeshRenderer MESH_RENDERER = new EbslMeshRenderer();
 
-    private static volatile boolean enabled = false;
     private static volatile List<Node> currentPath = Collections.emptyList();
     private static volatile int currentWaypointIndex = 0;
     private static volatile List<Vec3> cameraPath = Collections.emptyList();
@@ -71,13 +70,6 @@ public final class PathVisualizer {
         }
     }
 
-    public static void toggle() {
-        enabled = !enabled;
-        if (!enabled) {
-            clear();
-        }
-    }
-
     public static void updateExecution(int wpIndex, int camTargetIdx) {
         currentWaypointIndex = clampIndex(wpIndex, currentPath.size());
         if (camTargetIdx >= 0) {
@@ -98,14 +90,10 @@ public final class PathVisualizer {
     }
 
     public static boolean isEnabled() {
-        return enabled;
+        return true;
     }
 
     public static void renderWorld(RenderWorldEvent event) {
-        if (!enabled) {
-            return;
-        }
-
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
             return;

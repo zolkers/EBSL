@@ -12,9 +12,24 @@ import net.minecraft.resources.Identifier;
 public final class EbslRenderPipelines {
     private static final Identifier POSITION_COLOR_SHADER =
         Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "core/pos_color");
+    private static final Identifier POSITION_TEX_SHADER =
+        Identifier.fromNamespaceAndPath("minecraft", "core/position_tex");
+    private static final Identifier DOCKED_VIEWPORT_SHADER =
+        Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "core/docked_viewport");
 
     static final RenderPipeline LINES_WITH_DEPTH = createLines(DepthTestFunction.LEQUAL_DEPTH_TEST, "lines_depth");
     static final RenderPipeline LINES_NO_DEPTH = createLines(DepthTestFunction.NO_DEPTH_TEST, "lines_no_depth");
+    public static final RenderPipeline DOCKED_VIEWPORT = RenderPipeline.builder()
+        .withLocation(Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "pipelines/docked_viewport"))
+        .withVertexShader(POSITION_TEX_SHADER)
+        .withFragmentShader(DOCKED_VIEWPORT_SHADER)
+        .withSampler("Sampler0")
+        .withoutBlend()
+        .withCull(false)
+        .withDepthWrite(false)
+        .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+        .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
+        .build();
 
     private EbslRenderPipelines() {
     }
