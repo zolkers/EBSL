@@ -1,8 +1,8 @@
 package fr.riege.ebsl.pathfinding.check;
 
 final class MissedCheckpointCheck implements PathCheck {
-    private static final int MAX_SKIPPED_CHECKPOINTS = 5;
-    private static final double MAX_NEXT_CHECKPOINT_DISTANCE = 6.0;
+    private static final int MAX_SKIPPED_CHECKPOINTS = 10;
+    private static final double MAX_NEXT_CHECKPOINT_DISTANCE = 12.0;
     private static final long MAX_CHECKPOINT_STALE_MS = 3000L;
 
     @Override

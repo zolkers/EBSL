@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"WorldRendererMixin",
-		"RenderTargetDockingMixin"
+		"RenderTargetDockingMixin",
+		"MouseHandlerDockingMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

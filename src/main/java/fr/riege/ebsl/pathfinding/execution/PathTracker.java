@@ -98,20 +98,25 @@ final class PathTracker {
     boolean advancePursuit(Vec3 playerPos, long now) {
         boolean changed = false;
         while (pursuitSegment + 1 < path.size()) {
-            double ax = path.get(pursuitSegment).position.centeredX();
-            double az = path.get(pursuitSegment).position.centeredZ();
-            double bx = path.get(pursuitSegment + 1).position.centeredX();
-            double bz = path.get(pursuitSegment + 1).position.centeredZ();
+            Node from = path.get(pursuitSegment);
+            Node to = path.get(pursuitSegment + 1);
+            double ax = from.position.centeredX();
+            double ay = from.position.flooredY();
+            double az = from.position.centeredZ();
+            double bx = to.position.centeredX();
+            double by = to.position.flooredY();
+            double bz = to.position.centeredZ();
             double dx = bx - ax;
+            double dy = by - ay;
             double dz = bz - az;
-            double lenSq = dx * dx + dz * dz;
+            double lenSq = dx * dx + dy * dy + dz * dz;
             if (lenSq < 1e-6) {
                 pursuitSegment++;
                 lastProgressTime = now;
                 changed = true;
                 continue;
             }
-            double t = ((playerPos.x - ax) * dx + (playerPos.z - az) * dz) / lenSq;
+            double t = ((playerPos.x - ax) * dx + (playerPos.y - ay) * dy + (playerPos.z - az) * dz) / lenSq;
             if (t < 1.0) {
                 break;
             }
@@ -299,15 +304,17 @@ final class PathTracker {
         Node from = path.get(pursuitSegment);
         Node to = path.get(pursuitSegment + 1);
         double dx = to.position.centeredX() - from.position.centeredX();
+        double dy = to.position.flooredY() - from.position.flooredY();
         double dz = to.position.centeredZ() - from.position.centeredZ();
-        double lenSq = dx * dx + dz * dz;
+        double lenSq = dx * dx + dy * dy + dz * dz;
         if (lenSq < 1.0e-6) {
             return pursuitSegment;
         }
 
         double px = playerPos.x - from.position.centeredX();
+        double py = playerPos.y - from.position.flooredY();
         double pz = playerPos.z - from.position.centeredZ();
-        double t = (px * dx + pz * dz) / lenSq;
+        double t = (px * dx + py * dy + pz * dz) / lenSq;
         return pursuitSegment + Math.max(0.0, Math.min(0.999, t));
     }
 

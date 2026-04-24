@@ -17,7 +17,7 @@ final class PathPipeline {
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async) {
-        return createWalkPathfinderConfiguration(checker, async, 300000, 25000);
+        return createWalkPathfinderConfiguration(checker, async, 100000, 12500);
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,

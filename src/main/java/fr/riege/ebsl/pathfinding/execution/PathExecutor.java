@@ -44,7 +44,7 @@ public final class PathExecutor {
     private static final long   PATH_REPLAN_STALE_MS = 1400;
     private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.75;
     private static final double PATH_PROGRESS_EPSILON = 0.08;
-    private static final long   GROUNDED_NO_PROGRESS_REPLAN_MS = 500;
+    private static final long   GROUNDED_NO_PROGRESS_REPLAN_MS = 1000;
     private static final long   PATH_REPLAN_HARD_STALE_MS = 4200;
 
     static final double WALK_TARGET_DEADZONE = 0.28;
@@ -53,24 +53,6 @@ public final class PathExecutor {
     static final double WALK_STRAFE_DOT      = 0.32;
 
     private static final long   COAST_TIMEOUT_MS    = 3000;
-    private static final double LOOKAHEAD_WALK      = 3.0;
-    private static final int    CAMERA_LOOKAHEAD    = 32; // legacy nav-node camera lookahead
-    /** Max perpendicular deviation (blocks) allowed from direct player->candidate line. */
-    private static final double CAM_MAX_LATERAL_DEV = 2.5;
-
-    // Reversible switch: set false to restore legacy keynode-driven camera targeting.
-    private static final boolean USE_CAMERA_RAIL = true;
-    private static final double  CAMERA_RAIL_REACHED_DIST = 1.15;
-    private static final double  CAMERA_RAIL_MAX_STEP_DIST = 3.0;
-    private static final double  LEGACY_CAMERA_EYE_Y = 1.6;
-    private static final double  CAMERA_RAIL_EYE_Y = 1.52;
-    private static final double  CAMERA_RAIL_GUIDE_LOOKAHEAD_DIST = 3.5;
-    // Density controls: raise DENSITY_SCALE for more rail points, lower for fewer.
-    private static final double  CAMERA_RAIL_DENSITY_SCALE = 0.1;
-    private static final int     CAMERA_RAIL_MAX_STEPS_PER_SEGMENT = 18;
-    private static final double  CAMERA_RAIL_MIN_POINT_SPACING = 0.44;
-    private static final double  CAMERA_RAIL_MIN_HORIZONTAL_SPACING = 0.16;
-    private static final float   CAMERA_RAIL_MAX_TURN_DEG = 14.0f;
 
     /** Direct goal proximity check - if player is this close horizontally, finish. */
     private static final double GOAL_REACHED_HDIST = 1.2;
@@ -222,7 +204,6 @@ public final class PathExecutor {
             return;
         }
 
-        // -- Unfly guard: hold sneak to exit flight before walking ----------
         if (mc.player.getAbilities().flying) {
             releaseAll(mc);
             mc.options.keyShift.setDown(true);

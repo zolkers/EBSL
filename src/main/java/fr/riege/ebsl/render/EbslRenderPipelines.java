@@ -7,6 +7,7 @@ import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import fr.riege.ebsl.EbslMod;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 public final class EbslRenderPipelines {
@@ -19,17 +20,18 @@ public final class EbslRenderPipelines {
 
     static final RenderPipeline LINES_WITH_DEPTH = createLines(DepthTestFunction.LEQUAL_DEPTH_TEST, "lines_depth");
     static final RenderPipeline LINES_NO_DEPTH = createLines(DepthTestFunction.NO_DEPTH_TEST, "lines_no_depth");
-    public static final RenderPipeline DOCKED_VIEWPORT = RenderPipeline.builder()
+    public static final RenderPipeline DOCKED_VIEWPORT = RenderPipelines.register(RenderPipeline.builder()
         .withLocation(Identifier.fromNamespaceAndPath(EbslMod.MOD_ID, "pipelines/docked_viewport"))
         .withVertexShader(POSITION_TEX_SHADER)
         .withFragmentShader(DOCKED_VIEWPORT_SHADER)
         .withSampler("Sampler0")
+        .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
         .withoutBlend()
         .withCull(false)
         .withDepthWrite(false)
         .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
         .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS)
-        .build();
+        .build());
 
     private EbslRenderPipelines() {
     }
