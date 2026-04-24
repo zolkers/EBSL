@@ -40,8 +40,8 @@ final class WalkExecutionOptions {
         this.onFailed = onFailed;
         this.allowReplan = allowReplan;
         this.preciseGoalTolerance = preciseGoalTolerance;
-        stickySneakDistance = 5.0;
         exactGoalCentering = preciseGoalTolerance != DEFAULT_PRECISE_GOAL_TOLERANCE;
+        stickySneakDistance = exactGoalCentering ? 5.0 : -1.0;
     }
 
     void applyTo(PathExecutor executor) {
