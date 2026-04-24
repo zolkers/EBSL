@@ -5,7 +5,8 @@
 	"client": [
 		"WorldRendererMixin",
 		"RenderTargetDockingMixin",
-		"MouseHandlerDockingMixin"
+		"MouseHandlerDockingMixin",
+		"ConnectionPacketCaptureMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
