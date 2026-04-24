@@ -3,22 +3,23 @@ package fr.riege.ebsl.botting.module;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.Setting;
 import fr.riege.ebsl.settings.Settingable;
-import fr.riege.ebsl.settings.StringSetting;
+import fr.riege.ebsl.settings.StringListSetting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class PathfinderBlockBlacklistModule extends Settingable implements BotModule {
     public static final PathfinderBlockBlacklistModule INSTANCE = new PathfinderBlockBlacklistModule();
 
     private final BooleanSetting enabledSetting = registerSetting(new BooleanSetting("enabled", "Enabled", false));
-    private final StringSetting blockIds = registerSetting(new StringSetting(
+    private final StringListSetting blockIds = registerSetting(new StringListSetting(
         "blocks",
         "Blocks",
-        "minecraft:slime_block"));
+        List.of("minecraft:slime_block")));
     private Set<Identifier> parsedBlockIds = parseBlockIds(blockIds.value());
 
     private PathfinderBlockBlacklistModule() {
@@ -69,12 +70,12 @@ public final class PathfinderBlockBlacklistModule extends Settingable implements
         return id != null && INSTANCE.parsedBlockIds.contains(id);
     }
 
-    private static Set<Identifier> parseBlockIds(String raw) {
+    private static Set<Identifier> parseBlockIds(List<String> raw) {
         Set<Identifier> ids = new HashSet<>();
-        if (raw == null || raw.isBlank()) {
+        if (raw == null || raw.isEmpty()) {
             return ids;
         }
-        for (String entry : raw.split("[,\\n]")) {
+        for (String entry : raw) {
             Identifier id = Identifier.tryParse(entry.trim());
             if (id != null) {
                 ids.add(id);

@@ -8,6 +8,7 @@ import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.IntSetting;
 import fr.riege.ebsl.settings.Setting;
+import fr.riege.ebsl.settings.StringListSetting;
 import fr.riege.ebsl.settings.StringSetting;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
@@ -100,7 +101,41 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
                     stringSetting.setValue(value.get());
                     saveSetting(module, setting);
                 }
+            } else if (setting instanceof StringListSetting listSetting) {
+                renderStringListSetting(module, listSetting);
             }
+        }
+    }
+
+    private void renderStringListSetting(BotModule module, StringListSetting setting) {
+        ImGui.text(setting.displayName());
+        if (ImGui.beginChild("##" + module.id() + "." + setting.id(), 0.0f, 124.0f, true)) {
+            for (int i = 0; i < setting.value().size(); i++) {
+                String key = module.id() + "." + setting.id() + "." + i;
+                String entry = setting.value().get(i);
+                ImString value = stringValues.computeIfAbsent(key, ignored -> new ImString(entry, 128));
+                if (!value.get().equals(entry)) {
+                    value.set(entry);
+                }
+                ImGui.pushItemWidth(-38.0f);
+                if (ImGui.inputText("##entry-" + key, value)) {
+                    setting.setEntry(i, value.get());
+                    saveSetting(module, setting);
+                }
+                ImGui.popItemWidth();
+                ImGui.sameLine();
+                if (ImGui.button("X##delete-" + key, 24.0f, 22.0f)) {
+                    setting.removeEntry(i);
+                    stringValues.remove(key);
+                    saveSetting(module, setting);
+                    break;
+                }
+            }
+            ImGui.endChild();
+        }
+        if (ImGui.button("Add row##" + module.id() + "." + setting.id(), 86.0f, 24.0f)) {
+            setting.addEntry("minecraft:stone");
+            saveSetting(module, setting);
         }
     }
 
