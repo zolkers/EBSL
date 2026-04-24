@@ -214,14 +214,7 @@ public final class PathExecutor {
     public void tick(Minecraft mc) {
         if (mc.player == null) return;
         if (state != State.WALKING && state != State.REPLANNING) return;
-        if (ClientUtils.isInventoryScreenOpen(mc)) {
-            releaseAll(mc);
-            return;
-        }
-
-        if (mc.player.getAbilities().flying) {
-            releaseAll(mc);
-            mc.options.keyShift.setDown(true);
+        if (pauseForBlockingClientState(mc)) {
             return;
         }
 
@@ -253,35 +246,12 @@ public final class PathExecutor {
         PathProximitySnapshot proximity = pathTracker.analyzePathProximity(playerPos);
         pathTracker.updateSevereOffPathState(proximity, now);
 
-        PathCheckResult pathCheckResult = PathCheckRegistry.evaluate(new PathCheckContext(
-            playerPos,
-            path,
-            pathTracker.getPursuitSegment(),
-            goalX,
-            goalY,
-            goalZ,
-            pathTracker.getSevereOffPathDuration(now),
-            proximity
-        ));
-        if (pathCheckResult.isForceReplan()) {
-            triggerReplan(mc, true, true, pathCheckResult.reason());
+        PathCheckHandling pathCheckHandling = handlePathChecks(mc, playerPos, path, proximity, now);
+        if (pathCheckHandling.handled()) {
             return;
         }
-        if (pathCheckResult.isRepairToSegment()) {
-            triggerRepair(mc, pathCheckResult.cutoffSegmentIndex(), pathCheckResult.reason());
-            return;
-        }
-        if (pathCheckResult.isCutoff()) {
-            if (pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
-                path = pathTracker.getPath();
-                rotationController.rebuild(path);
-                movementController = new WalkMovementController(path);
-                PathVisualizer.setPath(path, 0);
-                PathVisualizer.setCameraPath(rotationController.getCameraPath());
-                PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
-                proximity = pathTracker.analyzePathProximity(playerPos);
-            }
-        }
+        path = pathCheckHandling.path();
+        proximity = pathCheckHandling.proximity();
 
         MovementValidationResult movementValidation = movementController.validateCurrentSegment(
             mc, playerPos, pathTracker.getPursuitSegment());
@@ -376,6 +346,57 @@ public final class PathExecutor {
 
     // --- Internal helpers ----------------------------------------------------
 
+    private boolean pauseForBlockingClientState(Minecraft mc) {
+        if (ClientUtils.isInventoryScreenOpen(mc)) {
+            releaseAll(mc);
+            return true;
+        }
+
+        if (mc.player.getAbilities().flying) {
+            releaseAll(mc);
+            mc.options.keyShift.setDown(true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private PathCheckHandling handlePathChecks(Minecraft mc, Vec3 playerPos,
+                                               List<Node> path,
+                                               PathProximitySnapshot proximity,
+                                               long now) {
+        PathCheckResult pathCheckResult = PathCheckRegistry.evaluate(new PathCheckContext(
+            playerPos,
+            path,
+            pathTracker.getPursuitSegment(),
+            goalX,
+            goalY,
+            goalZ,
+            pathTracker.getSevereOffPathDuration(now),
+            proximity
+        ));
+
+        if (pathCheckResult.isForceReplan()) {
+            triggerReplan(mc, true, true, pathCheckResult.reason());
+            return PathCheckHandling.handled(path, proximity);
+        }
+        if (pathCheckResult.isRepairToSegment()) {
+            triggerRepair(mc, pathCheckResult.cutoffSegmentIndex(), pathCheckResult.reason());
+            return PathCheckHandling.handled(path, proximity);
+        }
+        if (!pathCheckResult.isCutoff() || !pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
+            return PathCheckHandling.continueWith(path, proximity);
+        }
+
+        List<Node> updatedPath = pathTracker.getPath();
+        rotationController.rebuild(updatedPath);
+        movementController = new WalkMovementController(updatedPath);
+        PathVisualizer.setPath(updatedPath, 0);
+        PathVisualizer.setCameraPath(rotationController.getCameraPath());
+        PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
+        return PathCheckHandling.continueWith(updatedPath, pathTracker.analyzePathProximity(playerPos));
+    }
+
     private void rebuildControllers() {
         List<Node> path = pathTracker.getPath();
         rotationController.rebuild(path);
@@ -461,6 +482,16 @@ public final class PathExecutor {
         state = State.FINISHED;
         if (onFinished != null) {
             onFinished.run();
+        }
+    }
+
+    private record PathCheckHandling(boolean handled, List<Node> path, PathProximitySnapshot proximity) {
+        static PathCheckHandling handled(List<Node> path, PathProximitySnapshot proximity) {
+            return new PathCheckHandling(true, path, proximity);
+        }
+
+        static PathCheckHandling continueWith(List<Node> path, PathProximitySnapshot proximity) {
+            return new PathCheckHandling(false, path, proximity);
         }
     }
 
