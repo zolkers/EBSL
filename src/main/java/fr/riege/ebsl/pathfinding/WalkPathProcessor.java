@@ -12,6 +12,8 @@ import java.util.List;
 
 final class WalkPathProcessor {
     private static final double INTERMEDIATE_SPACING = 4.0;
+    private static final double PARTIAL_ASCENT_THRESHOLD = 0.2;
+    private static final double DESCENT_THRESHOLD = -0.1;
 
     private WalkPathProcessor() {
     }
@@ -49,7 +51,7 @@ final class WalkPathProcessor {
             Node node = new Node(position, start, target,
                 effectiveConfig.heuristicWeights, effectiveConfig.heuristicStrategy, nodes.size());
             if (previous != null) {
-                node.moveType = PathGeometry.inferMoveType(previous, position);
+                node.moveType = inferMoveType(previous, position, checker);
                 // Water always wins — intentionally overrides FALL/JUMP for nodes entering a pool.
                 if (checker != null && isSwimPosition(checker, position)) {
                     node.moveType = Node.MoveType.SWIM;
@@ -59,6 +61,44 @@ final class WalkPathProcessor {
             previous = position;
         }
         return nodes;
+    }
+
+    private static Node.MoveType inferMoveType(PathPosition previous, PathPosition current,
+                                               WalkabilityChecker checker) {
+        if (checker == null) {
+            return PathGeometry.inferMoveType(previous, current);
+        }
+
+        double dy = floorLevel(checker, current) - floorLevel(checker, previous);
+        int dx = Math.abs(current.flooredX() - previous.flooredX());
+        int dz = Math.abs(current.flooredZ() - previous.flooredZ());
+        if (dy > PARTIAL_ASCENT_THRESHOLD) {
+            return Node.MoveType.STEP_UP;
+        }
+        if (dy < DESCENT_THRESHOLD) {
+            return Node.MoveType.FALL;
+        }
+        if ((dx == 0 || dz == 0) && dx + dz > 1) {
+            return Node.MoveType.PARKOUR;
+        }
+        if (dx + dz >= 2) {
+            return Node.MoveType.WALK_DIAGONAL;
+        }
+        return Node.MoveType.WALK;
+    }
+
+    private static double floorLevel(WalkabilityChecker checker, PathPosition position) {
+        int x = position.flooredX();
+        int y = position.flooredY();
+        int z = position.flooredZ();
+        if (checker.isWater(x, y, z)) {
+            return y + 0.5;
+        }
+        if (checker.isLowPartialSupport(x, y, z)) {
+            return y + 0.5;
+        }
+        double topY = checker.getTopY(x, y - 1, z);
+        return topY <= 0.0 ? y - 1 : y - 1 + topY;
     }
 
     private static double computePathLength(List<Node> path) {
