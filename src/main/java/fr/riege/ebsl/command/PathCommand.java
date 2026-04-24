@@ -72,7 +72,7 @@ public final class PathCommand {
             return 1;
         }));
         root.then(ClientCommandManager.literal("jumpheight")
-            .then(GoalCommandSupport.boundedIntArg("n", 1, 5)
+            .then(GoalCommandSupport.boundedIntArg("n", 1, 20)
             .executes(ctx -> {
                 int n = GoalCommandSupport.getInt(ctx, "n");
                 PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.set(n);

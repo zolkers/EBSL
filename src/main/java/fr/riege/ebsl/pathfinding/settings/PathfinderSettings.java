@@ -11,7 +11,7 @@ import java.util.List;
 public final class PathfinderSettings extends Settingable {
     private static final PathfinderSettings INSTANCE = new PathfinderSettings();
     public final BooleanSetting showDebug = registerSetting(new BooleanSetting("show_debug", "Show debug", true));
-    public final IntSetting maxJumpHeight = registerSetting(new IntSetting("max_jump_height", "Max jump height", 1, 1, 5));
+    public final IntSetting maxJumpHeight = registerSetting(new IntSetting("max_jump_height", "Max jump height", 1, 1, 20));
 
     private PathfinderSettings() {
     }
