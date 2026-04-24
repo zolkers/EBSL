@@ -1,12 +1,10 @@
 package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.execution.PathExecutor;
-import net.minecraft.world.phys.Vec3;
 
 final class WalkExecutionOptions {
     private static final double DEFAULT_PRECISE_GOAL_TOLERANCE = 0.5;
 
-    private Vec3 lookTarget;
     private Runnable onFinished;
     private Runnable onFailed;
     private boolean allowReplan;
@@ -24,7 +22,6 @@ final class WalkExecutionOptions {
     }
 
     void reset() {
-        lookTarget = null;
         onFinished = null;
         onFailed = null;
         allowReplan = true;
@@ -38,9 +35,7 @@ final class WalkExecutionOptions {
         exactGoalCentering = false;
     }
 
-    void configure(Vec3 lookTarget, Runnable onFinished, Runnable onFailed,
-                   boolean allowReplan, double preciseGoalTolerance) {
-        this.lookTarget = lookTarget;
+    void configure(Runnable onFinished, Runnable onFailed, boolean allowReplan, double preciseGoalTolerance) {
         this.onFinished = onFinished;
         this.onFailed = onFailed;
         this.allowReplan = allowReplan;
@@ -58,9 +53,6 @@ final class WalkExecutionOptions {
         executor.setSneakLatched(sneakLatched);
         executor.setGoalCenterOffsets(goalCenterX, goalCenterZ);
         executor.setPreciseGoalTolerance(preciseGoalTolerance);
-        if (lookTarget != null) {
-            executor.setLookTarget(lookTarget);
-        }
     }
 
     boolean isPreciseExecution() {

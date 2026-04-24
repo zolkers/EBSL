@@ -1,21 +1,47 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.movement.types.MovementExecutionContext;
 import fr.riege.ebsl.pathfinding.movement.types.MovementRegistry;
+import fr.riege.ebsl.pathfinding.movement.types.MovementValidationContext;
+import fr.riege.ebsl.pathfinding.movement.types.MovementValidationResult;
 import fr.riege.ebsl.pathfinding.movement.types.WaterMovementContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
 final class WalkMovementController {
     private final List<Node> path;
+    private Level checkerLevel;
+    private WalkabilityChecker checker;
 
     WalkMovementController(List<Node> path) {
         this.path = path;
+    }
+
+    MovementValidationResult validateCurrentSegment(Minecraft mc, Vec3 playerPos, int pursuitSegment) {
+        if (mc.level == null || path.size() < 2 || pursuitSegment + 1 >= path.size()) {
+            return MovementValidationResult.ok();
+        }
+        int currentIndex = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+        int targetIndex = Math.min(path.size() - 1, currentIndex + 1);
+        Node from = path.get(currentIndex);
+        Node target = path.get(targetIndex);
+        Node next = path.get(Math.min(path.size() - 1, targetIndex + 1));
+        MovementValidationContext context = new MovementValidationContext(
+            mc,
+            checker(mc),
+            from,
+            target,
+            next,
+            playerPos,
+            pursuitSegment);
+        return MovementRegistry.get(target.moveType).validate(context);
     }
 
     void apply(PathExecutor executor, Minecraft mc, Vec3 playerPos, Node movementWaypoint,
@@ -194,5 +220,16 @@ final class WalkMovementController {
         }
         BlockPos pos = mc.player.blockPosition();
         return mc.level.getBlockState(pos).is(BlockTags.CLIMBABLE);
+    }
+
+    private WalkabilityChecker checker(Minecraft mc) {
+        if (mc.level == null) {
+            return checker;
+        }
+        if (checker == null || checkerLevel != mc.level) {
+            checkerLevel = mc.level;
+            checker = new WalkabilityChecker(mc.level);
+        }
+        return checker;
     }
 }

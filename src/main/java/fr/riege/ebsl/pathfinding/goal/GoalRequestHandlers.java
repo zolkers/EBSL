@@ -107,8 +107,7 @@ public final class GoalRequestHandlers {
             .allowReplan(request.allowReplan())
             .preciseGoalTolerance(request.preciseGoalTolerance())
             .onFinished(request.onFinished())
-            .onFailed(request.onFailed())
-            .rotationTarget(request.rotationTarget());
+            .onFailed(request.onFailed());
     }
 
     private static int clamp(int value, int min, int max) {

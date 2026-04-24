@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 final class PathTracker {
     private static final double OFF_PATH_VERTICAL_CURSOR_OFFSET = 0.15;
@@ -84,6 +85,19 @@ final class PathTracker {
         this.checkpointIndex = Math.min(1, this.path.size() - 1);
         this.lastCheckpointTime = this.lastPathProgressTime;
         return true;
+    }
+
+    Optional<PathRepairRequest> createRepairRequest(int segmentIndex, String reason) {
+        if (path.size() < 2) {
+            return Optional.empty();
+        }
+        int targetSegment = Math.max(0, Math.min(segmentIndex, path.size() - 2));
+        Node joinNode = path.get(targetSegment);
+        List<Node> remaining = new ArrayList<>(path.subList(targetSegment, path.size()));
+        if (remaining.size() < 2) {
+            return Optional.empty();
+        }
+        return Optional.of(new PathRepairRequest(joinNode, remaining, reason));
     }
 
     double noteMovementProgress(Vec3 playerPos, double stuckDistanceThreshold) {
@@ -187,10 +201,11 @@ final class PathTracker {
             double bz = to.position.centeredZ();
 
             double dx = bx - ax;
+            double dy = by - ay;
             double dz = bz - az;
-            double lenSq = dx * dx + dz * dz;
+            double lenSq = dx * dx + dy * dy + dz * dz;
             double t = lenSq < 1.0e-6 ? 0.0
-                : Math.max(0.0, Math.min(1.0, ((pos.x - ax) * dx + (pos.z - az) * dz) / lenSq));
+                : Math.max(0.0, Math.min(1.0, ((pos.x - ax) * dx + (pos.y - ay) * dy + (pos.z - az) * dz) / lenSq));
 
             double projX = ax + dx * t;
             double projY = ay + (by - ay) * t;

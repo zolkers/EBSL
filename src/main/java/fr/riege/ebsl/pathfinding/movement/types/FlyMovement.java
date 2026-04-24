@@ -7,4 +7,9 @@ public final class FlyMovement extends WalkMovement {
     public Node.MoveType type() {
         return Node.MoveType.FLY;
     }
+
+    @Override
+    public MovementValidationResult validate(MovementValidationContext context) {
+        return MovementValidationResult.ok();
+    }
 }

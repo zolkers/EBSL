@@ -1,15 +1,12 @@
 package fr.riege.ebsl.pathfinding.goal;
 
-import net.minecraft.world.entity.Entity;
-
 public record NavigationRequest(
     Goal goal,
     NavigationModeType mode,
     boolean allowReplan,
     double preciseGoalTolerance,
     Runnable onFinished,
-    Runnable onFailed,
-    Entity rotationTarget
+    Runnable onFailed
 ) {
     public static Builder builder(Goal goal) {
         return new Builder(goal);
@@ -26,7 +23,6 @@ public record NavigationRequest(
         private double preciseGoalTolerance = 0.5;
         private Runnable onFinished;
         private Runnable onFailed;
-        private Entity rotationTarget;
 
         private Builder(Goal goal) {
             this.goal = goal;
@@ -57,11 +53,6 @@ public record NavigationRequest(
             return this;
         }
 
-        public Builder rotationTarget(Entity rotationTarget) {
-            this.rotationTarget = rotationTarget;
-            return this;
-        }
-
         public NavigationRequest build() {
             return new NavigationRequest(
                 goal,
@@ -69,8 +60,7 @@ public record NavigationRequest(
                 allowReplan,
                 preciseGoalTolerance,
                 onFinished,
-                onFailed,
-                rotationTarget
+                onFailed
             );
         }
     }

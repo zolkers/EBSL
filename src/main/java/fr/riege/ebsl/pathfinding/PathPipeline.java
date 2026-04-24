@@ -10,6 +10,7 @@ import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.util.Mth;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 
 final class PathPipeline {
@@ -91,5 +92,27 @@ final class PathPipeline {
 
     static void pushExploredNodesToVisualizer(AStarPathfinder pathfinder) {
         PathClosedSetVisualizer.pushExploredNodes(pathfinder);
+    }
+
+    static List<Node> mergePathPrefixWithTail(List<Node> prefix, List<Node> tail) {
+        List<Node> merged = new ArrayList<>();
+        appendDistinct(merged, prefix);
+        appendDistinct(merged, tail);
+        return merged;
+    }
+
+    private static void appendDistinct(List<Node> merged, List<Node> candidates) {
+        if (candidates == null) {
+            return;
+        }
+        for (Node candidate : candidates) {
+            if (candidate == null) {
+                continue;
+            }
+            if (!merged.isEmpty() && merged.getLast().position.equals(candidate.position)) {
+                continue;
+            }
+            merged.add(candidate);
+        }
     }
 }

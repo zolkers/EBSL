@@ -126,8 +126,11 @@ final class LongRangePathSession {
             || now < nextRetryAfterMs) {
             return SegmentQueueDecision.NONE;
         }
-        if (walkExecutionDone || remainingDistance <= EMERGENCY_REMAINING_DISTANCE) {
+        if (walkExecutionDone) {
             return SegmentQueueDecision.EMERGENCY_FROM_PLAYER;
+        }
+        if (remainingDistance <= EMERGENCY_REMAINING_DISTANCE) {
+            return SegmentQueueDecision.NORMAL;
         }
         if (progressRatio >= EARLY_SEGMENT_RECALC_RATIO || remainingDistance <= PREPARE_REMAINING_DISTANCE) {
             return SegmentQueueDecision.NORMAL;

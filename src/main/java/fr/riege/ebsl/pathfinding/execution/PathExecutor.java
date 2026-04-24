@@ -8,14 +8,14 @@ import fr.riege.ebsl.pathfinding.check.PathCheckRegistry;
 import fr.riege.ebsl.pathfinding.check.PathCheckResult;
 import fr.riege.ebsl.pathfinding.check.PathProximitySnapshot;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.movement.types.MovementValidationResult;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.util.ClientUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * State machine that walks a player along a pre-computed path using keyboard injection.
@@ -26,9 +26,9 @@ public final class PathExecutor {
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
     // Stall detection thresholds
-    private static final double STUCK_DIST_THRESHOLD = 0.2;
-    private static final long   STUCK_TIME_MS        = 2000;
-    private static final double DRIFT_DISTANCE       = 4.5;
+    static final double STUCK_DIST_THRESHOLD = 0.2;
+    static final long   STUCK_TIME_MS        = 2000;
+    static final double DRIFT_DISTANCE       = 4.5;
     private static final long   REPLAN_COOLDOWN_MS   = 5000;
 
     // Jump triggers
@@ -37,15 +37,7 @@ public final class PathExecutor {
     static final int    JUMP_COOLDOWN_TICKS = 8;
     static final long   STALL_JUMP_PROGRESS_MS = 450;
 
-    // Anti-unstuck escalation
-    private static final long   UNSTUCK_JUMP_MS    = 1200;  // try jumping after 1.2s
-    private static final long   UNSTUCK_BACKUP_MS  = 2200;  // try backing up after 2.2s
-    private static final int    BACKUP_TICKS       = 8;      // back up for 8 ticks
-    private static final long   PATH_REPLAN_STALE_MS = 1400;
-    private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.75;
     private static final double PATH_PROGRESS_EPSILON = 0.08;
-    private static final long   GROUNDED_NO_PROGRESS_REPLAN_MS = 1000;
-    private static final long   PATH_REPLAN_HARD_STALE_MS = 4200;
 
     static final double WALK_TARGET_DEADZONE = 0.28;
     static final double WALK_FORWARD_DOT     = 0.18;
@@ -67,8 +59,6 @@ public final class PathExecutor {
     private int  goalX, goalY, goalZ;
     private double goalCenterX   = 0.5;
     private double goalCenterZ   = 0.5;
-    private Entity rotationTarget;
-    private Vec3 lookTargetPos   = null;
     private boolean allowReplan  = true;
     private boolean allowJumps   = true;
     private boolean allowRotation = true;
@@ -78,10 +68,13 @@ public final class PathExecutor {
     private double preciseGoalTolerance = 0.5;
     private Runnable onFinished;
     private int  debugTick       = 0;
-    private int  backupTicksLeft = 0;
     private boolean replanFromPlayerRequested = false;
+    private PathRepairRequest repairRequest;
+    private String lastRepairReason = "";
+    private long lastRepairReasonTime = 0;
     private WalkMovementController movementController;
     private final PathTracker pathTracker = new PathTracker();
+    private final PathRecoveryController recoveryController = new PathRecoveryController();
     private final PathRotationController rotationController = new PathRotationController();
 
     // --- Public API ----------------------------------------------------------
@@ -90,20 +83,14 @@ public final class PathExecutor {
         start(path, goalX, goalY, goalZ, precise, null);
     }
 
-    public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise, Entity rotationTarget) {
-        start(path, goalX, goalY, goalZ, precise, rotationTarget, null);
-    }
-
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise,
-                      Entity rotationTarget, Runnable onFinished) {
+                      Runnable onFinished) {
         this.goalX            = goalX;
         this.goalY            = goalY;
         this.goalZ            = goalZ;
         this.goalCenterX      = 0.5;
         this.goalCenterZ      = 0.5;
         this.precise          = precise;
-        this.rotationTarget   = rotationTarget;
-        this.lookTargetPos    = null;
         this.allowReplan      = true;
         this.allowJumps       = true;
         this.allowRotation    = true;
@@ -113,16 +100,15 @@ public final class PathExecutor {
         this.onFinished       = onFinished;
         this.jumpCooldown     = 0;
         this.coastStartTime   = 0;
-        this.backupTicksLeft  = 0;
         this.replanFromPlayerRequested = false;
+        this.repairRequest = null;
+        this.lastRepairReason = "";
+        this.lastRepairReasonTime = 0;
+        recoveryController.reset();
         pathTracker.start(path);
         rotationController.rebuild(path);
         this.movementController = new WalkMovementController(path);
         state = State.WALKING;
-    }
-
-    public void setLookTarget(Vec3 lookTargetPos) {
-        this.lookTargetPos = lookTargetPos;
     }
 
     public void setAllowReplan(boolean allowReplan) {
@@ -181,6 +167,12 @@ public final class PathExecutor {
         boolean requested = replanFromPlayerRequested;
         replanFromPlayerRequested = false;
         return requested;
+    }
+
+    public PathRepairRequest consumeRepairRequest() {
+        PathRepairRequest request = repairRequest;
+        repairRequest = null;
+        return request;
     }
 
     public void continueWith(List<Node> continuationPath, int goalX, int goalY, int goalZ) {
@@ -259,6 +251,10 @@ public final class PathExecutor {
             triggerReplan(mc, true, true, pathCheckResult.reason());
             return;
         }
+        if (pathCheckResult.isRepairToSegment()) {
+            triggerRepair(mc, pathCheckResult.cutoffSegmentIndex(), pathCheckResult.reason());
+            return;
+        }
         if (pathCheckResult.isCutoff()) {
             if (pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
                 path = pathTracker.getPath();
@@ -269,6 +265,16 @@ public final class PathExecutor {
                 PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
                 proximity = pathTracker.analyzePathProximity(playerPos);
             }
+        }
+
+        MovementValidationResult movementValidation = movementController.validateCurrentSegment(
+            mc, playerPos, pathTracker.getPursuitSegment());
+        if (!movementValidation.valid()) {
+            triggerRepair(
+                mc,
+                Math.min(path.size() - 2, pathTracker.getPursuitSegment() + 1),
+                movementValidation.reason());
+            return;
         }
 
         // Periodic debug
@@ -309,75 +315,29 @@ public final class PathExecutor {
             return;
         }
 
-        // -- Stall + drift detection with escalating recovery ----------------
-        long    staleDuration = now - pathTracker.getLastProgressTime();
-        long    pathStaleDuration = now - pathTracker.getLastPathProgressTime();
-        boolean progressStale = staleDuration > STUCK_TIME_MS;
-        boolean pathProgressStale = pathStaleDuration > PATH_REPLAN_STALE_MS;
-        double  hDistToPath   = proximity.horizontalDistance();
-        boolean drifted       = hDistToPath > DRIFT_DISTANCE;
-        boolean cooldownPassed = now - lastReplanTime > REPLAN_COOLDOWN_MS;
-
-        if (allowReplan
-                && mc.player.onGround()
-                && pathStaleDuration > GROUNDED_NO_PROGRESS_REPLAN_MS) {
-            triggerReplan(mc, true, true, String.format("grounded no progress stale=%d", pathStaleDuration));
+        PathProgressSnapshot progress = new PathProgressSnapshot(
+            distMoved,
+            now - pathTracker.getLastProgressTime(),
+            now - pathTracker.getLastPathProgressTime(),
+            proximity);
+        PathRecoveryController.RecoveryDecision recovery = recoveryController.update(
+            this,
+            mc,
+            playerPos,
+            progress,
+            allowReplan,
+            now - lastReplanTime > REPLAN_COOLDOWN_MS,
+            jumpCooldown);
+        if (recovery.action() == PathRecoveryController.Action.REPLAN_FROM_PLAYER) {
+            triggerReplan(mc, false, true, recovery.reason());
             return;
         }
-
-        if (allowReplan && pathStaleDuration > PATH_REPLAN_HARD_STALE_MS && cooldownPassed) {
-            triggerReplan(mc, false, true, "hard stale path progress");
+        if (recovery.action() == PathRecoveryController.Action.TICK_HANDLED) {
             return;
         }
-
-        // Handle backup movement if active
-        if (backupTicksLeft > 0) {
-            backupTicksLeft--;
-            mc.options.keyUp.setDown(false);
-            mc.options.keyDown.setDown(true);
-            mc.options.keyLeft.setDown(false);
-            mc.options.keyRight.setDown(false);
-            mc.options.keyJump.setDown(false);
-            mc.options.keySprint.setDown(false);
-            if (backupTicksLeft == 0) {
-                mc.options.keyDown.setDown(false);
-            }
-            return;
-        }
-
-        // Escalating unstuck: jump -> backup -> replan
-        boolean recoveryJump = false;
-        if (staleDuration > UNSTUCK_BACKUP_MS && !drifted) {
-            // Try backing up briefly to unstick from block edges
-            if (backupTicksLeft == 0 && mc.player.onGround()) {
-                backupTicksLeft = BACKUP_TICKS;
-                pathTracker.noteMovementProgress(playerPos, 0.0);
-                return;
-            }
-        } else if (staleDuration > UNSTUCK_JUMP_MS && !drifted) {
-            // Try a jump to get unstuck from block edges
-            if (mc.player.onGround() && jumpCooldown == 0) {
-                mc.options.keyJump.setDown(true);
-                jumpCooldown = JUMP_COOLDOWN_TICKS;
-                recoveryJump = true;
-            }
-        }
-
-        if (allowReplan && pathProgressStale && cooldownPassed
-                && (hDistToPath > PATH_REPLAN_DRIFT_DISTANCE || distMoved >= STUCK_DIST_THRESHOLD)) {
-            triggerReplan(mc, false, true, String.format("path progress stale drift=%.2f", hDistToPath));
-            return;
-        }
-
-        if (allowReplan && progressStale && drifted && cooldownPassed) {
-            triggerReplan(mc, false, true, String.format("drift stale=%.2f", hDistToPath));
-            return;
-        }
-
-        // Replan if stuck for too long even without drift (true deadlock)
-        if (staleDuration > STUCK_TIME_MS * 2 && cooldownPassed) {
-            triggerReplan(mc, false, true, String.format("deadlock stale=%d", staleDuration));
-            return;
+        boolean recoveryJump = recovery.action() == PathRecoveryController.Action.RECOVERY_JUMP;
+        if (recoveryJump) {
+            jumpCooldown = JUMP_COOLDOWN_TICKS;
         }
 
         // -- Rotation: look at best visible waypoint ahead -------------
@@ -415,6 +375,10 @@ public final class PathExecutor {
         MovementInputController.releaseAll(mc, sneakLatched);
     }
 
+    void noteRecoveryMovement(Vec3 playerPos) {
+        pathTracker.noteMovementProgress(playerPos, 0.0);
+    }
+
     // --- Internal helpers ----------------------------------------------------
 
     private Node getMovementWaypoint() {
@@ -428,6 +392,29 @@ public final class PathExecutor {
         replanFromPlayerRequested = fromPlayer;
         if (PathfinderConfig.SHOW_DEBUG.get()) {
             ClientUtils.sendDebugMessage(mc, "Path replan: " + reason);
+        }
+        state = State.REPLANNING;
+    }
+
+    private void triggerRepair(Minecraft mc, int segmentIndex, String reason) {
+        long now = System.currentTimeMillis();
+        if (reason.equals(lastRepairReason) && now - lastRepairReasonTime < 1500) {
+            triggerReplan(mc, false, true, "repair loop suppressed: " + reason);
+            return;
+        }
+        Optional<PathRepairRequest> request = pathTracker.createRepairRequest(segmentIndex, reason);
+        if (request.isEmpty()) {
+            triggerReplan(mc, false, true, reason);
+            return;
+        }
+        releaseAll(mc);
+        lastRepairReason = reason;
+        lastRepairReasonTime = now;
+        lastReplanTime = now;
+        pathTracker.markReplanTriggered(lastReplanTime);
+        repairRequest = request.get();
+        if (PathfinderConfig.SHOW_DEBUG.get()) {
+            ClientUtils.sendDebugMessage(mc, "Path repair: " + reason);
         }
         state = State.REPLANNING;
     }

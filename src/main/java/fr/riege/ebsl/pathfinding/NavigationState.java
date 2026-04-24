@@ -4,7 +4,6 @@ import fr.riege.ebsl.pathfinding.execution.FlyExecutor;
 import fr.riege.ebsl.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -17,7 +16,6 @@ final class NavigationState {
     private volatile int goalZ;
     private volatile NavigationMode activeMode = NavigationMode.NONE;
     private volatile AStarPathfinder currentPathfinder;
-    private Entity rotationTarget;
 
     void begin(NavigationMode mode, int goalX, int goalY, int goalZ) {
         abortFlag.set(false);
@@ -97,11 +95,4 @@ final class NavigationState {
         return currentPathfinder == pathfinder;
     }
 
-    Entity rotationTarget() {
-        return rotationTarget;
-    }
-
-    void setRotationTarget(Entity rotationTarget) {
-        this.rotationTarget = rotationTarget;
-    }
 }

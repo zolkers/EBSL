@@ -13,8 +13,8 @@ final class AnomalousPathCutoffCheck implements PathCheck {
         PathProximitySnapshot proximity = context.proximity();
         int candidateSegment = proximity.nearestSegmentIndex();
         if (canCutToBetterNearbySegment(context, proximity, candidateSegment)) {
-            return PathCheckResult.cutoff(candidateSegment, String.format(
-                "anomaly cutoff segment=%d h=%.2f y=%.2f progress=%.2f",
+            return PathCheckResult.repairToSegment(candidateSegment, String.format(
+                "anomaly repair segment=%d h=%.2f y=%.2f progress=%.2f",
                 candidateSegment,
                 proximity.horizontalDistance(),
                 proximity.verticalDistance(),

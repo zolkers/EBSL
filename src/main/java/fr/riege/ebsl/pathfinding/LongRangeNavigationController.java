@@ -18,7 +18,6 @@ final class LongRangeNavigationController {
 
     void startPathfindXZ(Minecraft mc, int x, int z) {
         runtime.walkOptions.reset();
-        runtime.state.setRotationTarget(null);
         runtime.longRangeSession.start(x, z);
 
         if (mc.player == null || mc.level == null) {

@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.pathfinding.goal.Goal;
 import fr.riege.ebsl.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlerRegistry;
@@ -8,7 +9,6 @@ import fr.riege.ebsl.pathfinding.goal.GoalXZ;
 import fr.riege.ebsl.pathfinding.goal.NavigationModeType;
 import fr.riege.ebsl.pathfinding.goal.NavigationRequest;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -36,6 +36,11 @@ public final class PathfindingManager {
         }
 
         if (runtime.state.shouldRestartWalkPathfind(runtime.executor)) {
+            PathRepairRequest repairRequest = runtime.executor.consumeRepairRequest();
+            if (repairRequest != null
+                && walkService.startPathRepair(mc, repairRequest)) {
+                return;
+            }
             if (runtime.executor.consumeReplanFromPlayerRequest()
                 && longRangeController.replanFromPlayer(mc)) {
                 return;
@@ -72,13 +77,6 @@ public final class PathfindingManager {
             .build());
     }
 
-    public static void startPathfind(Minecraft mc, int x, int y, int z, boolean fly, Entity rotTarget) {
-        startGoal(mc, NavigationRequest.builder(new GoalBlock(x, y, z))
-            .mode(fly ? NavigationModeType.FLY : NavigationModeType.WALK)
-            .rotationTarget(rotTarget)
-            .build());
-    }
-
     public static void startFlyPathfind(Minecraft mc, int x, int y, int z) {
         startGoal(mc, NavigationRequest.builder(new GoalBlock(x, y, z))
             .mode(NavigationModeType.FLY)
@@ -110,12 +108,10 @@ public final class PathfindingManager {
     private void startGoalInternal(Minecraft mc, NavigationRequest request) {
         runtime.walkOptions.reset();
         runtime.walkOptions.configure(
-            null,
             request.onFinished(),
             request.onFailed(),
             request.allowReplan(),
             request.preciseGoalTolerance());
-        runtime.state.setRotationTarget(request.rotationTarget());
         GoalRequestHandlerRegistry.start(mc, request);
     }
 

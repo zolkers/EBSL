@@ -23,4 +23,8 @@ public interface PathMovement {
 
     default void handleWaterMovement(WaterMovementContext context) {
     }
+
+    default MovementValidationResult validate(MovementValidationContext context) {
+        return MovementValidationResult.ok();
+    }
 }

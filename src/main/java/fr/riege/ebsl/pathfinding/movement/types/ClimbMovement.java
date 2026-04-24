@@ -7,4 +7,17 @@ public final class ClimbMovement extends WalkMovement {
     public Node.MoveType type() {
         return Node.MoveType.CLIMB;
     }
+
+    @Override
+    public MovementValidationResult validate(MovementValidationContext context) {
+        int x = context.targetX();
+        int y = context.targetY();
+        int z = context.targetZ();
+        if (context.checker().isClimbable(x, y, z)
+            || context.checker().isClimbable(context.from().position.flooredX(), context.from().position.flooredY(), context.from().position.flooredZ())) {
+            return MovementValidationResult.ok();
+        }
+        return MovementValidationResult.invalid("climb segment lost climbable blocks near "
+            + x + ", " + y + ", " + z);
+    }
 }

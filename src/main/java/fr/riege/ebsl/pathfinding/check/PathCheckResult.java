@@ -11,6 +11,10 @@ public record PathCheckResult(PathCheckAction action, int cutoffSegmentIndex, St
         return new PathCheckResult(PathCheckAction.CUTOFF, cutoffSegmentIndex, reason);
     }
 
+    static PathCheckResult repairToSegment(int cutoffSegmentIndex, String reason) {
+        return new PathCheckResult(PathCheckAction.REPAIR_TO_SEGMENT, cutoffSegmentIndex, reason);
+    }
+
     static PathCheckResult forceReplan(String reason) {
         return new PathCheckResult(PathCheckAction.FORCE_REPLAN, -1, reason);
     }
@@ -21,6 +25,10 @@ public record PathCheckResult(PathCheckAction action, int cutoffSegmentIndex, St
 
     public boolean isCutoff() {
         return action == PathCheckAction.CUTOFF;
+    }
+
+    public boolean isRepairToSegment() {
+        return action == PathCheckAction.REPAIR_TO_SEGMENT;
     }
 
     public boolean isForceReplan() {

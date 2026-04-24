@@ -12,6 +12,7 @@ import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.PathCommand;
 import fr.riege.ebsl.botting.registry.BotModuleRegistry;
+import fr.riege.ebsl.input.EbslKeybinds;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlers;
@@ -35,6 +36,7 @@ public final class EbslMod implements ClientModInitializer {
         eventBus = new EventBusImpl();
         PathfinderSettingsStore.load();
         BotModuleRegistry.bootstrap();
+        EbslKeybinds.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             PathCommand.register(dispatcher));

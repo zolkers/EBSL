@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.pathfinding.execution.FlyExecutor;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
@@ -8,7 +9,6 @@ import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +98,7 @@ final class WalkNavigationService {
         double centerVariationZ = (Math.random() * 0.4) - 0.2;
 
         runtime.walkOptions.reset();
-        runtime.walkOptions.configure(target.add(0, -10.0, 0), onFinished, null, !isFirst, 0.1);
+        runtime.walkOptions.configure(onFinished, null, !isFirst, 0.1);
         runtime.walkOptions.setGoalCenterOffsets(0.5 + centerVariationX, 0.5 + centerVariationZ);
         runtime.walkOptions.setAllowRotation(false);
         runtime.walkOptions.setAllowReplan(false);
@@ -106,7 +106,6 @@ final class WalkNavigationService {
         runtime.walkOptions.setExactGoalCentering(true);
 
         if (isFirst) {
-            runtime.state.setRotationTarget(null);
             startPathfind(mc, tx, ty, tz, false);
             return;
         }
@@ -123,7 +122,7 @@ final class WalkNavigationService {
         List<Node> directPath = PathPipeline.buildLinearWalkPath(start, targetPos);
 
         PathVisualizer.setPath(directPath, 0);
-        runtime.executor.start(directPath, tx, ty, tz, true, null, onFinished);
+        runtime.executor.start(directPath, tx, ty, tz, true, onFinished);
         runtime.walkOptions.applyTo(runtime.executor);
 
         fr.riege.ebsl.util.ClientUtils.sendMessage(mc, "§7Greenhouse path: direct walk to target.", false);
@@ -149,6 +148,28 @@ final class WalkNavigationService {
             || state == fr.riege.ebsl.pathfinding.execution.PathExecutor.State.FAILED;
     }
 
+    boolean startPathRepair(Minecraft mc, PathRepairRequest request) {
+        if (mc.player == null || mc.level == null || request == null || request.joinNode() == null) {
+            return false;
+        }
+
+        WalkabilityChecker checker = new WalkabilityChecker(mc.level);
+        PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true, 40000, 5000);
+        AStarPathfinder pathfinder = new AStarPathfinder(config);
+        runtime.state.setCurrentPathfinder(pathfinder);
+
+        int startX = (int) Math.floor(mc.player.getX());
+        int startZ = (int) Math.floor(mc.player.getZ());
+        int startY = PathPipeline.resolveStartY(checker, mc.player.getX(), mc.player.getY(), mc.player.getZ());
+        PathPosition start = new PathPosition(startX, startY, startZ);
+        PathPosition join = request.joinNode().position;
+
+        pathfinder.findPath(start, join)
+            .whenComplete((result, throwable) -> mc.execute(() ->
+                handleRepairResult(mc, checker, config, pathfinder, request, result, throwable)));
+        return true;
+    }
+
     void refreshWalkVisualizer() {
         PathVisualizer.setCameraPath(runtime.executor.getCameraPath());
         PathVisualizer.updateExecution(runtime.executor.getWaypointIndex(), runtime.executor.getCamTargetIdx());
@@ -170,7 +191,6 @@ final class WalkNavigationService {
                 pendingSegment.goalY(),
                 pendingSegment.goalZ(),
                 runtime.walkOptions.isPreciseExecution(),
-                runtime.state.rotationTarget(),
                 runtime.walkOptions.onFinished());
         }
         runtime.walkOptions.applyTo(runtime.executor);
@@ -229,6 +249,55 @@ final class WalkNavigationService {
             }));
     }
 
+    private void handleRepairResult(Minecraft mc, WalkabilityChecker checker,
+                                    PathfinderConfiguration config,
+                                    AStarPathfinder pathfinder,
+                                    PathRepairRequest request,
+                                    PathfinderResult result,
+                                    Throwable throwable) {
+        if (runtime.state.isAborted() || !runtime.state.isCurrentPathfinder(pathfinder)) {
+            return;
+        }
+        runtime.state.clearCurrentPathfinder();
+
+        if (throwable != null || result == null || result.getPath() == null) {
+            if (throwable != null) {
+                LOGGER.error("Path repair calculation failed", throwable);
+            }
+            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            return;
+        }
+
+        Collection<PathPosition> positions = result.getPath().collect();
+        if (!PathResultClassifier.hasUsablePath(result, positions)) {
+            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            return;
+        }
+
+        ProcessedPath repairPath = PathPipeline.processWalkPath(positions, config, checker);
+        List<Node> mergedPath = PathPipeline.mergePathPrefixWithTail(repairPath.navigationPath(), request.remainingPath());
+        if (mergedPath.size() < 2) {
+            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            return;
+        }
+
+        runtime.executor.start(
+            mergedPath,
+            runtime.state.goalX(),
+            runtime.state.goalY(),
+            runtime.state.goalZ(),
+            runtime.walkOptions.isPreciseExecution(),
+            runtime.walkOptions.onFinished());
+        runtime.walkOptions.applyTo(runtime.executor);
+        PathVisualizer.setPath(mergedPath, 0);
+        refreshWalkVisualizer();
+
+        fr.riege.ebsl.util.ClientUtils.sendDebugMessage(mc,
+            "Path repair merged " + repairPath.navigationPath().size()
+                + " repair nodes into " + request.remainingPath().size()
+                + " remaining nodes: " + request.reason());
+    }
+
     private void handleWalkResult(Minecraft mc, PathfinderResult result,
                                   PathfinderConfiguration config, WalkabilityChecker checker,
                                   int x, int y, int z,
@@ -263,6 +332,9 @@ final class WalkNavigationService {
         PathVisualizer.setPath(processedPath.navigationPath(), 0);
         PathVisualizer.setCameraPath(Collections.emptyList());
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, x, y, z);
+        if (partial && !runtime.longRangeSession.isActive()) {
+            runtime.longRangeSession.start(x, z);
+        }
         boolean longRangeActive = runtime.longRangeSession.isActive();
         boolean longRangeFinalSegment = longRangeActive
             && x == runtime.longRangeSession.finalGoalX()
@@ -303,7 +375,6 @@ final class WalkNavigationService {
             y,
             z,
             runtime.walkOptions.isPreciseExecution(),
-            runtime.state.rotationTarget(),
             runtime.walkOptions.onFinished());
         runtime.walkOptions.applyTo(runtime.executor);
         refreshWalkVisualizer();
