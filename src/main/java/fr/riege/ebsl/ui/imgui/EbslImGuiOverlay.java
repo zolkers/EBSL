@@ -5,6 +5,7 @@ import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.layout.UiRect;
 import fr.riege.ebsl.ui.layout.UiTheme;
 import fr.riege.ebsl.ui.state.EbslUiState;
+import fr.riege.ebsl.ui.state.CenterTab;
 import imgui.ImGuiIO;
 
 public final class EbslImGuiOverlay {
@@ -28,6 +29,17 @@ public final class EbslImGuiOverlay {
         UiRect center = ViewportLayout.create(width, height).center();
         int top = center.y() + UiTheme.TAB_H + 8;
         return new UiRect(center.x() + 8, top, center.width() - 16, center.bottom() - top - 8);
+    }
+
+    public static boolean acceptsMinecraftFocusAt(double x, double y, int width, int height) {
+        if (!visible || STATE.centerTab() != CenterTab.GAME) {
+            return false;
+        }
+        UiRect viewport = gameViewportRect(width, height);
+        return x >= viewport.x()
+            && x <= viewport.right()
+            && y >= viewport.y()
+            && y <= viewport.bottom();
     }
 
     public static void render() {
