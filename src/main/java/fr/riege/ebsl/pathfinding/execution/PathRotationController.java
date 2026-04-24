@@ -172,6 +172,7 @@ final class PathRotationController {
             return 0;
         }
         if (lastCameraCheckPos == null) {
+            cameraIndex = nearestCameraRailIndex(playerPos);
             lastCameraCheckPos = playerPos;
         }
 
@@ -183,6 +184,24 @@ final class PathRotationController {
             }
         }
         return cameraIndex;
+    }
+
+    private int nearestCameraRailIndex(Vec3 playerPos) {
+        int bestIndex = Math.max(0, Math.min(cameraIndex, cameraPath.size() - 1));
+        double bestDistSq = Double.MAX_VALUE;
+        for (int i = 0; i < cameraPath.size(); i++) {
+            Vec3 point = cameraPath.get(i);
+            double dx = point.x - playerPos.x;
+            double dy = point.y - playerPos.y;
+            double dz = point.z - playerPos.z;
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < bestDistSq - 1.0e-4
+                || (Math.abs(distSq - bestDistSq) <= 1.0e-4 && i > bestIndex)) {
+                bestDistSq = distSq;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
     }
 
     private Vec3 getCameraRailGuideTarget(Vec3 playerPos, int idx) {
