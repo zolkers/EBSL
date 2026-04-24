@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.execution.ExecutionPlan;
 import fr.riege.ebsl.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.pathfinding.execution.FlyExecutor;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
@@ -122,7 +123,7 @@ final class WalkNavigationService {
         List<Node> directPath = PathPipeline.buildLinearWalkPath(start, targetPos);
 
         PathVisualizer.setPath(directPath, 0);
-        runtime.executor.start(directPath, tx, ty, tz, true, onFinished);
+        runtime.executor.start(new ExecutionPlan(directPath, tx, ty, tz, true, onFinished));
         runtime.walkOptions.applyTo(runtime.executor);
 
         fr.riege.ebsl.util.ClientUtils.sendMessage(mc, "§7Greenhouse path: direct walk to target.", false);
@@ -194,13 +195,13 @@ final class WalkNavigationService {
                     pendingSegment.goalZ());
             }
         } else {
-            runtime.executor.start(
+            runtime.executor.start(new ExecutionPlan(
                 pendingSegment.path(),
                 pendingSegment.goalX(),
                 pendingSegment.goalY(),
                 pendingSegment.goalZ(),
                 runtime.walkOptions.isPreciseExecution(),
-                runtime.walkOptions.onFinished());
+                runtime.walkOptions.onFinished()));
         }
         runtime.walkOptions.applyTo(runtime.executor);
         PathVisualizer.setPath(runtime.executor.getPathSnapshot(), runtime.executor.getWaypointIndex());
@@ -290,13 +291,13 @@ final class WalkNavigationService {
             return;
         }
 
-        runtime.executor.start(
+        runtime.executor.start(new ExecutionPlan(
             mergedPath,
             runtime.state.goalX(),
             runtime.state.goalY(),
             runtime.state.goalZ(),
             runtime.walkOptions.isPreciseExecution(),
-            runtime.walkOptions.onFinished());
+            runtime.walkOptions.onFinished()));
         runtime.walkOptions.applyTo(runtime.executor);
         PathVisualizer.setPath(mergedPath, 0);
         refreshWalkVisualizer();
@@ -378,13 +379,13 @@ final class WalkNavigationService {
                 false);
         }
 
-        runtime.executor.start(
+        runtime.executor.start(new ExecutionPlan(
             processedPath.navigationPath(),
             x,
             y,
             z,
             runtime.walkOptions.isPreciseExecution(),
-            runtime.walkOptions.onFinished());
+            runtime.walkOptions.onFinished()));
         runtime.walkOptions.applyTo(runtime.executor);
         refreshWalkVisualizer();
     }
