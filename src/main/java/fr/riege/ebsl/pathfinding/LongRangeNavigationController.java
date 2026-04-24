@@ -68,17 +68,8 @@ final class LongRangeNavigationController {
             walkExecutionDone,
             System.currentTimeMillis());
         if (queueDecision != LongRangePathSession.SegmentQueueDecision.NONE) {
-            boolean fromPlayer = queueDecision == LongRangePathSession.SegmentQueueDecision.EMERGENCY_FROM_PLAYER
-                || runtime.longRangeSession.shouldUsePlayerRecoveryStart(progressRatio, walkExecutionDone);
-            fr.riege.ebsl.pathfinding.wrapper.PathPosition horizonStart = null;
-            if (!fromPlayer) {
-                fr.riege.ebsl.pathfinding.Node horizonNode =
-                    runtime.executor.getNodeAtRatio(LongRangePathSession.HORIZON_TRIM_RATIO);
-                if (horizonNode != null) {
-                    horizonStart = horizonNode.position;
-                }
-            }
-            segmentPlanner.queueNextSegment(mc, fromPlayer, horizonStart);
+            LongRangeQueueRequest request = createQueueRequest(queueDecision, progressRatio, walkExecutionDone);
+            segmentPlanner.queueNextSegment(mc, request.startFromPlayer(), request.horizonStart());
         }
 
         if (runtime.longRangeSession.hasPreparedSegment()
@@ -131,5 +122,17 @@ final class LongRangeNavigationController {
                     + " (" + pendingSegment.exploredCount() + " explored).",
                 false);
         }
+    }
+
+    private LongRangeQueueRequest createQueueRequest(LongRangePathSession.SegmentQueueDecision decision,
+                                                     double progressRatio,
+                                                     boolean walkExecutionDone) {
+        if (decision == LongRangePathSession.SegmentQueueDecision.EMERGENCY_FROM_PLAYER
+            || runtime.longRangeSession.shouldUsePlayerRecoveryStart(progressRatio, walkExecutionDone)) {
+            return LongRangeQueueRequest.fromPlayer();
+        }
+
+        Node horizonNode = runtime.executor.getNodeAtRatio(LongRangePathSession.HORIZON_TRIM_RATIO);
+        return LongRangeQueueRequest.fromSegmentHorizon(horizonNode != null ? horizonNode.position : null);
     }
 }
