@@ -68,9 +68,17 @@ final class LongRangeNavigationController {
             walkExecutionDone,
             System.currentTimeMillis());
         if (queueDecision != LongRangePathSession.SegmentQueueDecision.NONE) {
-            segmentPlanner.queueNextSegment(mc,
-                queueDecision == LongRangePathSession.SegmentQueueDecision.EMERGENCY_FROM_PLAYER
-                    || runtime.longRangeSession.shouldUsePlayerRecoveryStart(progressRatio, walkExecutionDone));
+            boolean fromPlayer = queueDecision == LongRangePathSession.SegmentQueueDecision.EMERGENCY_FROM_PLAYER
+                || runtime.longRangeSession.shouldUsePlayerRecoveryStart(progressRatio, walkExecutionDone);
+            fr.riege.ebsl.pathfinding.wrapper.PathPosition horizonStart = null;
+            if (!fromPlayer) {
+                fr.riege.ebsl.pathfinding.Node horizonNode =
+                    runtime.executor.getNodeAtRatio(LongRangePathSession.HORIZON_TRIM_RATIO);
+                if (horizonNode != null) {
+                    horizonStart = horizonNode.position;
+                }
+            }
+            segmentPlanner.queueNextSegment(mc, fromPlayer, horizonStart);
         }
 
         if (runtime.longRangeSession.hasPreparedSegment()

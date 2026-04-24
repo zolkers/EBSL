@@ -7,7 +7,8 @@ import java.util.List;
 
 final class LongRangePathSession {
     private static final double SEGMENT_RECALC_RATIO = 0.70;
-    private static final double EARLY_SEGMENT_RECALC_RATIO = 0.55;
+    private static final double EARLY_SEGMENT_RECALC_RATIO = 0.50;
+    static final double HORIZON_TRIM_RATIO = 0.75;
     private static final double PREPARE_REMAINING_DISTANCE = 45.0;
     private static final double EMERGENCY_REMAINING_DISTANCE = 14.0;
     private static final double FINAL_GOAL_XZ_TOLERANCE = 1.75;
@@ -229,7 +230,8 @@ final class LongRangePathSession {
         boolean needsContinuation,
         boolean partial,
         long exploredCount,
-        SegmentAttachment attachment
+        SegmentAttachment attachment,
+        boolean rollingHorizon
     ) {
     }
 }

@@ -1,7 +1,6 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.check.PathCheckpointSnapshot;
 import fr.riege.ebsl.pathfinding.check.PathProximitySnapshot;
 import net.minecraft.world.phys.Vec3;
 
@@ -20,8 +19,6 @@ final class PathTracker {
     private double bestPathProgress = Double.NEGATIVE_INFINITY;
     private long lastPathProgressTime;
     private long severeOffPathSince;
-    private int checkpointIndex;
-    private long lastCheckpointTime;
 
     void start(List<Node> path) {
         this.path = path == null ? Collections.emptyList() : path;
@@ -31,8 +28,6 @@ final class PathTracker {
         this.bestPathProgress = Double.NEGATIVE_INFINITY;
         this.lastPathProgressTime = this.lastProgressTime;
         this.severeOffPathSince = 0;
-        this.checkpointIndex = Math.min(1, this.path.size() - 1);
-        this.lastCheckpointTime = this.lastProgressTime;
     }
 
     void continueWith(List<Node> continuationPath) {
@@ -54,13 +49,24 @@ final class PathTracker {
             return;
         }
 
-        this.path = merged;
-        this.pursuitSegment = 0;
-        this.bestPathProgress = Double.NEGATIVE_INFINITY;
-        this.lastPathProgressTime = System.currentTimeMillis();
-        this.severeOffPathSince = 0;
-        this.checkpointIndex = Math.min(1, this.path.size() - 1);
-        this.lastCheckpointTime = this.lastPathProgressTime;
+        resetPath(merged);
+    }
+
+    void trimAndContinueWith(double trimRatio, List<Node> newPath) {
+        if (newPath == null || newPath.isEmpty()) return;
+        int trimIndex = (int)(path.size() * trimRatio);
+        trimIndex = Math.max(pursuitSegment + 1, Math.min(path.size(), trimIndex));
+
+        List<Node> merged = new ArrayList<>();
+        for (int i = pursuitSegment; i < trimIndex; i++) {
+            appendDistinct(merged, path.get(i));
+        }
+        for (Node node : newPath) {
+            appendDistinct(merged, node);
+        }
+        if (merged.isEmpty()) return;
+
+        resetPath(merged);
     }
 
     boolean applySmartCutoff(int segmentIndex) {
@@ -77,14 +83,16 @@ final class PathTracker {
             return false;
         }
 
-        this.path = trimmed;
+        resetPath(trimmed);
+        return true;
+    }
+
+    private void resetPath(List<Node> newPath) {
+        this.path = newPath;
         this.pursuitSegment = 0;
         this.bestPathProgress = Double.NEGATIVE_INFINITY;
         this.lastPathProgressTime = System.currentTimeMillis();
         this.severeOffPathSince = 0;
-        this.checkpointIndex = Math.min(1, this.path.size() - 1);
-        this.lastCheckpointTime = this.lastPathProgressTime;
-        return true;
     }
 
     Optional<PathRepairRequest> createRepairRequest(int segmentIndex, String reason) {
@@ -138,24 +146,7 @@ final class PathTracker {
             lastProgressTime = now;
             changed = true;
         }
-        advanceCheckpoints(playerPos, now);
         return changed;
-    }
-
-    PathCheckpointSnapshot checkpointSnapshot(Vec3 playerPos, PathProximitySnapshot proximity, long now) {
-        if (path.isEmpty()) {
-            return new PathCheckpointSnapshot(0, 0, 0, 0.0, 0);
-        }
-        int checkpoint = Math.max(0, Math.min(checkpointIndex, path.size() - 1));
-        int projected = Math.max(0, Math.min(proximity.nearestSegmentIndex(), path.size() - 1));
-        int skipped = Math.max(0, projected - checkpoint);
-        return new PathCheckpointSnapshot(
-            checkpoint,
-            projected,
-            skipped,
-            distanceToNode(playerPos, path.get(checkpoint)),
-            now - lastCheckpointTime
-        );
     }
 
     double computeAndTrackPathProgress(Vec3 playerPos, double epsilon, long now) {
@@ -288,6 +279,12 @@ final class PathTracker {
         return path.get(targetIdx);
     }
 
+    Node getNodeAtRatio(double ratio) {
+        if (path.isEmpty()) return null;
+        int index = Math.max(0, Math.min(path.size() - 1, (int)(path.size() * ratio)));
+        return path.get(index);
+    }
+
     List<Node> getPath() {
         return path;
     }
@@ -331,19 +328,6 @@ final class PathTracker {
         double pz = playerPos.z - from.position.centeredZ();
         double t = (px * dx + py * dy + pz * dz) / lenSq;
         return pursuitSegment + Math.max(0.0, Math.min(0.999, t));
-    }
-
-    private void advanceCheckpoints(Vec3 playerPos, long now) {
-        while (checkpointIndex < path.size()) {
-            Node checkpoint = path.get(checkpointIndex);
-            double horizontal = horizontalDistanceToNode(playerPos, checkpoint);
-            double vertical = Math.abs(checkpoint.position.flooredY() - playerPos.y);
-            if (horizontal > 1.85 || vertical > 3.25) {
-                break;
-            }
-            checkpointIndex++;
-            lastCheckpointTime = now;
-        }
     }
 
     private static double distanceToNode(Vec3 position, Node node) {

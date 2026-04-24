@@ -5,7 +5,6 @@ import java.util.List;
 public final class PathCheckRegistry {
     private static final List<PathCheck> CHECKS = List.of(
         new AnomalousPathCutoffCheck(),
-        new MissedCheckpointCheck(),
         new HugeDeviationCheck(),
         new SustainedOffPathCheck(),
         new SmartCutoffCheck()

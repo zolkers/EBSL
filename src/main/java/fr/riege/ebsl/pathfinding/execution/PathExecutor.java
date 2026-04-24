@@ -191,9 +191,20 @@ public final class PathExecutor {
         this.goalY = goalY;
         this.goalZ = goalZ;
         pathTracker.continueWith(continuationPath);
-        List<Node> mergedPath = pathTracker.getPath();
-        rotationController.rebuild(mergedPath);
-        this.movementController = new WalkMovementController(mergedPath);
+        rebuildControllers();
+    }
+
+    public void trimAndContinueWith(double trimRatio, List<Node> newPath, int goalX, int goalY, int goalZ) {
+        if (newPath == null || newPath.isEmpty()) return;
+        this.goalX = goalX;
+        this.goalY = goalY;
+        this.goalZ = goalZ;
+        pathTracker.trimAndContinueWith(trimRatio, newPath);
+        rebuildControllers();
+    }
+
+    public Node getNodeAtRatio(double ratio) {
+        return pathTracker.getNodeAtRatio(ratio);
     }
 
     public void tick(Minecraft mc) {
@@ -246,8 +257,7 @@ public final class PathExecutor {
             goalY,
             goalZ,
             pathTracker.getSevereOffPathDuration(now),
-            proximity,
-            pathTracker.checkpointSnapshot(playerPos, proximity, now)
+            proximity
         ));
         if (pathCheckResult.isForceReplan()) {
             triggerReplan(mc, true, true, pathCheckResult.reason());
@@ -361,6 +371,12 @@ public final class PathExecutor {
     }
 
     // --- Internal helpers ----------------------------------------------------
+
+    private void rebuildControllers() {
+        List<Node> path = pathTracker.getPath();
+        rotationController.rebuild(path);
+        this.movementController = new WalkMovementController(path);
+    }
 
     private Node getMovementWaypoint() {
         return pathTracker.getMovementWaypoint();

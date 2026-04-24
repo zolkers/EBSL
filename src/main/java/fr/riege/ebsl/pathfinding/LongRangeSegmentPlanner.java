@@ -22,27 +22,46 @@ final class LongRangeSegmentPlanner {
     }
 
     void queueNextSegment(Minecraft mc, boolean startFromPlayer) {
+        queueNextSegment(mc, startFromPlayer, null);
+    }
+
+    void queueNextSegment(Minecraft mc, boolean startFromPlayer, PathPosition horizonStart) {
         if (mc.player == null || mc.level == null) {
             return;
         }
 
         WalkabilityChecker checker = new WalkabilityChecker(mc.level);
         int playerY = PathPipeline.resolveStartY(checker, mc.player.getX(), mc.player.getY(), mc.player.getZ());
-        int startX = startFromPlayer
-            ? (int) Math.floor(mc.player.getX())
-            : runtime.longRangeSession.currentSegmentGoalX();
-        int startZ = startFromPlayer
-            ? (int) Math.floor(mc.player.getZ())
-            : runtime.longRangeSession.currentSegmentGoalZ();
-        int startY = startFromPlayer
-            ? playerY
-            : PathPipeline.resolveGoalYForXZ(checker, startX, playerY, startZ);
-        PathPosition start = new PathPosition(startX, startY, startZ);
 
-        double fromX = startFromPlayer ? mc.player.getX() : startX + 0.5;
-        double fromZ = startFromPlayer ? mc.player.getZ() : startZ + 0.5;
+        PathPosition start;
+        boolean rollingHorizon = false;
+        double fromX, fromZ;
+
+        if (startFromPlayer) {
+            int startX = (int) Math.floor(mc.player.getX());
+            int startZ = (int) Math.floor(mc.player.getZ());
+            start = new PathPosition(startX, playerY, startZ);
+            fromX = mc.player.getX();
+            fromZ = mc.player.getZ();
+        } else if (horizonStart != null) {
+            int hx = horizonStart.flooredX();
+            int hz = horizonStart.flooredZ();
+            int hy = PathPipeline.resolveGoalYForXZ(checker, hx, playerY, hz);
+            start = new PathPosition(hx, hy, hz);
+            fromX = hx + 0.5;
+            fromZ = hz + 0.5;
+            rollingHorizon = true;
+        } else {
+            int startX = runtime.longRangeSession.currentSegmentGoalX();
+            int startZ = runtime.longRangeSession.currentSegmentGoalZ();
+            int startY = PathPipeline.resolveGoalYForXZ(checker, startX, playerY, startZ);
+            start = new PathPosition(startX, startY, startZ);
+            fromX = startX + 0.5;
+            fromZ = startZ + 0.5;
+        }
+
         LongRangePathSession.SegmentGoal segmentGoal = runtime.longRangeSession.planSegmentGoal(fromX, fromZ);
-        int goalY = PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), startY, segmentGoal.z());
+        int goalY = PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), playerY, segmentGoal.z());
         PathPosition target = new PathPosition(segmentGoal.x(), goalY, segmentGoal.z());
 
         PathfinderConfiguration config = segmentGoal.segmented()
@@ -54,6 +73,7 @@ final class LongRangeSegmentPlanner {
         LongRangePathSession.SegmentAttachment attachment = startFromPlayer
             ? LongRangePathSession.SegmentAttachment.REPLACE_FROM_PLAYER
             : LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT;
+        boolean rollingHorizonFinal = rollingHorizon;
         pathfinder.findPath(start, target).whenComplete((result, throwable) ->
             mc.execute(() -> handleResult(
                 mc,
@@ -64,6 +84,7 @@ final class LongRangeSegmentPlanner {
                 result,
                 throwable,
                 attachment,
+                rollingHorizonFinal,
                 segmentGoal.x(),
                 goalY,
                 segmentGoal.z())));
@@ -76,6 +97,7 @@ final class LongRangeSegmentPlanner {
                               PathfinderResult result,
                               Throwable throwable,
                               LongRangePathSession.SegmentAttachment attachment,
+                              boolean rollingHorizon,
                               int requestedX,
                               int requestedY,
                               int requestedZ) {
@@ -127,7 +149,8 @@ final class LongRangeSegmentPlanner {
             needsContinuation,
             partial,
             pathfinder.getExploredCount(),
-            attachment
+            attachment,
+            rollingHorizon
         ));
 
         fr.riege.ebsl.util.ClientUtils.sendDebugMessage(mc,
@@ -136,7 +159,8 @@ final class LongRangeSegmentPlanner {
                 + " nodes toward XZ "
                 + runtime.longRangeSession.finalGoalX() + ", "
                 + runtime.longRangeSession.finalGoalZ()
-                + " (" + (needsContinuation ? "partial" : "full") + ")");
+                + " (" + (needsContinuation ? "partial" : "full") + ")"
+                + (rollingHorizon ? " [horizon]" : ""));
     }
 
     private void failQueuedSegment(Minecraft mc, String reason) {

@@ -85,15 +85,18 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
 
         boolean canPassFeet   = canWalkThrough(feetState);
         boolean canPassHead   = canWalkThrough(headState);
-        boolean hasFloor      = checker != null
+        boolean isLiquid      = !feetState.getFluidState().isEmpty();
+        // When the feet are in liquid, the player is already supported; don't check below.
+        // This prevents the air-above-water node (feet=air, below=water) from inheriting
+        // hasFloor=true and opening up incorrect +2-block exits from water.
+        boolean hasFloor      = isLiquid || (checker != null
                 ? canWalkOnCached(checker, belowState, x, y - 1, z)
-                : canWalkOn(level, belowState, new BlockPos(x, y - 1, z));
+                : canWalkOn(level, belowState, new BlockPos(x, y - 1, z)));
         double  floorLevel    = checker != null
                 ? calculateFloorLevelCached(checker, x, y, z)
                 : calculateFloorLevel(level, new BlockPos(x, y, z));
         boolean isClimbable   = feetState.getBlock() instanceof LadderBlock
                              || feetState.getBlock() instanceof VineBlock;
-        boolean isLiquid      = !feetState.getFluidState().isEmpty();
 
         // Aether addition: block dangerous positions
         boolean isDangerous   = isDangerous(feetState) || isDangerous(headState);
@@ -153,7 +156,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOn(Level level, BlockState state, BlockPos pos) {
-        if (state.getFluidState().is(FluidTags.WATER)) return true;
         Block block = state.getBlock();
         if (state.isCollisionShapeFullBlock(level, pos)
                 && block != Blocks.MAGMA_BLOCK
@@ -165,7 +167,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOnCached(WalkabilityChecker checker, BlockState state, int x, int y, int z) {
-        if (checker.isWater(x, y, z)) return true;
         Block block = state.getBlock();
         if (checker.isFullWallBlock(x, y, z)
                 && block != Blocks.MAGMA_BLOCK

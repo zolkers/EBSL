@@ -179,11 +179,20 @@ final class WalkNavigationService {
         runtime.state.updateGoal(pendingSegment.goalX(), pendingSegment.goalY(), pendingSegment.goalZ());
         if (runtime.executor.getState() == fr.riege.ebsl.pathfinding.execution.PathExecutor.State.WALKING
             && pendingSegment.attachment() == LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT) {
-            runtime.executor.continueWith(
-                pendingSegment.path(),
-                pendingSegment.goalX(),
-                pendingSegment.goalY(),
-                pendingSegment.goalZ());
+            if (pendingSegment.rollingHorizon()) {
+                runtime.executor.trimAndContinueWith(
+                    LongRangePathSession.HORIZON_TRIM_RATIO,
+                    pendingSegment.path(),
+                    pendingSegment.goalX(),
+                    pendingSegment.goalY(),
+                    pendingSegment.goalZ());
+            } else {
+                runtime.executor.continueWith(
+                    pendingSegment.path(),
+                    pendingSegment.goalX(),
+                    pendingSegment.goalY(),
+                    pendingSegment.goalZ());
+            }
         } else {
             runtime.executor.start(
                 pendingSegment.path(),

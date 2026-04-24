@@ -5,6 +5,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
+
 public record PathCheckContext(
     Vec3 playerPos,
     List<Node> path,
@@ -13,7 +14,6 @@ public record PathCheckContext(
     int goalY,
     int goalZ,
     long severeOffPathDurationMs,
-    PathProximitySnapshot proximity,
-    PathCheckpointSnapshot checkpoint
+    PathProximitySnapshot proximity
 ) {
 }
