@@ -45,7 +45,16 @@ public final class PathfindingManager {
                 && longRangeController.replanFromPlayer(mc)) {
                 return;
             }
-            walkService.startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            if (longRangeController.continueReplanning(mc)) {
+                return;
+            }
+            walkService.startPathfind(
+                mc,
+                runtime.state.goalX(),
+                runtime.state.goalY(),
+                runtime.state.goalZ(),
+                false,
+                !runtime.longRangeSession.isActive());
             return;
         }
 

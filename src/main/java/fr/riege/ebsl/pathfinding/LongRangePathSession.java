@@ -193,6 +193,10 @@ final class LongRangePathSession {
         return preparedSegment != null;
     }
 
+    boolean hasSegmentCalculationInFlight() {
+        return segmentCalculationInFlight;
+    }
+
     PendingSegment preparedSegment() {
         return preparedSegment;
     }

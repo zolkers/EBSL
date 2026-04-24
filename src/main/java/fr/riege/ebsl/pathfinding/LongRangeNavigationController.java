@@ -91,6 +91,17 @@ final class LongRangeNavigationController {
         return true;
     }
 
+    boolean continueReplanning(Minecraft mc) {
+        if (!runtime.longRangeSession.isActive()) {
+            return false;
+        }
+        if (runtime.longRangeSession.hasPreparedSegment()) {
+            startPreparedSegment(mc);
+            return true;
+        }
+        return runtime.longRangeSession.hasSegmentCalculationInFlight();
+    }
+
     private void startPreparedSegment(Minecraft mc) {
         LongRangePathSession.PendingSegment pendingSegment = runtime.longRangeSession.preparedSegment();
         if (pendingSegment == null) {

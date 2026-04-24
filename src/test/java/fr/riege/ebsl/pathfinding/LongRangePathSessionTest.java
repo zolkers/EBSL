@@ -55,6 +55,17 @@ class LongRangePathSessionTest {
     }
 
     @Test
+    void exposesPendingSegmentCalculationSoRecoveryDoesNotFallBackToDestructiveReplan() {
+        LongRangePathSession session = new LongRangePathSession();
+        session.start(5000, 5000);
+
+        assertFalse(session.hasSegmentCalculationInFlight());
+        session.markSegmentCalculationStarted(null);
+
+        assertTrue(session.hasSegmentCalculationInFlight());
+    }
+
+    @Test
     void reportsFinalGoalReachedByXZToleranceOnly() {
         LongRangePathSession session = new LongRangePathSession();
         session.start(5000, 5000);

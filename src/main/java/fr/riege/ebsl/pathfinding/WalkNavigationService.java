@@ -264,20 +264,20 @@ final class WalkNavigationService {
             if (throwable != null) {
                 LOGGER.error("Path repair calculation failed", throwable);
             }
-            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            restartCurrentWalkGoal(mc);
             return;
         }
 
         Collection<PathPosition> positions = result.getPath().collect();
         if (!PathResultClassifier.hasUsablePath(result, positions)) {
-            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            restartCurrentWalkGoal(mc);
             return;
         }
 
         ProcessedPath repairPath = PathPipeline.processWalkPath(positions, config, checker);
         List<Node> mergedPath = PathPipeline.mergePathPrefixWithTail(repairPath.navigationPath(), request.remainingPath());
         if (mergedPath.size() < 2) {
-            startPathfind(mc, runtime.state.goalX(), runtime.state.goalY(), runtime.state.goalZ(), false);
+            restartCurrentWalkGoal(mc);
             return;
         }
 
@@ -394,6 +394,16 @@ final class WalkNavigationService {
         }
         return (partial ? "§e" : "§a")
             + "Path found (" + pathLen + " waypoints). Walking...";
+    }
+
+    private void restartCurrentWalkGoal(Minecraft mc) {
+        startPathfind(
+            mc,
+            runtime.state.goalX(),
+            runtime.state.goalY(),
+            runtime.state.goalZ(),
+            false,
+            !runtime.longRangeSession.isActive());
     }
 
     private void runPathTest(Minecraft mc, WalkabilityChecker checker,
