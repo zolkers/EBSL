@@ -116,8 +116,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImGui.setCursorScreenPos(viewport.x() + 14.0f, viewport.y() + 14.0f);
         ImGui.beginGroup();
         ImGui.text("Packet");
-        ImGui.sameLine();
-        ImGui.textDisabled("C++ proxy-style packet log, captured in-client");
 
         ImBoolean enabled = new ImBoolean(PacketCaptureLog.isEnabled());
         if (ImGui.checkbox("Capture", enabled)) {
