@@ -3,9 +3,9 @@
 	"id": "ebsl",
 	"version": "${version}",
 	"name": "EBSL",
-	"description": "EBSL client pathfinding and rendering toolkit.",
+	"description": "Pretty sure wynntils doesn't offer that.",
 	"authors": [
-		"riege"
+		"EDGN"
 	],
 	"contact": {
 		"homepage": "https://github.com/riege/ebsl",
@@ -23,7 +23,7 @@
 		"ebsl.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.19.2",
+		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.21.11",
 		"java": ">=21",
 		"fabric-api": "*",
