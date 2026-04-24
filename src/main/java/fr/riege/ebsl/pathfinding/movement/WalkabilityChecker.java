@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding.movement;
 
+import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.pathfinding.util.BlockPosUtil;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
@@ -123,6 +124,9 @@ public final class WalkabilityChecker {
      * rather than the cached flag which uses a null-context fallback.
      */
     public boolean hasWalkableTop(int x, int y, int z) {
+        if (isBlacklisted(x, y, z)) {
+            return false;
+        }
         return getTopY(x, y, z) >= 0.5;
     }
 
@@ -131,6 +135,9 @@ public final class WalkabilityChecker {
      * standing on their top surface, most notably bottom slabs.
      */
     public boolean isLowPartialSupport(int x, int y, int z) {
+        if (isBlacklisted(x, y, z)) {
+            return false;
+        }
         double topY = getTopY(x, y, z);
         return topY > 0.0 && topY <= 0.5;
     }
@@ -148,6 +155,10 @@ public final class WalkabilityChecker {
         if (cached != 0) return cached == 2;
 
         BlockState state = getState(x, y, z);
+        if (isBlacklisted(state)) {
+            fullWallCache.put(key, (byte) 2);
+            return true;
+        }
         boolean result = state.canOcclude() && state.isCollisionShapeFullBlock(level, mutablePos.set(x, y, z));
         fullWallCache.put(key, result ? (byte) 2 : (byte) 1);
         return result;
@@ -205,7 +216,8 @@ public final class WalkabilityChecker {
      * Returns true if the block state at (x,y,z) can occlude (used for ceiling proximity checks).
      */
     public boolean canOcclude(int x, int y, int z) {
-        return getState(x, y, z).canOcclude();
+        BlockState state = getState(x, y, z);
+        return isBlacklisted(state) || state.canOcclude();
     }
 
     /**
@@ -236,6 +248,9 @@ public final class WalkabilityChecker {
     private byte computeFlags(int x, int y, int z) {
         BlockState state = getState(x, y, z);
         byte flags = 0;
+        if (isBlacklisted(state)) {
+            return (byte) (FLAG_SOLID | FLAG_DANGEROUS);
+        }
 
         // -- SOLID --
         // Use getTopY which is itself cached
@@ -293,6 +308,7 @@ public final class WalkabilityChecker {
      * context-dependent blocks (doors, fence gates) throwing on null context.
      */
     private boolean isStatePassable(BlockState state, int x, int y, int z) {
+        if (isBlacklisted(state)) return false;
         if (state.isAir()) return true;
         Block block = state.getBlock();
         // Plants, flowers, grass, etc.
@@ -323,5 +339,13 @@ public final class WalkabilityChecker {
         // General: no full solid collision - use actual level + position (no exceptions)
         VoxelShape shape = state.getCollisionShape(level, mutablePos.set(x, y, z));
         return shape == null || shape.isEmpty();
+    }
+
+    private boolean isBlacklisted(int x, int y, int z) {
+        return isBlacklisted(getState(x, y, z));
+    }
+
+    private static boolean isBlacklisted(BlockState state) {
+        return PathfinderBlockBlacklistModule.isBlacklisted(state);
     }
 }

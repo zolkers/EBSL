@@ -8,17 +8,23 @@ import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.IntSetting;
 import fr.riege.ebsl.settings.Setting;
+import fr.riege.ebsl.settings.StringSetting;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.state.EbslUiState;
 import fr.riege.ebsl.ui.state.RightPanelMode;
 import imgui.ImGui;
+import imgui.flag.ImGuiCol;
 import imgui.type.ImBoolean;
+import imgui.type.ImString;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public final class ImGuiModulesPanel implements ImGuiUiPanel {
+    private final Map<String, ImString> stringValues = new HashMap<>();
+
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
         ImGuiPanelUtil.nextFixedWindow(layout.right());
@@ -36,10 +42,12 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
 
     private void renderModuleList(EbslUiState state) {
         for (BotModule module : BotModuleRegistry.modules()) {
+            pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
                 AnalyticsEventLog.record("module", "Opened settings for " + module.displayName());
             }
+            ImGui.popStyleColor(3);
         }
         ImGui.separator();
         Map<BotModuleCategory, Integer> counts = new EnumMap<>(BotModuleCategory.class);
@@ -81,8 +89,28 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
                     intSetting.setValue(value[0]);
                     saveSetting(module, setting);
                 }
+            } else if (setting instanceof StringSetting stringSetting) {
+                ImString value = stringValues.computeIfAbsent(
+                    module.id() + "." + setting.id(),
+                    ignored -> new ImString(stringSetting.value(), 512));
+                if (!value.get().equals(stringSetting.value())) {
+                    value.set(stringSetting.value());
+                }
+                if (ImGui.inputText(setting.displayName(), value)) {
+                    stringSetting.setValue(value.get());
+                    saveSetting(module, setting);
+                }
             }
         }
+    }
+
+    private static void pushModuleButtonColor(BotModule module) {
+        int base = module.isEnabled() ? 0xFF1B7F46 : 0xFF8A2630;
+        int hover = module.isEnabled() ? 0xFF239D58 : 0xFFA8323E;
+        int active = module.isEnabled() ? 0xFF28B565 : 0xFFC23B49;
+        ImGui.pushStyleColor(ImGuiCol.Button, base);
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, hover);
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, active);
     }
 
     private void saveSetting(BotModule module, Setting<?> setting) {

@@ -1,7 +1,7 @@
 package fr.riege.ebsl.botting.registry;
 
 import fr.riege.ebsl.botting.module.BotModule;
-import fr.riege.ebsl.botting.module.ExampleBotModule;
+import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -19,7 +19,7 @@ public final class BotModuleRegistry {
             return;
         }
         bootstrapped = true;
-        register(new ExampleBotModule());
+        register(PathfinderBlockBlacklistModule.INSTANCE);
         BotModuleSettingsStore.load();
     }
 
