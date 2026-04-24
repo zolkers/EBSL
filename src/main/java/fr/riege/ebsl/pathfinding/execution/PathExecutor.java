@@ -17,21 +17,15 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * State machine that walks a player along a pre-computed path using keyboard injection.
- * Includes jump handling and automatic stall detection.
- */
 public final class PathExecutor {
 
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
-    // Stall detection thresholds
     static final double STUCK_DIST_THRESHOLD = 0.2;
     static final long   STUCK_TIME_MS        = 2000;
     static final double DRIFT_DISTANCE       = 4.5;
     private static final long   REPLAN_COOLDOWN_MS   = 5000;
 
-    // Jump triggers
     static final double JUMP_TRIGGER_DIST      = 0.6;
     static final double STEP_UP_TRIGGER_DIST   = 1.0;
     static final int    JUMP_COOLDOWN_TICKS = 8;
@@ -46,7 +40,6 @@ public final class PathExecutor {
 
     private static final long   COAST_TIMEOUT_MS    = 3000;
 
-    /** Direct goal proximity check - if player is this close horizontally, finish. */
     private static final double GOAL_REACHED_HDIST = 1.2;
     private static final double GOAL_REACHED_VDIST = 2.0;
 
@@ -75,8 +68,6 @@ public final class PathExecutor {
     private final PathTracker pathTracker = new PathTracker();
     private final PathRecoveryController recoveryController = new PathRecoveryController();
     private final PathRotationController rotationController = new PathRotationController();
-
-    // --- Public API ----------------------------------------------------------
 
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise) {
         start(path, goalX, goalY, goalZ, precise, null);
@@ -228,14 +219,11 @@ public final class PathExecutor {
             return;
         }
 
-        // -- Direct goal proximity check -------------------------------------
-        // Catches cases where waypoint advancement gets stuck but player is at the goal.
         if (isAtGoal(playerPos)) {
             finish(mc);
             return;
         }
 
-        // -- Movement progress tracking -------------------------------------
         double distMoved = pathTracker.noteMovementProgress(playerPos, STUCK_DIST_THRESHOLD);
 
         long now = System.currentTimeMillis();
@@ -263,7 +251,6 @@ public final class PathExecutor {
             return;
         }
 
-        // Periodic debug
         if (PathfinderConfig.SHOW_DEBUG.get() && now % 2000 < 50 && pathTracker.getPursuitSegment() < path.size()) {
             Node wp   = path.get(pathTracker.getPursuitSegment());
             double dx = wp.position.centeredX() - playerPos.x;
@@ -274,7 +261,6 @@ public final class PathExecutor {
                     pathTracker.getPursuitSegment(), path.size(), hDist));
         }
 
-        // -- Goal reached / coasting ----------------------------------------
         if (pathTracker.getPursuitSegment() >= path.size() - 1) {
             tickGoalCoasting(mc, playerPos);
             return;
@@ -305,13 +291,11 @@ public final class PathExecutor {
             jumpCooldown = JUMP_COOLDOWN_TICKS;
         }
 
-        // -- Rotation: look at best visible waypoint ahead -------------
         if (allowRotation) {
             rotationController.updateRotation(mc, playerPos, path, pathTracker.getPursuitSegment(), message -> {
             });
         }
 
-        // -- Distance to final goal -----------------------------------------
         double finalDx = (goalX + goalCenterX) - playerPos.x;
         double finalDy = goalY         - playerPos.y;
         double finalDz = (goalZ + goalCenterZ) - playerPos.z;
@@ -343,8 +327,6 @@ public final class PathExecutor {
     void noteRecoveryMovement(Vec3 playerPos) {
         pathTracker.noteMovementProgress(playerPos, 0.0);
     }
-
-    // --- Internal helpers ----------------------------------------------------
 
     private boolean pauseForBlockingClientState(Minecraft mc) {
         if (ClientUtils.isInventoryScreenOpen(mc)) {
