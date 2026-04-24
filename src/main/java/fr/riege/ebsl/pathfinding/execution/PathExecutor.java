@@ -85,30 +85,39 @@ public final class PathExecutor {
 
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise,
                       Runnable onFinished) {
-        this.goalX            = goalX;
-        this.goalY            = goalY;
-        this.goalZ            = goalZ;
-        this.goalCenterX      = 0.5;
-        this.goalCenterZ      = 0.5;
-        this.precise          = precise;
-        this.allowReplan      = true;
-        this.allowJumps       = true;
-        this.allowRotation    = true;
-        this.exactGoalCentering = false;
-        this.stickySneakDistance = -1.0;
-        this.preciseGoalTolerance = 0.5;
-        this.onFinished       = onFinished;
-        this.jumpCooldown     = 0;
-        this.coastStartTime   = 0;
-        this.replanFromPlayerRequested = false;
-        this.repairRequest = null;
-        this.lastRepairReason = "";
-        this.lastRepairReasonTime = 0;
-        recoveryController.reset();
+        this.goalX      = goalX;
+        this.goalY      = goalY;
+        this.goalZ      = goalZ;
+        this.precise    = precise;
+        this.onFinished = onFinished;
+        resetConfig();
+        resetTransientState();
         pathTracker.start(path);
         rotationController.rebuild(path);
-        this.movementController = new WalkMovementController(path);
+        movementController = new WalkMovementController(path);
         state = State.WALKING;
+    }
+
+    private void resetConfig() {
+        allowReplan          = true;
+        allowJumps           = true;
+        allowRotation        = true;
+        exactGoalCentering   = false;
+        stickySneakDistance  = -1.0;
+        preciseGoalTolerance = 0.5;
+        goalCenterX          = 0.5;
+        goalCenterZ          = 0.5;
+    }
+
+    private void resetTransientState() {
+        jumpCooldown              = 0;
+        coastStartTime            = 0;
+        replanFromPlayerRequested = false;
+        repairRequest             = null;
+        lastRepairReason          = "";
+        lastRepairReasonTime      = 0;
+        sneakLatched              = false;
+        recoveryController.reset();
     }
 
     public void setAllowReplan(boolean allowReplan) {
