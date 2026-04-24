@@ -1,6 +1,8 @@
 package fr.riege.ebsl.pathfinding.movement.types;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
+import fr.riege.ebsl.pathfinding.provider.impl.MinecraftNavigationProvider;
 
 public final class FallMovement extends WalkMovement {
     @Override
@@ -24,9 +26,9 @@ public final class FallMovement extends WalkMovement {
         if (!context.checker().safeToFall(fromX, fromY, fromZ, x, y, z)) {
             return MovementValidationResult.invalid("fall segment became unsafe at " + x + ", " + y + ", " + z);
         }
-        if (context.checker().isWalkable(x, y, z)
-            || context.checker().isWater(x, y, z)
-            || context.checker().isClimbable(x, y, z)) {
+        NavigationPoint targetPoint = new MinecraftNavigationProvider(context.checker())
+            .getNavigationPoint(context.target().position, null);
+        if (targetPoint.isTraversable()) {
             return MovementValidationResult.ok();
         }
         return MovementValidationResult.invalid("fall landing is no longer traversable at "

@@ -178,6 +178,11 @@ public final class PathExecutor {
         return request;
     }
 
+    public void rememberRecentRepair(String reason) {
+        lastRepairReason = reason;
+        lastRepairReasonTime = System.currentTimeMillis();
+    }
+
     public void continueWith(List<Node> continuationPath, int goalX, int goalY, int goalZ) {
         if (continuationPath == null || continuationPath.isEmpty()) {
             return;

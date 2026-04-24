@@ -299,6 +299,7 @@ final class WalkNavigationService {
             runtime.walkOptions.isPreciseExecution(),
             runtime.walkOptions.onFinished()));
         runtime.walkOptions.applyTo(runtime.executor);
+        runtime.executor.rememberRecentRepair(request.reason());
         PathVisualizer.setPath(mergedPath, 0);
         refreshWalkVisualizer();
 
