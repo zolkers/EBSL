@@ -3,7 +3,6 @@ package fr.riege.ebsl.input;
 import com.mojang.blaze3d.platform.InputConstants;
 import fr.riege.ebsl.EbslMod;
 import fr.riege.ebsl.ui.imgui.EbslImGuiOverlay;
-import fr.riege.ebsl.ui.viewport.DockedMouseLock;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -34,7 +33,6 @@ public final class EbslKeybinds {
         while (unfocusMinecraft.consumeClick()) {
             client.mouseHandler.releaseMouse();
         }
-        DockedMouseLock.confineIfFocused(client);
         if (EbslImGuiOverlay.isVisible() && !client.mouseHandler.isMouseGrabbed()) {
             releaseGameplayKeys(client);
         }
