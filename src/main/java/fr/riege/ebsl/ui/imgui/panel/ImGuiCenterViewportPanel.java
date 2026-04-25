@@ -1,5 +1,6 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
+import fr.riege.ebsl.botting.module.KeyDisplayModule;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.packet.PacketCaptureEvent;
 import fr.riege.ebsl.packet.PacketCaptureLog;
@@ -218,6 +219,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private void drawGameViewportShell(UiRect viewport) {
         ImDrawList drawList = ImGui.getWindowDrawList();
         drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), 0x18000000);
+        KeyDisplayModule.INSTANCE.renderGameOverlay(ImGui.getForegroundDrawList(), viewport);
     }
 
     private void drawViewportFrame(UiRect viewport) {

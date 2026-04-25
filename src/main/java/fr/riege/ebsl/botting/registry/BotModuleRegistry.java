@@ -1,6 +1,7 @@
 package fr.riege.ebsl.botting.registry;
 
 import fr.riege.ebsl.botting.module.BotModule;
+import fr.riege.ebsl.botting.module.KeyDisplayModule;
 import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import java.util.Collection;
@@ -20,6 +21,7 @@ public final class BotModuleRegistry {
         }
         bootstrapped = true;
         register(PathfinderBlockBlacklistModule.INSTANCE);
+        register(KeyDisplayModule.INSTANCE);
         BotModuleSettingsStore.load();
     }
 

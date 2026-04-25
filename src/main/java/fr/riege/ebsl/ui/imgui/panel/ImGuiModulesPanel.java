@@ -6,6 +6,8 @@ import fr.riege.ebsl.botting.module.BotModuleCategory;
 import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
+import fr.riege.ebsl.settings.ColorSetting;
+import fr.riege.ebsl.settings.EnumSetting;
 import fr.riege.ebsl.settings.IntSetting;
 import fr.riege.ebsl.settings.Setting;
 import fr.riege.ebsl.settings.StringListSetting;
@@ -17,6 +19,7 @@ import fr.riege.ebsl.ui.state.RightPanelMode;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImBoolean;
+import imgui.type.ImInt;
 import imgui.type.ImString;
 
 import java.util.EnumMap;
@@ -101,9 +104,45 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
                     stringSetting.setValue(value.get());
                     saveSetting(module, setting);
                 }
+            } else if (setting instanceof ColorSetting colorSetting) {
+                renderColorSetting(module, colorSetting);
+            } else if (setting instanceof EnumSetting<?> enumSetting) {
+                renderEnumSetting(module, enumSetting);
             } else if (setting instanceof StringListSetting listSetting) {
                 renderStringListSetting(module, listSetting);
             }
+        }
+    }
+
+    private void renderColorSetting(BotModule module, ColorSetting setting) {
+        int argb = setting.value();
+        float a = ((argb >> 24) & 0xFF) / 255.0f;
+        float r = ((argb >> 16) & 0xFF) / 255.0f;
+        float g = ((argb >>  8) & 0xFF) / 255.0f;
+        float b = ( argb        & 0xFF) / 255.0f;
+        float[] col = {r, g, b, a};
+        if (ImGui.colorEdit4(setting.displayName(), col)) {
+            int packed = ((int)(col[3] * 255) << 24)
+                       | ((int)(col[0] * 255) << 16)
+                       | ((int)(col[1] * 255) <<  8)
+                       |  (int)(col[2] * 255);
+            setting.setValue(packed);
+            saveSetting(module, setting);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E extends Enum<E>> void renderEnumSetting(BotModule module, EnumSetting<?> raw) {
+        EnumSetting<E> setting = (EnumSetting<E>) raw;
+        E[] values = setting.enumType().getEnumConstants();
+        String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            labels[i] = values[i].toString();
+        }
+        ImInt idx = new ImInt(setting.value().ordinal());
+        if (ImGui.combo(setting.displayName(), idx, labels)) {
+            setting.setValue(values[idx.get()]);
+            saveSetting(module, setting);
         }
     }
 
