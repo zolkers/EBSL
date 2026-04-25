@@ -42,12 +42,13 @@ public final class DockingInputHandler {
         Minecraft minecraft = Minecraft.getInstance();
         Window window = minecraft.getWindow();
         if (event.getWindowHandle() != window.handle()) return;
+        if (minecraft.mouseHandler.isMouseGrabbed()) return;
         double[] x = {0}, y = {0};
         GLFW.glfwGetCursorPos(event.getWindowHandle(), x, y);
         if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(x[0], y[0], window.getScreenWidth(), window.getScreenHeight())) {
             minecraft.mouseHandler.releaseMouse();
             event.cancel();
-        } else if (!minecraft.mouseHandler.isMouseGrabbed()) {
+        } else {
             minecraft.mouseHandler.grabMouse();
         }
     }
@@ -78,6 +79,7 @@ public final class DockingInputHandler {
     private static boolean shouldRouteKeyboardToImGui() {
         Minecraft minecraft = Minecraft.getInstance();
         return EbslImGuiOverlay.isVisible()
+            && minecraft.screen == null
             && minecraft.mouseHandler != null
             && !minecraft.mouseHandler.isMouseGrabbed();
     }
