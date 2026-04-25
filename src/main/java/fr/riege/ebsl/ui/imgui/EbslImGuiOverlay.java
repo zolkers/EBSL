@@ -7,6 +7,7 @@ import fr.riege.ebsl.ui.layout.UiTheme;
 import fr.riege.ebsl.ui.state.EbslUiState;
 import fr.riege.ebsl.ui.state.CenterTab;
 import imgui.ImGuiIO;
+import net.minecraft.client.Minecraft;
 
 public final class EbslImGuiOverlay {
     private static final EbslUiState STATE = new EbslUiState();
@@ -54,7 +55,28 @@ public final class EbslImGuiOverlay {
     }
 
     private static void renderFrame(ImGuiIO io) {
+        suppressInputWhenMinecraftIsFocused(io);
         ViewportLayout layout = ViewportLayout.create((int) io.getDisplaySizeX(), (int) io.getDisplaySizeY());
         RENDERER.render(STATE, layout);
+    }
+
+    private static void suppressInputWhenMinecraftIsFocused(ImGuiIO io) {
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean minecraftFocused = shouldConfineMinecraftMouse()
+            && minecraft.mouseHandler != null
+            && minecraft.mouseHandler.isMouseGrabbed();
+
+        io.setAppAcceptingEvents(!minecraftFocused);
+        if (!minecraftFocused) {
+            return;
+        }
+
+        io.clearInputMouse();
+        io.setMousePos(-1_000_000.0f, -1_000_000.0f);
+        io.setMouseDelta(0.0f, 0.0f);
+        io.setMouseWheel(0.0f);
+        io.setWantCaptureMouse(false);
+        io.setWantCaptureKeyboard(false);
+        io.setWantTextInput(false);
     }
 }
