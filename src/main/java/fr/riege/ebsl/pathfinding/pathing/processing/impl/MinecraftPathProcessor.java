@@ -108,6 +108,9 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         if (dy > DEFAULT_MOB_JUMP_HEIGHT && (prevPoint.isLiquid() || currentPoint.isLiquid())) {
             return false;
         }
+        if (dy > ASCENT_DY_THRESHOLD && hasJumpSupport(prevPoint) && !hasJumpHeadroom(prev)) {
+            return false;
+        }
         if (isParkourOffset(dx, dz) && !isValidParkourMove(provider, env, prev, pos, prevPoint, currentPoint)) {
             return false;
         }
@@ -364,6 +367,21 @@ public final class MinecraftPathProcessor implements NodeProcessor {
 
     private static boolean hasJumpSupport(NavigationPoint point) {
         return point.hasFloor() && !point.isLiquid();
+    }
+
+    private boolean hasJumpHeadroom(PathPosition pos) {
+        int x = pos.flooredX();
+        int y = pos.flooredY() + 2;
+        int z = pos.flooredZ();
+        if (checker != null) {
+            return checker.isPassable(x, y, z);
+        }
+        Level level = mc.level;
+        if (level == null) return false;
+        BlockPos headroom = new BlockPos(x, y, z);
+        return level.getBlockState(headroom)
+            .getCollisionShape(level, headroom, CollisionContext.empty())
+            .isEmpty();
     }
 
     private static boolean isParkourOffset(int dx, int dz) {
