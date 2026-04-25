@@ -18,7 +18,7 @@ final class InputApplier {
         mc.options.keyDown.setDown(false);
         mc.options.keyLeft.setDown(false);
         mc.options.keyRight.setDown(false);
-        mc.options.keyJump.setDown(false);
+        mc.options.keyJump.setDown(mc.player != null && mc.player.isInWater());
         mc.options.keySprint.setDown(false);
         mc.options.keyShift.setDown(keepSneaking);
     }
@@ -64,7 +64,8 @@ final class InputApplier {
         mc.options.keyLeft.setDown(relativeYaw > -157.5 && relativeYaw <= -22.5);
         mc.options.keyRight.setDown(relativeYaw > 22.5 && relativeYaw <= 157.5);
         mc.options.keySprint.setDown(false);
-        mc.options.keyJump.setDown(false);
-        mc.options.keyShift.setDown(true);
+        boolean inWater = mc.player.isInWater();
+        mc.options.keyJump.setDown(inWater);
+        mc.options.keyShift.setDown(!inWater);
     }
 }
