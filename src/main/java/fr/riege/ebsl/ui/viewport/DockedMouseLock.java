@@ -15,7 +15,7 @@ public final class DockedMouseLock {
     public static void confineIfFocused(Minecraft client) {
         if (client == null
             || client.mouseHandler == null
-            || !client.mouseHandler.isMouseGrabbed()
+            || client.mouseHandler.isMouseGrabbed()
             || !EbslImGuiOverlay.shouldConfineMinecraftMouse()) {
             return;
         }
