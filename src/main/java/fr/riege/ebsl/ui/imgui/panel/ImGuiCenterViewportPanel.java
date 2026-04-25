@@ -89,7 +89,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImGui.beginChild("##pathfinder-settings-scroll", viewport.width() - 28.0f, viewport.height() - 28.0f, false);
         ImGui.text("Pathfinder Settings");
         ImGui.sameLine();
-        if (ImGui.button("Reset to defaults", 148.0f, 24.0f)) {
+        if (ImGui.button("Reset to defaults", 148.0f, 18.0f)) {
             PathfinderSettings.resetToDefaults();
             PathfinderSettingsStore.save();
         }

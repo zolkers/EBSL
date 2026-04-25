@@ -68,11 +68,11 @@ public final class EbslMod implements ClientModInitializer {
         postClientEvent(new RenderWorldEvent(projection, camX, camY, camZ));
     }
 
-    public static void postClientEvent(Event event) {
-        if (eventBus == null || event == null) {
-            return;
+    public static <T extends Event> T postClientEvent(T event) {
+        if (eventBus != null && event != null) {
+            eventBus.post(event);
         }
-        eventBus.post(event);
+        return event;
     }
 
     public static EventBus events() {

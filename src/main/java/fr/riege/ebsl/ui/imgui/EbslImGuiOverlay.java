@@ -1,11 +1,13 @@
 package fr.riege.ebsl.ui.imgui;
 
 import cn.enaium.fabric.imgui.FabricImGui;
+import com.mojang.blaze3d.platform.Window;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.layout.UiRect;
 import fr.riege.ebsl.ui.layout.UiTheme;
 import fr.riege.ebsl.ui.state.EbslUiState;
 import fr.riege.ebsl.ui.state.CenterTab;
+import imgui.ImGui;
 import imgui.ImGuiIO;
 import net.minecraft.client.Minecraft;
 
@@ -55,9 +57,28 @@ public final class EbslImGuiOverlay {
     }
 
     private static void renderFrame(ImGuiIO io) {
+        releaseMcMouseIfClickedInImGui(io);
         suppressInputWhenMinecraftIsFocused(io);
         ViewportLayout layout = ViewportLayout.create((int) io.getDisplaySizeX(), (int) io.getDisplaySizeY());
         RENDERER.render(STATE, layout);
+    }
+
+    // Release MC's mouse grab before the suppression check runs, so the suppress
+    // logic sees isMouseGrabbed()=false and leaves ImGui input alone on the click frame.
+    private static void releaseMcMouseIfClickedInImGui(ImGuiIO io) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!visible || minecraft.mouseHandler == null || !minecraft.mouseHandler.isMouseGrabbed()) {
+            return;
+        }
+        if (!ImGui.isMouseClicked(0) && !ImGui.isMouseClicked(1) && !ImGui.isMouseClicked(2)) {
+            return;
+        }
+        Window window = minecraft.getWindow();
+        double x = io.getMousePosX();
+        double y = io.getMousePosY();
+        if (!acceptsMinecraftFocusAt(x, y, window.getScreenWidth(), window.getScreenHeight())) {
+            minecraft.mouseHandler.releaseMouse();
+        }
     }
 
     private static void suppressInputWhenMinecraftIsFocused(ImGuiIO io) {
@@ -66,7 +87,6 @@ public final class EbslImGuiOverlay {
             && minecraft.mouseHandler != null
             && minecraft.mouseHandler.isMouseGrabbed();
 
-        io.setAppAcceptingEvents(!minecraftFocused);
         if (!minecraftFocused) {
             return;
         }

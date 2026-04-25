@@ -1,8 +1,11 @@
 package fr.riege.ebsl.event;
 
-import fr.riege.ebsl.event.events.render.RenderHudEvent;
 import fr.riege.ebsl.event.events.game.TickEvent;
+import fr.riege.ebsl.event.events.network.NetworkPacketEvent;
+import fr.riege.ebsl.event.events.render.RenderHudEvent;
 import fr.riege.ebsl.event.events.render.RenderWorldEvent;
+import fr.riege.ebsl.packet.PacketCaptureLog;
+import fr.riege.ebsl.ui.imgui.DockingInputHandler;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -17,6 +20,8 @@ public final class EventBridge {
 
     public void register() {
         registerAll();
+        DockingInputHandler.register(bus);
+        bus.subscribe(NetworkPacketEvent.class, e -> PacketCaptureLog.record(e.getDirection(), e.getPacket()));
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             tickCount++;
             bus.post(new TickEvent(client, tickCount), EventPhase.PRE);
