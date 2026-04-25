@@ -21,6 +21,7 @@ final class WalkMovementController {
     private Level checkerLevel;
     private WalkabilityChecker checker;
     private static final double SLIME_ASCENT_JUMP_TRIGGER_DIST = 1.7;
+    private static final double WATER_ENTRY_SURFACE_DROP = 0.6;
 
     WalkMovementController(List<Node> path) {
         this.path = path;
@@ -55,6 +56,10 @@ final class WalkMovementController {
             && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
 
         applyPathMovement(mc, playerPos, movementWaypoint, distToFinal, nearStepUp, pursuitSegment);
+
+        if (applyWaterEntryMovement(mc, movementWaypoint, playerPos, sneakLatched)) {
+            return;
+        }
 
         if (!allowJumps) {
             mc.options.keyJump.setDown(mc.player != null && mc.player.isInWater());
@@ -165,6 +170,23 @@ final class WalkMovementController {
         }
     }
 
+    private boolean applyWaterEntryMovement(Minecraft mc, Node movementWaypoint, Vec3 playerPos,
+                                            boolean sneakLatched) {
+        if (mc.player == null || mc.level == null || mc.player.isInWater()) {
+            return false;
+        }
+        if (!isWaterEntryWaypoint(mc, movementWaypoint)) {
+            return false;
+        }
+
+        mc.options.keyJump.setDown(false);
+        if (!sneakLatched) {
+            mc.options.keyShift.setDown(false);
+        }
+        mc.options.keySprint.setDown(false);
+        return true;
+    }
+
     private void applyClimbMovement(Minecraft mc, Node movementWaypoint, boolean sneakLatched) {
         if (isOnClimbable(mc)) {
             mc.options.keyUp.setDown(true);
@@ -243,6 +265,18 @@ final class WalkMovementController {
         BlockPos feet = mc.player.blockPosition();
         return mc.level.getBlockState(feet).is(Blocks.SLIME_BLOCK)
             || mc.level.getBlockState(feet.below()).is(Blocks.SLIME_BLOCK);
+    }
+
+    private boolean isWaterEntryWaypoint(Minecraft mc, Node waypoint) {
+        int x = waypoint.position.flooredX();
+        int y = waypoint.position.flooredY();
+        int z = waypoint.position.flooredZ();
+        if (checker(mc).isWater(x, y, z)) {
+            return true;
+        }
+        return waypoint.moveType == Node.MoveType.SWIM
+            && checker(mc).isWater(x, y - 1, z)
+            && mc.player.getY() - y <= WATER_ENTRY_SURFACE_DROP;
     }
 
     private static boolean isOnClimbable(Minecraft mc) {
