@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding.pathing.processing.impl;
 
+import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
@@ -25,20 +26,8 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     private static final double ASCENT_DY_THRESHOLD = 0.5;
     private static final double PARTIAL_ASCENT_DY_THRESHOLD = 0.2;
     private static final double DESCENT_DY_THRESHOLD = -0.1;
-    private static final double FULL_STEP_ASCENT_DY_SCALE = 0.5;
-    private static final double FULL_STEP_ASCENT_BASE_PENALTY = 2.0;
-    private static final double DESCENT_COST_SCALE = 0.1;
-
-    private static final double CARDINAL_WALL_COST = 0.55;
-    private static final double DIAGONAL_WALL_COST = 0.25;
-
     // Partial ascents (slabs/stairs) should prefer centered entry/lines over edge hugging.
-    private static final double PARTIAL_ASCENT_CARDINAL_EDGE_PENALTY = 0.32;
     private static final double PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY = 0.12;
-    private static final double PARTIAL_ASCENT_ENTRY_SIDE_PENALTY = 0.28;
-
-    // Openings between spaces should be entered centered; penalize side-biased approach lines.
-    private static final double OPENING_ENTRY_IMBALANCE_PENALTY = 0.24;
 
     // Approach centering: how far ahead to scan for upcoming transitions
     private static final int APPROACH_LOOKAHEAD_DIST = 3;
@@ -181,19 +170,27 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         int pz = prevPos.flooredZ();
 
         boolean fullStepSupport = isFullStepSupport(cx, cy - 1, cz);
+        boolean partialAscent = dy > PARTIAL_ASCENT_DY_THRESHOLD && !fullStepSupport;
+        boolean diagonalMove = Math.abs(cx - px) == 1 && Math.abs(cz - pz) == 1;
+
+        additionalCost += movementTypeCost(currentPoint, prevPoint, dy, diagonalMove, partialAscent);
 
         // Elevation cost: only true full-block ascents get heavy penalties.
         // Stairs/slabs are treated as partial ascents and stay cheap.
         if (dy > ASCENT_DY_THRESHOLD) {
             if (fullStepSupport) {
-                additionalCost += FULL_STEP_ASCENT_DY_SCALE * dy + FULL_STEP_ASCENT_BASE_PENALTY;
+                additionalCost += PathfinderConfig.FULL_STEP_ASCENT_DY_COST.get() * dy
+                    + PathfinderConfig.FULL_STEP_ASCENT_BASE_COST.get();
             }
         } else if (dy < DESCENT_DY_THRESHOLD) {
-            additionalCost += DESCENT_COST_SCALE * Math.abs(dy);
+            additionalCost += PathfinderConfig.FALL_DY_COST.get() * Math.abs(dy);
         }
 
         int moveDx = cx - px;
         int moveDz = cz - pz;
+        if (isParkourOffset(moveDx, moveDz)) {
+            additionalCost += PathfinderConfig.PARKOUR_COST.get();
+        }
 
         // Cramped space penalty: ceiling proximity
         for (int i = 2; i <= 3; i++) {
@@ -216,11 +213,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         int cardinalWalls = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallW ? 1 : 0) + (wallE ? 1 : 0);
         int diagonalWalls = (wallNW ? 1 : 0) + (wallNE ? 1 : 0) + (wallSW ? 1 : 0) + (wallSE ? 1 : 0);
 
-        boolean partialAscent = dy > PARTIAL_ASCENT_DY_THRESHOLD && !fullStepSupport;
-        double cardinalWallWeight = CARDINAL_WALL_COST;
-        double diagonalWallWeight = DIAGONAL_WALL_COST;
+        double cardinalWallWeight = PathfinderConfig.CARDINAL_WALL_COST.get();
+        double diagonalWallWeight = PathfinderConfig.DIAGONAL_WALL_COST.get();
         if (partialAscent) {
-            cardinalWallWeight += PARTIAL_ASCENT_CARDINAL_EDGE_PENALTY;
+            cardinalWallWeight += PathfinderConfig.PARTIAL_ASCENT_EDGE_COST.get();
             diagonalWallWeight += PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY;
         }
         additionalCost += cardinalWalls * cardinalWallWeight + diagonalWalls * diagonalWallWeight;
@@ -241,8 +237,8 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                     case 2  -> APPROACH_MULTIPLIER_DIST_2;
                     default -> APPROACH_MULTIPLIER_DIST_3;
                 };
-                additionalCost += cardinalWalls * (CARDINAL_WALL_COST * multiplier);
-                additionalCost += diagonalWalls * (DIAGONAL_WALL_COST * multiplier);
+                additionalCost += cardinalWalls * (PathfinderConfig.CARDINAL_WALL_COST.get() * multiplier);
+                additionalCost += diagonalWalls * (PathfinderConfig.DIAGONAL_WALL_COST.get() * multiplier);
             }
 
             // Approach imbalance: penalize lateral asymmetry before an opening
@@ -259,13 +255,13 @@ public final class MinecraftPathProcessor implements NodeProcessor {
             if (partialAscent) {
                 int entrySideWalls = countEntrySideWalls(px, py, pz, moveDx, moveDz);
                 entrySideWalls += countEntrySideWalls(cx, cy, cz, moveDx, moveDz);
-                additionalCost += entrySideWalls * PARTIAL_ASCENT_ENTRY_SIDE_PENALTY;
+                additionalCost += entrySideWalls * PathfinderConfig.PARTIAL_ASCENT_ENTRY_SIDE_COST.get();
             }
 
             if (isRoomOpeningTransition(px, py, pz, cx, cy, cz, moveDx, moveDz)) {
                 int imbalance = countLateralImbalanceAt(px, py, pz, moveDx, moveDz)
                         + countLateralImbalanceAt(cx, cy, cz, moveDx, moveDz);
-                additionalCost += imbalance * OPENING_ENTRY_IMBALANCE_PENALTY;
+                additionalCost += imbalance * PathfinderConfig.OPENING_ENTRY_IMBALANCE_COST.get();
             }
         }
 
@@ -314,6 +310,26 @@ public final class MinecraftPathProcessor implements NodeProcessor {
 
         double finalCost = Math.max(0.0, additionalCost);
         return Cost.of(finalCost);
+    }
+
+    private static double movementTypeCost(NavigationPoint currentPoint, NavigationPoint prevPoint,
+                                           double dy, boolean diagonalMove, boolean partialAscent) {
+        double cost = diagonalMove
+            ? PathfinderConfig.DIAGONAL_COST.get()
+            : PathfinderConfig.WALK_COST.get();
+
+        if (currentPoint.isLiquid() || prevPoint.isLiquid()) {
+            cost += PathfinderConfig.SWIM_COST.get();
+        }
+        if (currentPoint.isClimbable() || prevPoint.isClimbable()) {
+            cost += PathfinderConfig.CLIMB_COST.get();
+        }
+        if (partialAscent) {
+            cost += PathfinderConfig.PARTIAL_ASCENT_COST.get();
+        } else if (dy > ASCENT_DY_THRESHOLD) {
+            cost += PathfinderConfig.JUMP_COST.get();
+        }
+        return cost;
     }
 
     public static double computeStaticCost(Level level, BlockPos bp) {

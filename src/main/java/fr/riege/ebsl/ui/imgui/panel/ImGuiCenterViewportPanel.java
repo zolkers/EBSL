@@ -6,6 +6,7 @@ import fr.riege.ebsl.packet.PacketCaptureLog;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
+import fr.riege.ebsl.settings.DoubleSetting;
 import fr.riege.ebsl.settings.IntSetting;
 import fr.riege.ebsl.settings.Setting;
 import fr.riege.ebsl.ui.layout.UiRect;
@@ -15,6 +16,7 @@ import fr.riege.ebsl.ui.state.CenterTab;
 import fr.riege.ebsl.ui.state.EbslUiState;
 import imgui.ImGui;
 import imgui.ImDrawList;
+import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
@@ -80,34 +82,59 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private void renderPathfinderSettings(UiRect viewport) {
         ImDrawList drawList = ImGui.getWindowDrawList();
         drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), 0xEE143B66);
-        ImGui.setCursorScreenPos(viewport.x() + 18.0f, viewport.y() + 18.0f);
-        ImGui.beginGroup();
+        ImGui.setCursorScreenPos(viewport.x() + 14.0f, viewport.y() + 14.0f);
+        ImGui.beginChild("##pathfinder-settings-scroll", viewport.width() - 28.0f, viewport.height() - 28.0f, false);
         ImGui.text("Pathfinder Settings");
-        ImGui.textDisabled("These settings replace the whole viewport.");
-        ImGui.spacing();
-        for (Setting<?> setting : PathfinderSettings.all()) {
-            if (setting instanceof BooleanSetting boolSetting) {
-                ImBoolean value = new ImBoolean(boolSetting.value());
-                if (ImGui.checkbox(setting.displayName(), value)) {
-                    boolSetting.setValue(value.get());
-                    PathfinderSettings.apply();
-                    PathfinderSettingsStore.save();
-                }
-            } else if (setting instanceof IntSetting intSetting) {
-                int[] value = {intSetting.value()};
-                if (ImGui.sliderInt(setting.displayName(), value, intSetting.min(), intSetting.max())) {
-                    intSetting.setValue(value[0]);
-                    PathfinderSettings.apply();
-                    PathfinderSettingsStore.save();
-                }
-            }
-        }
-        ImGui.spacing();
+        ImGui.sameLine();
         if (ImGui.button("Reset to defaults", 148.0f, 24.0f)) {
             PathfinderSettings.resetToDefaults();
             PathfinderSettingsStore.save();
         }
-        ImGui.endGroup();
+        ImGui.spacing();
+        renderSettingsCategory("General", PathfinderSettings.generalSettings());
+        renderSettingsCategory("Movement costs", PathfinderSettings.movementCostSettings());
+        renderSettingsCategory("Corridor and centering costs", PathfinderSettings.corridorCostSettings());
+        ImGui.endChild();
+    }
+
+    private void renderSettingsCategory(String label, List<Setting<?>> settings) {
+        ImGui.setNextItemOpen(true, ImGuiCond.Once);
+        if (!ImGui.collapsingHeader(label)) {
+            return;
+        }
+        ImGui.indent(10.0f);
+        for (Setting<?> setting : settings) {
+            renderPathfinderSetting(setting);
+        }
+        ImGui.unindent(10.0f);
+        ImGui.spacing();
+    }
+
+    private void renderPathfinderSetting(Setting<?> setting) {
+        if (setting instanceof BooleanSetting boolSetting) {
+            ImBoolean value = new ImBoolean(boolSetting.value());
+            if (ImGui.checkbox(setting.displayName(), value)) {
+                boolSetting.setValue(value.get());
+                savePathfinderSettings();
+            }
+        } else if (setting instanceof IntSetting intSetting) {
+            int[] value = {intSetting.value()};
+            if (ImGui.sliderInt(setting.displayName(), value, intSetting.min(), intSetting.max())) {
+                intSetting.setValue(value[0]);
+                savePathfinderSettings();
+            }
+        } else if (setting instanceof DoubleSetting doubleSetting) {
+            float[] value = {(float) doubleSetting.value().doubleValue()};
+            if (ImGui.sliderFloat(setting.displayName(), value, (float) doubleSetting.min(), (float) doubleSetting.max(), "%.2f")) {
+                doubleSetting.setValue((double) value[0]);
+                savePathfinderSettings();
+            }
+        }
+    }
+
+    private void savePathfinderSettings() {
+        PathfinderSettings.apply();
+        PathfinderSettingsStore.save();
     }
 
     private void renderPacketView(UiRect viewport) {
