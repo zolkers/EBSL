@@ -32,7 +32,7 @@ public final class EbslImGuiOverlay {
     }
 
     public static boolean acceptsMinecraftFocusAt(double x, double y, int width, int height) {
-        if (!visible || STATE.centerTab() != CenterTab.GAME) {
+        if (!shouldConfineMinecraftMouse()) {
             return false;
         }
         UiRect viewport = gameViewportRect(width, height);
@@ -40,6 +40,10 @@ public final class EbslImGuiOverlay {
             && x <= viewport.right()
             && y >= viewport.y()
             && y <= viewport.bottom();
+    }
+
+    public static boolean shouldConfineMinecraftMouse() {
+        return visible && STATE.centerTab() == CenterTab.GAME;
     }
 
     public static void render() {
