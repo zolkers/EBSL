@@ -81,7 +81,10 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
 
     private void renderPathfinderSettings(UiRect viewport) {
         ImDrawList drawList = ImGui.getWindowDrawList();
-        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), 0xEE143B66);
+        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), UiTheme.BG_PANEL_DARK);
+        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.y() + 34.0f, UiTheme.BG_PANEL);
+        drawList.addLine(viewport.x(), viewport.y() + 34.0f, viewport.right(), viewport.y() + 34.0f, UiTheme.BORDER, 1.0f);
+        drawList.addLine(viewport.x() + 1.0f, viewport.y(), viewport.x() + 1.0f, viewport.bottom(), 0x66364755, 1.0f);
         ImGui.setCursorScreenPos(viewport.x() + 14.0f, viewport.y() + 14.0f);
         ImGui.beginChild("##pathfinder-settings-scroll", viewport.width() - 28.0f, viewport.height() - 28.0f, false);
         ImGui.text("Pathfinder Settings");
