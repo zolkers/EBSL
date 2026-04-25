@@ -14,10 +14,7 @@ import fr.riege.ebsl.ui.viewport.DockedMouseCoordinates;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public final class DockingInputHandler {
-    private static final AtomicBoolean pendingGrabApproved = new AtomicBoolean(false);
 
     private DockingInputHandler() {}
 
@@ -31,11 +28,11 @@ public final class DockingInputHandler {
     }
 
     private static void onGrabMouse(GrabMouseEvent event) {
-        if (!EbslImGuiOverlay.isVisible()) return;
-        if (pendingGrabApproved.compareAndSet(true, false)) return;
-        Window window = Minecraft.getInstance().getWindow();
-        if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(
-                event.getXpos(), event.getYpos(), window.getScreenWidth(), window.getScreenHeight())) {
+        // Block grab only when the overlay is open on a non-GAME tab.
+        // Clicks outside the game viewport never reach grabMouse() because onMouseButton
+        // cancels onButton first — so this handler is only called from non-click triggers
+        // (alt-tab focus regain, resize, screen close). Always allow those on the GAME tab.
+        if (EbslImGuiOverlay.isVisible() && !EbslImGuiOverlay.shouldConfineMinecraftMouse()) {
             event.cancel();
         }
     }
@@ -50,8 +47,8 @@ public final class DockingInputHandler {
         if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(x[0], y[0], window.getScreenWidth(), window.getScreenHeight())) {
             minecraft.mouseHandler.releaseMouse();
             event.cancel();
-        } else {
-            pendingGrabApproved.set(true);
+        } else if (!minecraft.mouseHandler.isMouseGrabbed()) {
+            minecraft.mouseHandler.grabMouse();
         }
     }
 
