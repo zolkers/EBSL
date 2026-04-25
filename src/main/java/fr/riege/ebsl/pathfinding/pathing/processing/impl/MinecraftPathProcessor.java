@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding.pathing.processing.impl;
 
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.pathfinding.pathing.processing.context.EvaluationContext;
@@ -395,22 +396,8 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                                        PathPosition to,
                                        NavigationPoint fromPoint,
                                        NavigationPoint toPoint) {
-        if (!hasJumpSupport(fromPoint) || !hasJumpSupport(toPoint) || toPoint.isLiquid()) {
-            return false;
-        }
-
-        int dx = Integer.signum(to.flooredX() - from.flooredX());
-        int dz = Integer.signum(to.flooredZ() - from.flooredZ());
-        int distance = Math.abs(to.flooredX() - from.flooredX())
-            + Math.abs(to.flooredZ() - from.flooredZ());
-        for (int step = 1; step < distance; step++) {
-            PathPosition bridge = from.add(dx * step, 0.0, dz * step);
-            NavigationPoint bridgePoint = provider.getNavigationPoint(bridge, env);
-            if (!bridgePoint.isTraversable() || bridgePoint.isLiquid()) {
-                return false;
-            }
-        }
-        return true;
+        ParkourJumpPlanner planner = new ParkourJumpPlanner(checker, provider, env);
+        return planner.plan(from, to, fromPoint, toPoint).feasible();
     }
 
     private boolean isInsideSolidSpace(PathPosition pos) {

@@ -18,6 +18,7 @@ public final class MovementExecutionContext {
     private final double stepUpTriggerDistance;
     private final double jumpTriggerDistance;
     private final double parkourTriggerDistance;
+    private final int parkourDistanceBlocks;
     private final int jumpCooldownTicks;
     private final long stallJumpProgressMs;
     private boolean jumpPressed;
@@ -28,7 +29,7 @@ public final class MovementExecutionContext {
                                     boolean playerOnGround, int jumpCooldown, long millisSinceProgress,
                                     double horizontalDistance, double verticalDelta,
                                     double stepUpTriggerDistance, double jumpTriggerDistance,
-                                    double parkourTriggerDistance, int jumpCooldownTicks,
+                                    double parkourTriggerDistance, int parkourDistanceBlocks, int jumpCooldownTicks,
                                     long stallJumpProgressMs) {
         this.minecraft = minecraft;
         this.waypoint = waypoint;
@@ -43,6 +44,7 @@ public final class MovementExecutionContext {
         this.stepUpTriggerDistance = stepUpTriggerDistance;
         this.jumpTriggerDistance = jumpTriggerDistance;
         this.parkourTriggerDistance = parkourTriggerDistance;
+        this.parkourDistanceBlocks = parkourDistanceBlocks;
         this.jumpCooldownTicks = jumpCooldownTicks;
         this.stallJumpProgressMs = stallJumpProgressMs;
     }
@@ -60,6 +62,7 @@ public final class MovementExecutionContext {
     public double stepUpTriggerDistance() { return stepUpTriggerDistance; }
     public double jumpTriggerDistance() { return jumpTriggerDistance; }
     public double parkourTriggerDistance() { return parkourTriggerDistance; }
+    public int parkourDistanceBlocks() { return parkourDistanceBlocks; }
     public int jumpCooldownTicks() { return jumpCooldownTicks; }
     public long stallJumpProgressMs() { return stallJumpProgressMs; }
 

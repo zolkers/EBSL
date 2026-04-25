@@ -132,6 +132,7 @@ final class WalkMovementController {
             PathExecutor.STEP_UP_TRIGGER_DIST,
             PathExecutor.JUMP_TRIGGER_DIST,
             1.2,
+            parkourDistanceBlocks(waypoint, pursuitSegment),
             PathExecutor.JUMP_COOLDOWN_TICKS,
             PathExecutor.STALL_JUMP_PROGRESS_MS
         );
@@ -225,6 +226,16 @@ final class WalkMovementController {
             }
         }
         return stairCount >= 2;
+    }
+
+    private int parkourDistanceBlocks(Node waypoint, int pursuitSegment) {
+        if (waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
+            return 0;
+        }
+        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        int dx = Math.abs(waypoint.position.flooredX() - takeoff.position.flooredX());
+        int dz = Math.abs(waypoint.position.flooredZ() - takeoff.position.flooredZ());
+        return Math.max(dx, dz);
     }
 
     private boolean isPartialSupportWaypoint(Minecraft mc, Node wp) {
