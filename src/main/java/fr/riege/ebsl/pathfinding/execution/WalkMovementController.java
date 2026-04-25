@@ -55,9 +55,14 @@ final class WalkMovementController {
         boolean nearStepUp = MovementRegistry.get(movementWaypoint.moveType).reducesSprintNearWaypoint()
             && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
 
-        applyPathMovement(mc, playerPos, movementWaypoint, distToFinal, nearStepUp, pursuitSegment);
+        boolean waterEntry = isWaterEntryWaypoint(mc, movementWaypoint);
+        Node pathMovementWaypoint = waterEntry
+            ? waterEntryMovementTarget(mc, movementWaypoint, pursuitSegment)
+            : movementWaypoint;
 
-        if (applyWaterEntryMovement(mc, movementWaypoint, playerPos, sneakLatched)) {
+        applyPathMovement(mc, playerPos, pathMovementWaypoint, distToFinal, nearStepUp, pursuitSegment, waterEntry);
+
+        if (applyWaterEntryMovement(mc, waterEntry, sneakLatched)) {
             return;
         }
 
@@ -72,7 +77,8 @@ final class WalkMovementController {
     }
 
     private void applyPathMovement(Minecraft mc, Vec3 playerPos, Node targetWp,
-                                   double distToFinal, boolean nearStepUp, int pursuitSegment) {
+                                   double distToFinal, boolean nearStepUp, int pursuitSegment,
+                                   boolean forceForwardWhenCentered) {
         if (mc.player == null) {
             return;
         }
@@ -89,6 +95,14 @@ final class WalkMovementController {
         }
 
         if (hDist < PathExecutor.WALK_TARGET_DEADZONE) {
+            if (forceForwardWhenCentered) {
+                mc.options.keyUp.setDown(true);
+                mc.options.keyDown.setDown(false);
+                mc.options.keyLeft.setDown(false);
+                mc.options.keyRight.setDown(false);
+                mc.options.keySprint.setDown(false);
+                return;
+            }
             mc.options.keyUp.setDown(false);
             mc.options.keyDown.setDown(false);
             mc.options.keyLeft.setDown(false);
@@ -171,12 +185,11 @@ final class WalkMovementController {
         }
     }
 
-    private boolean applyWaterEntryMovement(Minecraft mc, Node movementWaypoint, Vec3 playerPos,
-                                            boolean sneakLatched) {
+    private boolean applyWaterEntryMovement(Minecraft mc, boolean waterEntry, boolean sneakLatched) {
         if (mc.player == null || mc.level == null || mc.player.isInWater()) {
             return false;
         }
-        if (!isWaterEntryWaypoint(mc, movementWaypoint)) {
+        if (!waterEntry) {
             return false;
         }
 
@@ -186,6 +199,15 @@ final class WalkMovementController {
         }
         mc.options.keySprint.setDown(false);
         return true;
+    }
+
+    private Node waterEntryMovementTarget(Minecraft mc, Node movementWaypoint, int pursuitSegment) {
+        if (pursuitSegment + 2 >= path.size()) {
+            return movementWaypoint;
+        }
+
+        Node next = path.get(pursuitSegment + 2);
+        return isWaterEntryWaypoint(mc, next) ? next : movementWaypoint;
     }
 
     private void applyClimbMovement(Minecraft mc, Node movementWaypoint, boolean sneakLatched) {
@@ -279,6 +301,9 @@ final class WalkMovementController {
     }
 
     private boolean isWaterEntryWaypoint(Minecraft mc, Node waypoint) {
+        if (mc.player == null || mc.level == null) {
+            return false;
+        }
         int x = waypoint.position.flooredX();
         int y = waypoint.position.flooredY();
         int z = waypoint.position.flooredZ();
