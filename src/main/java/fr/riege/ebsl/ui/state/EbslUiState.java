@@ -1,13 +1,13 @@
 package fr.riege.ebsl.ui.state;
 
-import fr.riege.ebsl.botting.module.BotModule;
+import fr.riege.ebsl.botting.module.PathfinderModule;
 import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 
 public final class EbslUiState {
     private MainViewTab mainViewTab = MainViewTab.MAIN;
     private CenterTab centerTab = CenterTab.GAME;
     private RightPanelMode rightPanelMode = RightPanelMode.MODULE_LIST;
-    private BotModule selectedModule;
+    private PathfinderModule selectedModule;
 
     public MainViewTab mainViewTab() {
         return mainViewTab;
@@ -33,12 +33,12 @@ public final class EbslUiState {
         rightPanelMode = RightPanelMode.MODULE_LIST;
     }
 
-    public void showModuleSettings(BotModule module) {
+    public void showModuleSettings(PathfinderModule module) {
         selectedModule = module;
         rightPanelMode = RightPanelMode.MODULE_SETTINGS;
     }
 
-    public BotModule selectedModule() {
+    public PathfinderModule selectedModule() {
         if (selectedModule == null) {
             selectedModule = BotModuleRegistry.modules().stream().findFirst().orElse(null);
         } else {

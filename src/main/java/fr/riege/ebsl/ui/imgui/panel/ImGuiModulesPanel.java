@@ -1,8 +1,8 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.analytics.AnalyticsEventLog;
-import fr.riege.ebsl.botting.module.BotModule;
-import fr.riege.ebsl.botting.module.BotModuleCategory;
+import fr.riege.ebsl.botting.module.PathfinderModule;
+import fr.riege.ebsl.botting.module.PathfinderModuleCategory;
 import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
@@ -32,8 +32,8 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
         ImGuiPanelUtil.nextFixedWindow(layout.right());
-        if (ImGui.begin("Bot modules##ebsl-right", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
-            ImGui.text("Bot modules");
+        if (ImGui.begin("Pathfinder modules##ebsl-right", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
+            ImGui.text("Pathfinder modules");
             ImGui.separator();
             if (state.rightPanelMode() == RightPanelMode.MODULE_SETTINGS && state.selectedModule() != null) {
                 renderModuleSettings(state);
@@ -45,7 +45,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderModuleList(EbslUiState state) {
-        for (BotModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : BotModuleRegistry.modules()) {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
@@ -54,18 +54,18 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
             ImGui.popStyleColor(3);
         }
         ImGui.separator();
-        Map<BotModuleCategory, Integer> counts = new EnumMap<>(BotModuleCategory.class);
-        for (BotModule module : BotModuleRegistry.modules()) {
+        Map<PathfinderModuleCategory, Integer> counts = new EnumMap<>(PathfinderModuleCategory.class);
+        for (PathfinderModule module : BotModuleRegistry.modules()) {
             counts.merge(module.category(), 1, Integer::sum);
         }
         ImGui.text("Categories");
-        for (BotModuleCategory category : BotModuleCategory.values()) {
+        for (PathfinderModuleCategory category : PathfinderModuleCategory.values()) {
             ImGui.textDisabled(category.displayName() + ": " + counts.getOrDefault(category, 0));
         }
     }
 
     private void renderModuleSettings(EbslUiState state) {
-        BotModule module = state.selectedModule();
+        PathfinderModule module = state.selectedModule();
         if (ImGui.button("Back", 72.0f, 24.0f)) {
             state.showModuleList();
         }
@@ -73,6 +73,9 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
             module.resetSettings();
             BotModuleSettingsStore.save();
+            for (Setting<?> setting : module.settings()) {
+                BotModuleRegistry.onSettingChanged(module, setting);
+            }
             AnalyticsEventLog.record("module", "Reset " + module.displayName());
         }
         ImGui.separator();
@@ -114,7 +117,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
     }
 
-    private void renderColorSetting(BotModule module, ColorSetting setting) {
+    private void renderColorSetting(PathfinderModule module, ColorSetting setting) {
         int argb = setting.value();
         float a = ((argb >> 24) & 0xFF) / 255.0f;
         float r = ((argb >> 16) & 0xFF) / 255.0f;
@@ -132,7 +135,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     @SuppressWarnings("unchecked")
-    private <E extends Enum<E>> void renderEnumSetting(BotModule module, EnumSetting<?> raw) {
+    private <E extends Enum<E>> void renderEnumSetting(PathfinderModule module, EnumSetting<?> raw) {
         EnumSetting<E> setting = (EnumSetting<E>) raw;
         E[] values = setting.enumType().getEnumConstants();
         String[] labels = new String[values.length];
@@ -146,7 +149,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
     }
 
-    private void renderStringListSetting(BotModule module, StringListSetting setting) {
+    private void renderStringListSetting(PathfinderModule module, StringListSetting setting) {
         ImGui.text(setting.displayName());
         if (ImGui.beginChild("##" + module.id() + "." + setting.id(), 0.0f, 124.0f, true)) {
             for (int i = 0; i < setting.value().size(); i++) {
@@ -178,7 +181,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
     }
 
-    private static void pushModuleButtonColor(BotModule module) {
+    private static void pushModuleButtonColor(PathfinderModule module) {
         int base = module.isEnabled() ? 0xFF1B7F46 : 0xFF8A2630;
         int hover = module.isEnabled() ? 0xFF239D58 : 0xFFA8323E;
         int active = module.isEnabled() ? 0xFF28B565 : 0xFFC23B49;
@@ -187,8 +190,9 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, active);
     }
 
-    private void saveSetting(BotModule module, Setting<?> setting) {
+    private void saveSetting(PathfinderModule module, Setting<?> setting) {
         BotModuleSettingsStore.save();
+        BotModuleRegistry.onSettingChanged(module, setting);
         AnalyticsEventLog.record("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
     }
 }

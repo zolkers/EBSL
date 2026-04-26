@@ -38,7 +38,8 @@ public final class PathExecutor {
     static final double WALK_BACKWARD_DOT    = -0.45;
     static final double WALK_STRAFE_DOT      = 0.32;
 
-    private static final long   COAST_TIMEOUT_MS    = 3000;
+    private static final long   COAST_TIMEOUT_MS         = 3000;
+    private static final long   SMART_CUTOFF_COOLDOWN_MS = 800;
 
     private static final double GOAL_REACHED_HDIST = 1.2;
     private static final double GOAL_REACHED_VDIST = 2.0;
@@ -46,19 +47,20 @@ public final class PathExecutor {
     private State      state = State.IDLE;
     private boolean    precise;
 
-    private long lastReplanTime  = 0;
-    private long coastStartTime  = 0;
-    private int  jumpCooldown    = 0;
+    private long lastReplanTime       = 0;
+    private long coastStartTime       = 0;
+    private long lastSmartCutoffTime  = 0;
+    private int  jumpCooldown         = 0;
     private int  goalX, goalY, goalZ;
-    private double goalCenterX   = 0.5;
-    private double goalCenterZ   = 0.5;
-    private boolean allowReplan  = true;
-    private boolean allowJumps   = true;
-    private boolean allowRotation = true;
+    private double goalCenterX        = 0.5;
+    private double goalCenterZ        = 0.5;
+    private boolean allowReplan       = true;
+    private boolean allowJumps        = true;
+    private boolean allowRotation     = true;
     private boolean exactGoalCentering = false;
     private double stickySneakDistance = -1.0;
-    private boolean sneakLatched = false;
-    private double preciseGoalTolerance = 0.5;
+    private boolean sneakLatched      = false;
+    private double preciseGoalTolerance = ExecutionOptions.DEFAULT_TOLERANCE;
     private Runnable onFinished;
     private boolean replanFromPlayerRequested = false;
     private PathRepairRequest repairRequest;
@@ -84,7 +86,16 @@ public final class PathExecutor {
         this.goalZ      = plan.goalZ();
         this.precise    = plan.precise();
         this.onFinished = plan.onFinished();
-        resetConfig();
+        ExecutionOptions opts = plan.options();
+        this.allowReplan          = opts.allowReplan();
+        this.allowJumps           = opts.allowJumps();
+        this.allowRotation        = opts.allowRotation();
+        this.exactGoalCentering   = opts.exactGoalCentering();
+        this.stickySneakDistance  = opts.stickySneakDistance();
+        this.preciseGoalTolerance = Math.max(0.01, opts.preciseGoalTolerance());
+        this.goalCenterX          = opts.goalCenterX();
+        this.goalCenterZ          = opts.goalCenterZ();
+        this.sneakLatched         = opts.sneakLatched();
         resetTransientState();
         pathTracker.start(plan.path());
         rotationController.rebuild(plan.path());
@@ -92,20 +103,10 @@ public final class PathExecutor {
         state = State.WALKING;
     }
 
-    private void resetConfig() {
-        allowReplan          = true;
-        allowJumps           = true;
-        allowRotation        = true;
-        exactGoalCentering   = false;
-        stickySneakDistance  = -1.0;
-        preciseGoalTolerance = 0.5;
-        goalCenterX          = 0.5;
-        goalCenterZ          = 0.5;
-    }
-
     private void resetTransientState() {
         jumpCooldown              = 0;
         coastStartTime            = 0;
+        lastSmartCutoffTime       = 0;
         replanFromPlayerRequested = false;
         repairRequest             = null;
         lastRepairReason          = "";
@@ -114,44 +115,17 @@ public final class PathExecutor {
         recoveryController.reset();
     }
 
-    public void setAllowReplan(boolean allowReplan) {
-        this.allowReplan = allowReplan;
-    }
-
-    public void setPreciseGoalTolerance(double preciseGoalTolerance) {
-        this.preciseGoalTolerance = Math.max(0.01, preciseGoalTolerance);
-    }
-
-    public void setAllowJumps(boolean allowJumps) {
-        this.allowJumps = allowJumps;
-    }
-
-    public void setAllowRotation(boolean allowRotation) {
-        this.allowRotation = allowRotation;
-    }
-
-    public void setExactGoalCentering(boolean exactGoalCentering) {
-        this.exactGoalCentering = exactGoalCentering;
-    }
-
-    public void setStickySneakDistance(double stickySneakDistance) {
-        this.stickySneakDistance = stickySneakDistance;
-    }
-
+    /** Externally latch/unlatch sneak (e.g. from PathfindingManager). */
     public void setSneakLatched(boolean sneakLatched) {
         this.sneakLatched = sneakLatched;
     }
 
-    public void setGoalCenterOffsets(double goalCenterX, double goalCenterZ) {
-        this.goalCenterX = goalCenterX;
-        this.goalCenterZ = goalCenterZ;
-    }
-
-    public boolean isSneakLatched() {
-        return sneakLatched;
-    }
-
     public State getState() { return state; }
+    public Node.MoveType getCurrentMoveType() {
+        if (state != State.WALKING) return null;
+        Node waypoint = pathTracker.getMovementWaypoint();
+        return waypoint != null ? waypoint.moveType : null;
+    }
     public int getWaypointIndex() { return pathTracker.getPursuitSegment(); }
     public int getCamTargetIdx()  { return rotationController.getCamTargetIdx(); }
     public List<Vec3> getCameraPath() { return rotationController.getCameraPath(); }
@@ -164,6 +138,10 @@ public final class PathExecutor {
 
     public double getRemainingDistance(Vec3 playerPos) {
         return pathTracker.getRemainingDistance(playerPos);
+    }
+
+    public boolean isSneakLatched() {
+        return sneakLatched;
     }
 
     public boolean consumeReplanFromPlayerRequest() {
@@ -277,13 +255,15 @@ public final class PathExecutor {
             now - pathTracker.getLastPathProgressTime(),
             proximity);
         PathRecoveryController.RecoveryDecision recovery = recoveryController.update(
-            this,
             mc,
             playerPos,
             progress,
             allowReplan,
             now - lastReplanTime > REPLAN_COOLDOWN_MS,
             jumpCooldown);
+        if (recovery.noteProgress()) {
+            noteRecoveryMovement(playerPos);
+        }
         if (recovery.action() == PathRecoveryController.Action.REPLAN_FROM_PLAYER) {
             triggerReplan(mc, false, true, recovery.reason());
             return;
@@ -371,13 +351,16 @@ public final class PathExecutor {
             triggerRepair(mc, pathCheckResult.cutoffSegmentIndex(), pathCheckResult.reason());
             return PathCheckHandling.handled(path, proximity);
         }
-        if (!pathCheckResult.isCutoff() || !pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
+        if (!pathCheckResult.isCutoff()
+                || now - lastSmartCutoffTime < SMART_CUTOFF_COOLDOWN_MS
+                || !pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
             return PathCheckHandling.continueWith(path, proximity);
         }
+        lastSmartCutoffTime = now;
 
         List<Node> updatedPath = pathTracker.getPath();
         rotationController.rebuild(updatedPath);
-        movementController = new WalkMovementController(updatedPath);
+        movementController.setPath(updatedPath);
         PathVisualizer.setPath(updatedPath, 0);
         PathVisualizer.setCameraPath(rotationController.getCameraPath());
         PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
@@ -387,7 +370,7 @@ public final class PathExecutor {
     private void rebuildControllers() {
         List<Node> path = pathTracker.getPath();
         rotationController.rebuild(path);
-        this.movementController = new WalkMovementController(path);
+        movementController.setPath(path);
     }
 
     private Node getMovementWaypoint() {
@@ -411,7 +394,7 @@ public final class PathExecutor {
             triggerReplan(mc, false, true, "repair loop suppressed: " + reason);
             return;
         }
-        Optional<PathRepairRequest> request = pathTracker.createRepairRequest(segmentIndex, reason);
+        Optional<PathRepairRequest> request = pathTracker.createRepairRequest(segmentIndex, reason, goalX, goalY, goalZ);
         if (request.isEmpty()) {
             triggerReplan(mc, false, true, reason);
             return;
@@ -429,8 +412,8 @@ public final class PathExecutor {
     }
 
     private boolean isAtGoal(Vec3 playerPos) {
-        double dx = (goalX + 0.5) - playerPos.x;
-        double dz = (goalZ + 0.5) - playerPos.z;
+        double dx = (goalX + goalCenterX) - playerPos.x;
+        double dz = (goalZ + goalCenterZ) - playerPos.z;
         return Math.sqrt(dx * dx + dz * dz) <= GOAL_REACHED_HDIST
             && Math.abs(goalY - playerPos.y) <= GOAL_REACHED_VDIST;
     }

@@ -68,6 +68,9 @@ public final class ParkourJumpPlanner {
         if (!hasArcClearance(from, to, stepX, stepZ, distanceBlocks, verticalDelta)) {
             return ParkourJumpPlan.rejected("jump arc is blocked");
         }
+        if (!hasActualGap(from, stepX, stepZ, distanceBlocks)) {
+            return ParkourJumpPlan.rejected("no gap — all intermediates are walkable");
+        }
 
         int approachBlocks = countApproachBlocks(from, -stepX, -stepZ);
         double requiredReach = Math.max(0.0, distanceBlocks - PLAYER_WIDTH_MARGIN);
@@ -137,6 +140,18 @@ public final class ParkourJumpPlanner {
             }
         }
         return true;
+    }
+
+    private boolean hasActualGap(PathPosition from, int stepX, int stepZ, int distanceBlocks) {
+        int floorY = from.flooredY() - 1;
+        for (int step = 1; step < distanceBlocks; step++) {
+            int x = from.flooredX() + stepX * step;
+            int z = from.flooredZ() + stepZ * step;
+            if (isPassable(x, floorY, z)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasColumnHeadroom(int x, int y, int z) {

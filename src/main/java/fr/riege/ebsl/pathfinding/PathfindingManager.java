@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.pathfinding.goal.Goal;
@@ -170,13 +171,15 @@ public final class PathfindingManager {
         return INSTANCE.runtime.state.isNavigating();
     }
 
+    public static Node.MoveType getCurrentMoveType() {
+        return INSTANCE.runtime.executor.getCurrentMoveType();
+    }
+
     public static boolean isWalkSneakLatched() {
-        INSTANCE.runtime.walkOptions.setSneakLatched(INSTANCE.runtime.executor.isSneakLatched());
-        return INSTANCE.runtime.walkOptions.isSneakLatched();
+        return INSTANCE.runtime.executor.isSneakLatched();
     }
 
     public static void setWalkSneakLatched(boolean walkSneakLatched) {
-        INSTANCE.runtime.walkOptions.setSneakLatched(walkSneakLatched);
         INSTANCE.runtime.executor.setSneakLatched(walkSneakLatched);
     }
 }

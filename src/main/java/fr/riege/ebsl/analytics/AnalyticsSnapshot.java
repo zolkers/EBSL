@@ -1,6 +1,6 @@
 package fr.riege.ebsl.analytics;
 
-import fr.riege.ebsl.botting.module.BotModule;
+import fr.riege.ebsl.botting.module.PathfinderModule;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 
@@ -10,7 +10,7 @@ public record AnalyticsSnapshot(
     int jumpHeight,
     boolean visualizerEnabled
 ) {
-    public static AnalyticsSnapshot capture(BotModule selectedModule) {
+    public static AnalyticsSnapshot capture(PathfinderModule selectedModule) {
         return new AnalyticsSnapshot(
             PathfindingManager.isNavigating() ? "navigating" : "idle",
             selectedModule != null ? selectedModule.displayName() : "none",

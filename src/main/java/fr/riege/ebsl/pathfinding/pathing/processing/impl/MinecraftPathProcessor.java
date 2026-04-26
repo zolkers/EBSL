@@ -10,7 +10,10 @@ import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 /*
@@ -102,6 +105,14 @@ public final class MinecraftPathProcessor implements NodeProcessor {
             return false;
         }
         if (isParkourOffset(dx, dz) && !isValidParkourMove(provider, env, prev, pos, prevPoint, currentPoint)) {
+            return false;
+        }
+
+        // Stair orientation check: a stair can only be entered from the open (low) side.
+        // Approaching from the closed (high) side hits a full-height wall — Minecraft
+        // physically blocks this even though the target position is "traversable".
+        // Only applies for non-descending moves (dy >= -0.5); landing on top is always fine.
+        if (dy >= -0.5 && isApproachBlockedByStair(level, pos.flooredX(), pos.flooredY(), pos.flooredZ(), dx, dz)) {
             return false;
         }
 
@@ -399,6 +410,23 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         return level.getBlockState(headroom)
             .getCollisionShape(level, headroom, CollisionContext.empty())
             .isEmpty();
+    }
+
+    private boolean isApproachBlockedByStair(Level level, int cx, int cy, int cz, int dx, int dz) {
+        var floorState = checker != null
+            ? checker.getState(cx, cy - 1, cz)
+            : level.getBlockState(new BlockPos(cx, cy - 1, cz));
+        if (!(floorState.getBlock() instanceof StairBlock)) {
+            return false;
+        }
+        Direction facing = floorState.getValue(StairBlock.FACING);
+        boolean bottomHalf = floorState.getValue(StairBlock.HALF) == Half.BOTTOM;
+        // For a BOTTOM stair the high step is in the 'facing' direction.
+        // The approach is blocked when the movement vector has a negative component
+        // along 'facing' (approaching from the high side).
+        // For a TOP stair the high step is in the opposite direction, so the sign flips.
+        int dot = dx * facing.getStepX() + dz * facing.getStepZ();
+        return bottomHalf ? dot < 0 : dot > 0;
     }
 
     private static boolean isParkourOffset(int dx, int dz) {

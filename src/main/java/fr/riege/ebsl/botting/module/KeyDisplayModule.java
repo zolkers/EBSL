@@ -1,5 +1,8 @@
 package fr.riege.ebsl.botting.module;
 
+import fr.riege.ebsl.event.EventBus;
+import fr.riege.ebsl.event.Subscription;
+import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.ColorSetting;
 import fr.riege.ebsl.settings.EnumSetting;
@@ -9,7 +12,7 @@ import imgui.ImDrawList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 
-public final class KeyDisplayModule extends Settingable implements BotModule {
+public final class KeyDisplayModule extends Settingable implements PathfinderModule {
     public static final KeyDisplayModule INSTANCE = new KeyDisplayModule();
 
     private final BooleanSetting enabledSetting = registerSetting(
@@ -21,17 +24,37 @@ public final class KeyDisplayModule extends Settingable implements BotModule {
     private final ColorSetting releasedColorSetting = registerSetting(
         new ColorSetting("released_color", "Released color", 0xCC131A24));
 
+    private Subscription renderSubscription;
+    private EventBus bus;
+
     private KeyDisplayModule() {}
 
     @Override public String id() { return "key_display"; }
     @Override public String displayName() { return "Key Display"; }
     @Override public String description() { return "Shows which movement keys the bot is pressing over the game viewport."; }
-    @Override public BotModuleCategory category() { return BotModuleCategory.UTILITY; }
+    @Override public PathfinderModuleCategory category() { return PathfinderModuleCategory.RENDER; }
     @Override public boolean isEnabled() { return enabledSetting.value(); }
     @Override public void setEnabled(boolean enabled) { enabledSetting.setValue(enabled); }
 
-    public void renderGameOverlay(ImDrawList dl, UiRect viewport) {
-        if (!isEnabled()) return;
+    @Override
+    public void onEnable(EventBus eventBus) {
+        this.bus = eventBus;
+        renderSubscription = eventBus.subscribe(RenderGameViewportEvent.class, this::onRenderGameViewport);
+    }
+
+    @Override
+    public void onDisable() {
+        if (renderSubscription != null && bus != null) {
+            bus.unsubscribe(renderSubscription);
+            renderSubscription = null;
+        }
+    }
+
+    private void onRenderGameViewport(RenderGameViewportEvent event) {
+        render(event.getDrawList(), event.getViewport());
+    }
+
+    private void render(ImDrawList dl, UiRect viewport) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         Options opts = mc.options;
@@ -75,15 +98,15 @@ public final class KeyDisplayModule extends Settingable implements BotModule {
 
     private float anchoredX(UiRect vp, float groupW, float pad) {
         return switch (anchorSetting.value()) {
-            case TOP_LEFT, BOTTOM_LEFT   -> vp.x() + pad;
+            case TOP_LEFT, BOTTOM_LEFT     -> vp.x() + pad;
             case TOP_CENTER, BOTTOM_CENTER -> vp.x() + (vp.width() - groupW) * 0.5f;
-            case TOP_RIGHT, BOTTOM_RIGHT  -> vp.right() - groupW - pad;
+            case TOP_RIGHT, BOTTOM_RIGHT   -> vp.right() - groupW - pad;
         };
     }
 
     private float anchoredY(UiRect vp, float groupH, float pad) {
         return switch (anchorSetting.value()) {
-            case TOP_LEFT, TOP_CENTER, TOP_RIGHT       -> vp.y() + pad;
+            case TOP_LEFT, TOP_CENTER, TOP_RIGHT          -> vp.y() + pad;
             case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> vp.bottom() - groupH - pad;
         };
     }

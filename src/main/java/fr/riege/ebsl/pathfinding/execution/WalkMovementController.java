@@ -17,13 +17,17 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 final class WalkMovementController {
-    private final List<Node> path;
+    private List<Node> path;
     private Level checkerLevel;
     private WalkabilityChecker checker;
     private static final double SLIME_ASCENT_JUMP_TRIGGER_DIST = 1.7;
     private static final double WATER_ENTRY_SURFACE_DROP = 0.6;
 
     WalkMovementController(List<Node> path) {
+        this.path = path;
+    }
+
+    void setPath(List<Node> path) {
         this.path = path;
     }
 

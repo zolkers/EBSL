@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import fr.riege.ebsl.EbslMod;
-import fr.riege.ebsl.botting.module.BotModule;
+import fr.riege.ebsl.botting.module.PathfinderModule;
 import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 import fr.riege.ebsl.settings.Setting;
 import net.fabricmc.loader.api.FabricLoader;
@@ -30,7 +30,7 @@ public final class BotModuleSettingsStore {
             if (root == null) {
                 return;
             }
-            for (BotModule module : BotModuleRegistry.modules()) {
+            for (PathfinderModule module : BotModuleRegistry.modules()) {
                 JsonObject moduleJson = root.has(module.id()) && root.get(module.id()).isJsonObject()
                     ? root.getAsJsonObject(module.id())
                     : null;
@@ -51,7 +51,7 @@ public final class BotModuleSettingsStore {
 
     public static void save() {
         JsonObject root = new JsonObject();
-        for (BotModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : BotModuleRegistry.modules()) {
             JsonObject moduleJson = new JsonObject();
             for (Setting<?> setting : module.settings()) {
                 moduleJson.add(setting.id(), setting.toJson());
