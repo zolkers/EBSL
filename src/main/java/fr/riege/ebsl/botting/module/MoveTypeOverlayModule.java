@@ -64,26 +64,12 @@ public final class MoveTypeOverlayModule extends Settingable implements Pathfind
         float boxW  = label.length() * 6.5f + pad * 2;
         float boxH  = textH + pad * 2;
 
-        float x0 = anchoredX(viewport, boxW, pad);
-        float y0 = anchoredY(viewport, boxH, pad);
+        float x0 = anchorSetting.value().x(viewport, boxW, pad);
+        float y0 = anchorSetting.value().y(viewport, boxH, pad);
 
         dl.addRectFilled(x0, y0, x0 + boxW, y0 + boxH, 0xCC101820, 4.0f);
         dl.addRect      (x0, y0, x0 + boxW, y0 + boxH, 0xFF2E3C4E, 4.0f, 0, 1.0f);
         dl.addText(x0 + pad, y0 + pad, 0xFFDDEEFF, label);
     }
 
-    private float anchoredX(UiRect vp, float w, float pad) {
-        return switch (anchorSetting.value()) {
-            case TOP_LEFT, BOTTOM_LEFT     -> vp.x() + pad;
-            case TOP_CENTER, BOTTOM_CENTER -> vp.x() + (vp.width() - w) * 0.5f;
-            case TOP_RIGHT, BOTTOM_RIGHT   -> vp.right() - w - pad;
-        };
-    }
-
-    private float anchoredY(UiRect vp, float h, float pad) {
-        return switch (anchorSetting.value()) {
-            case TOP_LEFT, TOP_CENTER, TOP_RIGHT          -> vp.y() + pad;
-            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> vp.bottom() - h - pad;
-        };
-    }
 }

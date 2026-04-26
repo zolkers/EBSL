@@ -75,8 +75,8 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
         float groupH = cell + gap + cell + gap + spaceH;
         float pad    = 12.0f;
 
-        float x0 = anchoredX(viewport, groupW, pad);
-        float y0 = anchoredY(viewport, groupH, pad);
+        float x0 = anchorSetting.value().x(viewport, groupW, pad);
+        float y0 = anchorSetting.value().y(viewport, groupH, pad);
 
         int pressedColor  = pressedColorSetting.value();
         int releasedColor = releasedColorSetting.value();
@@ -94,21 +94,6 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
         float row3Y = row2Y + cell + gap;
         drawKey(dl, x0,                row3Y, spaceW, spaceH, jump,  -1, pressedColor, releasedColor);
         drawKey(dl, x0 + spaceW + gap, row3Y, sneakW, spaceH, sneak,  1, pressedColor, releasedColor);
-    }
-
-    private float anchoredX(UiRect vp, float groupW, float pad) {
-        return switch (anchorSetting.value()) {
-            case TOP_LEFT, BOTTOM_LEFT     -> vp.x() + pad;
-            case TOP_CENTER, BOTTOM_CENTER -> vp.x() + (vp.width() - groupW) * 0.5f;
-            case TOP_RIGHT, BOTTOM_RIGHT   -> vp.right() - groupW - pad;
-        };
-    }
-
-    private float anchoredY(UiRect vp, float groupH, float pad) {
-        return switch (anchorSetting.value()) {
-            case TOP_LEFT, TOP_CENTER, TOP_RIGHT          -> vp.y() + pad;
-            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> vp.bottom() - groupH - pad;
-        };
     }
 
     // dir: 0=up 1=down 2=left 3=right -1=none (space bar)

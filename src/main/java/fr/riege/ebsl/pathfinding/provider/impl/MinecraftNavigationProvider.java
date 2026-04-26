@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding.provider.impl;
 
+import fr.riege.ebsl.botting.module.BlockBlacklist;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
@@ -121,6 +122,7 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
 
     private static boolean canWalkThrough(BlockState state) {
         if (state.isAir()) return true;
+        if (BlockBlacklist.isBlacklisted(state)) return false;
 
         // Dangerous but physically walkable (treat as blocked)
         if (isDangerous(state)) return false;
@@ -159,6 +161,7 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOn(Level level, BlockState state, BlockPos pos) {
+        if (BlockBlacklist.isBlacklisted(state)) return false;
         Block block = state.getBlock();
         if (state.isCollisionShapeFullBlock(level, pos)
                 && block != Blocks.MAGMA_BLOCK
@@ -175,8 +178,11 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     }
 
     private static boolean canWalkOnCached(WalkabilityChecker checker, BlockState state, int x, int y, int z) {
+        if (BlockBlacklist.isBlacklisted(state)) return false;
         Block block = state.getBlock();
-        if (checker.isFullWallBlock(x, y, z)
+        // isFullWall (solid + topY >= 0.95) rather than isFullWallBlock (solid + canOcclude),
+        // so non-occluding full-collision blocks like barriers are correctly treated as floors.
+        if (checker.isFullWall(x, y, z)
                 && block != Blocks.MAGMA_BLOCK
                 && block != Blocks.BUBBLE_COLUMN
                 && block != Blocks.HONEY_BLOCK) {
