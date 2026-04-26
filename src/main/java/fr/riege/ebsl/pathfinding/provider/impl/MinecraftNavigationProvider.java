@@ -105,7 +105,12 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         // Aether addition: block dangerous positions
         boolean isDangerous   = isDangerous(feetState) || isDangerous(headState);
 
-        final boolean traversable = canPassFeet && canPassHead && !isDangerous;
+        // A position whose only floor is a blacklisted block must be rejected entirely,
+        // not just marked floorless — otherwise isValid accepts it via prevPoint.hasFloor().
+        boolean floorBlacklisted = !lowPartialFeet && !isLiquid
+                && BlockBlacklist.isBlacklisted(belowState);
+
+        final boolean traversable = canPassFeet && canPassHead && !isDangerous && !floorBlacklisted;
         final boolean floor       = hasFloor;
         final double  fl          = floorLevel;
         final boolean climb       = isClimbable;

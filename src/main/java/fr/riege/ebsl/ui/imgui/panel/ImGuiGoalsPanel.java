@@ -6,10 +6,12 @@ import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.goal.GoalParameter;
 import fr.riege.ebsl.command.goal.GoalUiDefinition;
+import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.state.EbslUiState;
 import imgui.ImGui;
+import imgui.flag.ImGuiCol;
 import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
 
@@ -74,6 +76,13 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
         if (ImGui.button("Go", 76.0f, 24.0f)) {
             startSelectedGoal();
         }
+        ImGui.pushStyleColor(ImGuiCol.Button,        0xFF8A2630);
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0xFFA8323E);
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive,  0xFFC23B49);
+        if (ImGui.button("Stop##goal-stop", -1.0f, 24.0f)) {
+            PathfindingManager.stop();
+        }
+        ImGui.popStyleColor(3);
     }
 
     private void fillDefaults(GoalUiDefinition definition) {
