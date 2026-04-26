@@ -18,7 +18,7 @@ public final class FallMovement extends WalkMovement {
         int x = context.targetX();
         int y = context.targetY();
         int z = context.targetZ();
-        if (!context.checker().safeToFall(fromX, fromY, fromZ, x, y, z)) {
+        if (!context.checker().safeToFall(fromY, x, y, z)) {
             return MovementValidationResult.invalid("fall segment became unsafe at " + x + ", " + y + ", " + z);
         }
         NavigationPoint targetPoint = new MinecraftNavigationProvider(context.checker())
