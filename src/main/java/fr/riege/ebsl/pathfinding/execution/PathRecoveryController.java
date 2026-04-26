@@ -19,7 +19,7 @@ final class PathRecoveryController {
         backupTicksLeft = 0;
     }
 
-    RecoveryDecision update(PathExecutor executor, Minecraft mc, Vec3 playerPos,
+    RecoveryDecision update(Minecraft mc, Vec3 playerPos,
                             PathProgressSnapshot progress, boolean allowReplan,
                             boolean cooldownPassed, int jumpCooldown) {
         if (mc.player == null) {
@@ -50,9 +50,8 @@ final class PathRecoveryController {
         boolean drifted = progress.drifted(PathExecutor.DRIFT_DISTANCE);
         if (shouldBackup(mc, progress, drifted, inWater)) {
             backupTicksLeft = BACKUP_TICKS;
-            executor.noteRecoveryMovement(playerPos);
             applyBackupTick(mc);
-            return RecoveryDecision.tickHandled();
+            return RecoveryDecision.tickHandledWithProgress();
         }
 
         if (shouldJumpForRecovery(mc, progress, drifted, jumpCooldown)) {
@@ -123,21 +122,25 @@ final class PathRecoveryController {
         return Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     }
 
-    record RecoveryDecision(Action action, String reason) {
+    record RecoveryDecision(Action action, String reason, boolean noteProgress) {
         static RecoveryDecision continueMovement() {
-            return new RecoveryDecision(Action.CONTINUE_MOVEMENT, "");
+            return new RecoveryDecision(Action.CONTINUE_MOVEMENT, "", false);
         }
 
         static RecoveryDecision tickHandled() {
-            return new RecoveryDecision(Action.TICK_HANDLED, "");
+            return new RecoveryDecision(Action.TICK_HANDLED, "", false);
+        }
+
+        static RecoveryDecision tickHandledWithProgress() {
+            return new RecoveryDecision(Action.TICK_HANDLED, "", true);
         }
 
         static RecoveryDecision recoveryJump() {
-            return new RecoveryDecision(Action.RECOVERY_JUMP, "");
+            return new RecoveryDecision(Action.RECOVERY_JUMP, "", false);
         }
 
         static RecoveryDecision replanFromPlayer(String reason) {
-            return new RecoveryDecision(Action.REPLAN_FROM_PLAYER, reason);
+            return new RecoveryDecision(Action.REPLAN_FROM_PLAYER, reason, false);
         }
     }
 

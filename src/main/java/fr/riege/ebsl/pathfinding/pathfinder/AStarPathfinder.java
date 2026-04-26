@@ -113,6 +113,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
             candidate.parent = currentNode;
             candidate.gCost = gCost;
+            candidate.moveType = inferMoveType(offset);
             double fCost   = candidate.fCost();
             candidate.cachedFCost = fCost;
             double heapKey = calculateHeapKey(candidate, fCost);

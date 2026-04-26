@@ -95,7 +95,7 @@ final class PathTracker {
         this.severeOffPathSince = 0;
     }
 
-    Optional<PathRepairRequest> createRepairRequest(int segmentIndex, String reason) {
+    Optional<PathRepairRequest> createRepairRequest(int segmentIndex, String reason, int goalX, int goalY, int goalZ) {
         if (path.size() < 2) {
             return Optional.empty();
         }
@@ -105,7 +105,7 @@ final class PathTracker {
         if (remaining.size() < 2) {
             return Optional.empty();
         }
-        return Optional.of(new PathRepairRequest(joinNode, remaining, reason));
+        return Optional.of(new PathRepairRequest(joinNode, remaining, reason, goalX, goalY, goalZ));
     }
 
     double noteMovementProgress(Vec3 playerPos, double stuckDistanceThreshold) {

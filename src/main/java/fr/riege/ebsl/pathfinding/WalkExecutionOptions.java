@@ -1,9 +1,9 @@
 package fr.riege.ebsl.pathfinding;
 
-import fr.riege.ebsl.pathfinding.execution.PathExecutor;
+import fr.riege.ebsl.pathfinding.execution.ExecutionOptions;
 
 final class WalkExecutionOptions {
-    private static final double DEFAULT_PRECISE_GOAL_TOLERANCE = 0.5;
+    private static final double DEFAULT_PRECISE_GOAL_TOLERANCE = ExecutionOptions.DEFAULT_TOLERANCE;
 
     private Runnable onFinished;
     private Runnable onFailed;
@@ -44,15 +44,10 @@ final class WalkExecutionOptions {
         stickySneakDistance = exactGoalCentering ? 5.0 : -1.0;
     }
 
-    void applyTo(PathExecutor executor) {
-        executor.setAllowRotation(allowRotation);
-        executor.setAllowReplan(allowReplan);
-        executor.setAllowJumps(allowJumps);
-        executor.setExactGoalCentering(exactGoalCentering);
-        executor.setStickySneakDistance(stickySneakDistance);
-        executor.setSneakLatched(sneakLatched);
-        executor.setGoalCenterOffsets(goalCenterX, goalCenterZ);
-        executor.setPreciseGoalTolerance(preciseGoalTolerance);
+    ExecutionOptions snapshot() {
+        return new ExecutionOptions(
+            allowReplan, allowJumps, allowRotation, exactGoalCentering,
+            stickySneakDistance, sneakLatched, goalCenterX, goalCenterZ, preciseGoalTolerance);
     }
 
     boolean isPreciseExecution() {
@@ -65,14 +60,6 @@ final class WalkExecutionOptions {
 
     Runnable onFailed() {
         return onFailed;
-    }
-
-    boolean isSneakLatched() {
-        return sneakLatched;
-    }
-
-    void setSneakLatched(boolean sneakLatched) {
-        this.sneakLatched = sneakLatched;
     }
 
     void setGoalCenterOffsets(double goalCenterX, double goalCenterZ) {

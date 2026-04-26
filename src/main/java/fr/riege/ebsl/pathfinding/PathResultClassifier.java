@@ -23,13 +23,16 @@ final class PathResultClassifier {
 
     static boolean isPartialWalkResult(PathfinderResult result, Collection<PathPosition> positions,
                                        int requestedX, int requestedY, int requestedZ) {
-        if (result == null || result.getPathState() != PathState.FOUND) {
+        if (result == null || positions == null || positions.isEmpty()) {
             return true;
         }
-        if (positions == null || positions.isEmpty()) {
+        PathState state = result.getPathState();
+        // Hard failures are always partial (no usable end position)
+        if (state == PathState.ABORTED || state == PathState.FAILED) {
             return true;
         }
-
+        // For FOUND and all fallback states, check whether the path end is close enough to the target.
+        // A FALLBACK path that ends within 1 block of the target is effectively complete.
         PathPosition last = positions instanceof List<?>
             ? ((List<PathPosition>) positions).getLast()
             : new ArrayList<>(positions).getLast();

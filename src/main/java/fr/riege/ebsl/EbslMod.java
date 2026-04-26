@@ -35,7 +35,7 @@ public final class EbslMod implements ClientModInitializer {
     public void onInitializeClient() {
         eventBus = new EventBusImpl();
         PathfinderSettingsStore.load();
-        BotModuleRegistry.bootstrap();
+        BotModuleRegistry.bootstrap(eventBus);
         EbslKeybinds.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->

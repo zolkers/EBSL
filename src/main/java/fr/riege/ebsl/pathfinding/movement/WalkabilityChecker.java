@@ -1,6 +1,6 @@
 package fr.riege.ebsl.pathfinding.movement;
 
-import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
+import fr.riege.ebsl.botting.module.BlockBlacklist;
 import fr.riege.ebsl.pathfinding.util.BlockPosUtil;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
@@ -352,7 +352,7 @@ public final class WalkabilityChecker {
     }
 
     private static boolean isBlacklisted(BlockState state) {
-        return PathfinderBlockBlacklistModule.isBlacklisted(state);
+        return BlockBlacklist.isBlacklisted(state);
     }
 
 }
