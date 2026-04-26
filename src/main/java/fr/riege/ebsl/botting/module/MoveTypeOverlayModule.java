@@ -5,12 +5,12 @@ import fr.riege.ebsl.event.Subscription;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
+import net.minecraft.client.Minecraft;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.EnumSetting;
 import fr.riege.ebsl.settings.Settingable;
 import fr.riege.ebsl.ui.layout.UiRect;
 import imgui.ImDrawList;
-import net.minecraft.client.Minecraft;
 
 public final class MoveTypeOverlayModule extends Settingable implements PathfinderModule {
     public static final MoveTypeOverlayModule INSTANCE = new MoveTypeOverlayModule();
@@ -59,20 +59,17 @@ public final class MoveTypeOverlayModule extends Settingable implements Pathfind
 
     private void render(ImDrawList dl, UiRect viewport, Node.MoveType moveType) {
         String label = moveType.name();
-        float pad  = 8.0f;
+        float pad   = 12.0f;
         float textH = 10.0f;
         float boxW  = label.length() * 6.5f + pad * 2;
         float boxH  = textH + pad * 2;
 
-        float x0 = anchoredX(viewport, boxW, 12.0f);
-        float y0 = anchoredY(viewport, boxH, 12.0f);
+        float x0 = anchoredX(viewport, boxW, pad);
+        float y0 = anchoredY(viewport, boxH, pad);
 
-        int bg     = moveTypeColor(moveType);
-        int border = blendBorderFrom(bg);
-
-        dl.addRectFilled(x0, y0, x0 + boxW, y0 + boxH, bg, 4.0f);
-        dl.addRect      (x0, y0, x0 + boxW, y0 + boxH, border, 4.0f, 0, 1.0f);
-        dl.addText(x0 + pad, y0 + pad, 0xFFEEF4FF, label);
+        dl.addRectFilled(x0, y0, x0 + boxW, y0 + boxH, 0xCC101820, 4.0f);
+        dl.addRect      (x0, y0, x0 + boxW, y0 + boxH, 0xFF2E3C4E, 4.0f, 0, 1.0f);
+        dl.addText(x0 + pad, y0 + pad, 0xFFDDEEFF, label);
     }
 
     private float anchoredX(UiRect vp, float w, float pad) {
@@ -88,25 +85,5 @@ public final class MoveTypeOverlayModule extends Settingable implements Pathfind
             case TOP_LEFT, TOP_CENTER, TOP_RIGHT          -> vp.y() + pad;
             case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> vp.bottom() - h - pad;
         };
-    }
-
-    private static int moveTypeColor(Node.MoveType type) {
-        return switch (type) {
-            case WALK, WALK_DIAGONAL -> 0xCC0E1C2E;
-            case STEP_UP             -> 0xCC1A3320;
-            case JUMP                -> 0xCC1A2A00;
-            case PARKOUR             -> 0xCC2D1A00;
-            case FALL                -> 0xCC2A1A00;
-            case SWIM                -> 0xCC00202E;
-            case CLIMB               -> 0xCC1A1A2E;
-            case FLY                 -> 0xCC1A001A;
-        };
-    }
-
-    private static int blendBorderFrom(int bg) {
-        int r = Math.min(255, ((bg >> 16) & 0xFF) + 60);
-        int g = Math.min(255, ((bg >>  8) & 0xFF) + 60);
-        int b = Math.min(255,  (bg        & 0xFF) + 60);
-        return (0xFF << 24) | (r << 16) | (g << 8) | b;
     }
 }
