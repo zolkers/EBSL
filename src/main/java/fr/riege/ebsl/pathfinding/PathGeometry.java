@@ -2,6 +2,7 @@ package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.pathing.heuristic.IHeuristicStrategy;
 import fr.riege.ebsl.pathfinding.pathing.heuristic.LinearHeuristicStrategy;
+import fr.riege.ebsl.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.ClipContext;
@@ -78,7 +79,7 @@ final class PathGeometry {
         if (dy < 0) {
             return Node.MoveType.FALL;
         }
-        if ((dx == 0 || dz == 0) && dx + dz > 1) {
+        if (ParkourGeometry.isCandidateOffset(to.flooredX() - from.flooredX(), to.flooredZ() - from.flooredZ())) {
             return Node.MoveType.PARKOUR;
         }
         if (dx + dz >= 2) {

@@ -149,6 +149,10 @@ public final class PathfindingManager {
         INSTANCE.walkService.startPathTest(mc, x, y, z);
     }
 
+    public static void startPathTestXZ(Minecraft mc, int x, int z) {
+        INSTANCE.walkService.startPathTestXZ(mc, x, z);
+    }
+
     public static void startGreenhouseWalk(Minecraft mc, Vec3 target, Runnable onFinished, boolean isFirst) {
         INSTANCE.walkService.startGreenhouseWalk(mc, target, onFinished, isFirst);
     }

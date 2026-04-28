@@ -2,6 +2,7 @@ package fr.riege.ebsl.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import fr.riege.ebsl.command.goal.GoalUiCatalog;
+import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.pathfinding.goal.GoalGetToBlock;
 import fr.riege.ebsl.pathfinding.goal.GoalNear;
@@ -26,10 +27,16 @@ public final class NavigationGoalCommands {
         register("offset", NavigationGoalCommands::buildOffsetCommand);
         register("precise", NavigationGoalCommands::buildPreciseCommand);
         register("noreplan", NavigationGoalCommands::buildNoReplanCommand);
+        registerCommandOnly("test", NavigationGoalCommands::buildTestCommand);
+        registerCommandOnly("testxz", NavigationGoalCommands::buildTestXzCommand);
     }
 
     private static void register(String id, java.util.function.Supplier<LiteralArgumentBuilder<FabricClientCommandSource>> command) {
         GoalRegistry.register(new SimpleGoalCommandDefinition(id, command, GoalUiCatalog.byId(id)));
+    }
+
+    private static void registerCommandOnly(String id, java.util.function.Supplier<LiteralArgumentBuilder<FabricClientCommandSource>> command) {
+        GoalRegistry.register(new SimpleGoalCommandDefinition(id, command));
     }
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> buildWalkCommand() {
@@ -140,6 +147,34 @@ public final class NavigationGoalCommands {
                     .mode(NavigationModeType.WALK)
                     .allowReplan(false)
                     .build())))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildTestCommand() {
+        return ClientCommandManager.literal("test")
+            .then(GoalCommandSupport.intArg("x")
+            .then(GoalCommandSupport.intArg("y")
+            .then(GoalCommandSupport.intArg("z")
+            .executes(ctx -> {
+                PathfindingManager.startPathTest(
+                    GoalCommandSupport.minecraft(),
+                    GoalCommandSupport.getInt(ctx, "x"),
+                    GoalCommandSupport.getInt(ctx, "y"),
+                    GoalCommandSupport.getInt(ctx, "z"));
+                return 1;
+            }))));
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> buildTestXzCommand() {
+        return ClientCommandManager.literal("testxz")
+            .then(GoalCommandSupport.intArg("x")
+            .then(GoalCommandSupport.intArg("z")
+            .executes(ctx -> {
+                PathfindingManager.startPathTestXZ(
+                    GoalCommandSupport.minecraft(),
+                    GoalCommandSupport.getInt(ctx, "x"),
+                    GoalCommandSupport.getInt(ctx, "z"));
+                return 1;
+            })));
     }
 
     private static int startBlock(com.mojang.brigadier.context.CommandContext<FabricClientCommandSource> ctx,

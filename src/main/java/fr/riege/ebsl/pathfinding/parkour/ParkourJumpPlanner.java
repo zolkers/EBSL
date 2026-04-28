@@ -38,15 +38,13 @@ public final class ParkourJumpPlanner {
                                 NavigationPoint toPoint) {
         int dx = to.flooredX() - from.flooredX();
         int dz = to.flooredZ() - from.flooredZ();
-        int absDx = Math.abs(dx);
-        int absDz = Math.abs(dz);
-        int distanceBlocks = absDx + absDz;
+        int distanceBlocks = ParkourGeometry.distanceBlocks(dx, dz);
+        int gapBlocks = ParkourGeometry.gapBlocks(dx, dz);
+        double verticalDelta = toPoint.getFloorLevel() - fromPoint.getFloorLevel();
 
-        if ((absDx == 0) == (absDz == 0)) {
-            return ParkourJumpPlan.rejected("parkour must be cardinal");
-        }
-        if (distanceBlocks < 2 || distanceBlocks > 4) {
-            return ParkourJumpPlan.rejected("unsupported parkour distance");
+        ParkourJumpRules.RuleResult rule = ParkourJumpRules.evaluate(dx, dz, verticalDelta);
+        if (!rule.accepted()) {
+            return ParkourJumpPlan.rejected(rule.reason());
         }
         if (!hasJumpSupport(fromPoint) || !hasJumpSupport(toPoint)) {
             return ParkourJumpPlan.rejected("missing takeoff or landing support");
@@ -57,10 +55,6 @@ public final class ParkourJumpPlanner {
 
         int stepX = Integer.signum(dx);
         int stepZ = Integer.signum(dz);
-        double verticalDelta = toPoint.getFloorLevel() - fromPoint.getFloorLevel();
-        if (verticalDelta > 0.75 && distanceBlocks >= 3) {
-            return ParkourJumpPlan.rejected("upward long parkour is too risky");
-        }
         if (!hasColumnHeadroom(from.flooredX(), from.flooredY(), from.flooredZ())
             || !hasColumnHeadroom(to.flooredX(), to.flooredY(), to.flooredZ())) {
             return ParkourJumpPlan.rejected("missing takeoff or landing headroom");
@@ -68,14 +62,21 @@ public final class ParkourJumpPlanner {
         if (!hasArcClearance(from, to, stepX, stepZ, distanceBlocks, verticalDelta)) {
             return ParkourJumpPlan.rejected("jump arc is blocked");
         }
-        if (!hasActualGap(from, stepX, stepZ, distanceBlocks)) {
+        if (!hasActualGap(from, to, distanceBlocks)) {
             return ParkourJumpPlan.rejected("no gap — all intermediates are walkable");
         }
 
         int approachBlocks = countApproachBlocks(from, -stepX, -stepZ);
-        double requiredReach = Math.max(0.0, distanceBlocks - PLAYER_WIDTH_MARGIN);
-        double estimatedReach = estimateReach(approachBlocks, verticalDelta);
-        boolean feasible = estimatedReach + SAFETY_MARGIN >= requiredReach;
+        double horizontalSpan = Math.sqrt(
+            Math.pow(to.centeredX() - from.centeredX(), 2.0)
+                + Math.pow(to.centeredZ() - from.centeredZ(), 2.0));
+        double requiredReach = Math.max(0.0, horizontalSpan - PLAYER_WIDTH_MARGIN);
+        double estimatedReach = estimateReach(approachBlocks, verticalDelta, gapBlocks);
+        if (rule.forceReach()) {
+            estimatedReach = Math.max(estimatedReach, requiredReach);
+        }
+        boolean feasible = (!rule.requiresApproach() || approachBlocks > 0)
+            && estimatedReach + SAFETY_MARGIN >= requiredReach;
         return new ParkourJumpPlan(
             feasible,
             approachBlocks,
@@ -83,7 +84,7 @@ public final class ParkourJumpPlanner {
             requiredReach,
             estimatedReach,
             verticalDelta,
-            feasible ? "ok" : "not enough momentum");
+            feasible ? "ok" : (rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum"));
     }
 
     private int countApproachBlocks(PathPosition from, int backX, int backZ) {
@@ -102,12 +103,15 @@ public final class ParkourJumpPlanner {
         return approach;
     }
 
-    private double estimateReach(int approachBlocks, double verticalDelta) {
+    private double estimateReach(int approachBlocks, double verticalDelta, int gapBlocks) {
         double reach = BASE_STANDSTILL_REACH
             + Math.min(MAX_APPROACH_SCAN, approachBlocks) * APPROACH_BLOCK_BONUS;
         reach = Math.min(MAX_SPRINT_REACH, reach);
         if (verticalDelta > 0.0) {
-            reach -= verticalDelta * UPWARD_REACH_PENALTY;
+            double upwardPenalty = gapBlocks <= 2
+                ? UPWARD_REACH_PENALTY * 0.05
+                : UPWARD_REACH_PENALTY;
+            reach -= verticalDelta * upwardPenalty;
         } else if (verticalDelta < 0.0) {
             reach += Math.min(0.45, -verticalDelta * DOWNWARD_REACH_BONUS);
         }
@@ -118,13 +122,16 @@ public final class ParkourJumpPlanner {
                                     int stepX, int stepZ,
                                     int distanceBlocks,
                                     double verticalDelta) {
-        int checks = Math.max(2, distanceBlocks * 2);
+        double dx = to.centeredX() - from.centeredX();
+        double dz = to.centeredZ() - from.centeredZ();
+        double horizontalLength = Math.sqrt(dx * dx + dz * dz);
+        int checks = Math.max(2, (int) Math.ceil(horizontalLength * 2.0));
         for (int i = 1; i < checks; i++) {
             double t = (double) i / checks;
             int x = (int) Math.floor(from.centeredX() + (to.centeredX() - from.centeredX()) * t);
             int z = (int) Math.floor(from.centeredZ() + (to.centeredZ() - from.centeredZ()) * t);
             int baseY = from.flooredY();
-            if (!hasColumnHeadroom(x, baseY, z)) {
+            if (!isLandingColumn(to, x, z) && !hasColumnHeadroom(x, baseY, z)) {
                 return false;
             }
             if (verticalDelta > 0.25 && !isPassable(x, baseY + 2, z)) {
@@ -132,9 +139,13 @@ public final class ParkourJumpPlanner {
             }
         }
 
-        for (int step = 1; step < distanceBlocks; step++) {
-            int x = from.flooredX() + stepX * step;
-            int z = from.flooredZ() + stepZ * step;
+        for (int i = 1; i < checks; i++) {
+            double t = (double) i / checks;
+            int x = (int) Math.floor(from.centeredX() + (to.centeredX() - from.centeredX()) * t);
+            int z = (int) Math.floor(from.centeredZ() + (to.centeredZ() - from.centeredZ()) * t);
+            if (isLandingColumn(to, x, z)) {
+                continue;
+            }
             if (!isPassable(x, from.flooredY(), z) || !isPassable(x, from.flooredY() + 1, z)) {
                 return false;
             }
@@ -142,11 +153,17 @@ public final class ParkourJumpPlanner {
         return true;
     }
 
-    private boolean hasActualGap(PathPosition from, int stepX, int stepZ, int distanceBlocks) {
+    private static boolean isLandingColumn(PathPosition to, int x, int z) {
+        return x == to.flooredX() && z == to.flooredZ();
+    }
+
+    private boolean hasActualGap(PathPosition from, PathPosition to, int distanceBlocks) {
         int floorY = from.flooredY() - 1;
-        for (int step = 1; step < distanceBlocks; step++) {
-            int x = from.flooredX() + stepX * step;
-            int z = from.flooredZ() + stepZ * step;
+        int checks = Math.max(2, distanceBlocks * 2);
+        for (int step = 1; step < checks; step++) {
+            double t = (double) step / checks;
+            int x = (int) Math.floor(from.centeredX() + (to.centeredX() - from.centeredX()) * t);
+            int z = (int) Math.floor(from.centeredZ() + (to.centeredZ() - from.centeredZ()) * t);
             if (isPassable(x, floorY, z)) {
                 return true;
             }

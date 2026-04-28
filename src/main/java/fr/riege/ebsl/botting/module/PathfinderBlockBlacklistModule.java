@@ -67,6 +67,7 @@ public final class PathfinderBlockBlacklistModule extends Settingable implements
     }
 
     private void syncBlacklist() {
+        parsedBlockIds = parseBlockIds(blockIds.value());
         BlockBlacklist.update(isEnabled(), isEnabled() ? parsedBlockIds : Set.of());
     }
 
@@ -74,9 +75,26 @@ public final class PathfinderBlockBlacklistModule extends Settingable implements
         Set<Identifier> ids = new HashSet<>();
         if (raw == null || raw.isEmpty()) return ids;
         for (String entry : raw) {
-            Identifier id = Identifier.tryParse(entry.trim());
-            if (id != null) ids.add(id);
+            if (entry == null) continue;
+            for (String token : entry.split("[,;\\s]+")) {
+                Identifier id = parseBlockId(token);
+                if (id != null) ids.add(id);
+            }
         }
         return ids;
+    }
+
+    private static Identifier parseBlockId(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String normalized = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.startsWith("#")) {
+            normalized = normalized.substring(1);
+        }
+        if (!normalized.contains(":")) {
+            normalized = "minecraft:" + normalized;
+        }
+        return Identifier.tryParse(normalized);
     }
 }

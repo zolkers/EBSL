@@ -3,6 +3,7 @@ package fr.riege.ebsl.pathfinding.pathfinder;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.Node.MoveType;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.pathfinding.pathfinder.processing.EvaluationContextImpl;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
@@ -210,10 +211,10 @@ public final class AStarPathfinder extends AbstractPathfinder {
         int dx = Math.abs((int) offset.x);
         int dz = Math.abs((int) offset.z);
 
+        if (ParkourGeometry.isCandidateOffset((int) offset.x, (int) offset.z)) return MoveType.PARKOUR;
         if (dy > 0)           return MoveType.STEP_UP;
         if (dy < -1)          return MoveType.FALL;
         if (dy < 0)           return MoveType.FALL;
-        if ((dx == 0 || dz == 0) && dx + dz > 1) return MoveType.PARKOUR;
         if (dx + dz >= 2)     return MoveType.WALK_DIAGONAL;
         return MoveType.WALK;
     }

@@ -92,6 +92,17 @@ final class WalkNavigationService {
         thread.start();
     }
 
+    void startPathTestXZ(Minecraft mc, int x, int z) {
+        if (mc.player == null || mc.level == null) {
+            return;
+        }
+
+        WalkabilityChecker checker = new WalkabilityChecker(mc.level);
+        int preferredY = PathPipeline.resolveStartY(checker, mc.player.getX(), mc.player.getY(), mc.player.getZ());
+        int y = PathPipeline.resolveGoalYForXZ(checker, x, preferredY, z);
+        startPathTest(mc, x, y, z);
+    }
+
     void startGreenhouseWalk(Minecraft mc, Vec3 target, Runnable onFinished, boolean isFirst) {
         if (mc.player == null) {
             return;

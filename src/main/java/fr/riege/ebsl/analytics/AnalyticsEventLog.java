@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class AnalyticsEventLog {
-    private static final int MAX_EVENTS = 80;
+    private static final int MAX_EVENTS = 240;
     private static final List<AnalyticsEvent> EVENTS = new ArrayList<>();
 
     private AnalyticsEventLog() {

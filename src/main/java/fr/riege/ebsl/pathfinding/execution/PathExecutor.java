@@ -185,7 +185,9 @@ public final class PathExecutor {
             return;
         }
 
-        jumpCooldown = Math.max(0, jumpCooldown - 1);
+        if (mc.player.onGround() || mc.player.isInWater()) {
+            jumpCooldown = Math.max(0, jumpCooldown - 1);
+        }
 
         Vec3 playerPos = mc.player.position();
 

@@ -4,6 +4,8 @@ import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
+import fr.riege.ebsl.pathfinding.parkour.ParkourEvaluationTelemetry;
+import fr.riege.ebsl.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.pathfinding.pathing.processing.NodeProcessor;
@@ -419,8 +421,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     }
 
     private static boolean isParkourOffset(int dx, int dz) {
-        int distance = Math.abs(dx) + Math.abs(dz);
-        return distance > 1 && (dx == 0 || dz == 0);
+        return ParkourGeometry.isCandidateOffset(dx, dz);
     }
 
     private boolean isValidParkourMove(fr.riege.ebsl.pathfinding.provider.NavigationPointProvider provider,
@@ -430,7 +431,9 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                                        NavigationPoint fromPoint,
                                        NavigationPoint toPoint) {
         ParkourJumpPlanner planner = new ParkourJumpPlanner(checker, provider, env);
-        return planner.plan(from, to, fromPoint, toPoint).feasible();
+        var plan = planner.plan(from, to, fromPoint, toPoint);
+        ParkourEvaluationTelemetry.record(from, to, plan);
+        return plan.feasible();
     }
 
     private boolean isInsideSolidSpace(PathPosition pos) {

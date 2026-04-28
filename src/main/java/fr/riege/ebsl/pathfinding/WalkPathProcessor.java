@@ -5,6 +5,7 @@ import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
+import fr.riege.ebsl.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.world.level.block.state.BlockState;
@@ -79,14 +80,14 @@ final class WalkPathProcessor {
         if (isStairEntryRequiringJump(previous, current, checker)) {
             return Node.MoveType.JUMP;
         }
+        if (isParkourMove(previous, current, checker, dx, dz)) {
+            return Node.MoveType.PARKOUR;
+        }
         if (dy > PathfinderSettings.instance().partialAscentThreshold.value()) {
             return Node.MoveType.STEP_UP;
         }
         if (dy < PathfinderSettings.instance().descentThreshold.value()) {
             return Node.MoveType.FALL;
-        }
-        if (isParkourMove(previous, current, checker, dx, dz)) {
-            return Node.MoveType.PARKOUR;
         }
         if (dx + dz >= 2) {
             return Node.MoveType.WALK_DIAGONAL;
@@ -107,18 +108,22 @@ final class WalkPathProcessor {
 
     private static boolean isParkourMove(PathPosition previous, PathPosition current,
                                          WalkabilityChecker checker, int absDx, int absDz) {
-        int distance = absDx + absDz;
-        if (distance < 2 || distance > 4 || (absDx != 0 && absDz != 0)) {
+        if (!ParkourGeometry.isCandidateOffset(
+            current.flooredX() - previous.flooredX(),
+            current.flooredZ() - previous.flooredZ())) {
             return false;
         }
-        int stepX = Integer.compare(current.flooredX(), previous.flooredX());
-        int stepZ = Integer.compare(current.flooredZ(), previous.flooredZ());
+        int distance = ParkourGeometry.distanceBlocks(
+            current.flooredX() - previous.flooredX(),
+            current.flooredZ() - previous.flooredZ());
         if (!hasWalkableSupport(checker, previous) || !hasWalkableSupport(checker, current)) {
             return false;
         }
-        for (int step = 1; step < distance; step++) {
-            int x = previous.flooredX() + stepX * step;
-            int z = previous.flooredZ() + stepZ * step;
+        int checks = Math.max(2, distance * 2);
+        for (int step = 1; step < checks; step++) {
+            double t = (double) step / checks;
+            int x = (int) Math.floor(previous.centeredX() + (current.centeredX() - previous.centeredX()) * t);
+            int z = (int) Math.floor(previous.centeredZ() + (current.centeredZ() - previous.centeredZ()) * t);
             if (!checker.isWalkable(x, previous.flooredY(), z)) {
                 return true;
             }

@@ -53,10 +53,38 @@ public final class NeighborStrategies {
 
     private static void addParkourOffsets(List<PathVector> offsets) {
         for (int distance = 2; distance <= 4; distance++) {
-            offsets.add(new PathVector( distance, 0,  0));
-            offsets.add(new PathVector(-distance, 0,  0));
-            offsets.add(new PathVector( 0, 0,  distance));
-            offsets.add(new PathVector( 0, 0, -distance));
+            addCardinalParkourOffset(offsets, distance, 0);
+            addCardinalParkourOffset(offsets, distance, 1);
+            addCardinalParkourOffset(offsets, distance, -1);
         }
+
+        for (int longAxis = 2; longAxis <= 3; longAxis++) {
+            for (int shortAxis = 1; shortAxis <= longAxis; shortAxis++) {
+                addDiagonalParkourOffset(offsets, longAxis, shortAxis, 0);
+                addDiagonalParkourOffset(offsets, longAxis, shortAxis, 1);
+                addDiagonalParkourOffset(offsets, longAxis, shortAxis, -1);
+            }
+        }
+    }
+
+    private static void addCardinalParkourOffset(List<PathVector> offsets, int distance, int dy) {
+        offsets.add(new PathVector( distance, dy,  0));
+        offsets.add(new PathVector(-distance, dy,  0));
+        offsets.add(new PathVector( 0, dy,  distance));
+        offsets.add(new PathVector( 0, dy, -distance));
+    }
+
+    private static void addDiagonalParkourOffset(List<PathVector> offsets, int x, int z, int dy) {
+        offsets.add(new PathVector( x, dy,  z));
+        offsets.add(new PathVector( x, dy, -z));
+        offsets.add(new PathVector(-x, dy,  z));
+        offsets.add(new PathVector(-x, dy, -z));
+        if (x == z) {
+            return;
+        }
+        offsets.add(new PathVector( z, dy,  x));
+        offsets.add(new PathVector( z, dy, -x));
+        offsets.add(new PathVector(-z, dy,  x));
+        offsets.add(new PathVector(-z, dy, -x));
     }
 }

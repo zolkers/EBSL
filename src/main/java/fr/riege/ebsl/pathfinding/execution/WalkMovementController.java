@@ -26,6 +26,11 @@ final class WalkMovementController {
     private WalkabilityChecker checker;
     private static final double SLIME_ASCENT_JUMP_TRIGGER_DIST = 1.7;
     private static final double WATER_ENTRY_SURFACE_DROP = 0.6;
+    private static final double PARKOUR_OPEN_BRAKE_REMAINING = 0.25;
+    private static final double PARKOUR_CONSTRAINED_BRAKE_REMAINING = 0.45;
+    private static final double PARKOUR_GROUNDED_BRAKE_OVERSHOOT = -0.12;
+    private static final double PARKOUR_MIN_BRAKE_SPEED = 0.035;
+    private static final double PARKOUR_LATERAL_CORRECTION = 0.18;
 
     WalkMovementController(List<Node> path) {
         this.path = path;
@@ -79,14 +84,30 @@ final class WalkMovementController {
             return;
         }
 
+        String parkourDecision = "path";
+        String landingDecision = applyParkourLandingControl(mc, playerPos, movementWaypoint, pursuitSegment);
+        if (!"path".equals(landingDecision)) {
+            parkourDecision = landingDecision;
+        }
+        String takeoffDecision = applyParkourTakeoffGuard(mc, movementWaypoint, playerPos, pursuitSegment, jumpCooldown, allowJumps);
+        if (!"path".equals(takeoffDecision)) {
+            parkourDecision = takeoffDecision;
+        }
+
         if (!allowJumps) {
             mc.options.keyJump.setDown(mc.player != null && mc.player.isInWater());
+            ParkourExecutionTelemetry.record(mc, path, playerPos, movementWaypoint, pursuitSegment,
+                jumpCooldown, false, parkourDecision + ":jumps-off");
             return;
         }
 
-        handleJump(executor, mc, movementWaypoint, playerPos, jumpCooldown, lastProgressTime, pursuitSegment);
+        if (handleJump(executor, mc, movementWaypoint, playerPos, jumpCooldown, lastProgressTime, pursuitSegment)) {
+            parkourDecision = "jump";
+        }
         applyWaterMovement(mc, movementWaypoint, playerPos, distToFinal, pursuitSegment, sneakLatched);
         applyClimbMovement(mc, movementWaypoint, sneakLatched);
+        ParkourExecutionTelemetry.record(mc, path, playerPos, movementWaypoint, pursuitSegment,
+            jumpCooldown, allowJumps, parkourDecision);
     }
 
     private void applyPathMovement(Minecraft mc, Vec3 playerPos, Node targetWp,
@@ -140,7 +161,90 @@ final class WalkMovementController {
             && (!steering.nearCorner() || !PathfinderSettings.instance().cornerSteeringSlowdown.value()));
     }
 
-    private void handleJump(PathExecutor executor, Minecraft mc, Node waypoint, Vec3 playerPos,
+    private String applyParkourLandingControl(Minecraft mc, Vec3 playerPos, Node waypoint, int pursuitSegment) {
+        if (mc.player == null || waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
+            return "path";
+        }
+
+        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        double startX = takeoff.position.centeredX();
+        double startZ = takeoff.position.centeredZ();
+        double targetX = waypoint.position.centeredX();
+        double targetZ = waypoint.position.centeredZ();
+        double dirX = targetX - startX;
+        double dirZ = targetZ - startZ;
+        double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        if (jumpLen < 1.0e-6) {
+            return "path";
+        }
+
+        dirX /= jumpLen;
+        dirZ /= jumpLen;
+        double fromStartX = playerPos.x - startX;
+        double fromStartZ = playerPos.z - startZ;
+        double progress = fromStartX * dirX + fromStartZ * dirZ;
+        double remaining = jumpLen - progress;
+        double lateral = fromStartX * -dirZ + fromStartZ * dirX;
+        double velocityAlong = mc.player.getDeltaMovement().x * dirX + mc.player.getDeltaMovement().z * dirZ;
+        boolean constrainedLanding = isConstrainedParkourLanding(mc, waypoint, dirX, dirZ);
+        double brakeRemaining = constrainedLanding ? PARKOUR_CONSTRAINED_BRAKE_REMAINING : PARKOUR_OPEN_BRAKE_REMAINING;
+        boolean inLandingColumn = mc.player.getBlockX() == waypoint.position.flooredX()
+            && mc.player.getBlockZ() == waypoint.position.flooredZ();
+        boolean shouldBrake = !mc.player.onGround() && remaining <= brakeRemaining && velocityAlong > PARKOUR_MIN_BRAKE_SPEED;
+        boolean shouldHoldLanding = constrainedLanding && mc.player.onGround()
+            && (inLandingColumn || remaining <= PARKOUR_GROUNDED_BRAKE_OVERSHOOT);
+
+        if (!shouldBrake && !shouldHoldLanding) {
+            return "path";
+        }
+
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(true);
+        mc.options.keySprint.setDown(false);
+        if (Math.abs(lateral) <= PARKOUR_LATERAL_CORRECTION) {
+            mc.options.keyLeft.setDown(false);
+            mc.options.keyRight.setDown(false);
+        }
+        return shouldHoldLanding ? "landing-hold" : "landing-brake";
+    }
+
+    private boolean isConstrainedParkourLanding(Minecraft mc, Node landing, double dirX, double dirZ) {
+        if (mc.level == null) {
+            return false;
+        }
+
+        int stepX = Math.abs(dirX) > Math.abs(dirZ) ? (int) Math.signum(dirX) : 0;
+        int stepZ = stepX == 0 ? (int) Math.signum(dirZ) : 0;
+        int aheadX = landing.position.flooredX() + stepX;
+        int aheadY = landing.position.flooredY();
+        int aheadZ = landing.position.flooredZ() + stepZ;
+        return !checker(mc).isWalkable(aheadX, aheadY, aheadZ);
+    }
+
+    private String applyParkourTakeoffGuard(Minecraft mc, Node waypoint, Vec3 playerPos, int pursuitSegment,
+                                          int jumpCooldown, boolean allowJumps) {
+        if (mc.player == null || waypoint.moveType != Node.MoveType.PARKOUR || !mc.player.onGround()) {
+            return "path";
+        }
+
+        double dx = waypoint.position.centeredX() - playerPos.x;
+        double dz = waypoint.position.centeredZ() - playerPos.z;
+        double hDist = Math.sqrt(dx * dx + dz * dz);
+        int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
+        double jumpZone = Math.max(1.2, distance - 0.45);
+        if (hDist > jumpZone || (allowJumps && jumpCooldown == 0)) {
+            return "path";
+        }
+
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(true);
+        mc.options.keySprint.setDown(false);
+        mc.options.keyLeft.setDown(false);
+        mc.options.keyRight.setDown(false);
+        return "takeoff-guard";
+    }
+
+    private boolean handleJump(PathExecutor executor, Minecraft mc, Node waypoint, Vec3 playerPos,
                             int jumpCooldown, long lastProgressTime, int pursuitSegment) {
         boolean partialSupportAscent = isPartialSupportWaypoint(mc, waypoint);
         boolean inStairSequence = isInStairSequence(mc, pursuitSegment);
@@ -173,11 +277,14 @@ final class WalkMovementController {
         if (shouldAssistSlimeAscent(mc, waypoint, hDist, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
             executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
-            return;
+            return true;
         }
         if (context.jumpCooldownConsumed()) {
-            executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
+            executor.setJumpCooldown(waypoint.moveType == Node.MoveType.PARKOUR
+                ? 0
+                : PathfinderSettings.instance().jumpCooldownTicks.value());
         }
+        return context.jumpPressed();
     }
 
     private void applyWaterMovement(Minecraft mc, Node movementWaypoint, Vec3 playerPos,

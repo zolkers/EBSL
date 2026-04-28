@@ -23,7 +23,7 @@ public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
             ImGui.textDisabled("Visualizer: always on");
             ImGui.nextColumn();
             ImGui.text("Event log");
-            for (AnalyticsEvent event : EbslApi.gui().latestAnalyticsEvents(4)) {
+            for (AnalyticsEvent event : EbslApi.gui().latestAnalyticsEvents(12)) {
                 ImGui.textDisabled(event.source() + ": " + event.message());
             }
             ImGui.columns(1);
