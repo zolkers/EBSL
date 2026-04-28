@@ -41,8 +41,6 @@ final class LongRangePathSession {
     private int currentSegmentGoalZ;
     @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private boolean currentSegmentNeedsContinuation;
-    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
-    private boolean currentSegmentPartial;
     private int currentSegmentId;
     private int calculationSegmentId = -1;
     private boolean segmentCalculationInFlight;
@@ -79,7 +77,6 @@ final class LongRangePathSession {
         currentSegmentGoalX = 0;
         currentSegmentGoalZ = 0;
         currentSegmentNeedsContinuation = false;
-        currentSegmentPartial = false;
         currentSegmentId = 0;
         calculationSegmentId = -1;
         segmentCalculationInFlight = false;
@@ -156,7 +153,6 @@ final class LongRangePathSession {
         currentSegmentGoalX = goalX;
         currentSegmentGoalZ = goalZ;
         currentSegmentNeedsContinuation = needsContinuation;
-        currentSegmentPartial = partial;
         currentSegmentId++;
         calculationSegmentId = -1;
         preparedSegment = null;
@@ -202,7 +198,6 @@ final class LongRangePathSession {
 
     boolean shouldUsePlayerRecoveryStart(double progressRatio, boolean walkExecutionDone) {
         return walkExecutionDone
-            || currentSegmentPartial
             || (failedSegmentCalculations >= PLAYER_START_AFTER_FAILURES
             && progressRatio >= PLAYER_START_RECOVERY_RATIO);
     }
