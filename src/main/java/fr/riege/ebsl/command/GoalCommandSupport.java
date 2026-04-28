@@ -4,13 +4,13 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.goal.NavigationRequest;
+import fr.riege.ebsl.util.ClientUtils;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 
 public final class GoalCommandSupport {
-    public static final String PREFIX = "§e[ebsl] §r";
+    public static final String PREFIX = ClientUtils.basePrefix();
 
     private GoalCommandSupport() {
     }
@@ -26,9 +26,7 @@ public final class GoalCommandSupport {
 
     public static void sendClientMessage(String message) {
         Minecraft mc = minecraft();
-        if (mc.player != null) {
-            mc.player.displayClientMessage(Component.literal(PREFIX + message), false);
-        }
+        ClientUtils.sendMessage(mc, message, false);
     }
 
     public static int currentBlockX() {
