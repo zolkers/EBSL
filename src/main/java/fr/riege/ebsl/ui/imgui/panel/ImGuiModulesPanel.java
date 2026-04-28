@@ -1,10 +1,8 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
-import fr.riege.ebsl.analytics.AnalyticsEventLog;
+import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.botting.module.PathfinderModule;
 import fr.riege.ebsl.botting.module.PathfinderModuleCategory;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
-import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.ColorSetting;
 import fr.riege.ebsl.settings.EnumSetting;
@@ -45,17 +43,17 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderModuleList(EbslUiState state) {
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : EbslApi.modules().all()) {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
-                AnalyticsEventLog.record("module", "Opened settings for " + module.displayName());
+                EbslApi.analytics().record("module", "Opened settings for " + module.displayName());
             }
             ImGui.popStyleColor(3);
         }
         ImGui.separator();
         Map<PathfinderModuleCategory, Integer> counts = new EnumMap<>(PathfinderModuleCategory.class);
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : EbslApi.modules().all()) {
             counts.merge(module.category(), 1, Integer::sum);
         }
         ImGui.text("Categories");
@@ -71,12 +69,8 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
         ImGui.sameLine();
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
-            module.resetSettings();
-            BotModuleSettingsStore.save();
-            for (Setting<?> setting : module.settings()) {
-                BotModuleRegistry.onSettingChanged(module, setting);
-            }
-            AnalyticsEventLog.record("module", "Reset " + module.displayName());
+            EbslApi.modules().resetToDefaultsAndSave(module);
+            EbslApi.analytics().record("module", "Reset " + module.displayName());
         }
         ImGui.separator();
         ImGui.text(module.displayName());
@@ -191,8 +185,8 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void saveSetting(PathfinderModule module, Setting<?> setting) {
-        BotModuleSettingsStore.save();
-        BotModuleRegistry.onSettingChanged(module, setting);
-        AnalyticsEventLog.record("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
+        EbslApi.modules().saveSettings();
+        EbslApi.modules().notifySettingChanged(module, setting);
+        EbslApi.analytics().record("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
     }
 }

@@ -1,10 +1,11 @@
 package fr.riege.ebsl.botting.module;
 
+import fr.riege.ebsl.api.EbslApi;
+import fr.riege.ebsl.api.navigation.NavigationSnapshot;
 import fr.riege.ebsl.event.EventBus;
 import fr.riege.ebsl.event.Subscription;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfindingManager;
 import net.minecraft.client.Minecraft;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.EnumSetting;
@@ -49,9 +50,10 @@ public final class MoveTypeOverlayModule extends Settingable implements Pathfind
     private void onRender(RenderGameViewportEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        if (!PathfindingManager.isNavigating()) return;
+        NavigationSnapshot snapshot = EbslApi.navigation().snapshot();
+        if (!snapshot.navigating()) return;
 
-        Node.MoveType moveType = PathfindingManager.getCurrentMoveType();
+        Node.MoveType moveType = snapshot.currentMoveType();
         if (moveType == null) return;
 
         render(event.getDrawList(), event.getViewport(), moveType);

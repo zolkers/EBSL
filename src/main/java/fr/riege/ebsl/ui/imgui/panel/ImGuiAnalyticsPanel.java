@@ -1,8 +1,8 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.analytics.AnalyticsEvent;
-import fr.riege.ebsl.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.analytics.AnalyticsSnapshot;
+import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.state.EbslUiState;
@@ -13,7 +13,7 @@ public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
     public void render(EbslUiState state, ViewportLayout layout) {
         ImGuiPanelUtil.nextFixedWindow(layout.bottom());
         if (ImGui.begin("Analytics##ebsl-bottom", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
-            AnalyticsSnapshot snapshot = AnalyticsSnapshot.capture(state.selectedModule());
+            AnalyticsSnapshot snapshot = EbslApi.analytics().snapshot(state.selectedModule());
             ImGui.text("Analytics");
             ImGui.separator();
             ImGui.columns(2, "ebsl-analytics-columns", false);
@@ -23,7 +23,7 @@ public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
             ImGui.textDisabled("Visualizer: always on");
             ImGui.nextColumn();
             ImGui.text("Event log");
-            for (AnalyticsEvent event : AnalyticsEventLog.latest(4)) {
+            for (AnalyticsEvent event : EbslApi.analytics().latestEvents(4)) {
                 ImGui.textDisabled(event.source() + ": " + event.message());
             }
             ImGui.columns(1);

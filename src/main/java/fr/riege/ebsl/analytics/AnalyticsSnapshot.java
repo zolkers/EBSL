@@ -1,8 +1,8 @@
 package fr.riege.ebsl.analytics;
 
+import fr.riege.ebsl.api.EbslApi;
+import fr.riege.ebsl.api.navigation.NavigationSnapshot;
 import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
-import fr.riege.ebsl.pathfinding.PathfindingManager;
 
 public record AnalyticsSnapshot(
     String navigationState,
@@ -11,10 +11,11 @@ public record AnalyticsSnapshot(
     boolean visualizerEnabled
 ) {
     public static AnalyticsSnapshot capture(PathfinderModule selectedModule) {
+        NavigationSnapshot pathfinding = EbslApi.navigation().snapshot();
         return new AnalyticsSnapshot(
-            PathfindingManager.isNavigating() ? "navigating" : "idle",
+            pathfinding.navigationStateLabel(),
             selectedModule != null ? selectedModule.displayName() : "none",
-            PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get(),
-            true);
+            pathfinding.maxJumpHeight(),
+            pathfinding.visualizerEnabled());
     }
 }

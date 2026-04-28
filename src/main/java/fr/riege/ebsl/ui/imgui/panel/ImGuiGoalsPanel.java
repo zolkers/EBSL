@@ -1,12 +1,11 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
-import fr.riege.ebsl.analytics.AnalyticsEventLog;
+import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.command.GoalCommandSupport;
 import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.goal.GoalParameter;
 import fr.riege.ebsl.command.goal.GoalUiDefinition;
-import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.state.EbslUiState;
@@ -80,7 +79,7 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0xFFA8323E);
         ImGui.pushStyleColor(ImGuiCol.ButtonActive,  0xFFC23B49);
         if (ImGui.button("Stop##goal-stop", -1.0f, 24.0f)) {
-            PathfindingManager.stop();
+            EbslApi.navigation().stop();
         }
         ImGui.popStyleColor(3);
     }
@@ -99,14 +98,14 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
             Integer value = parseInt(values.get(parameter.id()).get());
             if (value == null) {
                 GoalCommandSupport.sendClientMessage("Invalid value for " + parameter.label() + ".");
-                AnalyticsEventLog.record("goal", "Invalid value for " + selected.id() + "." + parameter.id());
+                EbslApi.analytics().record("goal", "Invalid value for " + selected.id() + "." + parameter.id());
                 return;
             }
             parsed.put(parameter.id(), value);
         }
         int result = selected.execute(parsed);
         if (result > 0) {
-            AnalyticsEventLog.record("goal", "Started " + selected.label());
+            EbslApi.analytics().record("goal", "Started " + selected.label());
         }
     }
 

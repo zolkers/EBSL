@@ -1,7 +1,7 @@
 package fr.riege.ebsl.ui.state;
 
+import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
 
 public final class EbslUiState {
     private MainViewTab mainViewTab = MainViewTab.MAIN;
@@ -40,9 +40,9 @@ public final class EbslUiState {
 
     public PathfinderModule selectedModule() {
         if (selectedModule == null) {
-            selectedModule = BotModuleRegistry.modules().stream().findFirst().orElse(null);
+            selectedModule = EbslApi.modules().all().stream().findFirst().orElse(null);
         } else {
-            selectedModule = BotModuleRegistry.get(selectedModule.id());
+            selectedModule = EbslApi.modules().get(selectedModule.id());
         }
         return selectedModule;
     }

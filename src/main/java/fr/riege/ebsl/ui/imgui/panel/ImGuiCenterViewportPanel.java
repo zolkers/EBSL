@@ -1,12 +1,11 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.EbslMod;
+import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.packet.PacketCaptureEvent;
 import fr.riege.ebsl.packet.PacketCaptureLog;
-import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
-import fr.riege.ebsl.pathfinding.settings.PathfinderSettingsStore;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.DoubleSetting;
 import fr.riege.ebsl.settings.IntSetting;
@@ -92,13 +91,12 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImGui.text("Pathfinder Settings");
         ImGui.sameLine();
         if (ImGui.button("Reset to defaults", 148.0f, 18.0f)) {
-            PathfinderSettings.resetToDefaults();
-            PathfinderSettingsStore.save();
+            EbslApi.settings().pathfinding().resetToDefaultsAndSave();
         }
         ImGui.spacing();
-        renderSettingsCategory("General", PathfinderSettings.generalSettings());
-        renderSettingsCategory("Movement costs", PathfinderSettings.movementCostSettings());
-        renderSettingsCategory("Corridor and centering costs", PathfinderSettings.corridorCostSettings());
+        renderSettingsCategory("General", EbslApi.settings().pathfinding().general());
+        renderSettingsCategory("Movement costs", EbslApi.settings().pathfinding().movementCosts());
+        renderSettingsCategory("Corridor and centering costs", EbslApi.settings().pathfinding().corridorCosts());
         ImGui.endChild();
     }
 
@@ -138,8 +136,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     }
 
     private void savePathfinderSettings() {
-        PathfinderSettings.apply();
-        PathfinderSettingsStore.save();
+        EbslApi.settings().pathfinding().save();
     }
 
     private void renderPacketView(UiRect viewport) {
