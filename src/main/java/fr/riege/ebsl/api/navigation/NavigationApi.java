@@ -9,6 +9,8 @@ import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 
 @EbslApiSurface(EbslApiSurface.Domain.NAVIGATION)
 public final class NavigationApi {
+    private final BlockBlacklistApi blockBlacklist = new BlockBlacklistApi();
+
     public NavigationApi() {
     }
 
@@ -36,5 +38,10 @@ public final class NavigationApi {
     @EbslApiOperation("Read the currently executed move type.")
     public Node.MoveType currentMoveType() {
         return PathfindingManager.getCurrentMoveType();
+    }
+
+    @EbslApiOperation("Access pathfinder block blacklist controls.")
+    public BlockBlacklistApi blockBlacklist() {
+        return blockBlacklist;
     }
 }

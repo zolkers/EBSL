@@ -29,26 +29,45 @@ public final class PathfinderBlockBlacklistModule extends Settingable implements
     @Override public String description() { return "Prevents the pathfinder from using selected blocks."; }
     @Override public PathfinderModuleCategory category() { return PathfinderModuleCategory.BEHAVIOUR; }
     @Override public boolean isEnabled() { return enabledSetting.value(); }
-    @Override public void setEnabled(boolean enabled) { enabledSetting.setValue(enabled); }
+    @Override public void setEnabled(boolean enabled) {
+        enabledSetting.setValue(enabled);
+        syncBlacklist();
+    }
+
+    public List<String> blockIds() {
+        return blockIds.value();
+    }
+
+    public StringListSetting blockIdsSetting() {
+        return blockIds;
+    }
+
+    public void setBlockIds(List<String> rawBlockIds) {
+        blockIds.setValue(rawBlockIds);
+        parsedBlockIds = parseBlockIds(blockIds.value());
+        syncBlacklist();
+    }
 
     @Override
     public void onEnable(EventBus bus) {
-        BlockBlacklist.update(true, parsedBlockIds);
+        syncBlacklist();
     }
 
     @Override
     public void onDisable() {
-        BlockBlacklist.update(false, Set.of());
+        syncBlacklist();
     }
 
     @Override
     public void onSettingChanged(Setting<?> setting) {
         if (setting == blockIds) {
             parsedBlockIds = parseBlockIds(blockIds.value());
-            if (isEnabled()) {
-                BlockBlacklist.update(true, parsedBlockIds);
-            }
         }
+        syncBlacklist();
+    }
+
+    private void syncBlacklist() {
+        BlockBlacklist.update(isEnabled(), isEnabled() ? parsedBlockIds : Set.of());
     }
 
     private static Set<Identifier> parseBlockIds(List<String> raw) {

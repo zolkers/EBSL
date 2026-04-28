@@ -438,6 +438,11 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         int fy = pos.flooredY();
         int fz = pos.flooredZ();
         if (checker != null) {
+            if (checker.isBlacklisted(fx, fy - 1, fz)
+                    || checker.isBlacklisted(fx, fy, fz)
+                    || checker.isBlacklisted(fx, fy + 1, fz)) {
+                return true;
+            }
             // Treat passable partial blocks such as carpet as empty player space.
             return isBlockingPlayerSpace(fx, fy, fz) || isBlockingPlayerSpace(fx, fy + 1, fz);
         }

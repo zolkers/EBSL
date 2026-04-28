@@ -4,6 +4,7 @@ import fr.riege.ebsl.api.analytics.AnalyticsApi;
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
 import fr.riege.ebsl.api.events.EventsApi;
+import fr.riege.ebsl.api.gui.GuiApi;
 import fr.riege.ebsl.api.modules.ModulesApi;
 import fr.riege.ebsl.api.navigation.NavigationApi;
 import fr.riege.ebsl.api.settings.ModSettingsApi;
@@ -15,6 +16,7 @@ public final class EbslApi {
     private static final ModulesApi MODULES = new ModulesApi();
     private static final EventsApi EVENTS = new EventsApi();
     private static final AnalyticsApi ANALYTICS = new AnalyticsApi();
+    private static final GuiApi GUI = new GuiApi();
 
     private EbslApi() {
     }
@@ -42,5 +44,10 @@ public final class EbslApi {
     @EbslApiOperation("Access analytics snapshots and event logs.")
     public static AnalyticsApi analytics() {
         return ANALYTICS;
+    }
+
+    @EbslApiOperation("Access UI-ready data models for ImGui and overlays.")
+    public static GuiApi gui() {
+        return GUI;
     }
 }

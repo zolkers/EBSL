@@ -2,8 +2,6 @@ package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.command.GoalCommandSupport;
-import fr.riege.ebsl.command.GoalCommands;
-import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.goal.GoalParameter;
 import fr.riege.ebsl.command.goal.GoalUiDefinition;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
@@ -25,8 +23,11 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
         if (selected == null) {
-            GoalCommands.bootstrap();
-            selected = GoalRegistry.uiDefinitions().getFirst();
+            List<GoalUiDefinition> goals = EbslApi.gui().goalDefinitions();
+            if (goals.isEmpty()) {
+                return;
+            }
+            selected = goals.getFirst();
             fillDefaults(selected);
         }
 
@@ -42,7 +43,7 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
     }
 
     private void renderGoalList() {
-        List<GoalUiDefinition> goals = GoalRegistry.uiDefinitions();
+        List<GoalUiDefinition> goals = EbslApi.gui().goalDefinitions();
         if (ImGui.beginChild("##goal-list", 0.0f, 160.0f, true)) {
             for (GoalUiDefinition goal : goals) {
                 boolean isSelected = selected != null && selected.id().equals(goal.id());

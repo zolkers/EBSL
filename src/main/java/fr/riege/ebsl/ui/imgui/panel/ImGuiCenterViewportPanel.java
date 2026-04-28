@@ -2,6 +2,7 @@ package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.EbslMod;
 import fr.riege.ebsl.api.EbslApi;
+import fr.riege.ebsl.api.gui.GuiSettingsGroup;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.packet.PacketCaptureEvent;
@@ -94,9 +95,9 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             EbslApi.settings().pathfinding().resetToDefaultsAndSave();
         }
         ImGui.spacing();
-        renderSettingsCategory("General", EbslApi.settings().pathfinding().general());
-        renderSettingsCategory("Movement costs", EbslApi.settings().pathfinding().movementCosts());
-        renderSettingsCategory("Corridor and centering costs", EbslApi.settings().pathfinding().corridorCosts());
+        for (GuiSettingsGroup group : EbslApi.gui().pathfinderSettingsGroups()) {
+            renderSettingsCategory(group.label(), group.settings());
+        }
         ImGui.endChild();
     }
 

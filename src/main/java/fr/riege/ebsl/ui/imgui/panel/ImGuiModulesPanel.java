@@ -43,7 +43,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderModuleList(EbslUiState state) {
-        for (PathfinderModule module : EbslApi.modules().all()) {
+        for (PathfinderModule module : EbslApi.gui().modules()) {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
@@ -53,7 +53,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
         ImGui.separator();
         Map<PathfinderModuleCategory, Integer> counts = new EnumMap<>(PathfinderModuleCategory.class);
-        for (PathfinderModule module : EbslApi.modules().all()) {
+        for (PathfinderModule module : EbslApi.gui().modules()) {
             counts.merge(module.category(), 1, Integer::sum);
         }
         ImGui.text("Categories");

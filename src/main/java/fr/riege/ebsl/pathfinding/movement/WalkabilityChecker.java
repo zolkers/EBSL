@@ -65,6 +65,9 @@ public final class WalkabilityChecker {
     }
 
     public boolean isWalkable(int x, int y, int z) {
+        if (isBlacklisted(x, y - 1, z) || isBlacklisted(x, y, z) || isBlacklisted(x, y + 1, z)) {
+            return false;
+        }
         boolean lowPartialFeet = isLowPartialSupport(x, y, z);
         return (isPassable(x, y, z) || lowPartialFeet)
                 && isPassable(x, y + 1, z)
@@ -126,6 +129,7 @@ public final class WalkabilityChecker {
 
     public boolean safeToFall(int fromY, int toX, int toY, int toZ) {
         int fallDistance = fromY - toY;
+        if (isBlacklisted(toX, toY - 1, toZ) || isBlacklisted(toX, toY, toZ)) return false;
         if (fallDistance <= 3) return true;
         // Water at the landing position breaks the fall safely
         if (isWater(toX, toY, toZ)) return true;
@@ -249,7 +253,7 @@ public final class WalkabilityChecker {
         return shape.isEmpty();
     }
 
-    private boolean isBlacklisted(int x, int y, int z) {
+    public boolean isBlacklisted(int x, int y, int z) {
         return isBlacklisted(getState(x, y, z));
     }
 

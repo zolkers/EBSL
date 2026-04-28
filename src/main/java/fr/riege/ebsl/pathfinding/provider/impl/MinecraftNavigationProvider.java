@@ -84,6 +84,10 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             belowState = level.getBlockState(blockPos.below());
         }
 
+        if (isBlacklistedNodeSpace(feetState, headState, belowState)) {
+            return BLOCKED;
+        }
+
         boolean lowPartialFeet = checker != null
             ? checker.isLowPartialSupport(x, y, z)
             : isLowPartialSupport(level, x, y, z, feetState);
@@ -123,6 +127,12 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             @Override public boolean isClimbable()   { return climb;       }
             @Override public boolean isLiquid()      { return liquid;      }
         };
+    }
+
+    private static boolean isBlacklistedNodeSpace(BlockState feetState, BlockState headState, BlockState belowState) {
+        return BlockBlacklist.isBlacklisted(feetState)
+            || BlockBlacklist.isBlacklisted(headState)
+            || BlockBlacklist.isBlacklisted(belowState);
     }
 
     private static boolean canWalkThrough(BlockState state) {

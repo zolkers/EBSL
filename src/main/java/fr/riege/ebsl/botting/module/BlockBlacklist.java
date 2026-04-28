@@ -14,7 +14,15 @@ public final class BlockBlacklist {
 
     static void update(boolean active, Set<Identifier> blockIds) {
         enabled = active;
-        ids = blockIds;
+        ids = blockIds == null || blockIds.isEmpty() ? Set.of() : Set.copyOf(blockIds);
+    }
+
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
+    public static Set<Identifier> ids() {
+        return ids;
     }
 
     public static boolean isBlacklisted(BlockState state) {

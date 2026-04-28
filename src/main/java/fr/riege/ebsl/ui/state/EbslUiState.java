@@ -40,9 +40,9 @@ public final class EbslUiState {
 
     public PathfinderModule selectedModule() {
         if (selectedModule == null) {
-            selectedModule = EbslApi.modules().all().stream().findFirst().orElse(null);
+            selectedModule = EbslApi.gui().modules().stream().findFirst().orElse(null);
         } else {
-            selectedModule = EbslApi.modules().get(selectedModule.id());
+            selectedModule = EbslApi.gui().module(selectedModule.id());
         }
         return selectedModule;
     }
