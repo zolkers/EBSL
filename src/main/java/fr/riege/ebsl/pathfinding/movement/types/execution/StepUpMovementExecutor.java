@@ -11,6 +11,10 @@ final class StepUpMovementExecutor implements MovementExecutor {
             context.releaseJump();
             return;
         }
+        if (context.verticalDelta() <= 0) {
+            context.releaseJump();
+            return;
+        }
         if (!context.canStartJump()) {
             return;
         }
