@@ -108,11 +108,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
             return false;
         }
 
-        // Stair orientation check: a stair can only be entered from the open (low) side.
-        // Approaching from the closed (high) side hits a full-height wall — Minecraft
-        // physically blocks this even though the target position is "traversable".
-        // Only applies for non-descending moves (dy >= -0.5); landing on top is always fine.
-        if (dy >= -0.5 && isApproachBlockedByStair(level, pos.flooredX(), pos.flooredY(), pos.flooredZ(), dx, dz)) {
+        // Entering a stair from the rear or side hits its high collision lip. Keep the
+        // move valid when the player can jump it; the path processor will label it JUMP.
+        if (dy >= -0.5 && isStairEntryRequiringJump(level, pos.flooredX(), pos.flooredY(), pos.flooredZ(), dx, dz)
+                && (!hasJumpSupport(prevPoint) || !hasJumpHeadroom(prev))) {
             return false;
         }
 
@@ -412,7 +411,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
             .isEmpty();
     }
 
-    private boolean isApproachBlockedByStair(Level level, int cx, int cy, int cz, int dx, int dz) {
+    private boolean isStairEntryRequiringJump(Level level, int cx, int cy, int cz, int dx, int dz) {
         var floorState = checker != null
             ? checker.getState(cx, cy - 1, cz)
             : level.getBlockState(new BlockPos(cx, cy - 1, cz));
@@ -422,11 +421,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         Direction facing = floorState.getValue(StairBlock.FACING);
         boolean bottomHalf = floorState.getValue(StairBlock.HALF) == Half.BOTTOM;
         // For a BOTTOM stair the high step is in the 'facing' direction.
-        // The approach is blocked when the movement vector has a negative component
-        // along 'facing' (approaching from the high side).
+        // Jump when the movement vector comes from the high side or either side edge.
         // For a TOP stair the high step is in the opposite direction, so the sign flips.
         int dot = dx * facing.getStepX() + dz * facing.getStepZ();
-        return bottomHalf ? dot < 0 : dot > 0;
+        return bottomHalf ? dot <= 0 : dot >= 0;
     }
 
     private static boolean isParkourOffset(int dx, int dz) {

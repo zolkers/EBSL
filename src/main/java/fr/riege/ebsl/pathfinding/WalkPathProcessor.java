@@ -4,6 +4,10 @@ import fr.riege.ebsl.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,6 +76,9 @@ final class WalkPathProcessor {
         double dy = floorLevel(checker, current) - floorLevel(checker, previous);
         int dx = Math.abs(current.flooredX() - previous.flooredX());
         int dz = Math.abs(current.flooredZ() - previous.flooredZ());
+        if (isStairEntryRequiringJump(previous, current, checker)) {
+            return Node.MoveType.JUMP;
+        }
         if (dy > PARTIAL_ASCENT_THRESHOLD) {
             return Node.MoveType.STEP_UP;
         }
@@ -85,6 +92,24 @@ final class WalkPathProcessor {
             return Node.MoveType.WALK_DIAGONAL;
         }
         return Node.MoveType.WALK;
+    }
+
+    private static boolean isStairEntryRequiringJump(PathPosition previous, PathPosition current,
+                                                     WalkabilityChecker checker) {
+        int cx = current.flooredX();
+        int cy = current.flooredY();
+        int cz = current.flooredZ();
+        BlockState support = checker.getState(cx, cy - 1, cz);
+        if (!(support.getBlock() instanceof StairBlock)) {
+            return false;
+        }
+
+        Direction facing = support.getValue(StairBlock.FACING);
+        boolean bottomHalf = support.getValue(StairBlock.HALF) == Half.BOTTOM;
+        int moveDx = Integer.compare(cx, previous.flooredX());
+        int moveDz = Integer.compare(cz, previous.flooredZ());
+        int dot = moveDx * facing.getStepX() + moveDz * facing.getStepZ();
+        return bottomHalf ? dot <= 0 : dot >= 0;
     }
 
     private static double floorLevel(WalkabilityChecker checker, PathPosition position) {
