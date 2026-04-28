@@ -34,14 +34,8 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     private final WalkabilityChecker checker;
     private final Long2ObjectOpenHashMap<NavigationPoint> navPointCache;
 
-    public MinecraftNavigationProvider() {
-        this(null);
-    }
-
     public MinecraftNavigationProvider(WalkabilityChecker checker) {
         this.checker = checker;
-        // Cache sized for typical Skyblock paths (<100 blocks). This provider is
-        // recreated per pathfinding search so stale entries are never an issue.
         this.navPointCache = checker != null ? new Long2ObjectOpenHashMap<>(512) : null;
     }
 
@@ -54,7 +48,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         int y = position.flooredY();
         int z = position.flooredZ();
 
-        // Check cache first
         if (navPointCache != null) {
             long key = BlockPosUtil.pack(x, y, z);
             NavigationPoint cached = navPointCache.get(key);
@@ -94,9 +87,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         boolean canPassFeet   = lowPartialFeet || canWalkThrough(feetState);
         boolean canPassHead   = canWalkThrough(headState);
         boolean isLiquid      = !feetState.getFluidState().isEmpty();
-        // When the feet are in liquid, the player is already supported; don't check below.
-        // This prevents the air-above-water node (feet=air, below=water) from inheriting
-        // hasFloor=true and opening up incorrect +2-block exits from water.
         boolean hasFloor      = lowPartialFeet || isLiquid || (checker != null
                 ? canWalkOnCached(checker, belowState, x, y - 1, z)
                 : canWalkOn(level, belowState, new BlockPos(x, y - 1, z)));
@@ -106,11 +96,8 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         boolean isClimbable   = feetState.getBlock() instanceof LadderBlock
                              || feetState.getBlock() instanceof VineBlock;
 
-        // Aether addition: block dangerous positions
         boolean isDangerous   = isDangerous(feetState) || isDangerous(headState);
 
-        // A position whose only floor is a blacklisted block must be rejected entirely,
-        // not just marked floorless — otherwise isValid accepts it via prevPoint.hasFloor().
         boolean floorBlacklisted = !lowPartialFeet && !isLiquid
                 && BlockBlacklist.isBlacklisted(belowState);
 
@@ -139,7 +126,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         if (state.isAir()) return true;
         if (BlockBlacklist.isBlacklisted(state)) return false;
 
-        // Dangerous but physically walkable (treat as blocked)
         if (isDangerous(state)) return false;
 
         if (state.is(BlockTags.TRAPDOORS)
@@ -148,7 +134,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             return true;
         }
 
-        // Aether: mark hazardous blocks as not traversable
         if (state.is(Blocks.POWDER_SNOW)
                 || state.is(Blocks.CACTUS)
                 || state.is(Blocks.SWEET_BERRY_BUSH)
@@ -195,8 +180,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
     private static boolean canWalkOnCached(WalkabilityChecker checker, BlockState state, int x, int y, int z) {
         if (BlockBlacklist.isBlacklisted(state)) return false;
         Block block = state.getBlock();
-        // isFullWall (solid + topY >= 0.95) rather than isFullWallBlock (solid + canOcclude),
-        // so non-occluding full-collision blocks like barriers are correctly treated as floors.
         if (checker.isFullWall(x, y, z)
                 && block != Blocks.MAGMA_BLOCK
                 && block != Blocks.BUBBLE_COLUMN
@@ -217,6 +200,7 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
             || block == Blocks.CHEST
             || block == Blocks.ENDER_CHEST
             || block == Blocks.GLASS
+                || block instanceof BarrierBlock
             || block instanceof StairBlock
             || block instanceof SlabBlock
             || block instanceof BaseRailBlock;
@@ -253,7 +237,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
         return belowY + topY;
     }
 
-    /** Aether addition: detect blocks that deal damage on contact. */
     private static boolean isDangerous(BlockState state) {
         Block block = state.getBlock();
         if (block == Blocks.LAVA
@@ -265,7 +248,6 @@ public final class MinecraftNavigationProvider implements NavigationPointProvide
                 || block == Blocks.WITHER_ROSE) {
             return true;
         }
-        // Lava fluid state
         return state.getFluidState().is(FluidTags.LAVA);
     }
 

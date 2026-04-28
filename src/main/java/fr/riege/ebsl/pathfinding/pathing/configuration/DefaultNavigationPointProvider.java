@@ -5,7 +5,6 @@ import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 
-/** Package-private default provider: everything is traversable. */
 final class DefaultNavigationPointProvider implements NavigationPointProvider {
     static final DefaultNavigationPointProvider INSTANCE = new DefaultNavigationPointProvider();
     private DefaultNavigationPointProvider() {}
