@@ -1,8 +1,8 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -24,7 +24,7 @@ final class PathSteering {
 
         desiredX /= desiredLen;
         desiredZ /= desiredLen;
-        if (!PathfinderConfig.CORNER_STEERING_ENABLED.get()) {
+        if (!PathfinderSettings.instance().cornerSteeringEnabled.value()) {
             return new SteeringVector(desiredX, desiredZ, false);
         }
 
@@ -34,17 +34,17 @@ final class PathSteering {
 
         Vec3 centerlineCorrection = centerlineCorrection(path, playerPos, pursuitSegment);
         double correctionLen = horizontalLength(centerlineCorrection.x, centerlineCorrection.z);
-        double centerlineStart = PathfinderConfig.CORNER_STEERING_CENTERLINE_START.get();
+        double centerlineStart = PathfinderSettings.instance().cornerSteeringCenterlineStart.value();
         if (correctionLen > centerlineStart && nearCorner) {
-            double centerlineMax = Math.max(centerlineStart + 1.0e-6, PathfinderConfig.CORNER_STEERING_CENTERLINE_MAX.get());
+            double centerlineMax = Math.max(centerlineStart + 1.0e-6, PathfinderSettings.instance().cornerSteeringCenterlineMax.value());
             double correctionScale = Math.min(1.0, correctionLen / centerlineMax);
-            double centerlineWeight = PathfinderConfig.CORNER_STEERING_CENTERLINE_WEIGHT.get();
+            double centerlineWeight = PathfinderSettings.instance().cornerSteeringCenterlineWeight.value();
             desiredX += (centerlineCorrection.x / correctionLen) * centerlineWeight * correctionScale;
             desiredZ += (centerlineCorrection.z / correctionLen) * centerlineWeight * correctionScale;
         }
 
         if (nearCorner) {
-            double nudgeWeight = PathfinderConfig.CORNER_STEERING_NUDGE_WEIGHT.get();
+            double nudgeWeight = PathfinderSettings.instance().cornerSteeringNudgeWeight.value();
             desiredX += (obstacleNudge.x / nudgeLen) * nudgeWeight;
             desiredZ += (obstacleNudge.z / nudgeLen) * nudgeWeight;
         }
@@ -101,7 +101,7 @@ final class PathSteering {
                 double awayX = playerPos.x - closestX;
                 double awayZ = playerPos.z - closestZ;
                 double dist = horizontalLength(awayX, awayZ);
-                double scanRadius = PathfinderConfig.CORNER_STEERING_SCAN_RADIUS.get();
+                double scanRadius = PathfinderSettings.instance().cornerSteeringScanRadius.value();
                 if (dist <= 1.0e-6 || dist > scanRadius) {
                     continue;
                 }

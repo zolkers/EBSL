@@ -10,6 +10,7 @@ import fr.riege.ebsl.pathfinding.execution.FlyExecutor;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
@@ -193,7 +194,7 @@ final class WalkNavigationService {
             && pendingSegment.attachment() == LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT) {
             if (pendingSegment.rollingHorizon()) {
                 runtime.executor.trimAndContinueWith(
-                    PathfinderConfig.HORIZON_TRIM_RATIO.get(),
+                    PathfinderSettings.instance().horizonTrimRatio.value(),
                     pendingSegment.path(),
                     pendingSegment.goalX(),
                     pendingSegment.goalY(),
@@ -211,9 +212,10 @@ final class WalkNavigationService {
                 pendingSegment.goalX(),
                 pendingSegment.goalY(),
                 pendingSegment.goalZ(),
-                runtime.walkOptions.isPreciseExecution(),
-                runtime.walkOptions.onFinished(),
-                runtime.walkOptions.snapshot()));
+            runtime.walkOptions.isPreciseExecution(),
+            runtime.walkOptions.onFinished(),
+            runtime.walkOptions.snapshot(),
+            !pendingSegment.needsContinuation()));
         }
         PathVisualizer.setPath(runtime.executor.getPathSnapshot(), runtime.executor.getWaypointIndex());
         refreshWalkVisualizer();
@@ -366,7 +368,8 @@ final class WalkNavigationService {
             request.goalZ(),
             opts.exactGoalCentering() || opts.preciseGoalTolerance() != ExecutionOptions.DEFAULT_TOLERANCE,
             onFinished,
-            opts));
+            opts,
+            true));
         runtime.executor.rememberRecentRepair(request.reason());
         PathVisualizer.setPath(mergedPath, 0);
         refreshWalkVisualizer();
@@ -448,7 +451,14 @@ final class WalkNavigationService {
         boolean precise = opts.exactGoalCentering()
             || opts.preciseGoalTolerance() != ExecutionOptions.DEFAULT_TOLERANCE;
         runtime.executor.start(new ExecutionPlan(
-            processedPath.navigationPath(), x, y, z, precise, onFinished, opts));
+            processedPath.navigationPath(),
+            x,
+            y,
+            z,
+            precise,
+            onFinished,
+            opts,
+            !continuationNeeded));
         refreshWalkVisualizer();
     }
 

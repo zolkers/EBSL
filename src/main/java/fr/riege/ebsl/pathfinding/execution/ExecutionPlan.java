@@ -12,11 +12,17 @@ public record ExecutionPlan(
     int goalZ,
     boolean precise,
     Runnable onFinished,
-    ExecutionOptions options
+    ExecutionOptions options,
+    boolean finishAtPathEnd
 ) {
     public ExecutionPlan(List<Node> path, int goalX, int goalY, int goalZ,
                          boolean precise, Runnable onFinished) {
-        this(path, goalX, goalY, goalZ, precise, onFinished, ExecutionOptions.defaults());
+        this(path, goalX, goalY, goalZ, precise, onFinished, ExecutionOptions.defaults(), true);
+    }
+
+    public ExecutionPlan(List<Node> path, int goalX, int goalY, int goalZ,
+                         boolean precise, Runnable onFinished, ExecutionOptions options) {
+        this(path, goalX, goalY, goalZ, precise, onFinished, options, true);
     }
 
     public ExecutionPlan {
@@ -29,6 +35,6 @@ public record ExecutionPlan(
     }
 
     public ExecutionPlan withPath(List<Node> newPath) {
-        return new ExecutionPlan(newPath, goalX, goalY, goalZ, precise, onFinished, options);
+        return new ExecutionPlan(newPath, goalX, goalY, goalZ, precise, onFinished, options, finishAtPathEnd);
     }
 }

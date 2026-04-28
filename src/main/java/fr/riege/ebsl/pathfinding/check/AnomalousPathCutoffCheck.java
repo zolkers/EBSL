@@ -1,8 +1,8 @@
 package fr.riege.ebsl.pathfinding.check;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 
 @PathCheckRole("anomalous_cutoff_repair")
 final class AnomalousPathCutoffCheck implements PathCheck {
@@ -24,20 +24,20 @@ final class AnomalousPathCutoffCheck implements PathCheck {
     private static boolean canCutToBetterNearbySegment(PathCheckContext context,
                                                        PathProximitySnapshot proximity,
                                                        int candidateSegment) {
-        if (candidateSegment < context.pursuitSegment() + PathfinderConfig.ANOMALOUS_MIN_SEGMENT_SKIP.get()) {
+        if (candidateSegment < context.pursuitSegment() + PathfinderSettings.instance().anomalousMinSegmentSkip.value()) {
             return false;
         }
         if (candidateSegment >= context.path().size() - 1) {
             return false;
         }
-        if (proximity.horizontalDistance() > PathfinderConfig.ANOMALOUS_MAX_HORIZONTAL_DISTANCE.get()
-            || proximity.verticalDistance() > PathfinderConfig.ANOMALOUS_MAX_VERTICAL_DISTANCE.get()) {
+        if (proximity.horizontalDistance() > PathfinderSettings.instance().anomalousMaxHorizontalDistance.value()
+            || proximity.verticalDistance() > PathfinderSettings.instance().anomalousMaxVerticalDistance.value()) {
             return false;
         }
 
         Node next = context.path().get(Math.min(context.path().size() - 1, context.pursuitSegment() + 1));
         double nextDistance = distanceToNode(context, next);
-        return proximity.distance3d() + PathfinderConfig.ANOMALOUS_MIN_NEAREST_ADVANTAGE.get() < nextDistance;
+        return proximity.distance3d() + PathfinderSettings.instance().anomalousMinNearestAdvantage.value() < nextDistance;
     }
 
     private static double distanceToNode(PathCheckContext context, Node node) {

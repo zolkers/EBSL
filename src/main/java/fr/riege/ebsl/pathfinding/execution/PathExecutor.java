@@ -3,8 +3,8 @@ package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.NavigationMode;
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
 import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
@@ -49,6 +49,7 @@ public final class PathExecutor {
     private boolean sneakLatched      = false;
     private double preciseGoalTolerance = ExecutionOptions.DEFAULT_TOLERANCE;
     private Runnable onFinished;
+    private boolean finishAtPathEnd = true;
     private boolean replanFromPlayerRequested = false;
     private PathRepairRequest repairRequest;
     private String lastRepairReason = "";
@@ -85,6 +86,7 @@ public final class PathExecutor {
         this.goalCenterX          = opts.goalCenterX();
         this.goalCenterZ          = opts.goalCenterZ();
         this.sneakLatched         = opts.sneakLatched();
+        this.finishAtPathEnd      = plan.finishAtPathEnd();
         resetTransientState();
         pathTracker.start(plan.path());
         rotationController.rebuild(plan.path());
@@ -198,12 +200,12 @@ public final class PathExecutor {
             return;
         }
 
-        double distMoved = pathTracker.noteMovementProgress(playerPos, PathfinderConfig.STUCK_DIST_THRESHOLD.get());
+        double distMoved = pathTracker.noteMovementProgress(playerPos, PathfinderSettings.instance().stuckDistThreshold.value());
 
         long now = System.currentTimeMillis();
         pathTracker.advancePursuit(playerPos, now);
 
-        pathTracker.computeAndTrackPathProgress(playerPos, PathfinderConfig.PATH_PROGRESS_EPSILON.get(), now);
+        pathTracker.computeAndTrackPathProgress(playerPos, PathfinderSettings.instance().pathProgressEpsilon.value(), now);
 
         PathProximitySnapshot proximity = pathTracker.analyzePathProximity(playerPos);
         pathTracker.updateSevereOffPathState(proximity, now);
@@ -225,7 +227,7 @@ public final class PathExecutor {
             return;
         }
 
-        if (PathfinderConfig.SHOW_DEBUG.get() && now % 2000 < 50 && pathTracker.getPursuitSegment() < path.size()) {
+        if (PathfinderSettings.instance().showDebug.value() && now % 2000 < 50 && pathTracker.getPursuitSegment() < path.size()) {
             Node wp   = path.get(pathTracker.getPursuitSegment());
             double dx = wp.position.centeredX() - playerPos.x;
             double dz = wp.position.centeredZ() - playerPos.z;
@@ -250,7 +252,7 @@ public final class PathExecutor {
             playerPos,
             progress,
             allowReplan,
-            now - lastReplanTime > PathfinderConfig.REPLAN_COOLDOWN_MS.get(),
+            now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
             jumpCooldown);
         if (recovery.noteProgress()) {
             noteRecoveryMovement(playerPos);
@@ -273,7 +275,7 @@ public final class PathExecutor {
         }
         boolean recoveryJump = recovery.action() == PathRecoveryController.Action.RECOVERY_JUMP;
         if (recoveryJump) {
-            jumpCooldown = PathfinderConfig.JUMP_COOLDOWN_TICKS.get();
+            jumpCooldown = PathfinderSettings.instance().jumpCooldownTicks.value();
         }
 
         if (allowRotation) {
@@ -352,7 +354,7 @@ public final class PathExecutor {
             return PathCheckHandling.handled(path, proximity);
         }
         if (!pathCheckResult.isCutoff()
-                || now - lastSmartCutoffTime < PathfinderConfig.SMART_CUTOFF_COOLDOWN_MS.get()
+                || now - lastSmartCutoffTime < PathfinderSettings.instance().smartCutoffCooldownMs.value()
                 || !pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
             return PathCheckHandling.continueWith(path, proximity);
         }
@@ -382,7 +384,7 @@ public final class PathExecutor {
         lastReplanTime = System.currentTimeMillis();
         pathTracker.markReplanTriggered(lastReplanTime);
         replanFromPlayerRequested = fromPlayer;
-        if (PathfinderConfig.SHOW_DEBUG.get()) {
+        if (PathfinderSettings.instance().showDebug.value()) {
             ClientUtils.sendDebugMessage(mc, "Path replan: " + reason);
         }
         state = State.REPLANNING;
@@ -405,7 +407,7 @@ public final class PathExecutor {
         lastReplanTime = now;
         pathTracker.markReplanTriggered(lastReplanTime);
         repairRequest = request.get();
-        if (PathfinderConfig.SHOW_DEBUG.get()) {
+        if (PathfinderSettings.instance().showDebug.value()) {
             ClientUtils.sendDebugMessage(mc, "Path repair: " + reason);
         }
         state = State.REPLANNING;
@@ -416,9 +418,9 @@ public final class PathExecutor {
             return 0;
         }
         int base = Math.max(pathTracker.getPursuitSegment(), proximity.nearestSegmentIndex());
-        int lookahead = proximity.horizontalDistance() > PathfinderConfig.LOCAL_REPAIR_DRIFT_THRESHOLD.get()
-            ? PathfinderConfig.LOCAL_REPAIR_DRIFT_LOOKAHEAD.get()
-            : PathfinderConfig.LOCAL_REPAIR_LOOKAHEAD.get();
+        int lookahead = proximity.horizontalDistance() > PathfinderSettings.instance().localRepairDriftThreshold.value()
+            ? PathfinderSettings.instance().localRepairDriftLookahead.value()
+            : PathfinderSettings.instance().localRepairLookahead.value();
         int target = base + lookahead;
         int maxJoinSegment = Math.max(0, path.size() - 2);
         return Math.max(0, Math.min(target, maxJoinSegment));
@@ -427,11 +429,15 @@ public final class PathExecutor {
     private boolean isAtGoal(Vec3 playerPos) {
         double dx = (goalX + goalCenterX) - playerPos.x;
         double dz = (goalZ + goalCenterZ) - playerPos.z;
-        return Math.sqrt(dx * dx + dz * dz) <= PathfinderConfig.GOAL_REACHED_HDIST.get()
-            && Math.abs(goalY - playerPos.y) <= PathfinderConfig.GOAL_REACHED_VDIST.get();
+        return Math.sqrt(dx * dx + dz * dz) <= PathfinderSettings.instance().goalReachedHDist.value()
+            && Math.abs(goalY - playerPos.y) <= PathfinderSettings.instance().goalReachedVDist.value();
     }
 
     private void tickGoalCoasting(Minecraft mc, Vec3 playerPos) {
+        if (!finishAtPathEnd && !isAtGoal(playerPos)) {
+            triggerReplan(mc, false, true, "path ended before final goal");
+            return;
+        }
         if (!precise) {
             finish(mc);
             return;
@@ -446,7 +452,7 @@ public final class PathExecutor {
             releaseAll(mc);
         }
         if (hDist <= preciseGoalTolerance
-                || System.currentTimeMillis() - coastStartTime > PathfinderConfig.COAST_TIMEOUT_MS.get()) {
+                || System.currentTimeMillis() - coastStartTime > PathfinderSettings.instance().coastTimeoutMs.value()) {
             finish(mc);
         }
     }

@@ -70,13 +70,12 @@ public final class PathfindingSettingsApi {
 
     @EbslApiOperation("Apply and persist pathfinding settings.")
     public void save() {
-        PathfinderSettings.apply();
         PathfinderSettingsStore.save();
     }
 
     @EbslApiOperation("Reset pathfinding settings and persist defaults.")
     public void resetToDefaultsAndSave() {
-        PathfinderSettings.resetToDefaults();
+        PathfinderSettings.instance().resetSettings();
         PathfinderSettingsStore.save();
     }
 }

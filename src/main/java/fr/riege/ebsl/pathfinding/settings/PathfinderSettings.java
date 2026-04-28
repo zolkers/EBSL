@@ -1,6 +1,5 @@
 package fr.riege.ebsl.pathfinding.settings;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.DoubleSetting;
 import fr.riege.ebsl.settings.IntSetting;
@@ -16,7 +15,7 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting walkCost = registerSetting(new DoubleSetting("walk_cost", "Walk", 0.0, 0.0, 10.0));
     public final DoubleSetting diagonalCost = registerSetting(new DoubleSetting("diagonal_cost", "Diagonal", 0.0, 0.0, 10.0));
     public final DoubleSetting fullStepAscentBaseCost = registerSetting(new DoubleSetting(
-        "full_step_ascent_base_cost", "Full step ascent base", 2.0, 0.0, 20.0));
+        "full_step_ascent_base_cost", "Full step ascent base", 1.0, 0.0, 20.0));
     public final DoubleSetting fullStepAscentDyCost = registerSetting(new DoubleSetting(
         "full_step_ascent_dy_cost", "Full step ascent height", 0.5, 0.0, 10.0));
     public final DoubleSetting partialAscentCost = registerSetting(new DoubleSetting(
@@ -24,8 +23,8 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting jumpCost = registerSetting(new DoubleSetting("jump_cost", "Jump", 0.0, 0.0, 20.0));
     public final DoubleSetting parkourCost = registerSetting(new DoubleSetting("parkour_cost", "Parkour", 0.0, 0.0, 30.0));
     public final DoubleSetting fallDyCost = registerSetting(new DoubleSetting("fall_dy_cost", "Fall height", 0.1, 0.0, 10.0));
-    public final DoubleSetting swimCost = registerSetting(new DoubleSetting("swim_cost", "Swim", 0.0, 0.0, 20.0));
-    public final DoubleSetting climbCost = registerSetting(new DoubleSetting("climb_cost", "Climb", 0.0, 0.0, 20.0));
+    public final DoubleSetting swimCost = registerSetting(new DoubleSetting("swim_cost", "Swim", 1.5, 0.0, 20.0));
+    public final DoubleSetting climbCost = registerSetting(new DoubleSetting("climb_cost", "Climb", 2.0, 0.0, 20.0));
     public final DoubleSetting cardinalWallCost = registerSetting(new DoubleSetting(
         "cardinal_wall_cost", "Cardinal wall proximity", 0.55, 0.0, 5.0));
     public final DoubleSetting diagonalWallCost = registerSetting(new DoubleSetting(
@@ -243,17 +242,14 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> all() {
-        syncFromConfig();
         return INSTANCE.settings();
     }
 
     public static List<Setting<?>> generalSettings() {
-        syncFromConfig();
         return List.of(INSTANCE.showDebug, INSTANCE.maxJumpHeight);
     }
 
     public static List<Setting<?>> movementCostSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.walkCost,
             INSTANCE.diagonalCost,
@@ -268,7 +264,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> corridorCostSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.cardinalWallCost,
             INSTANCE.diagonalWallCost,
@@ -278,7 +273,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> steeringSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.cornerSteeringEnabled,
             INSTANCE.cornerSteeringSlowdown,
@@ -290,7 +284,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> planningLimitSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.defaultWalkMaxIterations,
             INSTANCE.defaultWalkMaxLength,
@@ -303,7 +296,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> executionSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.stuckDistThreshold,
             INSTANCE.stuckTimeMs,
@@ -328,7 +320,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> recoverySettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.unstuckJumpMs,
             INSTANCE.unstuckBackupMs,
@@ -345,7 +336,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> longRangeSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.segmentRecalcRatio,
             INSTANCE.earlySegmentRecalcRatio,
@@ -361,7 +351,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> rotationSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.useCameraRail,
             INSTANCE.cameraRailReachedDist,
@@ -386,7 +375,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> smoothingSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.smoothOpenSkipBudget,
             INSTANCE.smoothMidSkipBudget,
@@ -400,7 +388,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static List<Setting<?>> pathCheckSettings() {
-        syncFromConfig();
         return List.of(
             INSTANCE.hugeDeviationHorizontalDistance,
             INSTANCE.smartCutoffMaxHorizontalDistance,
@@ -416,246 +403,7 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.anomalousMinNearestAdvantage);
     }
 
-    public static void apply() {
-        PathfinderConfig.SHOW_DEBUG.set(INSTANCE.showDebug.value());
-        PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.set(INSTANCE.maxJumpHeight.value());
-        PathfinderConfig.WALK_COST.set(INSTANCE.walkCost.value());
-        PathfinderConfig.DIAGONAL_COST.set(INSTANCE.diagonalCost.value());
-        PathfinderConfig.FULL_STEP_ASCENT_BASE_COST.set(INSTANCE.fullStepAscentBaseCost.value());
-        PathfinderConfig.FULL_STEP_ASCENT_DY_COST.set(INSTANCE.fullStepAscentDyCost.value());
-        PathfinderConfig.PARTIAL_ASCENT_COST.set(INSTANCE.partialAscentCost.value());
-        PathfinderConfig.JUMP_COST.set(INSTANCE.jumpCost.value());
-        PathfinderConfig.PARKOUR_COST.set(INSTANCE.parkourCost.value());
-        PathfinderConfig.FALL_DY_COST.set(INSTANCE.fallDyCost.value());
-        PathfinderConfig.SWIM_COST.set(INSTANCE.swimCost.value());
-        PathfinderConfig.CLIMB_COST.set(INSTANCE.climbCost.value());
-        PathfinderConfig.CARDINAL_WALL_COST.set(INSTANCE.cardinalWallCost.value());
-        PathfinderConfig.DIAGONAL_WALL_COST.set(INSTANCE.diagonalWallCost.value());
-        PathfinderConfig.PARTIAL_ASCENT_EDGE_COST.set(INSTANCE.partialAscentEdgeCost.value());
-        PathfinderConfig.PARTIAL_ASCENT_ENTRY_SIDE_COST.set(INSTANCE.partialAscentEntrySideCost.value());
-        PathfinderConfig.OPENING_ENTRY_IMBALANCE_COST.set(INSTANCE.openingEntryImbalanceCost.value());
-        PathfinderConfig.CORNER_STEERING_ENABLED.set(INSTANCE.cornerSteeringEnabled.value());
-        PathfinderConfig.CORNER_STEERING_SLOWDOWN.set(INSTANCE.cornerSteeringSlowdown.value());
-        PathfinderConfig.CORNER_STEERING_SCAN_RADIUS.set(INSTANCE.cornerSteeringScanRadius.value());
-        PathfinderConfig.CORNER_STEERING_NUDGE_WEIGHT.set(INSTANCE.cornerSteeringNudgeWeight.value());
-        PathfinderConfig.CORNER_STEERING_CENTERLINE_WEIGHT.set(INSTANCE.cornerSteeringCenterlineWeight.value());
-        PathfinderConfig.CORNER_STEERING_CENTERLINE_START.set(INSTANCE.cornerSteeringCenterlineStart.value());
-        PathfinderConfig.CORNER_STEERING_CENTERLINE_MAX.set(INSTANCE.cornerSteeringCenterlineMax.value());
-        PathfinderConfig.DEFAULT_WALK_MAX_ITERATIONS.set(INSTANCE.defaultWalkMaxIterations.value());
-        PathfinderConfig.DEFAULT_WALK_MAX_LENGTH.set(INSTANCE.defaultWalkMaxLength.value());
-        PathfinderConfig.INSTANT_WALK_MAX_ITERATIONS.set(INSTANCE.instantWalkMaxIterations.value());
-        PathfinderConfig.INSTANT_WALK_MAX_LENGTH.set(INSTANCE.instantWalkMaxLength.value());
-        PathfinderConfig.REPAIR_WALK_MAX_ITERATIONS.set(INSTANCE.repairWalkMaxIterations.value());
-        PathfinderConfig.REPAIR_WALK_MAX_LENGTH.set(INSTANCE.repairWalkMaxLength.value());
-        PathfinderConfig.QUEUED_LONG_RANGE_MAX_ITERATIONS.set(INSTANCE.queuedLongRangeMaxIterations.value());
-        PathfinderConfig.QUEUED_LONG_RANGE_MAX_LENGTH.set(INSTANCE.queuedLongRangeMaxLength.value());
-        PathfinderConfig.STUCK_DIST_THRESHOLD.set(INSTANCE.stuckDistThreshold.value());
-        PathfinderConfig.STUCK_TIME_MS.set(INSTANCE.stuckTimeMs.value());
-        PathfinderConfig.DRIFT_DISTANCE.set(INSTANCE.driftDistance.value());
-        PathfinderConfig.REPLAN_COOLDOWN_MS.set(INSTANCE.replanCooldownMs.value());
-        PathfinderConfig.JUMP_TRIGGER_DIST.set(INSTANCE.jumpTriggerDist.value());
-        PathfinderConfig.STEP_UP_TRIGGER_DIST.set(INSTANCE.stepUpTriggerDist.value());
-        PathfinderConfig.JUMP_COOLDOWN_TICKS.set(INSTANCE.jumpCooldownTicks.value());
-        PathfinderConfig.STALL_JUMP_PROGRESS_MS.set(INSTANCE.stallJumpProgressMs.value());
-        PathfinderConfig.PATH_PROGRESS_EPSILON.set(INSTANCE.pathProgressEpsilon.value());
-        PathfinderConfig.WALK_TARGET_DEADZONE.set(INSTANCE.walkTargetDeadzone.value());
-        PathfinderConfig.WALK_FORWARD_DOT.set(INSTANCE.walkForwardDot.value());
-        PathfinderConfig.WALK_BACKWARD_DOT.set(INSTANCE.walkBackwardDot.value());
-        PathfinderConfig.WALK_STRAFE_DOT.set(INSTANCE.walkStrafeDot.value());
-        PathfinderConfig.COAST_TIMEOUT_MS.set(INSTANCE.coastTimeoutMs.value());
-        PathfinderConfig.SMART_CUTOFF_COOLDOWN_MS.set(INSTANCE.smartCutoffCooldownMs.value());
-        PathfinderConfig.LOCAL_REPAIR_LOOKAHEAD.set(INSTANCE.localRepairLookahead.value());
-        PathfinderConfig.LOCAL_REPAIR_DRIFT_LOOKAHEAD.set(INSTANCE.localRepairDriftLookahead.value());
-        PathfinderConfig.LOCAL_REPAIR_DRIFT_THRESHOLD.set(INSTANCE.localRepairDriftThreshold.value());
-        PathfinderConfig.GOAL_REACHED_HDIST.set(INSTANCE.goalReachedHDist.value());
-        PathfinderConfig.GOAL_REACHED_VDIST.set(INSTANCE.goalReachedVDist.value());
-        PathfinderConfig.UNSTUCK_JUMP_MS.set(INSTANCE.unstuckJumpMs.value());
-        PathfinderConfig.UNSTUCK_BACKUP_MS.set(INSTANCE.unstuckBackupMs.value());
-        PathfinderConfig.BACKUP_TICKS.set(INSTANCE.backupTicks.value());
-        PathfinderConfig.PATH_REPLAN_STALE_MS.set(INSTANCE.pathReplanStaleMs.value());
-        PathfinderConfig.PATH_REPLAN_DRIFT_DISTANCE.set(INSTANCE.pathReplanDriftDistance.value());
-        PathfinderConfig.GROUNDED_NO_PROGRESS_REPLAN_MS.set(INSTANCE.groundedNoProgressReplanMs.value());
-        PathfinderConfig.PATH_REPLAN_HARD_STALE_MS.set(INSTANCE.pathReplanHardStaleMs.value());
-        PathfinderConfig.BACKUP_MAX_HORIZONTAL_SPEED.set(INSTANCE.backupMaxHorizontalSpeed.value());
-        PathfinderConfig.CORNER_ALIGN_MIN_DISTANCE.set(INSTANCE.cornerAlignMinDistance.value());
-        PathfinderConfig.CORNER_ALIGN_MAX_DISTANCE.set(INSTANCE.cornerAlignMaxDistance.value());
-        PathfinderConfig.CORNER_ALIGN_MAX_VERTICAL.set(INSTANCE.cornerAlignMaxVertical.value());
-        PathfinderConfig.CORNER_ALIGN_MAX_MS.set(INSTANCE.cornerAlignMaxMs.value());
-        PathfinderConfig.SEGMENT_RECALC_RATIO.set(INSTANCE.segmentRecalcRatio.value());
-        PathfinderConfig.EARLY_SEGMENT_RECALC_RATIO.set(INSTANCE.earlySegmentRecalcRatio.value());
-        PathfinderConfig.HORIZON_TRIM_RATIO.set(INSTANCE.horizonTrimRatio.value());
-        PathfinderConfig.PREPARE_REMAINING_DISTANCE.set(INSTANCE.prepareRemainingDistance.value());
-        PathfinderConfig.EMERGENCY_REMAINING_DISTANCE.set(INSTANCE.emergencyRemainingDistance.value());
-        PathfinderConfig.PREPARED_SWITCH_REMAINING_DISTANCE.set(INSTANCE.preparedSwitchRemainingDistance.value());
-        PathfinderConfig.FINAL_GOAL_XZ_TOLERANCE.set(INSTANCE.finalGoalXzTolerance.value());
-        PathfinderConfig.MAX_SEGMENT_DISTANCE.set(INSTANCE.maxSegmentDistance.value());
-        PathfinderConfig.SEGMENT_RETRY_COOLDOWN_MS.set(INSTANCE.segmentRetryCooldownMs.value());
-        PathfinderConfig.PLAYER_START_AFTER_FAILURES.set(INSTANCE.playerStartAfterFailures.value());
-        PathfinderConfig.PLAYER_START_RECOVERY_RATIO.set(INSTANCE.playerStartRecoveryRatio.value());
-        PathfinderConfig.USE_CAMERA_RAIL.set(INSTANCE.useCameraRail.value());
-        PathfinderConfig.CAMERA_RAIL_REACHED_DIST.set(INSTANCE.cameraRailReachedDist.value());
-        PathfinderConfig.LEGACY_CAMERA_EYE_Y.set(INSTANCE.legacyCameraEyeY.value());
-        PathfinderConfig.CAMERA_RAIL_GUIDE_LOOKAHEAD_DIST.set(INSTANCE.cameraRailGuideLookaheadDist.value());
-        PathfinderConfig.ROTATION_REDISPATCH_COOLDOWN_MS.set(INSTANCE.rotationRedispatchCooldownMs.value());
-        PathfinderConfig.IDLE_YAW_DEADBAND_DEG.set(INSTANCE.idleYawDeadbandDeg.value());
-        PathfinderConfig.IDLE_PITCH_DEADBAND_DEG.set(INSTANCE.idlePitchDeadbandDeg.value());
-        PathfinderConfig.ACTIVE_YAW_RETARGET_DEG.set(INSTANCE.activeYawRetargetDeg.value());
-        PathfinderConfig.ACTIVE_PITCH_RETARGET_DEG.set(INSTANCE.activePitchRetargetDeg.value());
-        PathfinderConfig.ROTATION_DURATION_MS.set(INSTANCE.rotationDurationMs.value());
-        PathfinderConfig.PITCH_MIN_HORIZONTAL_DISTANCE.set(INSTANCE.pitchMinHorizontalDistance.value());
-        PathfinderConfig.PITCH_LAND_DEADBAND_DEG.set(INSTANCE.pitchLandDeadbandDeg.value());
-        PathfinderConfig.PITCH_WATER_DEADBAND_DEG.set(INSTANCE.pitchWaterDeadbandDeg.value());
-        PathfinderConfig.PITCH_LAND_MAX_ABS_DEG.set(INSTANCE.pitchLandMaxAbsDeg.value());
-        PathfinderConfig.PITCH_WATER_MAX_ABS_DEG.set(INSTANCE.pitchWaterMaxAbsDeg.value());
-        PathfinderConfig.PITCH_LAND_MAX_STEP_DEG.set(INSTANCE.pitchLandMaxStepDeg.value());
-        PathfinderConfig.PITCH_WATER_MAX_STEP_DEG.set(INSTANCE.pitchWaterMaxStepDeg.value());
-        PathfinderConfig.PITCH_SNAP_TO_NEUTRAL_DEG.set(INSTANCE.pitchSnapToNeutralDeg.value());
-        PathfinderConfig.CAMERA_LOOKAHEAD.set(INSTANCE.cameraLookahead.value());
-        PathfinderConfig.CAMERA_MAX_LATERAL_DEV.set(INSTANCE.cameraMaxLateralDev.value());
-        PathfinderConfig.SMOOTH_OPEN_SKIP_BUDGET.set(INSTANCE.smoothOpenSkipBudget.value());
-        PathfinderConfig.SMOOTH_MID_SKIP_BUDGET.set(INSTANCE.smoothMidSkipBudget.value());
-        PathfinderConfig.SMOOTH_TIGHT_SKIP_BUDGET.set(INSTANCE.smoothTightSkipBudget.value());
-        PathfinderConfig.SMOOTH_OPEN_WALL_SCORE_MAX.set(INSTANCE.smoothOpenWallScoreMax.value());
-        PathfinderConfig.SMOOTH_MID_WALL_SCORE_MAX.set(INSTANCE.smoothMidWallScoreMax.value());
-        PathfinderConfig.SMOOTH_CONSTRAINED_CORNER_ANGLE_DEG.set(INSTANCE.smoothConstrainedCornerAngleDeg.value());
-        PathfinderConfig.INTERMEDIATE_SPACING.set(INSTANCE.intermediateSpacing.value());
-        PathfinderConfig.PARTIAL_ASCENT_THRESHOLD.set(INSTANCE.partialAscentThreshold.value());
-        PathfinderConfig.DESCENT_THRESHOLD.set(INSTANCE.descentThreshold.value());
-        PathfinderConfig.HUGE_DEVIATION_HORIZONTAL_DISTANCE.set(INSTANCE.hugeDeviationHorizontalDistance.value());
-        PathfinderConfig.SMART_CUTOFF_MAX_HORIZONTAL_DISTANCE.set(INSTANCE.smartCutoffMaxHorizontalDistance.value());
-        PathfinderConfig.SMART_CUTOFF_MAX_VERTICAL_DISTANCE.set(INSTANCE.smartCutoffMaxVerticalDistance.value());
-        PathfinderConfig.SMART_CUTOFF_MIN_PROGRESS_SKIP.set(INSTANCE.smartCutoffMinProgressSkip.value());
-        PathfinderConfig.SUSTAINED_OFF_PATH_MAX_MS.set(INSTANCE.sustainedOffPathMaxMs.value());
-        PathfinderConfig.SUSTAINED_VERTICAL_OFF_PATH_MAX_MS.set(INSTANCE.sustainedVerticalOffPathMaxMs.value());
-        PathfinderConfig.OFF_PATH_HORIZONTAL_DISTANCE.set(INSTANCE.offPathHorizontalDistance.value());
-        PathfinderConfig.OFF_PATH_VERTICAL_DISTANCE.set(INSTANCE.offPathVerticalDistance.value());
-        PathfinderConfig.ANOMALOUS_MIN_SEGMENT_SKIP.set(INSTANCE.anomalousMinSegmentSkip.value());
-        PathfinderConfig.ANOMALOUS_MAX_HORIZONTAL_DISTANCE.set(INSTANCE.anomalousMaxHorizontalDistance.value());
-        PathfinderConfig.ANOMALOUS_MAX_VERTICAL_DISTANCE.set(INSTANCE.anomalousMaxVerticalDistance.value());
-        PathfinderConfig.ANOMALOUS_MIN_NEAREST_ADVANTAGE.set(INSTANCE.anomalousMinNearestAdvantage.value());
-    }
-
     public static void resetToDefaults() {
         INSTANCE.resetSettings();
-        apply();
-    }
-
-    private static void syncFromConfig() {
-        INSTANCE.showDebug.setValue(PathfinderConfig.SHOW_DEBUG.get());
-        INSTANCE.maxJumpHeight.setValue(PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get());
-        INSTANCE.walkCost.setValue(PathfinderConfig.WALK_COST.get());
-        INSTANCE.diagonalCost.setValue(PathfinderConfig.DIAGONAL_COST.get());
-        INSTANCE.fullStepAscentBaseCost.setValue(PathfinderConfig.FULL_STEP_ASCENT_BASE_COST.get());
-        INSTANCE.fullStepAscentDyCost.setValue(PathfinderConfig.FULL_STEP_ASCENT_DY_COST.get());
-        INSTANCE.partialAscentCost.setValue(PathfinderConfig.PARTIAL_ASCENT_COST.get());
-        INSTANCE.jumpCost.setValue(PathfinderConfig.JUMP_COST.get());
-        INSTANCE.parkourCost.setValue(PathfinderConfig.PARKOUR_COST.get());
-        INSTANCE.fallDyCost.setValue(PathfinderConfig.FALL_DY_COST.get());
-        INSTANCE.swimCost.setValue(PathfinderConfig.SWIM_COST.get());
-        INSTANCE.climbCost.setValue(PathfinderConfig.CLIMB_COST.get());
-        INSTANCE.cardinalWallCost.setValue(PathfinderConfig.CARDINAL_WALL_COST.get());
-        INSTANCE.diagonalWallCost.setValue(PathfinderConfig.DIAGONAL_WALL_COST.get());
-        INSTANCE.partialAscentEdgeCost.setValue(PathfinderConfig.PARTIAL_ASCENT_EDGE_COST.get());
-        INSTANCE.partialAscentEntrySideCost.setValue(PathfinderConfig.PARTIAL_ASCENT_ENTRY_SIDE_COST.get());
-        INSTANCE.openingEntryImbalanceCost.setValue(PathfinderConfig.OPENING_ENTRY_IMBALANCE_COST.get());
-        INSTANCE.cornerSteeringEnabled.setValue(PathfinderConfig.CORNER_STEERING_ENABLED.get());
-        INSTANCE.cornerSteeringSlowdown.setValue(PathfinderConfig.CORNER_STEERING_SLOWDOWN.get());
-        INSTANCE.cornerSteeringScanRadius.setValue(PathfinderConfig.CORNER_STEERING_SCAN_RADIUS.get());
-        INSTANCE.cornerSteeringNudgeWeight.setValue(PathfinderConfig.CORNER_STEERING_NUDGE_WEIGHT.get());
-        INSTANCE.cornerSteeringCenterlineWeight.setValue(PathfinderConfig.CORNER_STEERING_CENTERLINE_WEIGHT.get());
-        INSTANCE.cornerSteeringCenterlineStart.setValue(PathfinderConfig.CORNER_STEERING_CENTERLINE_START.get());
-        INSTANCE.cornerSteeringCenterlineMax.setValue(PathfinderConfig.CORNER_STEERING_CENTERLINE_MAX.get());
-        INSTANCE.defaultWalkMaxIterations.setValue(PathfinderConfig.DEFAULT_WALK_MAX_ITERATIONS.get());
-        INSTANCE.defaultWalkMaxLength.setValue(PathfinderConfig.DEFAULT_WALK_MAX_LENGTH.get());
-        INSTANCE.instantWalkMaxIterations.setValue(PathfinderConfig.INSTANT_WALK_MAX_ITERATIONS.get());
-        INSTANCE.instantWalkMaxLength.setValue(PathfinderConfig.INSTANT_WALK_MAX_LENGTH.get());
-        INSTANCE.repairWalkMaxIterations.setValue(PathfinderConfig.REPAIR_WALK_MAX_ITERATIONS.get());
-        INSTANCE.repairWalkMaxLength.setValue(PathfinderConfig.REPAIR_WALK_MAX_LENGTH.get());
-        INSTANCE.queuedLongRangeMaxIterations.setValue(PathfinderConfig.QUEUED_LONG_RANGE_MAX_ITERATIONS.get());
-        INSTANCE.queuedLongRangeMaxLength.setValue(PathfinderConfig.QUEUED_LONG_RANGE_MAX_LENGTH.get());
-        INSTANCE.stuckDistThreshold.setValue(PathfinderConfig.STUCK_DIST_THRESHOLD.get());
-        INSTANCE.stuckTimeMs.setValue(PathfinderConfig.STUCK_TIME_MS.get());
-        INSTANCE.driftDistance.setValue(PathfinderConfig.DRIFT_DISTANCE.get());
-        INSTANCE.replanCooldownMs.setValue(PathfinderConfig.REPLAN_COOLDOWN_MS.get());
-        INSTANCE.jumpTriggerDist.setValue(PathfinderConfig.JUMP_TRIGGER_DIST.get());
-        INSTANCE.stepUpTriggerDist.setValue(PathfinderConfig.STEP_UP_TRIGGER_DIST.get());
-        INSTANCE.jumpCooldownTicks.setValue(PathfinderConfig.JUMP_COOLDOWN_TICKS.get());
-        INSTANCE.stallJumpProgressMs.setValue(PathfinderConfig.STALL_JUMP_PROGRESS_MS.get());
-        INSTANCE.pathProgressEpsilon.setValue(PathfinderConfig.PATH_PROGRESS_EPSILON.get());
-        INSTANCE.walkTargetDeadzone.setValue(PathfinderConfig.WALK_TARGET_DEADZONE.get());
-        INSTANCE.walkForwardDot.setValue(PathfinderConfig.WALK_FORWARD_DOT.get());
-        INSTANCE.walkBackwardDot.setValue(PathfinderConfig.WALK_BACKWARD_DOT.get());
-        INSTANCE.walkStrafeDot.setValue(PathfinderConfig.WALK_STRAFE_DOT.get());
-        INSTANCE.coastTimeoutMs.setValue(PathfinderConfig.COAST_TIMEOUT_MS.get());
-        INSTANCE.smartCutoffCooldownMs.setValue(PathfinderConfig.SMART_CUTOFF_COOLDOWN_MS.get());
-        INSTANCE.localRepairLookahead.setValue(PathfinderConfig.LOCAL_REPAIR_LOOKAHEAD.get());
-        INSTANCE.localRepairDriftLookahead.setValue(PathfinderConfig.LOCAL_REPAIR_DRIFT_LOOKAHEAD.get());
-        INSTANCE.localRepairDriftThreshold.setValue(PathfinderConfig.LOCAL_REPAIR_DRIFT_THRESHOLD.get());
-        INSTANCE.goalReachedHDist.setValue(PathfinderConfig.GOAL_REACHED_HDIST.get());
-        INSTANCE.goalReachedVDist.setValue(PathfinderConfig.GOAL_REACHED_VDIST.get());
-        INSTANCE.unstuckJumpMs.setValue(PathfinderConfig.UNSTUCK_JUMP_MS.get());
-        INSTANCE.unstuckBackupMs.setValue(PathfinderConfig.UNSTUCK_BACKUP_MS.get());
-        INSTANCE.backupTicks.setValue(PathfinderConfig.BACKUP_TICKS.get());
-        INSTANCE.pathReplanStaleMs.setValue(PathfinderConfig.PATH_REPLAN_STALE_MS.get());
-        INSTANCE.pathReplanDriftDistance.setValue(PathfinderConfig.PATH_REPLAN_DRIFT_DISTANCE.get());
-        INSTANCE.groundedNoProgressReplanMs.setValue(PathfinderConfig.GROUNDED_NO_PROGRESS_REPLAN_MS.get());
-        INSTANCE.pathReplanHardStaleMs.setValue(PathfinderConfig.PATH_REPLAN_HARD_STALE_MS.get());
-        INSTANCE.backupMaxHorizontalSpeed.setValue(PathfinderConfig.BACKUP_MAX_HORIZONTAL_SPEED.get());
-        INSTANCE.cornerAlignMinDistance.setValue(PathfinderConfig.CORNER_ALIGN_MIN_DISTANCE.get());
-        INSTANCE.cornerAlignMaxDistance.setValue(PathfinderConfig.CORNER_ALIGN_MAX_DISTANCE.get());
-        INSTANCE.cornerAlignMaxVertical.setValue(PathfinderConfig.CORNER_ALIGN_MAX_VERTICAL.get());
-        INSTANCE.cornerAlignMaxMs.setValue(PathfinderConfig.CORNER_ALIGN_MAX_MS.get());
-        INSTANCE.segmentRecalcRatio.setValue(PathfinderConfig.SEGMENT_RECALC_RATIO.get());
-        INSTANCE.earlySegmentRecalcRatio.setValue(PathfinderConfig.EARLY_SEGMENT_RECALC_RATIO.get());
-        INSTANCE.horizonTrimRatio.setValue(PathfinderConfig.HORIZON_TRIM_RATIO.get());
-        INSTANCE.prepareRemainingDistance.setValue(PathfinderConfig.PREPARE_REMAINING_DISTANCE.get());
-        INSTANCE.emergencyRemainingDistance.setValue(PathfinderConfig.EMERGENCY_REMAINING_DISTANCE.get());
-        INSTANCE.preparedSwitchRemainingDistance.setValue(PathfinderConfig.PREPARED_SWITCH_REMAINING_DISTANCE.get());
-        INSTANCE.finalGoalXzTolerance.setValue(PathfinderConfig.FINAL_GOAL_XZ_TOLERANCE.get());
-        INSTANCE.maxSegmentDistance.setValue(PathfinderConfig.MAX_SEGMENT_DISTANCE.get());
-        INSTANCE.segmentRetryCooldownMs.setValue(PathfinderConfig.SEGMENT_RETRY_COOLDOWN_MS.get());
-        INSTANCE.playerStartAfterFailures.setValue(PathfinderConfig.PLAYER_START_AFTER_FAILURES.get());
-        INSTANCE.playerStartRecoveryRatio.setValue(PathfinderConfig.PLAYER_START_RECOVERY_RATIO.get());
-        INSTANCE.useCameraRail.setValue(PathfinderConfig.USE_CAMERA_RAIL.get());
-        INSTANCE.cameraRailReachedDist.setValue(PathfinderConfig.CAMERA_RAIL_REACHED_DIST.get());
-        INSTANCE.legacyCameraEyeY.setValue(PathfinderConfig.LEGACY_CAMERA_EYE_Y.get());
-        INSTANCE.cameraRailGuideLookaheadDist.setValue(PathfinderConfig.CAMERA_RAIL_GUIDE_LOOKAHEAD_DIST.get());
-        INSTANCE.rotationRedispatchCooldownMs.setValue(PathfinderConfig.ROTATION_REDISPATCH_COOLDOWN_MS.get());
-        INSTANCE.idleYawDeadbandDeg.setValue(PathfinderConfig.IDLE_YAW_DEADBAND_DEG.get());
-        INSTANCE.idlePitchDeadbandDeg.setValue(PathfinderConfig.IDLE_PITCH_DEADBAND_DEG.get());
-        INSTANCE.activeYawRetargetDeg.setValue(PathfinderConfig.ACTIVE_YAW_RETARGET_DEG.get());
-        INSTANCE.activePitchRetargetDeg.setValue(PathfinderConfig.ACTIVE_PITCH_RETARGET_DEG.get());
-        INSTANCE.rotationDurationMs.setValue(PathfinderConfig.ROTATION_DURATION_MS.get());
-        INSTANCE.pitchMinHorizontalDistance.setValue(PathfinderConfig.PITCH_MIN_HORIZONTAL_DISTANCE.get());
-        INSTANCE.pitchLandDeadbandDeg.setValue(PathfinderConfig.PITCH_LAND_DEADBAND_DEG.get());
-        INSTANCE.pitchWaterDeadbandDeg.setValue(PathfinderConfig.PITCH_WATER_DEADBAND_DEG.get());
-        INSTANCE.pitchLandMaxAbsDeg.setValue(PathfinderConfig.PITCH_LAND_MAX_ABS_DEG.get());
-        INSTANCE.pitchWaterMaxAbsDeg.setValue(PathfinderConfig.PITCH_WATER_MAX_ABS_DEG.get());
-        INSTANCE.pitchLandMaxStepDeg.setValue(PathfinderConfig.PITCH_LAND_MAX_STEP_DEG.get());
-        INSTANCE.pitchWaterMaxStepDeg.setValue(PathfinderConfig.PITCH_WATER_MAX_STEP_DEG.get());
-        INSTANCE.pitchSnapToNeutralDeg.setValue(PathfinderConfig.PITCH_SNAP_TO_NEUTRAL_DEG.get());
-        INSTANCE.cameraLookahead.setValue(PathfinderConfig.CAMERA_LOOKAHEAD.get());
-        INSTANCE.cameraMaxLateralDev.setValue(PathfinderConfig.CAMERA_MAX_LATERAL_DEV.get());
-        INSTANCE.smoothOpenSkipBudget.setValue(PathfinderConfig.SMOOTH_OPEN_SKIP_BUDGET.get());
-        INSTANCE.smoothMidSkipBudget.setValue(PathfinderConfig.SMOOTH_MID_SKIP_BUDGET.get());
-        INSTANCE.smoothTightSkipBudget.setValue(PathfinderConfig.SMOOTH_TIGHT_SKIP_BUDGET.get());
-        INSTANCE.smoothOpenWallScoreMax.setValue(PathfinderConfig.SMOOTH_OPEN_WALL_SCORE_MAX.get());
-        INSTANCE.smoothMidWallScoreMax.setValue(PathfinderConfig.SMOOTH_MID_WALL_SCORE_MAX.get());
-        INSTANCE.smoothConstrainedCornerAngleDeg.setValue(PathfinderConfig.SMOOTH_CONSTRAINED_CORNER_ANGLE_DEG.get());
-        INSTANCE.intermediateSpacing.setValue(PathfinderConfig.INTERMEDIATE_SPACING.get());
-        INSTANCE.partialAscentThreshold.setValue(PathfinderConfig.PARTIAL_ASCENT_THRESHOLD.get());
-        INSTANCE.descentThreshold.setValue(PathfinderConfig.DESCENT_THRESHOLD.get());
-        INSTANCE.hugeDeviationHorizontalDistance.setValue(PathfinderConfig.HUGE_DEVIATION_HORIZONTAL_DISTANCE.get());
-        INSTANCE.smartCutoffMaxHorizontalDistance.setValue(PathfinderConfig.SMART_CUTOFF_MAX_HORIZONTAL_DISTANCE.get());
-        INSTANCE.smartCutoffMaxVerticalDistance.setValue(PathfinderConfig.SMART_CUTOFF_MAX_VERTICAL_DISTANCE.get());
-        INSTANCE.smartCutoffMinProgressSkip.setValue(PathfinderConfig.SMART_CUTOFF_MIN_PROGRESS_SKIP.get());
-        INSTANCE.sustainedOffPathMaxMs.setValue(PathfinderConfig.SUSTAINED_OFF_PATH_MAX_MS.get());
-        INSTANCE.sustainedVerticalOffPathMaxMs.setValue(PathfinderConfig.SUSTAINED_VERTICAL_OFF_PATH_MAX_MS.get());
-        INSTANCE.offPathHorizontalDistance.setValue(PathfinderConfig.OFF_PATH_HORIZONTAL_DISTANCE.get());
-        INSTANCE.offPathVerticalDistance.setValue(PathfinderConfig.OFF_PATH_VERTICAL_DISTANCE.get());
-        INSTANCE.anomalousMinSegmentSkip.setValue(PathfinderConfig.ANOMALOUS_MIN_SEGMENT_SKIP.get());
-        INSTANCE.anomalousMaxHorizontalDistance.setValue(PathfinderConfig.ANOMALOUS_MAX_HORIZONTAL_DISTANCE.get());
-        INSTANCE.anomalousMaxVerticalDistance.setValue(PathfinderConfig.ANOMALOUS_MAX_VERTICAL_DISTANCE.get());
-        INSTANCE.anomalousMinNearestAdvantage.setValue(PathfinderConfig.ANOMALOUS_MIN_NEAREST_ADVANTAGE.get());
     }
 }

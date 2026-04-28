@@ -1,16 +1,16 @@
 package fr.riege.ebsl.pathfinding.check;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 
 @PathCheckRole("sustained_off_path_replan")
 final class SustainedOffPathCheck implements PathCheck {
     @Override
     public PathCheckResult evaluate(PathCheckContext context) {
         PathProximitySnapshot proximity = context.proximity();
-        boolean verticalDeviation = proximity.verticalDistance() >= PathfinderConfig.OFF_PATH_VERTICAL_DISTANCE.get();
+        boolean verticalDeviation = proximity.verticalDistance() >= PathfinderSettings.instance().offPathVerticalDistance.value();
         if (verticalDeviation
-            && context.severeOffPathDurationMs() >= PathfinderConfig.SUSTAINED_VERTICAL_OFF_PATH_MAX_MS.get()) {
+            && context.severeOffPathDurationMs() >= PathfinderSettings.instance().sustainedVerticalOffPathMaxMs.value()) {
             return PathCheckResult.forceReplan(String.format(
                 "vertical off-path timeout dist3d=%.2f y=%.2f duration=%dms segment=%d",
                 proximity.distance3d(),
@@ -19,8 +19,8 @@ final class SustainedOffPathCheck implements PathCheck {
                 proximity.nearestSegmentIndex()));
         }
 
-        boolean horizontalDeviation = proximity.horizontalDistance() >= PathfinderConfig.OFF_PATH_HORIZONTAL_DISTANCE.get();
-        if (horizontalDeviation && context.severeOffPathDurationMs() >= PathfinderConfig.SUSTAINED_OFF_PATH_MAX_MS.get()) {
+        boolean horizontalDeviation = proximity.horizontalDistance() >= PathfinderSettings.instance().offPathHorizontalDistance.value();
+        if (horizontalDeviation && context.severeOffPathDurationMs() >= PathfinderSettings.instance().sustainedOffPathMaxMs.value()) {
             return PathCheckResult.forceReplan(String.format(
                 "horizontal off-path timeout dist3d=%.2f h=%.2f duration=%dms segment=%d",
                 proximity.distance3d(),

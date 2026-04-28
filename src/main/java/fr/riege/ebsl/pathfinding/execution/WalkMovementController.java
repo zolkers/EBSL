@@ -1,7 +1,6 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.movement.types.execution.MovementExecutionContext;
@@ -10,6 +9,7 @@ import fr.riege.ebsl.pathfinding.movement.types.execution.MovementExecutorRegist
 import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementValidationContext;
 import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.pathfinding.movement.types.execution.WaterMovementContext;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -100,14 +100,14 @@ final class WalkMovementController {
         double dz = targetWp.position.centeredZ() - playerPos.z;
         double hDist = Math.sqrt(dx * dx + dz * dz);
 
-        if (hDist < PathfinderConfig.WALK_TARGET_DEADZONE.get() && pursuitSegment + 2 < path.size()) {
+        if (hDist < PathfinderSettings.instance().walkTargetDeadzone.value() && pursuitSegment + 2 < path.size()) {
             targetWp = path.get(pursuitSegment + 2);
             dx = targetWp.position.centeredX() - playerPos.x;
             dz = targetWp.position.centeredZ() - playerPos.z;
             hDist = Math.sqrt(dx * dx + dz * dz);
         }
 
-        if (hDist < PathfinderConfig.WALK_TARGET_DEADZONE.get()) {
+        if (hDist < PathfinderSettings.instance().walkTargetDeadzone.value()) {
             if (forceForwardWhenCentered) {
                 mc.options.keyUp.setDown(true);
                 mc.options.keyDown.setDown(false);
@@ -131,13 +131,13 @@ final class WalkMovementController {
             targetWp,
             pursuitSegment);
         InputApplier.applyRelativeMovement(
-            mc, steering.x(), steering.z(), PathfinderConfig.WALK_FORWARD_DOT.get(),
-            PathfinderConfig.WALK_BACKWARD_DOT.get(), PathfinderConfig.WALK_STRAFE_DOT.get());
+            mc, steering.x(), steering.z(), PathfinderSettings.instance().walkForwardDot.value(),
+            PathfinderSettings.instance().walkBackwardDot.value(), PathfinderSettings.instance().walkStrafeDot.value());
         mc.options.keySprint.setDown(mc.options.keyUp.isDown()
             && !mc.options.keyDown.isDown()
             && distToFinal > 2.0
             && !nearStepUp
-            && (!steering.nearCorner() || !PathfinderConfig.CORNER_STEERING_SLOWDOWN.get()));
+            && (!steering.nearCorner() || !PathfinderSettings.instance().cornerSteeringSlowdown.value()));
     }
 
     private void handleJump(PathExecutor executor, Minecraft mc, Node waypoint, Vec3 playerPos,
@@ -161,22 +161,22 @@ final class WalkMovementController {
             millisSinceProgress,
             hDist,
             dy,
-            PathfinderConfig.STEP_UP_TRIGGER_DIST.get(),
-            PathfinderConfig.JUMP_TRIGGER_DIST.get(),
+            PathfinderSettings.instance().stepUpTriggerDist.value(),
+            PathfinderSettings.instance().jumpTriggerDist.value(),
             1.2,
             parkourDistanceBlocks(waypoint, pursuitSegment),
-            PathfinderConfig.JUMP_COOLDOWN_TICKS.get(),
-            PathfinderConfig.STALL_JUMP_PROGRESS_MS.get()
+            PathfinderSettings.instance().jumpCooldownTicks.value(),
+            PathfinderSettings.instance().stallJumpProgressMs.value()
         );
         MovementExecutorRegistry.get(waypoint.moveType).handleJump(context);
         mc.options.keyJump.setDown(context.jumpPressed());
         if (shouldAssistSlimeAscent(mc, waypoint, hDist, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
-            executor.setJumpCooldown(PathfinderConfig.JUMP_COOLDOWN_TICKS.get());
+            executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
             return;
         }
         if (context.jumpCooldownConsumed()) {
-            executor.setJumpCooldown(PathfinderConfig.JUMP_COOLDOWN_TICKS.get());
+            executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
         }
     }
 

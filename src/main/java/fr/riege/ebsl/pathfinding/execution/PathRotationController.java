@@ -1,13 +1,13 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
 import fr.riege.ebsl.pathfinding.rotation.AngleUtils;
 import fr.riege.ebsl.pathfinding.rotation.EasingType;
 import fr.riege.ebsl.pathfinding.rotation.Rotation;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.pathfinding.rotation.strategy.TimedEaseStrategy;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +28,7 @@ final class PathRotationController {
     private final PathPitchStabilizer pitchStabilizer = new PathPitchStabilizer();
 
     void rebuild(List<Node> path) {
-        this.cameraPath = PathfinderConfig.USE_CAMERA_RAIL.get() ? CameraRailBuilder.build(path) : Collections.emptyList();
+        this.cameraPath = PathfinderSettings.instance().useCameraRail.value() ? CameraRailBuilder.build(path) : Collections.emptyList();
         this.cameraIndex = 0;
         this.lastCameraCheckPos = null;
         this.camTargetIdx = -1;
@@ -85,7 +85,7 @@ final class PathRotationController {
     }
 
     private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment) {
-        if (PathfinderConfig.USE_CAMERA_RAIL.get() && !cameraPath.isEmpty()) {
+        if (PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()) {
             int camTarget = pickCameraRailTarget(playerPos);
             Vec3 rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
             int visualizerIndex = Math.min(cameraPath.size() - 1, camTarget + 1);
@@ -96,7 +96,7 @@ final class PathRotationController {
         Node rotTarget = path.get(camTarget);
         Vec3 rotTargetPos = new Vec3(
             rotTarget.position.centeredX(),
-            rotTarget.position.flooredY() + PathfinderConfig.LEGACY_CAMERA_EYE_Y.get(),
+            rotTarget.position.flooredY() + PathfinderSettings.instance().legacyCameraEyeY.value(),
             rotTarget.position.centeredZ());
         return new RotationTarget("legacy", camTarget, camTarget, rotTargetPos);
     }
@@ -120,16 +120,16 @@ final class PathRotationController {
             pitchDrift);
 
         float yawThreshold = (float) (double) (alreadyRotating
-            ? PathfinderConfig.ACTIVE_YAW_RETARGET_DEG.get()
-            : PathfinderConfig.IDLE_YAW_DEADBAND_DEG.get());
+            ? PathfinderSettings.instance().activeYawRetargetDeg.value()
+            : PathfinderSettings.instance().idleYawDeadbandDeg.value());
         float pitchThreshold = (float) (double) (alreadyRotating
-            ? PathfinderConfig.ACTIVE_PITCH_RETARGET_DEG.get()
-            : PathfinderConfig.IDLE_PITCH_DEADBAND_DEG.get());
+            ? PathfinderSettings.instance().activePitchRetargetDeg.value()
+            : PathfinderSettings.instance().idlePitchDeadbandDeg.value());
         long now = System.currentTimeMillis();
         if ((yawDrift > yawThreshold || pitchDrift > pitchThreshold)
-            && (!alreadyRotating || now - lastRotationDispatchMs >= PathfinderConfig.ROTATION_REDISPATCH_COOLDOWN_MS.get())) {
-            long durationMs = PathfinderConfig.ROTATION_DURATION_MS.get();
-            EasingType easing = PathfinderConfig.USE_CAMERA_RAIL.get() && !cameraPath.isEmpty()
+            && (!alreadyRotating || now - lastRotationDispatchMs >= PathfinderSettings.instance().rotationRedispatchCooldownMs.value())) {
+            long durationMs = PathfinderSettings.instance().rotationDurationMs.value();
+            EasingType easing = PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()
                 ? EasingType.EASE_OUT_CUBIC
                 : computePathDifficulty(mc, path, pursuitSegment) < 0.4f
                     ? EasingType.EASE_OUT_BACK
@@ -146,7 +146,7 @@ final class PathRotationController {
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {
-        if (debug != null && PathfinderConfig.SHOW_DEBUG.get()) {
+        if (debug != null && PathfinderSettings.instance().showDebug.value()) {
             debug.accept(String.format(message, args));
         }
     }
@@ -184,7 +184,7 @@ final class PathRotationController {
         }
 
         double distMoved = lastCameraCheckPos.distanceTo(playerPos);
-        if (distMoved >= PathfinderConfig.CAMERA_RAIL_REACHED_DIST.get() * 0.5) {
+        if (distMoved >= PathfinderSettings.instance().cameraRailReachedDist.value() * 0.5) {
             lastCameraCheckPos = playerPos;
             while (cameraIndex + 1 < cameraPath.size() && hasPassedCameraNode(playerPos, cameraIndex)) {
                 cameraIndex++;
@@ -229,7 +229,7 @@ final class PathRotationController {
         t = Math.max(0.0, Math.min(1.0, t));
 
         Vec3 cursor = lerp(a, b, t);
-        double remaining = PathfinderConfig.CAMERA_RAIL_GUIDE_LOOKAHEAD_DIST.get();
+        double remaining = PathfinderSettings.instance().cameraRailGuideLookaheadDist.value();
         int seg = start;
 
         while (remaining > 0.0 && seg + 1 < cameraPath.size()) {
@@ -254,7 +254,7 @@ final class PathRotationController {
         Vec3 cur = cameraPath.get(idx);
         double dx = cur.x - playerPos.x;
         double dz = cur.z - playerPos.z;
-        if (Math.sqrt(dx * dx + dz * dz) <= PathfinderConfig.CAMERA_RAIL_REACHED_DIST.get()) {
+        if (Math.sqrt(dx * dx + dz * dz) <= PathfinderSettings.instance().cameraRailReachedDist.value()) {
             return true;
         }
 

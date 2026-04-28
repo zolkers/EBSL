@@ -2,8 +2,8 @@ package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.NavigationMode;
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.util.ClientUtils;
@@ -185,7 +185,7 @@ public final class FlyExecutor {
         }
 
         // Periodic debug output
-        if (PathfinderConfig.SHOW_DEBUG.get()) {
+        if (PathfinderSettings.instance().showDebug.value()) {
             ClientUtils.sendDebugMessage(mc, String.format(
                     "fly wp=%d/%d dist=%.2f state=%s",
                     Math.min(wpIndex + 1, path.size()), path.size(), distToGoal, state));

@@ -3,8 +3,8 @@ package fr.riege.ebsl.api.navigation;
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 
 @EbslApiSurface(EbslApiSurface.Domain.NAVIGATION)
@@ -20,7 +20,7 @@ public final class NavigationApi {
             PathfindingManager.isNavigating(),
             PathfindingManager.getCurrentMoveType(),
             PathfindingManager.isWalkSneakLatched(),
-            PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get(),
+            PathfinderSettings.instance().maxJumpHeight.value(),
             PathVisualizer.isEnabled()
         );
     }

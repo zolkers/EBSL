@@ -4,6 +4,7 @@ import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
 import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -119,7 +120,7 @@ final class LongRangePathSession {
         double dx = finalGoalX + 0.5 - fromX;
         double dz = finalGoalZ + 0.5 - fromZ;
         double distance = Math.sqrt(dx * dx + dz * dz);
-        double maxSegmentDistance = PathfinderConfig.MAX_SEGMENT_DISTANCE.get();
+        double maxSegmentDistance = PathfinderSettings.instance().maxSegmentDistance.value();
         if (distance <= maxSegmentDistance) {
             return new SegmentGoal(finalGoalX, finalGoalZ, false);
         }
@@ -166,30 +167,30 @@ final class LongRangePathSession {
         if (walkExecutionDone) {
             return SegmentQueueDecision.EMERGENCY_FROM_PLAYER;
         }
-        if (remainingDistance <= PathfinderConfig.EMERGENCY_REMAINING_DISTANCE.get()) {
+        if (remainingDistance <= PathfinderSettings.instance().emergencyRemainingDistance.value()) {
             return SegmentQueueDecision.NORMAL;
         }
-        if (progressRatio >= PathfinderConfig.EARLY_SEGMENT_RECALC_RATIO.get()
-            || remainingDistance <= PathfinderConfig.PREPARE_REMAINING_DISTANCE.get()) {
+        if (progressRatio >= PathfinderSettings.instance().earlySegmentRecalcRatio.value()
+            || remainingDistance <= PathfinderSettings.instance().prepareRemainingDistance.value()) {
             return SegmentQueueDecision.NORMAL;
         }
         return SegmentQueueDecision.NONE;
     }
 
     double recalcThresholdRatio() {
-        return PathfinderConfig.SEGMENT_RECALC_RATIO.get();
+        return PathfinderSettings.instance().segmentRecalcRatio.value();
     }
 
     boolean shouldActivatePreparedSegment(double progressRatio, double remainingDistance, boolean walkExecutionDone) {
         return walkExecutionDone
-            || progressRatio >= PathfinderConfig.SEGMENT_RECALC_RATIO.get()
-            || remainingDistance <= PathfinderConfig.PREPARED_SWITCH_REMAINING_DISTANCE.get();
+            || progressRatio >= PathfinderSettings.instance().segmentRecalcRatio.value()
+            || remainingDistance <= PathfinderSettings.instance().preparedSwitchRemainingDistance.value();
     }
 
     boolean shouldUsePlayerRecoveryStart(double progressRatio, boolean walkExecutionDone) {
         return walkExecutionDone
-            || (failedSegmentCalculations >= PathfinderConfig.PLAYER_START_AFTER_FAILURES.get()
-            && progressRatio >= PathfinderConfig.PLAYER_START_RECOVERY_RATIO.get());
+            || (failedSegmentCalculations >= PathfinderSettings.instance().playerStartAfterFailures.value()
+            && progressRatio >= PathfinderSettings.instance().playerStartRecoveryRatio.value());
     }
 
     @PathStateTransition(PathStateTransition.Action.REPLACE)
@@ -215,7 +216,7 @@ final class LongRangePathSession {
         calculationSegmentId = -1;
         backgroundPathfinder = null;
         preparedSegment = null;
-        nextRetryAfterMs = now + PathfinderConfig.SEGMENT_RETRY_COOLDOWN_MS.get();
+        nextRetryAfterMs = now + PathfinderSettings.instance().segmentRetryCooldownMs.value();
         failedSegmentCalculations++;
     }
 
@@ -229,7 +230,7 @@ final class LongRangePathSession {
         backgroundPathfinder = null;
         preparedSegment = null;
         nextRetryAfterMs = 0;
-        failedSegmentCalculations = PathfinderConfig.PLAYER_START_AFTER_FAILURES.get();
+        failedSegmentCalculations = PathfinderSettings.instance().playerStartAfterFailures.value();
         immediateSegmentQueueRequested = true;
     }
 
@@ -252,7 +253,7 @@ final class LongRangePathSession {
     boolean isFinalGoalReached(Vec3 playerPos) {
         double dx = (finalGoalX + 0.5) - playerPos.x;
         double dz = (finalGoalZ + 0.5) - playerPos.z;
-        if (Math.sqrt(dx * dx + dz * dz) > PathfinderConfig.FINAL_GOAL_XZ_TOLERANCE.get()) {
+        if (Math.sqrt(dx * dx + dz * dz) > PathfinderSettings.instance().finalGoalXzTolerance.value()) {
             return false;
         }
         return !requiresExactY() || Math.abs(finalGoalY - playerPos.y) <= 2.0;

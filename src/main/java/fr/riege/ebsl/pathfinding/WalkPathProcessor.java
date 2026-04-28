@@ -2,6 +2,7 @@ package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
@@ -78,10 +79,10 @@ final class WalkPathProcessor {
         if (isStairEntryRequiringJump(previous, current, checker)) {
             return Node.MoveType.JUMP;
         }
-        if (dy > PathfinderConfig.PARTIAL_ASCENT_THRESHOLD.get()) {
+        if (dy > PathfinderSettings.instance().partialAscentThreshold.value()) {
             return Node.MoveType.STEP_UP;
         }
-        if (dy < PathfinderConfig.DESCENT_THRESHOLD.get()) {
+        if (dy < PathfinderSettings.instance().descentThreshold.value()) {
             return Node.MoveType.FALL;
         }
         if (isParkourMove(previous, current, checker, dx, dz)) {
@@ -183,7 +184,7 @@ final class WalkPathProcessor {
             double dx = to.position.centeredX() - from.position.centeredX();
             double dz = to.position.centeredZ() - from.position.centeredZ();
             double dist = Math.sqrt(dx * dx + dz * dz);
-            double intermediateSpacing = PathfinderConfig.INTERMEDIATE_SPACING.get();
+            double intermediateSpacing = PathfinderSettings.instance().intermediateSpacing.value();
             if (dist <= intermediateSpacing) {
                 continue;
             }

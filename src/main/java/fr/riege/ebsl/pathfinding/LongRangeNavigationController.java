@@ -2,6 +2,7 @@ package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 
@@ -137,7 +138,7 @@ final class LongRangeNavigationController {
             return LongRangeQueueRequest.fromPlayer();
         }
 
-        Node horizonNode = runtime.executor.getNodeAtRatio(PathfinderConfig.HORIZON_TRIM_RATIO.get());
+        Node horizonNode = runtime.executor.getNodeAtRatio(PathfinderSettings.instance().horizonTrimRatio.value());
         return LongRangeQueueRequest.fromSegmentHorizon(horizonNode != null ? horizonNode.position : null);
     }
 }

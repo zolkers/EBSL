@@ -1,7 +1,7 @@
 package fr.riege.ebsl.pathfinding.check;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 
 @PathCheckRole("smart_cutoff")
 final class SmartCutoffCheck implements PathCheck {
@@ -15,11 +15,11 @@ final class SmartCutoffCheck implements PathCheck {
         if (candidateSegment >= context.path().size() - 1) {
             return PathCheckResult.none();
         }
-        if (proximity.horizontalDistance() > PathfinderConfig.SMART_CUTOFF_MAX_HORIZONTAL_DISTANCE.get()
-            || proximity.verticalDistance() > PathfinderConfig.SMART_CUTOFF_MAX_VERTICAL_DISTANCE.get()) {
+        if (proximity.horizontalDistance() > PathfinderSettings.instance().smartCutoffMaxHorizontalDistance.value()
+            || proximity.verticalDistance() > PathfinderSettings.instance().smartCutoffMaxVerticalDistance.value()) {
             return PathCheckResult.none();
         }
-        if (proximity.progress() < context.pursuitSegment() + PathfinderConfig.SMART_CUTOFF_MIN_PROGRESS_SKIP.get()) {
+        if (proximity.progress() < context.pursuitSegment() + PathfinderSettings.instance().smartCutoffMinProgressSkip.value()) {
             return PathCheckResult.none();
         }
         return PathCheckResult.cutoff(candidateSegment, String.format(

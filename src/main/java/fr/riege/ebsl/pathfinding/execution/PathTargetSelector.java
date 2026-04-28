@@ -1,7 +1,7 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.util.ClientUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
@@ -11,7 +11,7 @@ import java.util.List;
 final class PathTargetSelector {
     int pickLegacyCamTarget(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment) {
         int camTarget = pursuitSegment;
-        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + PathfinderConfig.CAMERA_LOOKAHEAD.get());
+        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + PathfinderSettings.instance().cameraLookahead.value());
         for (int i = camScanEnd; i >= pursuitSegment; i--) {
             if (!isWaypointVisible(mc, path.get(i))) {
                 continue;
@@ -50,7 +50,7 @@ final class PathTargetSelector {
         if (lenSq < 0.001) {
             return true;
         }
-        double maxPerpSq = PathfinderConfig.CAMERA_MAX_LATERAL_DEV.get() * PathfinderConfig.CAMERA_MAX_LATERAL_DEV.get();
+        double maxPerpSq = PathfinderSettings.instance().cameraMaxLateralDev.value() * PathfinderSettings.instance().cameraMaxLateralDev.value();
         for (int j = fromIdx; j < toIdx; j++) {
             Node n = path.get(j);
             double nx = n.position.centeredX() - px;

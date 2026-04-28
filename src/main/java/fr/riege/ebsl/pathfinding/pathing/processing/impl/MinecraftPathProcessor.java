@@ -1,7 +1,7 @@
 package fr.riege.ebsl.pathfinding.pathing.processing.impl;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
 import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
@@ -189,17 +189,17 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         // Stairs/slabs are treated as partial ascents and stay cheap.
         if (dy > ASCENT_DY_THRESHOLD) {
             if (fullStepSupport) {
-                additionalCost += PathfinderConfig.FULL_STEP_ASCENT_DY_COST.get() * dy
-                    + PathfinderConfig.FULL_STEP_ASCENT_BASE_COST.get();
+                additionalCost += PathfinderSettings.instance().fullStepAscentDyCost.value() * dy
+                    + PathfinderSettings.instance().fullStepAscentBaseCost.value();
             }
         } else if (dy < DESCENT_DY_THRESHOLD) {
-            additionalCost += PathfinderConfig.FALL_DY_COST.get() * Math.abs(dy);
+            additionalCost += PathfinderSettings.instance().fallDyCost.value() * Math.abs(dy);
         }
 
         int moveDx = cx - px;
         int moveDz = cz - pz;
         if (isParkourOffset(moveDx, moveDz)) {
-            additionalCost += PathfinderConfig.PARKOUR_COST.get();
+            additionalCost += PathfinderSettings.instance().parkourCost.value();
         }
 
         // Cramped space penalty: ceiling proximity
@@ -223,10 +223,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         int cardinalWalls = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallW ? 1 : 0) + (wallE ? 1 : 0);
         int diagonalWalls = (wallNW ? 1 : 0) + (wallNE ? 1 : 0) + (wallSW ? 1 : 0) + (wallSE ? 1 : 0);
 
-        double cardinalWallWeight = PathfinderConfig.CARDINAL_WALL_COST.get();
-        double diagonalWallWeight = PathfinderConfig.DIAGONAL_WALL_COST.get();
+        double cardinalWallWeight = PathfinderSettings.instance().cardinalWallCost.value();
+        double diagonalWallWeight = PathfinderSettings.instance().diagonalWallCost.value();
         if (partialAscent) {
-            cardinalWallWeight += PathfinderConfig.PARTIAL_ASCENT_EDGE_COST.get();
+            cardinalWallWeight += PathfinderSettings.instance().partialAscentEdgeCost.value();
             diagonalWallWeight += PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY;
         }
         additionalCost += cardinalWalls * cardinalWallWeight + diagonalWalls * diagonalWallWeight;
@@ -247,8 +247,8 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                     case 2  -> APPROACH_MULTIPLIER_DIST_2;
                     default -> APPROACH_MULTIPLIER_DIST_3;
                 };
-                additionalCost += cardinalWalls * (PathfinderConfig.CARDINAL_WALL_COST.get() * multiplier);
-                additionalCost += diagonalWalls * (PathfinderConfig.DIAGONAL_WALL_COST.get() * multiplier);
+                additionalCost += cardinalWalls * (PathfinderSettings.instance().cardinalWallCost.value() * multiplier);
+                additionalCost += diagonalWalls * (PathfinderSettings.instance().diagonalWallCost.value() * multiplier);
             }
 
             // Approach imbalance: penalize lateral asymmetry before an opening
@@ -265,13 +265,13 @@ public final class MinecraftPathProcessor implements NodeProcessor {
             if (partialAscent) {
                 int entrySideWalls = countEntrySideWalls(px, py, pz, moveDx, moveDz);
                 entrySideWalls += countEntrySideWalls(cx, cy, cz, moveDx, moveDz);
-                additionalCost += entrySideWalls * PathfinderConfig.PARTIAL_ASCENT_ENTRY_SIDE_COST.get();
+                additionalCost += entrySideWalls * PathfinderSettings.instance().partialAscentEntrySideCost.value();
             }
 
             if (isRoomOpeningTransition(px, py, pz, cx, cy, cz, moveDx, moveDz)) {
                 int imbalance = countLateralImbalanceAt(px, py, pz, moveDx, moveDz)
                         + countLateralImbalanceAt(cx, cy, cz, moveDx, moveDz);
-                additionalCost += imbalance * PathfinderConfig.OPENING_ENTRY_IMBALANCE_COST.get();
+                additionalCost += imbalance * PathfinderSettings.instance().openingEntryImbalanceCost.value();
             }
         }
 
@@ -325,19 +325,19 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     private static double movementTypeCost(NavigationPoint currentPoint, NavigationPoint prevPoint,
                                            double dy, boolean diagonalMove, boolean partialAscent) {
         double cost = diagonalMove
-            ? PathfinderConfig.DIAGONAL_COST.get()
-            : PathfinderConfig.WALK_COST.get();
+            ? PathfinderSettings.instance().diagonalCost.value()
+            : PathfinderSettings.instance().walkCost.value();
 
         if (currentPoint.isLiquid() || prevPoint.isLiquid()) {
-            cost += PathfinderConfig.SWIM_COST.get();
+            cost += PathfinderSettings.instance().swimCost.value();
         }
         if (currentPoint.isClimbable() || prevPoint.isClimbable()) {
-            cost += PathfinderConfig.CLIMB_COST.get();
+            cost += PathfinderSettings.instance().climbCost.value();
         }
         if (partialAscent) {
-            cost += PathfinderConfig.PARTIAL_ASCENT_COST.get();
+            cost += PathfinderSettings.instance().partialAscentCost.value();
         } else if (dy > ASCENT_DY_THRESHOLD) {
-            cost += PathfinderConfig.JUMP_COST.get();
+            cost += PathfinderSettings.instance().jumpCost.value();
         }
         return cost;
     }

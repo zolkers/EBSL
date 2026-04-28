@@ -2,8 +2,8 @@ package fr.riege.ebsl.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.ui.imgui.EbslImGuiOverlay;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -58,16 +58,16 @@ public final class PathCommand {
                 return 0;
             }
             String navigating = PathfindingManager.isNavigating() ? "§anavigating" : "§7idle";
-            String debug = PathfinderConfig.SHOW_DEBUG.get() ? "§aON" : "§7OFF";
+            String debug = PathfinderSettings.instance().showDebug.value() ? "§aON" : "§7OFF";
             GoalCommandSupport.sendClientMessage(
-                navigating + "§r | jump=" + PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get()
+                navigating + "§r | jump=" + PathfinderSettings.instance().maxJumpHeight.value()
                     + " | debug=" + debug
                     + "§r | visualizer=§aalways on");
             return 1;
         }));
         root.then(ClientCommandManager.literal("debug").executes(ctx -> {
-            boolean next = !PathfinderConfig.SHOW_DEBUG.get();
-            PathfinderConfig.SHOW_DEBUG.set(next);
+            boolean next = !PathfinderSettings.instance().showDebug.value();
+            PathfinderSettings.instance().showDebug.setValue(next);
             GoalCommandSupport.sendClientMessage("Debug: " + (next ? "ON" : "OFF"));
             return 1;
         }));
@@ -75,7 +75,7 @@ public final class PathCommand {
             .then(GoalCommandSupport.boundedIntArg("n", 1, 20)
             .executes(ctx -> {
                 int n = GoalCommandSupport.getInt(ctx, "n");
-                PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.set(n);
+                PathfinderSettings.instance().maxJumpHeight.setValue(n);
                 GoalCommandSupport.sendClientMessage("Max jump height: " + n);
                 return 1;
             })));

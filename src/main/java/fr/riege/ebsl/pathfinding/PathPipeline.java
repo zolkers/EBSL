@@ -5,6 +5,7 @@ import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
 import fr.riege.ebsl.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.pathing.processing.impl.MinecraftPathProcessor;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.provider.impl.MinecraftNavigationProvider;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.util.Mth;
@@ -21,32 +22,32 @@ final class PathPipeline {
         return createWalkPathfinderConfiguration(
             checker,
             async,
-            PathfinderConfig.DEFAULT_WALK_MAX_ITERATIONS.get(),
-            PathfinderConfig.DEFAULT_WALK_MAX_LENGTH.get());
+            PathfinderSettings.instance().defaultWalkMaxIterations.value(),
+            PathfinderSettings.instance().defaultWalkMaxLength.value());
     }
 
     static PathfinderConfiguration createInstantWalkPathfinderConfiguration(WalkabilityChecker checker) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
-            PathfinderConfig.INSTANT_WALK_MAX_ITERATIONS.get(),
-            PathfinderConfig.INSTANT_WALK_MAX_LENGTH.get());
+            PathfinderSettings.instance().instantWalkMaxIterations.value(),
+            PathfinderSettings.instance().instantWalkMaxLength.value());
     }
 
     static PathfinderConfiguration createRepairWalkPathfinderConfiguration(WalkabilityChecker checker) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
-            PathfinderConfig.REPAIR_WALK_MAX_ITERATIONS.get(),
-            PathfinderConfig.REPAIR_WALK_MAX_LENGTH.get());
+            PathfinderSettings.instance().repairWalkMaxIterations.value(),
+            PathfinderSettings.instance().repairWalkMaxLength.value());
     }
 
     static PathfinderConfiguration createQueuedLongRangeSegmentConfiguration(WalkabilityChecker checker) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
-            PathfinderConfig.QUEUED_LONG_RANGE_MAX_ITERATIONS.get(),
-            PathfinderConfig.QUEUED_LONG_RANGE_MAX_LENGTH.get());
+            PathfinderSettings.instance().queuedLongRangeMaxIterations.value(),
+            PathfinderSettings.instance().queuedLongRangeMaxLength.value());
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,
@@ -54,9 +55,9 @@ final class PathPipeline {
         return PathfinderConfiguration.builder()
             .provider(new MinecraftNavigationProvider(checker))
             .processors(List.of(new MinecraftPathProcessor(checker,
-                PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get())))
+                PathfinderSettings.instance().maxJumpHeight.value())))
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
-                PathfinderConfig.PATHFINDER_MAX_JUMP_HEIGHT.get()))
+                PathfinderSettings.instance().maxJumpHeight.value()))
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .async(async)

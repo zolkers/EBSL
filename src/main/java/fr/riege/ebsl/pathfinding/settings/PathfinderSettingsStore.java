@@ -21,7 +21,6 @@ public final class PathfinderSettingsStore {
 
     public static void load() {
         if (!Files.exists(FILE)) {
-            PathfinderSettings.apply();
             return;
         }
         try {
@@ -34,10 +33,8 @@ public final class PathfinderSettingsStore {
                     }
                 }
             }
-            PathfinderSettings.apply();
         } catch (Exception exception) {
             EbslMod.LOGGER.warn("Failed to load EBSL pathfinder settings.", exception);
-            PathfinderSettings.apply();
         }
     }
 

@@ -49,14 +49,14 @@ final class PathResultClassifier {
         if (state == PathState.ABORTED || state == PathState.FAILED) {
             return true;
         }
-        // For FOUND and all fallback states, check whether the path end is close enough to the target.
-        // A FALLBACK path that ends within 1 block of the target is effectively complete.
+        if (state != PathState.FOUND) {
+            return true;
+        }
         PathPosition last = positions instanceof List<?>
             ? ((List<PathPosition>) positions).getLast()
             : new ArrayList<>(positions).getLast();
-        int dx = Math.abs(last.flooredX() - requestedX);
-        int dz = Math.abs(last.flooredZ() - requestedZ);
-        int dy = Math.abs(last.flooredY() - requestedY);
-        return dx > 1 || dz > 1 || dy > 2;
+        return last.flooredX() != requestedX
+            || last.flooredY() != requestedY
+            || last.flooredZ() != requestedZ;
     }
 }

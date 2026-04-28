@@ -1,8 +1,8 @@
 package fr.riege.ebsl.pathfinding.movement;
 
 import fr.riege.ebsl.pathfinding.Node;
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -160,13 +160,13 @@ public final class PathSmoother {
     private static int computeAdaptiveSkipBudget(Node anchor, WalkabilityChecker checker) {
         int wallScore = computeWallScore(anchor, checker);
 
-        if (wallScore <= PathfinderConfig.SMOOTH_OPEN_WALL_SCORE_MAX.get()) {
-            return PathfinderConfig.SMOOTH_OPEN_SKIP_BUDGET.get();
+        if (wallScore <= PathfinderSettings.instance().smoothOpenWallScoreMax.value()) {
+            return PathfinderSettings.instance().smoothOpenSkipBudget.value();
         }
-        if (wallScore <= PathfinderConfig.SMOOTH_MID_WALL_SCORE_MAX.get()) {
-            return PathfinderConfig.SMOOTH_MID_SKIP_BUDGET.get();
+        if (wallScore <= PathfinderSettings.instance().smoothMidWallScoreMax.value()) {
+            return PathfinderSettings.instance().smoothMidSkipBudget.value();
         }
-        return PathfinderConfig.SMOOTH_TIGHT_SKIP_BUDGET.get();
+        return PathfinderSettings.instance().smoothTightSkipBudget.value();
     }
 
     private static int computeWallScore(Node anchor, WalkabilityChecker checker) {
@@ -212,7 +212,7 @@ public final class PathSmoother {
 
         double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
         double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
-        return angleDeg >= PathfinderConfig.SMOOTH_CONSTRAINED_CORNER_ANGLE_DEG.get()
+        return angleDeg >= PathfinderSettings.instance().smoothConstrainedCornerAngleDeg.value()
             && computeWallScore(cur, checker) > 0;
     }
 

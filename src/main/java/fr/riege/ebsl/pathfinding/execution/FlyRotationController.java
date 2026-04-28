@@ -1,7 +1,7 @@
 package fr.riege.ebsl.pathfinding.execution;
 
-import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.rotation.AngleUtils;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -82,7 +82,7 @@ final class FlyRotationController {
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {
-        if (debug != null && PathfinderConfig.SHOW_DEBUG.get()) {
+        if (debug != null && PathfinderSettings.instance().showDebug.value()) {
             debug.accept(String.format(message, args));
         }
     }
