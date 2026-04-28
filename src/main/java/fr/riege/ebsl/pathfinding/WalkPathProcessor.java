@@ -3,12 +3,10 @@ package fr.riege.ebsl.pathfinding;
 import fr.riege.ebsl.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
+import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Half;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,7 +88,7 @@ final class WalkPathProcessor {
         if (dy < DESCENT_THRESHOLD) {
             return Node.MoveType.FALL;
         }
-        if ((dx == 0 || dz == 0) && dx + dz > 1) {
+        if (isParkourMove(previous, current, checker, dx, dz)) {
             return Node.MoveType.PARKOUR;
         }
         if (dx + dz >= 2) {
@@ -105,16 +103,34 @@ final class WalkPathProcessor {
         int cy = current.flooredY();
         int cz = current.flooredZ();
         BlockState support = checker.getState(cx, cy - 1, cz);
-        if (!(support.getBlock() instanceof StairBlock)) {
-            return false;
-        }
-
-        Direction facing = support.getValue(StairBlock.FACING);
-        boolean bottomHalf = support.getValue(StairBlock.HALF) == Half.BOTTOM;
         int moveDx = Integer.compare(cx, previous.flooredX());
         int moveDz = Integer.compare(cz, previous.flooredZ());
-        int dot = moveDx * facing.getStepX() + moveDz * facing.getStepZ();
-        return bottomHalf ? dot <= 0 : dot >= 0;
+        return StairEntryClassifier.requiresJump(support, moveDx, moveDz);
+    }
+
+    private static boolean isParkourMove(PathPosition previous, PathPosition current,
+                                         WalkabilityChecker checker, int absDx, int absDz) {
+        int distance = absDx + absDz;
+        if (distance < 2 || distance > 4 || (absDx != 0 && absDz != 0)) {
+            return false;
+        }
+        int stepX = Integer.compare(current.flooredX(), previous.flooredX());
+        int stepZ = Integer.compare(current.flooredZ(), previous.flooredZ());
+        if (!hasWalkableSupport(checker, previous) || !hasWalkableSupport(checker, current)) {
+            return false;
+        }
+        for (int step = 1; step < distance; step++) {
+            int x = previous.flooredX() + stepX * step;
+            int z = previous.flooredZ() + stepZ * step;
+            if (!checker.isWalkable(x, previous.flooredY(), z)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasWalkableSupport(WalkabilityChecker checker, PathPosition position) {
+        return checker.isWalkable(position.flooredX(), position.flooredY(), position.flooredZ());
     }
 
     private static double floorLevel(WalkabilityChecker checker, PathPosition position) {

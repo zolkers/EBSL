@@ -1,6 +1,9 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
+import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.check.PathProximitySnapshot;
 import net.minecraft.world.phys.Vec3;
 
@@ -9,10 +12,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+@PathingStage(PathingStage.Stage.STATE_PERSISTENCE)
+@PathStatePersistence(
+    value = PathStatePersistence.Scope.EXECUTION,
+    reason = "Persists the currently executable path, pursuit cursor, and progress telemetry.")
 final class PathTracker {
     private static final double OFF_PATH_VERTICAL_CURSOR_OFFSET = 0.15;
 
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private List<Node> path = Collections.emptyList();
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private int pursuitSegment;
     private Vec3 lastPos = Vec3.ZERO;
     private long lastProgressTime;
@@ -20,6 +29,7 @@ final class PathTracker {
     private long lastPathProgressTime;
     private long severeOffPathSince;
 
+    @PathStateTransition(PathStateTransition.Action.BEGIN)
     void start(List<Node> path) {
         this.path = snapshot(path);
         this.pursuitSegment = 0;
@@ -30,6 +40,7 @@ final class PathTracker {
         this.severeOffPathSince = 0;
     }
 
+    @PathStateTransition(PathStateTransition.Action.MERGE)
     void continueWith(List<Node> continuationPath) {
         if (continuationPath == null || continuationPath.isEmpty()) {
             return;
@@ -52,6 +63,7 @@ final class PathTracker {
         resetPath(merged);
     }
 
+    @PathStateTransition(PathStateTransition.Action.MERGE)
     void trimAndContinueWith(double trimRatio, List<Node> newPath) {
         if (newPath == null || newPath.isEmpty()) return;
         int trimIndex = (int)(path.size() * trimRatio);
@@ -69,6 +81,7 @@ final class PathTracker {
         resetPath(merged);
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     boolean applySmartCutoff(int segmentIndex) {
         if (path.size() < 2) {
             return false;
@@ -87,6 +100,7 @@ final class PathTracker {
         return true;
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     private void resetPath(List<Node> newPath) {
         this.path = snapshot(newPath);
         this.pursuitSegment = 0;

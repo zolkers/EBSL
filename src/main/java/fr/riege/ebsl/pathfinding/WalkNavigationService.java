@@ -42,9 +42,8 @@ final class WalkNavigationService {
         }
 
         if (runtime.state.isNavigating()) {
-            runtime.abortCurrentNavigation(mc);
-        }
-        if (clearLongRange) {
+            runtime.abortCurrentNavigation(mc, clearLongRange);
+        } else if (clearLongRange) {
             runtime.longRangeSession.clear();
         }
 
@@ -251,6 +250,34 @@ final class WalkNavigationService {
         Runnable         capturedOnFinished = runtime.walkOptions.onFinished();
         Runnable         capturedOnFailed   = runtime.walkOptions.onFailed();
 
+        PathfinderConfiguration config = PathPipeline.createInstantWalkPathfinderConfiguration(checker);
+        AStarPathfinder pathfinder = new AStarPathfinder(config);
+        runtime.state.setCurrentPathfinder(pathfinder);
+        long startMs = System.currentTimeMillis();
+
+        pathfinder.findPath(start, target)
+            .whenComplete((result, throwable) -> mc.execute(() -> {
+                if (runtime.state.isAborted() || !runtime.state.isCurrentPathfinder(pathfinder)) {
+                    return;
+                }
+                if (throwable != null) {
+                    LOGGER.warn("Instant walk path calculation failed for target {}, {}, {}; retrying full path",
+                        x, y, z, throwable);
+                    startFullWalkNavigation(mc, checker, start, target, x, y, z,
+                        capturedOpts, capturedOnFinished, capturedOnFailed);
+                    return;
+                }
+                handleInstantWalkResult(mc, result, config, checker, start, target, x, y, z, startMs,
+                    pathfinder.getExploredCount(), capturedOpts, capturedOnFinished, capturedOnFailed);
+            }));
+    }
+
+    private void startFullWalkNavigation(Minecraft mc, WalkabilityChecker checker,
+                                         PathPosition start, PathPosition target,
+                                         int x, int y, int z,
+                                         ExecutionOptions capturedOpts,
+                                         Runnable capturedOnFinished,
+                                         Runnable capturedOnFailed) {
         PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true);
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         runtime.state.setCurrentPathfinder(pathfinder);
@@ -264,7 +291,7 @@ final class WalkNavigationService {
                 if (throwable != null) {
                     runtime.state.clearCurrentPathfinder();
                     runtime.state.markIdle();
-                    LOGGER.error("Walk path calculation failed for target {}, {}, {}", x, y, z, throwable);
+                    LOGGER.error("Full walk path calculation failed for target {}, {}, {}", x, y, z, throwable);
                     if (mc.player != null) {
                         fr.riege.ebsl.util.ClientUtils.sendMessage(mc, "§cPath calculation failed. See log for details.", false);
                     }
@@ -276,6 +303,26 @@ final class WalkNavigationService {
                 handleWalkResult(mc, result, config, checker, x, y, z, startMs,
                     pathfinder.getExploredCount(), capturedOpts, capturedOnFinished, capturedOnFailed);
             }));
+    }
+
+    private void handleInstantWalkResult(Minecraft mc, PathfinderResult result,
+                                         PathfinderConfiguration config, WalkabilityChecker checker,
+                                         PathPosition start, PathPosition target,
+                                         int x, int y, int z,
+                                         long startMs, long exploredCount,
+                                         ExecutionOptions opts, Runnable onFinished, Runnable onFailed) {
+        Collection<PathPosition> positions = result != null && result.getPath() != null
+            ? result.getPath().collect()
+            : Collections.emptyList();
+        PathResultClassifier.PathAvailability availability =
+            PathResultClassifier.classifyWalkResult(result, positions, x, y, z);
+
+        if (availability == PathResultClassifier.PathAvailability.FAILED) {
+            startFullWalkNavigation(mc, checker, start, target, x, y, z, opts, onFinished, onFailed);
+            return;
+        }
+
+        handleWalkResult(mc, result, config, checker, x, y, z, startMs, exploredCount, opts, onFinished, onFailed);
     }
 
     private void handleRepairResult(Minecraft mc, WalkabilityChecker checker,
@@ -366,19 +413,15 @@ final class WalkNavigationService {
         PathVisualizer.setCameraPath(Collections.emptyList());
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, x, y, z);
         if (partial && !runtime.longRangeSession.isActive()) {
-            runtime.longRangeSession.start(x, z);
+            runtime.longRangeSession.startBlockGoal(x, y, z);
         }
         boolean longRangeActive = runtime.longRangeSession.isActive();
-        boolean longRangeFinalSegment = longRangeActive
-            && x == runtime.longRangeSession.finalGoalX()
-            && z == runtime.longRangeSession.finalGoalZ();
+        boolean longRangeFinalSegment = longRangeActive && runtime.longRangeSession.isFinalSegmentGoal(x, y, z);
         boolean longRangeIntermediateSegment = longRangeActive && !longRangeFinalSegment;
         Node segmentEnd = processedPath.navigationPath().getLast();
         boolean continuationNeeded = longRangeActive
             && (!runtime.longRangeSession.isFinalGoalReached(new Vec3(x + 0.5, y, z + 0.5)) || partial)
-            && (x != runtime.longRangeSession.finalGoalX()
-            || z != runtime.longRangeSession.finalGoalZ()
-            || partial);
+            && (!runtime.longRangeSession.isFinalSegmentGoal(x, y, z) || partial);
         runtime.longRangeSession.onSegmentStarted(
             segmentEnd.position.flooredX(),
             segmentEnd.position.flooredZ(),

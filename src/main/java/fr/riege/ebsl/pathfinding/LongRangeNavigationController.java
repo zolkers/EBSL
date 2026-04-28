@@ -32,7 +32,9 @@ final class LongRangeNavigationController {
         WalkabilityChecker checker = new WalkabilityChecker(mc.level);
         int startY = PathPipeline.resolveStartY(checker, mc.player.getX(), mc.player.getY(), mc.player.getZ());
         LongRangePathSession.SegmentGoal segmentGoal = runtime.longRangeSession.planSegmentGoal(mc.player.getX(), mc.player.getZ());
-        int goalY = PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), startY, segmentGoal.z());
+        int goalY = runtime.longRangeSession.requiresExactY() && !segmentGoal.segmented()
+            ? runtime.longRangeSession.finalGoalY()
+            : PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), startY, segmentGoal.z());
         walkNavigationService.startPathfind(mc, segmentGoal.x(), goalY, segmentGoal.z(), false, false);
     }
 

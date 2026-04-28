@@ -1,10 +1,17 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
+import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.STATE_PERSISTENCE)
+@PathStatePersistence(
+    value = PathStatePersistence.Scope.LONG_RANGE_SESSION,
+    reason = "Persists final XZ goal and prepared segment state across partial path replans.")
 final class LongRangePathSession {
     private static final double SEGMENT_RECALC_RATIO = 0.70;
     private static final double EARLY_SEGMENT_RECALC_RATIO = 0.50;
@@ -18,12 +25,23 @@ final class LongRangePathSession {
     private static final int PLAYER_START_AFTER_FAILURES = 2;
     private static final double PLAYER_START_RECOVERY_RATIO = 0.90;
 
+    @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
     private boolean active;
+    @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
     private int finalGoalX;
+    @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
+    private int finalGoalY;
+    @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
     private int finalGoalZ;
+    @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
+    private GoalContract goalContract = GoalContract.XZ;
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private int currentSegmentGoalX;
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private int currentSegmentGoalZ;
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private boolean currentSegmentNeedsContinuation;
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private boolean currentSegmentPartial;
     private int currentSegmentId;
     private int calculationSegmentId = -1;
@@ -32,16 +50,32 @@ final class LongRangePathSession {
     private PendingSegment preparedSegment;
     private long nextRetryAfterMs;
     private int failedSegmentCalculations;
+    private boolean immediateSegmentQueueRequested;
 
+    @PathStateTransition(PathStateTransition.Action.BEGIN)
     void start(int finalGoalX, int finalGoalZ) {
+        start(finalGoalX, 0, finalGoalZ, GoalContract.XZ);
+    }
+
+    @PathStateTransition(PathStateTransition.Action.BEGIN)
+    void startBlockGoal(int finalGoalX, int finalGoalY, int finalGoalZ) {
+        start(finalGoalX, finalGoalY, finalGoalZ, GoalContract.XYZ);
+    }
+
+    private void start(int finalGoalX, int finalGoalY, int finalGoalZ, GoalContract goalContract) {
         clear();
         active = true;
         this.finalGoalX = finalGoalX;
+        this.finalGoalY = finalGoalY;
         this.finalGoalZ = finalGoalZ;
+        this.goalContract = goalContract;
     }
 
+    @PathStateTransition(PathStateTransition.Action.CLEAR)
     void clear() {
         active = false;
+        finalGoalY = 0;
+        goalContract = GoalContract.XZ;
         currentSegmentGoalX = 0;
         currentSegmentGoalZ = 0;
         currentSegmentNeedsContinuation = false;
@@ -52,6 +86,7 @@ final class LongRangePathSession {
         preparedSegment = null;
         nextRetryAfterMs = 0;
         failedSegmentCalculations = 0;
+        immediateSegmentQueueRequested = false;
         if (backgroundPathfinder != null) {
             backgroundPathfinder.abort();
             backgroundPathfinder = null;
@@ -73,6 +108,14 @@ final class LongRangePathSession {
 
     int finalGoalZ() {
         return finalGoalZ;
+    }
+
+    int finalGoalY() {
+        return finalGoalY;
+    }
+
+    boolean requiresExactY() {
+        return goalContract == GoalContract.XYZ;
     }
 
     int currentSegmentGoalX() {
@@ -108,6 +151,7 @@ final class LongRangePathSession {
         onSegmentStarted(goalX, goalZ, needsContinuation, false);
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     void onSegmentStarted(int goalX, int goalZ, boolean needsContinuation, boolean partial) {
         currentSegmentGoalX = goalX;
         currentSegmentGoalZ = goalZ;
@@ -118,8 +162,10 @@ final class LongRangePathSession {
         preparedSegment = null;
         nextRetryAfterMs = 0;
         failedSegmentCalculations = 0;
+        immediateSegmentQueueRequested = partial;
     }
 
+    @PathStateTransition(PathStateTransition.Action.PRESERVE)
     SegmentQueueDecision queueDecision(double progressRatio, double remainingDistance, boolean walkExecutionDone, long now) {
         if (!active
             || !currentSegmentNeedsContinuation
@@ -127,6 +173,10 @@ final class LongRangePathSession {
             || preparedSegment != null
             || now < nextRetryAfterMs) {
             return SegmentQueueDecision.NONE;
+        }
+        if (immediateSegmentQueueRequested) {
+            immediateSegmentQueueRequested = false;
+            return SegmentQueueDecision.NORMAL;
         }
         if (walkExecutionDone) {
             return SegmentQueueDecision.EMERGENCY_FROM_PLAYER;
@@ -157,6 +207,7 @@ final class LongRangePathSession {
             && progressRatio >= PLAYER_START_RECOVERY_RATIO);
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     int markSegmentCalculationStarted(AStarPathfinder pathfinder) {
         segmentCalculationInFlight = true;
         calculationSegmentId = currentSegmentId;
@@ -164,6 +215,7 @@ final class LongRangePathSession {
         return calculationSegmentId;
     }
 
+    @PathStateTransition(PathStateTransition.Action.PRESERVE)
     void setPreparedSegment(PendingSegment preparedSegment) {
         this.preparedSegment = preparedSegment;
         this.segmentCalculationInFlight = false;
@@ -172,6 +224,7 @@ final class LongRangePathSession {
         this.failedSegmentCalculations = 0;
     }
 
+    @PathStateTransition(PathStateTransition.Action.RESET)
     void markSegmentCalculationFailed(long now) {
         segmentCalculationInFlight = false;
         calculationSegmentId = -1;
@@ -181,6 +234,7 @@ final class LongRangePathSession {
         failedSegmentCalculations++;
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     void forceNextCalculationFromPlayer() {
         if (backgroundPathfinder != null) {
             backgroundPathfinder.abort();
@@ -191,6 +245,7 @@ final class LongRangePathSession {
         preparedSegment = null;
         nextRetryAfterMs = 0;
         failedSegmentCalculations = PLAYER_START_AFTER_FAILURES;
+        immediateSegmentQueueRequested = true;
     }
 
     boolean isCurrentCalculation(int segmentId) {
@@ -212,7 +267,16 @@ final class LongRangePathSession {
     boolean isFinalGoalReached(Vec3 playerPos) {
         double dx = (finalGoalX + 0.5) - playerPos.x;
         double dz = (finalGoalZ + 0.5) - playerPos.z;
-        return Math.sqrt(dx * dx + dz * dz) <= FINAL_GOAL_XZ_TOLERANCE;
+        if (Math.sqrt(dx * dx + dz * dz) > FINAL_GOAL_XZ_TOLERANCE) {
+            return false;
+        }
+        return !requiresExactY() || Math.abs(finalGoalY - playerPos.y) <= 2.0;
+    }
+
+    boolean isFinalSegmentGoal(int x, int y, int z) {
+        return x == finalGoalX
+            && z == finalGoalZ
+            && (!requiresExactY() || y == finalGoalY);
     }
 
     record SegmentGoal(int x, int z, boolean segmented) {
@@ -227,6 +291,11 @@ final class LongRangePathSession {
         NONE,
         NORMAL,
         EMERGENCY_FROM_PLAYER
+    }
+
+    enum GoalContract {
+        XZ,
+        XYZ
     }
 
     record PendingSegment(

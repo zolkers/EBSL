@@ -14,6 +14,22 @@ final class PathResultClassifier {
     private PathResultClassifier() {
     }
 
+    enum PathAvailability {
+        COMPLETE,
+        PARTIAL_USABLE,
+        FAILED
+    }
+
+    static PathAvailability classifyWalkResult(PathfinderResult result, Collection<PathPosition> positions,
+                                               int requestedX, int requestedY, int requestedZ) {
+        if (!hasUsablePath(result, positions)) {
+            return PathAvailability.FAILED;
+        }
+        return isPartialWalkResult(result, positions, requestedX, requestedY, requestedZ)
+            ? PathAvailability.PARTIAL_USABLE
+            : PathAvailability.COMPLETE;
+    }
+
     static boolean hasUsablePath(PathfinderResult result, Collection<PathPosition> positions) {
         return result != null
             && result.getPath() != null

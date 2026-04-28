@@ -15,6 +15,7 @@ public @interface PathingStage {
         PATH_POST_PROCESSING,
         PATH_SMOOTHING,
         RESULT_CLASSIFICATION,
+        STATE_PERSISTENCE,
         EXECUTION,
         RECOVERY,
         NAVIGATION_SERVICE

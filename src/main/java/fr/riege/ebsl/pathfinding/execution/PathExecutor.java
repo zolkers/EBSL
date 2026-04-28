@@ -5,6 +5,8 @@ import fr.riege.ebsl.pathfinding.NavigationMode;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
+import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.check.PathCheckContext;
 import fr.riege.ebsl.pathfinding.check.PathCheckRegistry;
@@ -22,6 +24,9 @@ import java.util.Optional;
 
 @PathingStage(PathingStage.Stage.EXECUTION)
 @NavigationModeHandler(NavigationMode.WALK)
+@PathStatePersistence(
+    value = PathStatePersistence.Scope.EXECUTION,
+    reason = "Owns the active executable path and its movement/replan state.")
 public final class PathExecutor {
 
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
@@ -72,6 +77,7 @@ public final class PathExecutor {
     private String lastRepairReason = "";
     private long lastRepairReasonTime = 0;
     private WalkMovementController movementController;
+    @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private final PathTracker pathTracker = new PathTracker();
     private final PathRecoveryController recoveryController = new PathRecoveryController();
     private final PathRotationController rotationController = new PathRotationController();
@@ -85,6 +91,7 @@ public final class PathExecutor {
         start(new ExecutionPlan(path, goalX, goalY, goalZ, precise, onFinished));
     }
 
+    @PathStateTransition(PathStateTransition.Action.BEGIN)
     public void start(ExecutionPlan plan) {
         this.goalX      = plan.goalX();
         this.goalY      = plan.goalY();
@@ -166,6 +173,7 @@ public final class PathExecutor {
         lastRepairReasonTime = System.currentTimeMillis();
     }
 
+    @PathStateTransition(PathStateTransition.Action.MERGE)
     public void continueWith(List<Node> continuationPath, int goalX, int goalY, int goalZ) {
         if (continuationPath == null || continuationPath.isEmpty()) {
             return;
@@ -177,6 +185,7 @@ public final class PathExecutor {
         rebuildControllers();
     }
 
+    @PathStateTransition(PathStateTransition.Action.MERGE)
     public void trimAndContinueWith(double trimRatio, List<Node> newPath, int goalX, int goalY, int goalZ) {
         if (newPath == null || newPath.isEmpty()) return;
         this.goalX = goalX;

@@ -14,11 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class PathPipeline {
+    private static final int INSTANT_WALK_MAX_ITERATIONS = 12000;
+    private static final int INSTANT_WALK_MAX_LENGTH = 1800;
+
     private PathPipeline() {
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async) {
         return createWalkPathfinderConfiguration(checker, async, 100000, 12500);
+    }
+
+    static PathfinderConfiguration createInstantWalkPathfinderConfiguration(WalkabilityChecker checker) {
+        return createWalkPathfinderConfiguration(
+            checker,
+            true,
+            INSTANT_WALK_MAX_ITERATIONS,
+            INSTANT_WALK_MAX_LENGTH);
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,

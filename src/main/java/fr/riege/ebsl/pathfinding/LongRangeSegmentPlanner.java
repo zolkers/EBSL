@@ -61,7 +61,9 @@ final class LongRangeSegmentPlanner {
         }
 
         LongRangePathSession.SegmentGoal segmentGoal = runtime.longRangeSession.planSegmentGoal(fromX, fromZ);
-        int goalY = PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), playerY, segmentGoal.z());
+        int goalY = runtime.longRangeSession.requiresExactY() && !segmentGoal.segmented()
+            ? runtime.longRangeSession.finalGoalY()
+            : PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), playerY, segmentGoal.z());
         PathPosition target = new PathPosition(segmentGoal.x(), goalY, segmentGoal.z());
 
         PathfinderConfiguration config = segmentGoal.segmented()
@@ -138,8 +140,10 @@ final class LongRangeSegmentPlanner {
         boolean partial = PathResultClassifier.isPartialWalkResult(
             result, positions, requestedX, requestedY, requestedZ);
         boolean needsContinuation = partial
-            || last.flooredX() != runtime.longRangeSession.finalGoalX()
-            || last.flooredZ() != runtime.longRangeSession.finalGoalZ();
+            || !runtime.longRangeSession.isFinalSegmentGoal(
+                last.flooredX(),
+                last.flooredY(),
+                last.flooredZ());
 
         runtime.longRangeSession.setPreparedSegment(new LongRangePathSession.PendingSegment(
             processedPath.navigationPath(),

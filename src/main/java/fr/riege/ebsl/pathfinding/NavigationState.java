@@ -1,5 +1,8 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.annotation.PathStatePersistence;
+import fr.riege.ebsl.pathfinding.annotation.PathStateTransition;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.execution.FlyExecutor;
 import fr.riege.ebsl.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.pathfinding.pathfinder.AStarPathfinder;
@@ -7,6 +10,10 @@ import net.minecraft.client.Minecraft;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@PathingStage(PathingStage.Stage.STATE_PERSISTENCE)
+@PathStatePersistence(
+    value = PathStatePersistence.Scope.EXECUTION,
+    reason = "Tracks active navigation intent and the currently valid async pathfinder.")
 final class NavigationState {
     private final AtomicBoolean abortFlag = new AtomicBoolean(false);
 
@@ -17,6 +24,7 @@ final class NavigationState {
     private volatile NavigationMode activeMode = NavigationMode.NONE;
     private volatile AStarPathfinder currentPathfinder;
 
+    @PathStateTransition(PathStateTransition.Action.BEGIN)
     void begin(NavigationMode mode, int goalX, int goalY, int goalZ) {
         abortFlag.set(false);
         navigating = true;
@@ -26,17 +34,20 @@ final class NavigationState {
         this.goalZ = goalZ;
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     void updateGoal(int goalX, int goalY, int goalZ) {
         this.goalX = goalX;
         this.goalY = goalY;
         this.goalZ = goalZ;
     }
 
+    @PathStateTransition(PathStateTransition.Action.RESET)
     void markIdle() {
         navigating = false;
         activeMode = NavigationMode.NONE;
     }
 
+    @PathStateTransition(PathStateTransition.Action.CLEAR)
     void abortCurrentNavigation(Minecraft mc, PathExecutor executor, FlyExecutor flyExecutor) {
         abortFlag.set(true);
         AStarPathfinder walkPathfinder = currentPathfinder;
@@ -83,10 +94,12 @@ final class NavigationState {
         return goalZ;
     }
 
+    @PathStateTransition(PathStateTransition.Action.REPLACE)
     void setCurrentPathfinder(AStarPathfinder currentPathfinder) {
         this.currentPathfinder = currentPathfinder;
     }
 
+    @PathStateTransition(PathStateTransition.Action.CLEAR)
     void clearCurrentPathfinder() {
         currentPathfinder = null;
     }

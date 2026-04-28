@@ -3,6 +3,7 @@ package fr.riege.ebsl.pathfinding.pathing.processing.impl;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.movement.geometry.StairEntryClassifier;
 import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.pathfinding.pathing.processing.NodeProcessor;
@@ -11,10 +12,7 @@ import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.StairBlock;
-import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 /*
@@ -417,16 +415,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
         var floorState = checker != null
             ? checker.getState(cx, cy - 1, cz)
             : level.getBlockState(new BlockPos(cx, cy - 1, cz));
-        if (!(floorState.getBlock() instanceof StairBlock)) {
-            return false;
-        }
-        Direction facing = floorState.getValue(StairBlock.FACING);
-        boolean bottomHalf = floorState.getValue(StairBlock.HALF) == Half.BOTTOM;
-        // For a BOTTOM stair the high step is in the 'facing' direction.
-        // Jump when the movement vector comes from the high side or either side edge.
-        // For a TOP stair the high step is in the opposite direction, so the sign flips.
-        int dot = dx * facing.getStepX() + dz * facing.getStepZ();
-        return bottomHalf ? dot <= 0 : dot >= 0;
+        return StairEntryClassifier.requiresJump(floorState, dx, dz);
     }
 
     private static boolean isParkourOffset(int dx, int dz) {
