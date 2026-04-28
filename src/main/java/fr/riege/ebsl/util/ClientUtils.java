@@ -12,8 +12,7 @@ import net.minecraft.world.InteractionHand;
 
 public final class ClientUtils {
     private static final String BASE_TAG = "§b§le§3§lb§9§ls§d§ll";
-    private static final String TAG_SEPARATOR = " §8>> ";
-    private static final String TAG_END = "§8>> §r";
+    private static final String TAG_SEPARATOR = " §8>> §r";
 
     private ClientUtils() {}
 
@@ -37,15 +36,18 @@ public final class ClientUtils {
     }
 
     public static String basePrefix() {
-        return BASE_TAG + TAG_END;
+        return ChatTagBuilder.create().append(BASE_TAG).finish();
     }
 
     public static String prefixed(String message) {
-        return basePrefix() + message;
+        return ChatTagBuilder.create().append(BASE_TAG).finish(message);
     }
 
     public static String prefixed(LogTag tag, String message) {
-        return BASE_TAG + TAG_SEPARATOR + tag.formattedName() + TAG_SEPARATOR + "§r" + message;
+        return ChatTagBuilder.create()
+            .append(BASE_TAG)
+            .append(tag.formattedName())
+            .finish(message);
     }
 
     public enum LogTag {
@@ -64,6 +66,32 @@ public final class ClientUtils {
 
         String formattedName() {
             return color + label;
+        }
+    }
+
+    private static final class ChatTagBuilder {
+        private final StringBuilder builder = new StringBuilder();
+        private boolean hasTag;
+
+        static ChatTagBuilder create() {
+            return new ChatTagBuilder();
+        }
+
+        ChatTagBuilder append(String formattedTag) {
+            if (hasTag) {
+                builder.append(TAG_SEPARATOR);
+            }
+            builder.append(formattedTag);
+            hasTag = true;
+            return this;
+        }
+
+        String finish() {
+            return builder.append(TAG_SEPARATOR).toString();
+        }
+
+        String finish(String message) {
+            return finish() + message;
         }
     }
 

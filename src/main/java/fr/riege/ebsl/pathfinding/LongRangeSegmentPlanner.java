@@ -66,9 +66,7 @@ final class LongRangeSegmentPlanner {
             : PathPipeline.resolveGoalYForXZ(checker, segmentGoal.x(), playerY, segmentGoal.z());
         PathPosition target = new PathPosition(segmentGoal.x(), goalY, segmentGoal.z());
 
-        PathfinderConfiguration config = segmentGoal.segmented()
-            ? PathPipeline.createWalkPathfinderConfiguration(checker, true, 120000, 12000)
-            : PathPipeline.createWalkPathfinderConfiguration(checker, true);
+        PathfinderConfiguration config = PathPipeline.createQueuedLongRangeSegmentConfiguration(checker);
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         int requestSegmentId = runtime.longRangeSession.markSegmentCalculationStarted(pathfinder);
 

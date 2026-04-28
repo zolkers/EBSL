@@ -35,6 +35,7 @@ final class PathRotationController {
     private int lastRotationDebugCamTarget = -2;
     private long lastRotationDispatchMs;
     private final PathTargetSelector targetSelector = new PathTargetSelector();
+    private final PathPitchStabilizer pitchStabilizer = new PathPitchStabilizer();
 
     void rebuild(List<Node> path) {
         this.cameraPath = USE_CAMERA_RAIL ? CameraRailBuilder.build(path) : Collections.emptyList();
@@ -43,6 +44,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.pitchStabilizer.reset();
     }
 
     void reset() {
@@ -52,6 +54,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.pitchStabilizer.reset();
     }
 
     void updateRotation(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment, Consumer<String> debug) {
@@ -74,7 +77,8 @@ final class PathRotationController {
             playerPos.x, playerPos.y, playerPos.z,
             rotationTarget.position().x, rotationTarget.position().y, rotationTarget.position().z);
 
-        Rotation desiredRot = AngleUtils.getRotation(rotationTarget.position());
+        Rotation rawRot = AngleUtils.getRotation(rotationTarget.position());
+        Rotation desiredRot = pitchStabilizer.stabilize(mc, rotationTarget.position(), rawRot, debug);
         dispatchRotationIfNeeded(mc, path, pursuitSegment, debug, desiredRot);
     }
 

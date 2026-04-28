@@ -18,6 +18,8 @@ import java.util.Optional;
     reason = "Persists the currently executable path, pursuit cursor, and progress telemetry.")
 final class PathTracker {
     private static final double OFF_PATH_VERTICAL_CURSOR_OFFSET = 0.15;
+    private static final double CONTINUATION_ALIGN_MAX_DISTANCE = 12.0;
+    private static final int REPAIR_MIN_FORWARD_SEGMENTS = 2;
 
     @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private List<Node> path = Collections.emptyList();
@@ -73,7 +75,8 @@ final class PathTracker {
         for (int i = pursuitSegment; i < trimIndex; i++) {
             appendDistinct(merged, path.get(i));
         }
-        for (Node node : newPath) {
+        List<Node> alignedPath = alignContinuationStart(merged, newPath);
+        for (Node node : alignedPath) {
             appendDistinct(merged, node);
         }
         if (merged.isEmpty()) return;
@@ -113,7 +116,14 @@ final class PathTracker {
         if (path.size() < 2) {
             return Optional.empty();
         }
-        int targetSegment = Math.max(0, Math.min(segmentIndex, path.size() - 2));
+        int earliestForwardSegment = Math.max(
+            pursuitSegment + REPAIR_MIN_FORWARD_SEGMENTS,
+            (int) Math.ceil(bestPathProgress) + 1);
+        int targetSegment = Math.max(earliestForwardSegment, segmentIndex);
+        targetSegment = Math.max(0, Math.min(targetSegment, path.size() - 2));
+        if (targetSegment < earliestForwardSegment) {
+            return Optional.empty();
+        }
         Node joinNode = path.get(targetSegment);
         List<Node> remaining = new ArrayList<>(path.subList(targetSegment, path.size()));
         if (remaining.size() < 2) {
@@ -362,6 +372,28 @@ final class PathTracker {
         double dy = to.position.flooredY() - from.position.flooredY();
         double dz = to.position.centeredZ() - from.position.centeredZ();
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    private static List<Node> alignContinuationStart(List<Node> currentPrefix, List<Node> continuationPath) {
+        if (currentPrefix.isEmpty() || continuationPath == null || continuationPath.size() < 2) {
+            return continuationPath;
+        }
+
+        Node anchor = currentPrefix.getLast();
+        int bestIndex = 0;
+        double bestDistance = Double.MAX_VALUE;
+        for (int i = 0; i < continuationPath.size(); i++) {
+            double distance = distanceBetween(anchor, continuationPath.get(i));
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex <= 0 || bestDistance > CONTINUATION_ALIGN_MAX_DISTANCE) {
+            return continuationPath;
+        }
+        return continuationPath.subList(bestIndex, continuationPath.size());
     }
 
     private static List<Node> snapshot(List<Node> nodes) {

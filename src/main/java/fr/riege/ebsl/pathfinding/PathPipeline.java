@@ -32,6 +32,14 @@ final class PathPipeline {
             INSTANT_WALK_MAX_LENGTH);
     }
 
+    static PathfinderConfiguration createRepairWalkPathfinderConfiguration(WalkabilityChecker checker) {
+        return createWalkPathfinderConfiguration(checker, true, 8000, 600);
+    }
+
+    static PathfinderConfiguration createQueuedLongRangeSegmentConfiguration(WalkabilityChecker checker) {
+        return createWalkPathfinderConfiguration(checker, true, 24000, 2600);
+    }
+
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,
                                                                      int maxIterations, int maxLength) {
         return PathfinderConfiguration.builder()

@@ -4,13 +4,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 
 final class PathRecoveryController {
-    private static final long UNSTUCK_JUMP_MS = 1200;
-    private static final long UNSTUCK_BACKUP_MS = 2200;
-    private static final int BACKUP_TICKS = 8;
-    private static final long PATH_REPLAN_STALE_MS = 1400;
-    private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.75;
-    private static final long GROUNDED_NO_PROGRESS_REPLAN_MS = 1000;
-    private static final long PATH_REPLAN_HARD_STALE_MS = 4200;
+    private static final long UNSTUCK_JUMP_MS = 400;
+    private static final long UNSTUCK_BACKUP_MS = 900;
+    private static final int BACKUP_TICKS = 6;
+    private static final long PATH_REPLAN_STALE_MS = 500;
+    private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.25;
+    private static final long GROUNDED_NO_PROGRESS_REPLAN_MS = 400;
+    private static final long PATH_REPLAN_HARD_STALE_MS = 1800;
     private static final double BACKUP_MAX_HORIZONTAL_SPEED = 0.22;
 
     private int backupTicksLeft;
@@ -31,7 +31,7 @@ final class PathRecoveryController {
 
         if (allowReplan && mc.player.onGround()
             && progress.pathStale(GROUNDED_NO_PROGRESS_REPLAN_MS)) {
-            return RecoveryDecision.replanFromPlayer("grounded no progress stale=" + progress.pathStaleMs());
+            return RecoveryDecision.repairToSegment("grounded no progress stale=" + progress.pathStaleMs());
         }
 
         if (allowReplan && progress.pathStale(PATH_REPLAN_HARD_STALE_MS) && cooldownPassed) {
@@ -62,13 +62,13 @@ final class PathRecoveryController {
         if (allowReplan && progress.pathStale(PATH_REPLAN_STALE_MS) && cooldownPassed
             && (progress.proximity().horizontalDistance() > PATH_REPLAN_DRIFT_DISTANCE
             || progress.distanceMoved() >= PathExecutor.STUCK_DIST_THRESHOLD)) {
-            return RecoveryDecision.replanFromPlayer(String.format(
+            return RecoveryDecision.repairToSegment(String.format(
                 "path progress stale drift=%.2f", progress.proximity().horizontalDistance()));
         }
 
         if (allowReplan && progress.movementStale(PathExecutor.STUCK_TIME_MS)
             && drifted && cooldownPassed) {
-            return RecoveryDecision.replanFromPlayer(String.format(
+            return RecoveryDecision.repairToSegment(String.format(
                 "drift stale=%.2f", progress.proximity().horizontalDistance()));
         }
 
@@ -142,12 +142,17 @@ final class PathRecoveryController {
         static RecoveryDecision replanFromPlayer(String reason) {
             return new RecoveryDecision(Action.REPLAN_FROM_PLAYER, reason, false);
         }
+
+        static RecoveryDecision repairToSegment(String reason) {
+            return new RecoveryDecision(Action.REPAIR_TO_SEGMENT, reason, false);
+        }
     }
 
     enum Action {
         CONTINUE_MOVEMENT,
         TICK_HANDLED,
         RECOVERY_JUMP,
+        REPAIR_TO_SEGMENT,
         REPLAN_FROM_PLAYER
     }
 }

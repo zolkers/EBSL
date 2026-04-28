@@ -32,9 +32,9 @@ public final class PathExecutor {
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
     static final double STUCK_DIST_THRESHOLD = 0.2;
-    static final long   STUCK_TIME_MS        = 2000;
+    static final long   STUCK_TIME_MS        = 400;
     static final double DRIFT_DISTANCE       = 4.5;
-    private static final long   REPLAN_COOLDOWN_MS   = 5000;
+    private static final long   REPLAN_COOLDOWN_MS   = 2500;
 
     static final double JUMP_TRIGGER_DIST      = 0.6;
     static final double STEP_UP_TRIGGER_DIST   = 1.0;
@@ -50,6 +50,9 @@ public final class PathExecutor {
 
     private static final long   COAST_TIMEOUT_MS         = 3000;
     private static final long   SMART_CUTOFF_COOLDOWN_MS = 800;
+    private static final int    LOCAL_REPAIR_LOOKAHEAD = 4;
+    private static final int    LOCAL_REPAIR_DRIFT_LOOKAHEAD = 7;
+    private static final double LOCAL_REPAIR_DRIFT_THRESHOLD = 1.5;
 
     private static final double GOAL_REACHED_HDIST = 1.2;
     private static final double GOAL_REACHED_VDIST = 2.0;
@@ -282,6 +285,10 @@ public final class PathExecutor {
             triggerReplan(mc, false, true, recovery.reason());
             return;
         }
+        if (recovery.action() == PathRecoveryController.Action.REPAIR_TO_SEGMENT) {
+            triggerRepair(mc, chooseLocalRepairSegment(path, proximity), recovery.reason());
+            return;
+        }
         if (recovery.action() == PathRecoveryController.Action.TICK_HANDLED) {
             return;
         }
@@ -423,6 +430,19 @@ public final class PathExecutor {
             ClientUtils.sendDebugMessage(mc, "Path repair: " + reason);
         }
         state = State.REPLANNING;
+    }
+
+    private int chooseLocalRepairSegment(List<Node> path, PathProximitySnapshot proximity) {
+        if (path == null || path.size() < 2) {
+            return 0;
+        }
+        int base = Math.max(pathTracker.getPursuitSegment(), proximity.nearestSegmentIndex());
+        int lookahead = proximity.horizontalDistance() > LOCAL_REPAIR_DRIFT_THRESHOLD
+            ? LOCAL_REPAIR_DRIFT_LOOKAHEAD
+            : LOCAL_REPAIR_LOOKAHEAD;
+        int target = base + lookahead;
+        int maxJoinSegment = Math.max(0, path.size() - 2);
+        return Math.max(0, Math.min(target, maxJoinSegment));
     }
 
     private boolean isAtGoal(Vec3 playerPos) {

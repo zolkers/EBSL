@@ -166,7 +166,7 @@ final class WalkNavigationService {
         Runnable capturedOnFinished  = runtime.walkOptions.onFinished();
 
         WalkabilityChecker checker = new WalkabilityChecker(mc.level);
-        PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true, 40000, 5000);
+        PathfinderConfiguration config = PathPipeline.createRepairWalkPathfinderConfiguration(checker);
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         runtime.state.setCurrentPathfinder(pathfinder);
 
