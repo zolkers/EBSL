@@ -31,32 +31,6 @@ public final class PathExecutor {
 
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
-    static final double STUCK_DIST_THRESHOLD = 0.2;
-    static final long   STUCK_TIME_MS        = 400;
-    static final double DRIFT_DISTANCE       = 4.5;
-    private static final long   REPLAN_COOLDOWN_MS   = 2500;
-
-    static final double JUMP_TRIGGER_DIST      = 0.6;
-    static final double STEP_UP_TRIGGER_DIST   = 1.0;
-    static final int    JUMP_COOLDOWN_TICKS = 8;
-    static final long   STALL_JUMP_PROGRESS_MS = 450;
-
-    private static final double PATH_PROGRESS_EPSILON = 0.08;
-
-    static final double WALK_TARGET_DEADZONE = 0.28;
-    static final double WALK_FORWARD_DOT     = 0.18;
-    static final double WALK_BACKWARD_DOT    = -0.45;
-    static final double WALK_STRAFE_DOT      = 0.32;
-
-    private static final long   COAST_TIMEOUT_MS         = 3000;
-    private static final long   SMART_CUTOFF_COOLDOWN_MS = 800;
-    private static final int    LOCAL_REPAIR_LOOKAHEAD = 4;
-    private static final int    LOCAL_REPAIR_DRIFT_LOOKAHEAD = 7;
-    private static final double LOCAL_REPAIR_DRIFT_THRESHOLD = 1.5;
-
-    private static final double GOAL_REACHED_HDIST = 1.2;
-    private static final double GOAL_REACHED_VDIST = 2.0;
-
     private State      state = State.IDLE;
     private boolean    precise;
 
@@ -224,12 +198,12 @@ public final class PathExecutor {
             return;
         }
 
-        double distMoved = pathTracker.noteMovementProgress(playerPos, STUCK_DIST_THRESHOLD);
+        double distMoved = pathTracker.noteMovementProgress(playerPos, PathfinderConfig.STUCK_DIST_THRESHOLD.get());
 
         long now = System.currentTimeMillis();
         pathTracker.advancePursuit(playerPos, now);
 
-        pathTracker.computeAndTrackPathProgress(playerPos, PATH_PROGRESS_EPSILON, now);
+        pathTracker.computeAndTrackPathProgress(playerPos, PathfinderConfig.PATH_PROGRESS_EPSILON.get(), now);
 
         PathProximitySnapshot proximity = pathTracker.analyzePathProximity(playerPos);
         pathTracker.updateSevereOffPathState(proximity, now);
@@ -276,7 +250,7 @@ public final class PathExecutor {
             playerPos,
             progress,
             allowReplan,
-            now - lastReplanTime > REPLAN_COOLDOWN_MS,
+            now - lastReplanTime > PathfinderConfig.REPLAN_COOLDOWN_MS.get(),
             jumpCooldown);
         if (recovery.noteProgress()) {
             noteRecoveryMovement(playerPos);
@@ -292,9 +266,14 @@ public final class PathExecutor {
         if (recovery.action() == PathRecoveryController.Action.TICK_HANDLED) {
             return;
         }
+        if (recovery.action() == PathRecoveryController.Action.ALIGN_TO_PATH) {
+            Vec3 correction = pathTracker.computeCorrectionToPath(playerPos, proximity);
+            InputApplier.applyCornerAlignment(mc, correction.x, correction.z);
+            return;
+        }
         boolean recoveryJump = recovery.action() == PathRecoveryController.Action.RECOVERY_JUMP;
         if (recoveryJump) {
-            jumpCooldown = JUMP_COOLDOWN_TICKS;
+            jumpCooldown = PathfinderConfig.JUMP_COOLDOWN_TICKS.get();
         }
 
         if (allowRotation) {
@@ -373,7 +352,7 @@ public final class PathExecutor {
             return PathCheckHandling.handled(path, proximity);
         }
         if (!pathCheckResult.isCutoff()
-                || now - lastSmartCutoffTime < SMART_CUTOFF_COOLDOWN_MS
+                || now - lastSmartCutoffTime < PathfinderConfig.SMART_CUTOFF_COOLDOWN_MS.get()
                 || !pathTracker.applySmartCutoff(pathCheckResult.cutoffSegmentIndex())) {
             return PathCheckHandling.continueWith(path, proximity);
         }
@@ -437,9 +416,9 @@ public final class PathExecutor {
             return 0;
         }
         int base = Math.max(pathTracker.getPursuitSegment(), proximity.nearestSegmentIndex());
-        int lookahead = proximity.horizontalDistance() > LOCAL_REPAIR_DRIFT_THRESHOLD
-            ? LOCAL_REPAIR_DRIFT_LOOKAHEAD
-            : LOCAL_REPAIR_LOOKAHEAD;
+        int lookahead = proximity.horizontalDistance() > PathfinderConfig.LOCAL_REPAIR_DRIFT_THRESHOLD.get()
+            ? PathfinderConfig.LOCAL_REPAIR_DRIFT_LOOKAHEAD.get()
+            : PathfinderConfig.LOCAL_REPAIR_LOOKAHEAD.get();
         int target = base + lookahead;
         int maxJoinSegment = Math.max(0, path.size() - 2);
         return Math.max(0, Math.min(target, maxJoinSegment));
@@ -448,8 +427,8 @@ public final class PathExecutor {
     private boolean isAtGoal(Vec3 playerPos) {
         double dx = (goalX + goalCenterX) - playerPos.x;
         double dz = (goalZ + goalCenterZ) - playerPos.z;
-        return Math.sqrt(dx * dx + dz * dz) <= GOAL_REACHED_HDIST
-            && Math.abs(goalY - playerPos.y) <= GOAL_REACHED_VDIST;
+        return Math.sqrt(dx * dx + dz * dz) <= PathfinderConfig.GOAL_REACHED_HDIST.get()
+            && Math.abs(goalY - playerPos.y) <= PathfinderConfig.GOAL_REACHED_VDIST.get();
     }
 
     private void tickGoalCoasting(Minecraft mc, Vec3 playerPos) {
@@ -467,7 +446,7 @@ public final class PathExecutor {
             releaseAll(mc);
         }
         if (hDist <= preciseGoalTolerance
-                || System.currentTimeMillis() - coastStartTime > COAST_TIMEOUT_MS) {
+                || System.currentTimeMillis() - coastStartTime > PathfinderConfig.COAST_TIMEOUT_MS.get()) {
             finish(mc);
         }
     }

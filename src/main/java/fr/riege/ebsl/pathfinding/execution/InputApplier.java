@@ -68,4 +68,26 @@ final class InputApplier {
         mc.options.keyJump.setDown(inWater);
         mc.options.keyShift.setDown(!inWater);
     }
+
+    static void applyCornerAlignment(Minecraft mc, double dx, double dz) {
+        if (mc.player == null) {
+            return;
+        }
+
+        double hDist = Math.sqrt(dx * dx + dz * dz);
+        if (hDist < 1.0e-6) {
+            return;
+        }
+
+        InputApplier.applyRelativeMovement(
+            mc,
+            dx / hDist,
+            dz / hDist,
+            0.05,
+            -0.80,
+            0.08);
+        mc.options.keyDown.setDown(false);
+        mc.options.keySprint.setDown(false);
+        mc.options.keyJump.setDown(false);
+    }
 }

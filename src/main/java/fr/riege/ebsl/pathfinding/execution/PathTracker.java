@@ -259,6 +259,25 @@ final class PathTracker {
         );
     }
 
+    Vec3 computeCorrectionToPath(Vec3 pos, PathProximitySnapshot proximity) {
+        if (path.size() < 2) {
+            return Vec3.ZERO;
+        }
+        int segment = Math.max(0, Math.min(proximity.nearestSegmentIndex(), path.size() - 2));
+        Node from = path.get(segment);
+        Node to = path.get(segment + 1);
+        double ax = from.position.centeredX();
+        double az = from.position.centeredZ();
+        double bx = to.position.centeredX();
+        double bz = to.position.centeredZ();
+        double dx = bx - ax;
+        double dz = bz - az;
+        double lenSq = dx * dx + dz * dz;
+        double t = lenSq < 1.0e-6 ? 0.0
+            : Math.max(0.0, Math.min(1.0, ((pos.x - ax) * dx + (pos.z - az) * dz) / lenSq));
+        return new Vec3((ax + dx * t) - pos.x, 0.0, (az + dz * t) - pos.z);
+    }
+
     void updateSevereOffPathState(PathProximitySnapshot proximity, long now) {
         boolean severeDeviation = proximity.distance3d() >= 3.0 || proximity.verticalDistance() >= 3.0;
         if (!severeDeviation) {

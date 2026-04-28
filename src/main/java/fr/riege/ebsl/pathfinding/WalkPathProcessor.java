@@ -15,10 +15,6 @@ import java.util.List;
 
 @PathingStage(PathingStage.Stage.PATH_POST_PROCESSING)
 final class WalkPathProcessor {
-    private static final double INTERMEDIATE_SPACING = 4.0;
-    private static final double PARTIAL_ASCENT_THRESHOLD = 0.2;
-    private static final double DESCENT_THRESHOLD = -0.1;
-
     private WalkPathProcessor() {
     }
 
@@ -82,10 +78,10 @@ final class WalkPathProcessor {
         if (isStairEntryRequiringJump(previous, current, checker)) {
             return Node.MoveType.JUMP;
         }
-        if (dy > PARTIAL_ASCENT_THRESHOLD) {
+        if (dy > PathfinderConfig.PARTIAL_ASCENT_THRESHOLD.get()) {
             return Node.MoveType.STEP_UP;
         }
-        if (dy < DESCENT_THRESHOLD) {
+        if (dy < PathfinderConfig.DESCENT_THRESHOLD.get()) {
             return Node.MoveType.FALL;
         }
         if (isParkourMove(previous, current, checker, dx, dz)) {
@@ -187,11 +183,12 @@ final class WalkPathProcessor {
             double dx = to.position.centeredX() - from.position.centeredX();
             double dz = to.position.centeredZ() - from.position.centeredZ();
             double dist = Math.sqrt(dx * dx + dz * dz);
-            if (dist <= INTERMEDIATE_SPACING) {
+            double intermediateSpacing = PathfinderConfig.INTERMEDIATE_SPACING.get();
+            if (dist <= intermediateSpacing) {
                 continue;
             }
 
-            int steps = (int) (dist / INTERMEDIATE_SPACING);
+            int steps = (int) (dist / intermediateSpacing);
             int y = from.position.flooredY();
             for (int step = 1; step < steps; step++) {
                 double t = (double) step / steps;

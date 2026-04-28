@@ -1,15 +1,11 @@
 package fr.riege.ebsl.pathfinding.check;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
 
 @PathCheckRole("anomalous_cutoff_repair")
 final class AnomalousPathCutoffCheck implements PathCheck {
-    private static final int MIN_SEGMENT_SKIP = 3;
-    private static final double MAX_RECOVERY_CUTOFF_HORIZONTAL_DISTANCE = 5.5;
-    private static final double MAX_RECOVERY_CUTOFF_VERTICAL_DISTANCE = 4.5;
-    private static final double MIN_NEAREST_ADVANTAGE = 1.25;
-
     @Override
     public PathCheckResult evaluate(PathCheckContext context) {
         PathProximitySnapshot proximity = context.proximity();
@@ -28,20 +24,20 @@ final class AnomalousPathCutoffCheck implements PathCheck {
     private static boolean canCutToBetterNearbySegment(PathCheckContext context,
                                                        PathProximitySnapshot proximity,
                                                        int candidateSegment) {
-        if (candidateSegment < context.pursuitSegment() + MIN_SEGMENT_SKIP) {
+        if (candidateSegment < context.pursuitSegment() + PathfinderConfig.ANOMALOUS_MIN_SEGMENT_SKIP.get()) {
             return false;
         }
         if (candidateSegment >= context.path().size() - 1) {
             return false;
         }
-        if (proximity.horizontalDistance() > MAX_RECOVERY_CUTOFF_HORIZONTAL_DISTANCE
-            || proximity.verticalDistance() > MAX_RECOVERY_CUTOFF_VERTICAL_DISTANCE) {
+        if (proximity.horizontalDistance() > PathfinderConfig.ANOMALOUS_MAX_HORIZONTAL_DISTANCE.get()
+            || proximity.verticalDistance() > PathfinderConfig.ANOMALOUS_MAX_VERTICAL_DISTANCE.get()) {
             return false;
         }
 
         Node next = context.path().get(Math.min(context.path().size() - 1, context.pursuitSegment() + 1));
         double nextDistance = distanceToNode(context, next);
-        return proximity.distance3d() + MIN_NEAREST_ADVANTAGE < nextDistance;
+        return proximity.distance3d() + PathfinderConfig.ANOMALOUS_MIN_NEAREST_ADVANTAGE.get() < nextDistance;
     }
 
     private static double distanceToNode(PathCheckContext context, Node node) {

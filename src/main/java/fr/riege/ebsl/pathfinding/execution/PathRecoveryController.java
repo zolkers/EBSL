@@ -1,22 +1,16 @@
 package fr.riege.ebsl.pathfinding.execution;
 
+import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 
 final class PathRecoveryController {
-    private static final long UNSTUCK_JUMP_MS = 400;
-    private static final long UNSTUCK_BACKUP_MS = 900;
-    private static final int BACKUP_TICKS = 6;
-    private static final long PATH_REPLAN_STALE_MS = 500;
-    private static final double PATH_REPLAN_DRIFT_DISTANCE = 1.25;
-    private static final long GROUNDED_NO_PROGRESS_REPLAN_MS = 400;
-    private static final long PATH_REPLAN_HARD_STALE_MS = 1800;
-    private static final double BACKUP_MAX_HORIZONTAL_SPEED = 0.22;
-
     private int backupTicksLeft;
+    private long cornerAlignStartMs;
 
     void reset() {
         backupTicksLeft = 0;
+        cornerAlignStartMs = 0;
     }
 
     RecoveryDecision update(Minecraft mc, Vec3 playerPos,
@@ -29,16 +23,11 @@ final class PathRecoveryController {
         boolean inWater = mc.player.isInWater();
         keepSurfaceSwimming(mc, inWater);
 
-        if (allowReplan && mc.player.onGround()
-            && progress.pathStale(GROUNDED_NO_PROGRESS_REPLAN_MS)) {
-            return RecoveryDecision.repairToSegment("grounded no progress stale=" + progress.pathStaleMs());
-        }
-
-        if (allowReplan && progress.pathStale(PATH_REPLAN_HARD_STALE_MS) && cooldownPassed) {
+        if (allowReplan && progress.pathStale(PathfinderConfig.PATH_REPLAN_HARD_STALE_MS.get()) && cooldownPassed) {
             return RecoveryDecision.replanFromPlayer("hard stale path progress");
         }
 
-        if (backupTicksLeft > 0 && horizontalSpeed(mc) > BACKUP_MAX_HORIZONTAL_SPEED) {
+        if (backupTicksLeft > 0 && horizontalSpeed(mc) > PathfinderConfig.BACKUP_MAX_HORIZONTAL_SPEED.get()) {
             backupTicksLeft = 0;
         }
 
@@ -47,11 +36,19 @@ final class PathRecoveryController {
             return RecoveryDecision.tickHandled();
         }
 
-        boolean drifted = progress.drifted(PathExecutor.DRIFT_DISTANCE);
+        boolean drifted = progress.drifted(PathfinderConfig.DRIFT_DISTANCE.get());
         if (shouldBackup(mc, progress, drifted, inWater)) {
-            backupTicksLeft = BACKUP_TICKS;
+            backupTicksLeft = PathfinderConfig.BACKUP_TICKS.get();
             applyBackupTick(mc);
             return RecoveryDecision.tickHandledWithProgress();
+        }
+
+        boolean alignOffCorner = shouldAlignOffCorner(mc, progress, inWater);
+        if (alignOffCorner && withinCornerAlignWindow()) {
+            return RecoveryDecision.alignToPath();
+        }
+        if (!alignOffCorner) {
+            cornerAlignStartMs = 0;
         }
 
         if (shouldJumpForRecovery(mc, progress, drifted, jumpCooldown)) {
@@ -59,20 +56,25 @@ final class PathRecoveryController {
             return RecoveryDecision.recoveryJump();
         }
 
-        if (allowReplan && progress.pathStale(PATH_REPLAN_STALE_MS) && cooldownPassed
-            && (progress.proximity().horizontalDistance() > PATH_REPLAN_DRIFT_DISTANCE
-            || progress.distanceMoved() >= PathExecutor.STUCK_DIST_THRESHOLD)) {
+        if (allowReplan && mc.player.onGround()
+            && progress.pathStale(PathfinderConfig.GROUNDED_NO_PROGRESS_REPLAN_MS.get())) {
+            return RecoveryDecision.repairToSegment("grounded no progress stale=" + progress.pathStaleMs());
+        }
+
+        if (allowReplan && progress.pathStale(PathfinderConfig.PATH_REPLAN_STALE_MS.get()) && cooldownPassed
+            && (progress.proximity().horizontalDistance() > PathfinderConfig.PATH_REPLAN_DRIFT_DISTANCE.get()
+            || progress.distanceMoved() >= PathfinderConfig.STUCK_DIST_THRESHOLD.get())) {
             return RecoveryDecision.repairToSegment(String.format(
                 "path progress stale drift=%.2f", progress.proximity().horizontalDistance()));
         }
 
-        if (allowReplan && progress.movementStale(PathExecutor.STUCK_TIME_MS)
+        if (allowReplan && progress.movementStale(PathfinderConfig.STUCK_TIME_MS.get())
             && drifted && cooldownPassed) {
             return RecoveryDecision.repairToSegment(String.format(
                 "drift stale=%.2f", progress.proximity().horizontalDistance()));
         }
 
-        if (progress.movementStale(PathExecutor.STUCK_TIME_MS * 2) && cooldownPassed) {
+        if (progress.movementStale(PathfinderConfig.STUCK_TIME_MS.get() * 2L) && cooldownPassed) {
             return RecoveryDecision.replanFromPlayer("deadlock stale=" + progress.movementStaleMs());
         }
 
@@ -90,18 +92,35 @@ final class PathRecoveryController {
 
     private boolean shouldBackup(Minecraft mc, PathProgressSnapshot progress, boolean drifted, boolean inWater) {
         return !inWater
-            && progress.movementStale(UNSTUCK_BACKUP_MS)
+            && progress.movementStale(PathfinderConfig.UNSTUCK_BACKUP_MS.get())
             && !drifted
             && mc.player.onGround()
-            && horizontalSpeed(mc) <= BACKUP_MAX_HORIZONTAL_SPEED;
+            && horizontalSpeed(mc) <= PathfinderConfig.BACKUP_MAX_HORIZONTAL_SPEED.get();
     }
 
     private boolean shouldJumpForRecovery(Minecraft mc, PathProgressSnapshot progress,
                                           boolean drifted, int jumpCooldown) {
-        return progress.movementStale(UNSTUCK_JUMP_MS)
+        return progress.movementStale(PathfinderConfig.UNSTUCK_JUMP_MS.get())
             && !drifted
             && mc.player.onGround()
             && jumpCooldown == 0;
+    }
+
+    private boolean shouldAlignOffCorner(Minecraft mc, PathProgressSnapshot progress, boolean inWater) {
+        return !inWater
+            && mc.player.onGround()
+            && progress.pathStale(PathfinderConfig.GROUNDED_NO_PROGRESS_REPLAN_MS.get())
+            && progress.proximity().horizontalDistance() >= PathfinderConfig.CORNER_ALIGN_MIN_DISTANCE.get()
+            && progress.proximity().horizontalDistance() <= PathfinderConfig.CORNER_ALIGN_MAX_DISTANCE.get()
+            && progress.proximity().verticalDistance() <= PathfinderConfig.CORNER_ALIGN_MAX_VERTICAL.get();
+    }
+
+    private boolean withinCornerAlignWindow() {
+        long now = System.currentTimeMillis();
+        if (cornerAlignStartMs == 0) {
+            cornerAlignStartMs = now;
+        }
+        return now - cornerAlignStartMs <= PathfinderConfig.CORNER_ALIGN_MAX_MS.get();
     }
 
     private void applyBackupTick(Minecraft mc) {
@@ -139,6 +158,10 @@ final class PathRecoveryController {
             return new RecoveryDecision(Action.RECOVERY_JUMP, "", false);
         }
 
+        static RecoveryDecision alignToPath() {
+            return new RecoveryDecision(Action.ALIGN_TO_PATH, "", false);
+        }
+
         static RecoveryDecision replanFromPlayer(String reason) {
             return new RecoveryDecision(Action.REPLAN_FROM_PLAYER, reason, false);
         }
@@ -152,6 +175,7 @@ final class PathRecoveryController {
         CONTINUE_MOVEMENT,
         TICK_HANDLED,
         RECOVERY_JUMP,
+        ALIGN_TO_PATH,
         REPAIR_TO_SEGMENT,
         REPLAN_FROM_PLAYER
     }

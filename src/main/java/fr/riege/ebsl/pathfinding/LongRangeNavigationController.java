@@ -137,7 +137,7 @@ final class LongRangeNavigationController {
             return LongRangeQueueRequest.fromPlayer();
         }
 
-        Node horizonNode = runtime.executor.getNodeAtRatio(LongRangePathSession.HORIZON_TRIM_RATIO);
+        Node horizonNode = runtime.executor.getNodeAtRatio(PathfinderConfig.HORIZON_TRIM_RATIO.get());
         return LongRangeQueueRequest.fromSegmentHorizon(horizonNode != null ? horizonNode.position : null);
     }
 }

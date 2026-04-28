@@ -20,6 +20,6 @@ public final class AnalyticsEventLog {
 
     public static synchronized List<AnalyticsEvent> latest(int count) {
         int from = Math.max(0, EVENTS.size() - count);
-        return Collections.unmodifiableList(new ArrayList<>(EVENTS.subList(from, EVENTS.size())));
+        return List.copyOf(EVENTS.subList(from, EVENTS.size()));
     }
 }

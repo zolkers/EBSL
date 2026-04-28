@@ -1,25 +1,15 @@
 package fr.riege.ebsl.pathfinding.movement;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Implements a string-pulling path smoother using Bresenham 3-D line-of-sight tests.
- */
+//Bresenham 3-D
 @PathingStage(PathingStage.Stage.PATH_SMOOTHING)
 public final class PathSmoother {
-
-    // Adaptive smoothing budget: open areas can skip farther than tight corridors.
-    private static final int OPEN_SKIP_BUDGET = 12;
-    private static final int MID_SKIP_BUDGET = 7;
-    private static final int TIGHT_SKIP_BUDGET = 4;
-
-    private static final int OPEN_WALL_SCORE_MAX = 2;
-    private static final int MID_WALL_SCORE_MAX = 6;
-    private static final double CONSTRAINED_CORNER_ANGLE_DEG = 35.0;
 
     private PathSmoother() {}
 
@@ -170,9 +160,13 @@ public final class PathSmoother {
     private static int computeAdaptiveSkipBudget(Node anchor, WalkabilityChecker checker) {
         int wallScore = computeWallScore(anchor, checker);
 
-        if (wallScore <= OPEN_WALL_SCORE_MAX) return OPEN_SKIP_BUDGET;
-        if (wallScore <= MID_WALL_SCORE_MAX) return MID_SKIP_BUDGET;
-        return TIGHT_SKIP_BUDGET;
+        if (wallScore <= PathfinderConfig.SMOOTH_OPEN_WALL_SCORE_MAX.get()) {
+            return PathfinderConfig.SMOOTH_OPEN_SKIP_BUDGET.get();
+        }
+        if (wallScore <= PathfinderConfig.SMOOTH_MID_WALL_SCORE_MAX.get()) {
+            return PathfinderConfig.SMOOTH_MID_SKIP_BUDGET.get();
+        }
+        return PathfinderConfig.SMOOTH_TIGHT_SKIP_BUDGET.get();
     }
 
     private static int computeWallScore(Node anchor, WalkabilityChecker checker) {
@@ -218,7 +212,8 @@ public final class PathSmoother {
 
         double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
         double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
-        return angleDeg >= CONSTRAINED_CORNER_ANGLE_DEG && computeWallScore(cur, checker) > 0;
+        return angleDeg >= PathfinderConfig.SMOOTH_CONSTRAINED_CORNER_ANGLE_DEG.get()
+            && computeWallScore(cur, checker) > 0;
     }
 
     private static boolean diagonalStepBlocked(WalkabilityChecker checker,

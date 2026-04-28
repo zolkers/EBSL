@@ -14,30 +14,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class PathPipeline {
-    private static final int INSTANT_WALK_MAX_ITERATIONS = 12000;
-    private static final int INSTANT_WALK_MAX_LENGTH = 1800;
-
     private PathPipeline() {
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async) {
-        return createWalkPathfinderConfiguration(checker, async, 100000, 12500);
+        return createWalkPathfinderConfiguration(
+            checker,
+            async,
+            PathfinderConfig.DEFAULT_WALK_MAX_ITERATIONS.get(),
+            PathfinderConfig.DEFAULT_WALK_MAX_LENGTH.get());
     }
 
     static PathfinderConfiguration createInstantWalkPathfinderConfiguration(WalkabilityChecker checker) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
-            INSTANT_WALK_MAX_ITERATIONS,
-            INSTANT_WALK_MAX_LENGTH);
+            PathfinderConfig.INSTANT_WALK_MAX_ITERATIONS.get(),
+            PathfinderConfig.INSTANT_WALK_MAX_LENGTH.get());
     }
 
     static PathfinderConfiguration createRepairWalkPathfinderConfiguration(WalkabilityChecker checker) {
-        return createWalkPathfinderConfiguration(checker, true, 8000, 600);
+        return createWalkPathfinderConfiguration(
+            checker,
+            true,
+            PathfinderConfig.REPAIR_WALK_MAX_ITERATIONS.get(),
+            PathfinderConfig.REPAIR_WALK_MAX_LENGTH.get());
     }
 
     static PathfinderConfiguration createQueuedLongRangeSegmentConfiguration(WalkabilityChecker checker) {
-        return createWalkPathfinderConfiguration(checker, true, 24000, 2600);
+        return createWalkPathfinderConfiguration(
+            checker,
+            true,
+            PathfinderConfig.QUEUED_LONG_RANGE_MAX_ITERATIONS.get(),
+            PathfinderConfig.QUEUED_LONG_RANGE_MAX_LENGTH.get());
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,

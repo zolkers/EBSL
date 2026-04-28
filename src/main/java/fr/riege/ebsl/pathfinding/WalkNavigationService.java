@@ -193,7 +193,7 @@ final class WalkNavigationService {
             && pendingSegment.attachment() == LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT) {
             if (pendingSegment.rollingHorizon()) {
                 runtime.executor.trimAndContinueWith(
-                    LongRangePathSession.HORIZON_TRIM_RATIO,
+                    PathfinderConfig.HORIZON_TRIM_RATIO.get(),
                     pendingSegment.path(),
                     pendingSegment.goalX(),
                     pendingSegment.goalY(),

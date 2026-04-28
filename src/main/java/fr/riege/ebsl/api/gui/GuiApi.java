@@ -43,7 +43,15 @@ public final class GuiApi {
         return List.of(
             new GuiSettingsGroup("General", EbslApi.settings().pathfinding().general()),
             new GuiSettingsGroup("Movement costs", EbslApi.settings().pathfinding().movementCosts()),
-            new GuiSettingsGroup("Corridor and centering costs", EbslApi.settings().pathfinding().corridorCosts())
+            new GuiSettingsGroup("Corridor and centering costs", EbslApi.settings().pathfinding().corridorCosts()),
+            new GuiSettingsGroup("Planning limits", EbslApi.settings().pathfinding().planningLimits()),
+            new GuiSettingsGroup("Smoothing and post-processing", EbslApi.settings().pathfinding().smoothing()),
+            new GuiSettingsGroup("Execution", EbslApi.settings().pathfinding().execution()),
+            new GuiSettingsGroup("Recovery", EbslApi.settings().pathfinding().recovery()),
+            new GuiSettingsGroup("Path health checks", EbslApi.settings().pathfinding().pathChecks()),
+            new GuiSettingsGroup("Execution steering", EbslApi.settings().pathfinding().steering()),
+            new GuiSettingsGroup("Long range", EbslApi.settings().pathfinding().longRange()),
+            new GuiSettingsGroup("Rotation and camera", EbslApi.settings().pathfinding().rotation())
         );
     }
 

@@ -13,18 +13,6 @@ import java.util.List;
     value = PathStatePersistence.Scope.LONG_RANGE_SESSION,
     reason = "Persists final XZ goal and prepared segment state across partial path replans.")
 final class LongRangePathSession {
-    private static final double SEGMENT_RECALC_RATIO = 0.70;
-    private static final double EARLY_SEGMENT_RECALC_RATIO = 0.50;
-    static final double HORIZON_TRIM_RATIO = 0.75;
-    private static final double PREPARE_REMAINING_DISTANCE = 45.0;
-    private static final double EMERGENCY_REMAINING_DISTANCE = 14.0;
-    private static final double PREPARED_SWITCH_REMAINING_DISTANCE = 24.0;
-    private static final double FINAL_GOAL_XZ_TOLERANCE = 1.75;
-    private static final double MAX_SEGMENT_DISTANCE = 150.0;
-    private static final long SEGMENT_RETRY_COOLDOWN_MS = 1500;
-    private static final int PLAYER_START_AFTER_FAILURES = 2;
-    private static final double PLAYER_START_RECOVERY_RATIO = 0.90;
-
     @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
     private boolean active;
     @PathStatePersistence(PathStatePersistence.Scope.LONG_RANGE_SESSION)
@@ -131,11 +119,12 @@ final class LongRangePathSession {
         double dx = finalGoalX + 0.5 - fromX;
         double dz = finalGoalZ + 0.5 - fromZ;
         double distance = Math.sqrt(dx * dx + dz * dz);
-        if (distance <= MAX_SEGMENT_DISTANCE) {
+        double maxSegmentDistance = PathfinderConfig.MAX_SEGMENT_DISTANCE.get();
+        if (distance <= maxSegmentDistance) {
             return new SegmentGoal(finalGoalX, finalGoalZ, false);
         }
 
-        double scale = MAX_SEGMENT_DISTANCE / Math.max(distance, 1.0e-6);
+        double scale = maxSegmentDistance / Math.max(distance, 1.0e-6);
         int segmentX = (int) Math.floor(fromX + dx * scale);
         int segmentZ = (int) Math.floor(fromZ + dz * scale);
         if (segmentX == finalGoalX && segmentZ == finalGoalZ) {
@@ -177,29 +166,30 @@ final class LongRangePathSession {
         if (walkExecutionDone) {
             return SegmentQueueDecision.EMERGENCY_FROM_PLAYER;
         }
-        if (remainingDistance <= EMERGENCY_REMAINING_DISTANCE) {
+        if (remainingDistance <= PathfinderConfig.EMERGENCY_REMAINING_DISTANCE.get()) {
             return SegmentQueueDecision.NORMAL;
         }
-        if (progressRatio >= EARLY_SEGMENT_RECALC_RATIO || remainingDistance <= PREPARE_REMAINING_DISTANCE) {
+        if (progressRatio >= PathfinderConfig.EARLY_SEGMENT_RECALC_RATIO.get()
+            || remainingDistance <= PathfinderConfig.PREPARE_REMAINING_DISTANCE.get()) {
             return SegmentQueueDecision.NORMAL;
         }
         return SegmentQueueDecision.NONE;
     }
 
     double recalcThresholdRatio() {
-        return SEGMENT_RECALC_RATIO;
+        return PathfinderConfig.SEGMENT_RECALC_RATIO.get();
     }
 
     boolean shouldActivatePreparedSegment(double progressRatio, double remainingDistance, boolean walkExecutionDone) {
         return walkExecutionDone
-            || progressRatio >= SEGMENT_RECALC_RATIO
-            || remainingDistance <= PREPARED_SWITCH_REMAINING_DISTANCE;
+            || progressRatio >= PathfinderConfig.SEGMENT_RECALC_RATIO.get()
+            || remainingDistance <= PathfinderConfig.PREPARED_SWITCH_REMAINING_DISTANCE.get();
     }
 
     boolean shouldUsePlayerRecoveryStart(double progressRatio, boolean walkExecutionDone) {
         return walkExecutionDone
-            || (failedSegmentCalculations >= PLAYER_START_AFTER_FAILURES
-            && progressRatio >= PLAYER_START_RECOVERY_RATIO);
+            || (failedSegmentCalculations >= PathfinderConfig.PLAYER_START_AFTER_FAILURES.get()
+            && progressRatio >= PathfinderConfig.PLAYER_START_RECOVERY_RATIO.get());
     }
 
     @PathStateTransition(PathStateTransition.Action.REPLACE)
@@ -225,7 +215,7 @@ final class LongRangePathSession {
         calculationSegmentId = -1;
         backgroundPathfinder = null;
         preparedSegment = null;
-        nextRetryAfterMs = now + SEGMENT_RETRY_COOLDOWN_MS;
+        nextRetryAfterMs = now + PathfinderConfig.SEGMENT_RETRY_COOLDOWN_MS.get();
         failedSegmentCalculations++;
     }
 
@@ -239,7 +229,7 @@ final class LongRangePathSession {
         backgroundPathfinder = null;
         preparedSegment = null;
         nextRetryAfterMs = 0;
-        failedSegmentCalculations = PLAYER_START_AFTER_FAILURES;
+        failedSegmentCalculations = PathfinderConfig.PLAYER_START_AFTER_FAILURES.get();
         immediateSegmentQueueRequested = true;
     }
 
@@ -262,7 +252,7 @@ final class LongRangePathSession {
     boolean isFinalGoalReached(Vec3 playerPos) {
         double dx = (finalGoalX + 0.5) - playerPos.x;
         double dz = (finalGoalZ + 0.5) - playerPos.z;
-        if (Math.sqrt(dx * dx + dz * dz) > FINAL_GOAL_XZ_TOLERANCE) {
+        if (Math.sqrt(dx * dx + dz * dz) > PathfinderConfig.FINAL_GOAL_XZ_TOLERANCE.get()) {
             return false;
         }
         return !requiresExactY() || Math.abs(finalGoalY - playerPos.y) <= 2.0;

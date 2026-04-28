@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.PathfinderConfig;
 import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.movement.types.execution.MovementExecutionContext;
@@ -99,14 +100,14 @@ final class WalkMovementController {
         double dz = targetWp.position.centeredZ() - playerPos.z;
         double hDist = Math.sqrt(dx * dx + dz * dz);
 
-        if (hDist < PathExecutor.WALK_TARGET_DEADZONE && pursuitSegment + 2 < path.size()) {
+        if (hDist < PathfinderConfig.WALK_TARGET_DEADZONE.get() && pursuitSegment + 2 < path.size()) {
             targetWp = path.get(pursuitSegment + 2);
             dx = targetWp.position.centeredX() - playerPos.x;
             dz = targetWp.position.centeredZ() - playerPos.z;
             hDist = Math.sqrt(dx * dx + dz * dz);
         }
 
-        if (hDist < PathExecutor.WALK_TARGET_DEADZONE) {
+        if (hDist < PathfinderConfig.WALK_TARGET_DEADZONE.get()) {
             if (forceForwardWhenCentered) {
                 mc.options.keyUp.setDown(true);
                 mc.options.keyDown.setDown(false);
@@ -123,15 +124,20 @@ final class WalkMovementController {
             return;
         }
 
-        double desiredX = dx / hDist;
-        double desiredZ = dz / hDist;
+        PathSteering.SteeringVector steering = PathSteering.steer(
+            checker(mc),
+            path,
+            playerPos,
+            targetWp,
+            pursuitSegment);
         InputApplier.applyRelativeMovement(
-            mc, desiredX, desiredZ, PathExecutor.WALK_FORWARD_DOT,
-            PathExecutor.WALK_BACKWARD_DOT, PathExecutor.WALK_STRAFE_DOT);
+            mc, steering.x(), steering.z(), PathfinderConfig.WALK_FORWARD_DOT.get(),
+            PathfinderConfig.WALK_BACKWARD_DOT.get(), PathfinderConfig.WALK_STRAFE_DOT.get());
         mc.options.keySprint.setDown(mc.options.keyUp.isDown()
             && !mc.options.keyDown.isDown()
             && distToFinal > 2.0
-            && !nearStepUp);
+            && !nearStepUp
+            && (!steering.nearCorner() || !PathfinderConfig.CORNER_STEERING_SLOWDOWN.get()));
     }
 
     private void handleJump(PathExecutor executor, Minecraft mc, Node waypoint, Vec3 playerPos,
@@ -155,22 +161,22 @@ final class WalkMovementController {
             millisSinceProgress,
             hDist,
             dy,
-            PathExecutor.STEP_UP_TRIGGER_DIST,
-            PathExecutor.JUMP_TRIGGER_DIST,
+            PathfinderConfig.STEP_UP_TRIGGER_DIST.get(),
+            PathfinderConfig.JUMP_TRIGGER_DIST.get(),
             1.2,
             parkourDistanceBlocks(waypoint, pursuitSegment),
-            PathExecutor.JUMP_COOLDOWN_TICKS,
-            PathExecutor.STALL_JUMP_PROGRESS_MS
+            PathfinderConfig.JUMP_COOLDOWN_TICKS.get(),
+            PathfinderConfig.STALL_JUMP_PROGRESS_MS.get()
         );
         MovementExecutorRegistry.get(waypoint.moveType).handleJump(context);
         mc.options.keyJump.setDown(context.jumpPressed());
         if (shouldAssistSlimeAscent(mc, waypoint, hDist, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
-            executor.setJumpCooldown(PathExecutor.JUMP_COOLDOWN_TICKS);
+            executor.setJumpCooldown(PathfinderConfig.JUMP_COOLDOWN_TICKS.get());
             return;
         }
         if (context.jumpCooldownConsumed()) {
-            executor.setJumpCooldown(PathExecutor.JUMP_COOLDOWN_TICKS);
+            executor.setJumpCooldown(PathfinderConfig.JUMP_COOLDOWN_TICKS.get());
         }
     }
 
