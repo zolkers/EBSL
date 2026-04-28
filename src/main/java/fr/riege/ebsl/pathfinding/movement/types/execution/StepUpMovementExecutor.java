@@ -1,28 +1,10 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 
-public final class StepUpMovement implements PathMovement {
-    @Override
-    public Node.MoveType type() {
-        return Node.MoveType.STEP_UP;
-    }
-
-    @Override
-    public boolean reducesSprintNearWaypoint() {
-        return true;
-    }
-
-    @Override
-    public boolean countsAsStairSequence() {
-        return true;
-    }
-
-    @Override
-    public boolean countsAsAscendingDifficulty() {
-        return true;
-    }
-
+@MovementHandler(Node.MoveType.STEP_UP)
+final class StepUpMovementExecutor implements MovementExecutor {
     @Override
     public void handleJump(MovementExecutionContext context) {
         if (context.partialSupportAscent()) {

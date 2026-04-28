@@ -1,4 +1,4 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.evaluation;
 
 public record MovementValidationResult(boolean valid, String reason) {
     private static final MovementValidationResult VALID = new MovementValidationResult(true, "");

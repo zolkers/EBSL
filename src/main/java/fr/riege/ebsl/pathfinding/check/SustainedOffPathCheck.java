@@ -1,5 +1,8 @@
 package fr.riege.ebsl.pathfinding.check;
 
+import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+
+@PathCheckRole("sustained_off_path_replan")
 final class SustainedOffPathCheck implements PathCheck {
     private static final long MAX_OFF_PATH_MS = 5000L;
     // Vertical recovery gets more time because higher jump height can keep Y off-path longer.

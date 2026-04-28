@@ -1,12 +1,14 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
-import fr.riege.ebsl.pathfinding.movement.types.MovementExecutionContext;
-import fr.riege.ebsl.pathfinding.movement.types.MovementRegistry;
-import fr.riege.ebsl.pathfinding.movement.types.MovementValidationContext;
-import fr.riege.ebsl.pathfinding.movement.types.MovementValidationResult;
-import fr.riege.ebsl.pathfinding.movement.types.WaterMovementContext;
+import fr.riege.ebsl.pathfinding.movement.types.execution.MovementExecutionContext;
+import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
+import fr.riege.ebsl.pathfinding.movement.types.execution.MovementExecutorRegistry;
+import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementValidationContext;
+import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementValidationResult;
+import fr.riege.ebsl.pathfinding.movement.types.execution.WaterMovementContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -16,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.EXECUTION)
 final class WalkMovementController {
     private List<Node> path;
     private Level checkerLevel;
@@ -48,7 +51,7 @@ final class WalkMovementController {
             next,
             playerPos,
             pursuitSegment);
-        return MovementRegistry.get(target.moveType).validate(context);
+        return MovementEvaluatorRegistry.get(target.moveType).validate(context);
     }
 
     void apply(PathExecutor executor, Minecraft mc, Vec3 playerPos, Node movementWaypoint,
@@ -56,7 +59,11 @@ final class WalkMovementController {
                int pursuitSegment, int jumpCooldown, long lastProgressTime) {
         double dxWp = movementWaypoint.position.centeredX() - playerPos.x;
         double dzWp = movementWaypoint.position.centeredZ() - playerPos.z;
-        boolean nearStepUp = MovementRegistry.get(movementWaypoint.moveType).reducesSprintNearWaypoint()
+        boolean partialSupportWaypoint = isPartialSupportWaypoint(mc, movementWaypoint);
+        boolean nearStepUp = MovementEvaluatorRegistry.get(movementWaypoint.moveType).reducesSprintNearWaypoint()
+            && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
+        boolean nearPartialSupportJump = movementWaypoint.moveType == Node.MoveType.JUMP
+            && partialSupportWaypoint
             && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
 
         boolean waterEntry = isWaterEntryWaypoint(mc, movementWaypoint);
@@ -64,7 +71,8 @@ final class WalkMovementController {
             ? waterEntryMovementTarget(mc, movementWaypoint, pursuitSegment)
             : movementWaypoint;
 
-        applyPathMovement(mc, playerPos, pathMovementWaypoint, distToFinal, nearStepUp, pursuitSegment, waterEntry);
+        applyPathMovement(mc, playerPos, pathMovementWaypoint, distToFinal,
+            nearStepUp || nearPartialSupportJump, pursuitSegment, waterEntry);
 
         if (applyWaterEntryMovement(mc, waterEntry, sneakLatched)) {
             return;
@@ -154,7 +162,7 @@ final class WalkMovementController {
             PathExecutor.JUMP_COOLDOWN_TICKS,
             PathExecutor.STALL_JUMP_PROGRESS_MS
         );
-        MovementRegistry.get(waypoint.moveType).handleJump(context);
+        MovementExecutorRegistry.get(waypoint.moveType).handleJump(context);
         mc.options.keyJump.setDown(context.jumpPressed());
         if (shouldAssistSlimeAscent(mc, waypoint, hDist, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
@@ -175,7 +183,7 @@ final class WalkMovementController {
         Node nextWaypoint = path.get(Math.min(path.size() - 1, pursuitSegment + 2));
         WaterMovementContext waterContext = new WaterMovementContext(
             mc, movementWaypoint, nextWaypoint, playerPos, distToFinal);
-        MovementRegistry.get(movementWaypoint.moveType).handleWaterMovement(waterContext);
+        MovementExecutorRegistry.get(movementWaypoint.moveType).handleWaterMovement(waterContext);
         if (waterContext.handled()) {
             mc.options.keyJump.setDown(waterContext.jumpPressed());
             if (!sneakLatched) {
@@ -237,7 +245,7 @@ final class WalkMovementController {
         int checkEnd = Math.min(path.size(), pursuitSegment + 3);
         for (int i = pursuitSegment; i < checkEnd; i++) {
             Node wp = path.get(i);
-            if (MovementRegistry.get(wp.moveType).countsAsStairSequence() && isPartialSupportWaypoint(mc, wp)) {
+            if (MovementEvaluatorRegistry.get(wp.moveType).countsAsStairSequence() && isPartialSupportWaypoint(mc, wp)) {
                 stairCount++;
             }
             if (i > 0 && wp.position.flooredY() < path.get(i - 1).position.flooredY()) {

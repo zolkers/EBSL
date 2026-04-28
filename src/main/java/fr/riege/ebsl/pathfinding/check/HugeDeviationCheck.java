@@ -1,5 +1,8 @@
 package fr.riege.ebsl.pathfinding.check;
 
+import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+
+@PathCheckRole("huge_deviation_replan")
 final class HugeDeviationCheck implements PathCheck {
     private static final double HUGE_HORIZONTAL_DISTANCE = 12.0;
 

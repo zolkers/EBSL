@@ -1,13 +1,10 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.evaluation;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 
-public final class ClimbMovement extends WalkMovement {
-    @Override
-    public Node.MoveType type() {
-        return Node.MoveType.CLIMB;
-    }
-
+@MovementHandler(Node.MoveType.CLIMB)
+final class ClimbMovementEvaluator extends WalkMovementEvaluator {
     @Override
     public MovementValidationResult validate(MovementValidationContext context) {
         int x = context.targetX();

@@ -1,5 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.execution.ExecutionOptions;
 import fr.riege.ebsl.pathfinding.execution.ExecutionPlan;
@@ -19,6 +21,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.NAVIGATION_SERVICE)
+@NavigationModeHandler(NavigationMode.WALK)
 final class WalkNavigationService {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-navigation");
 

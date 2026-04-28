@@ -1,7 +1,10 @@
 package fr.riege.ebsl.pathfinding.check;
 
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
+
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.RECOVERY)
 public final class PathCheckRegistry {
     private static final List<PathCheck> CHECKS = List.of(
         new AnomalousPathCutoffCheck(),

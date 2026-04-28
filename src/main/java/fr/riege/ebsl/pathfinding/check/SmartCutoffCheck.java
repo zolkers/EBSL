@@ -1,5 +1,8 @@
 package fr.riege.ebsl.pathfinding.check;
 
+import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
+
+@PathCheckRole("smart_cutoff")
 final class SmartCutoffCheck implements PathCheck {
     private static final double MAX_CUTOFF_HORIZONTAL_DISTANCE = 1.35;
     private static final double MAX_CUTOFF_VERTICAL_DISTANCE = 1.75;

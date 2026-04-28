@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding.pathing.processing.impl;
 
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
@@ -23,6 +24,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
  * please write a comment explaining WHY you did it that way. i dont like
  * magic numbers that i cant understand.
  */
+@PathingStage(PathingStage.Stage.GRAPH_EVALUATION)
 public final class MinecraftPathProcessor implements NodeProcessor {
 
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125; // WalkNodeEvaluator

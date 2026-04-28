@@ -1,7 +1,10 @@
 package fr.riege.ebsl.pathfinding.execution;
 
+import fr.riege.ebsl.pathfinding.NavigationMode;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
+import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.util.ClientUtils;
 import net.minecraft.client.Minecraft;
@@ -23,6 +26,8 @@ import java.util.List;
  * keys release.
  * - Stuck recovery: at 1.5s hold Space to climb; at 3s abort.
  */
+@PathingStage(PathingStage.Stage.EXECUTION)
+@NavigationModeHandler(NavigationMode.FLY)
 public final class FlyExecutor {
 
     public enum State {
@@ -233,5 +238,4 @@ public final class FlyExecutor {
     private void debugRotation(String message, Object... args) {
     }
 }
-
 

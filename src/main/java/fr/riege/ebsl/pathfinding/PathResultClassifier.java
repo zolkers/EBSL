@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding;
 
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.RESULT_CLASSIFICATION)
 final class PathResultClassifier {
     private PathResultClassifier() {
     }

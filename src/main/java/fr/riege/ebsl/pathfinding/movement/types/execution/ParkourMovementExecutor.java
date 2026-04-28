@@ -1,19 +1,11 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 
-public final class ParkourMovement implements PathMovement {
+@MovementHandler(Node.MoveType.PARKOUR)
+final class ParkourMovementExecutor implements MovementExecutor {
     private static final double TAKEOFF_EDGE_MARGIN = 0.45;
-
-    @Override
-    public Node.MoveType type() {
-        return Node.MoveType.PARKOUR;
-    }
-
-    @Override
-    public boolean countsAsAscendingDifficulty() {
-        return true;
-    }
 
     @Override
     public void handleJump(MovementExecutionContext context) {

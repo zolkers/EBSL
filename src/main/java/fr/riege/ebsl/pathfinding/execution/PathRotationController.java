@@ -2,7 +2,7 @@ package fr.riege.ebsl.pathfinding.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
-import fr.riege.ebsl.pathfinding.movement.types.MovementRegistry;
+import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
 import fr.riege.ebsl.pathfinding.rotation.AngleUtils;
 import fr.riege.ebsl.pathfinding.rotation.EasingType;
 import fr.riege.ebsl.pathfinding.rotation.Rotation;
@@ -172,7 +172,7 @@ final class PathRotationController {
         float tightness = walls / 8.0f;
 
         boolean ascending = pursuitSegment < path.size()
-            && MovementRegistry.get(path.get(pursuitSegment).moveType).countsAsAscendingDifficulty();
+            && MovementEvaluatorRegistry.get(path.get(pursuitSegment).moveType).countsAsAscendingDifficulty();
         return Math.min(1.0f, tightness + (ascending ? 0.4f : 0.0f));
     }
 

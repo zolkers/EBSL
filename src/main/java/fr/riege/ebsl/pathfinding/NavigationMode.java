@@ -1,6 +1,6 @@
 package fr.riege.ebsl.pathfinding;
 
-enum NavigationMode {
+public enum NavigationMode {
     NONE,
     WALK,
     FLY

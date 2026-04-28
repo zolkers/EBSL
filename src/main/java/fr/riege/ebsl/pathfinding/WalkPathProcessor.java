@@ -2,6 +2,7 @@ package fr.riege.ebsl.pathfinding;
 
 import fr.riege.ebsl.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.core.Direction;
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+@PathingStage(PathingStage.Stage.PATH_POST_PROCESSING)
 final class WalkPathProcessor {
     private static final double INTERMEDIATE_SPACING = 4.0;
     private static final double PARTIAL_ASCENT_THRESHOLD = 0.2;
@@ -27,11 +29,14 @@ final class WalkPathProcessor {
                                          WalkabilityChecker checker) {
         List<Node> nodes = toNodeList(positions, config, checker);
         List<Node> smoothed = PathSmoother.smooth(nodes, checker);
+        relabelMoveTypes(smoothed, checker);
         List<Node> keynodes = collapseAscendingStacks(smoothed);
+        relabelMoveTypes(keynodes, checker);
         for (Node node : keynodes) {
             node.isKeynode = true;
         }
         List<Node> navigationPath = insertIntermediates(keynodes, checker);
+        relabelMoveTypes(navigationPath, checker);
         return new ProcessedPath(nodes, navigationPath, computePathLength(nodes));
     }
 
@@ -134,6 +139,19 @@ final class WalkPathProcessor {
             total += from.distance(to);
         }
         return total;
+    }
+
+    private static void relabelMoveTypes(List<Node> nodes, WalkabilityChecker checker) {
+        if (checker == null || nodes == null || nodes.size() < 2) {
+            return;
+        }
+        for (int i = 1; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
+            node.moveType = inferMoveType(nodes.get(i - 1).position, node.position, checker);
+            if (isSwimPosition(checker, node.position)) {
+                node.moveType = Node.MoveType.SWIM;
+            }
+        }
     }
 
     private static List<Node> insertIntermediates(List<Node> keynodes, WalkabilityChecker checker) {

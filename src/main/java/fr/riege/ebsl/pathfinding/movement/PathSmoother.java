@@ -1,6 +1,7 @@
 package fr.riege.ebsl.pathfinding.movement;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 /**
  * Implements a string-pulling path smoother using Bresenham 3-D line-of-sight tests.
  */
+@PathingStage(PathingStage.Stage.PATH_SMOOTHING)
 public final class PathSmoother {
 
     // Adaptive smoothing budget: open areas can skip farther than tight corridors.

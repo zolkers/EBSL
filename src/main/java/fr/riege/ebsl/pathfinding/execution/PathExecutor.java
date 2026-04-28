@@ -1,14 +1,17 @@
 package fr.riege.ebsl.pathfinding.execution;
 
 
+import fr.riege.ebsl.pathfinding.NavigationMode;
 import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.PathfinderConfig;
+import fr.riege.ebsl.pathfinding.annotation.NavigationModeHandler;
+import fr.riege.ebsl.pathfinding.annotation.PathingStage;
 import fr.riege.ebsl.pathfinding.check.PathCheckContext;
 import fr.riege.ebsl.pathfinding.check.PathCheckRegistry;
 import fr.riege.ebsl.pathfinding.check.PathCheckResult;
 import fr.riege.ebsl.pathfinding.check.PathProximitySnapshot;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
-import fr.riege.ebsl.pathfinding.movement.types.MovementValidationResult;
+import fr.riege.ebsl.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.util.ClientUtils;
 import net.minecraft.client.Minecraft;
@@ -17,6 +20,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.Optional;
 
+@PathingStage(PathingStage.Stage.EXECUTION)
+@NavigationModeHandler(NavigationMode.WALK)
 public final class PathExecutor {
 
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }

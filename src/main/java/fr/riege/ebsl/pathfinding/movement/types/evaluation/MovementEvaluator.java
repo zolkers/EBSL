@@ -1,10 +1,6 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.evaluation;
 
-import fr.riege.ebsl.pathfinding.Node;
-
-public interface PathMovement {
-    Node.MoveType type();
-
+public interface MovementEvaluator {
     default boolean reducesSprintNearWaypoint() {
         return false;
     }
@@ -15,13 +11,6 @@ public interface PathMovement {
 
     default boolean countsAsAscendingDifficulty() {
         return false;
-    }
-
-    default void handleJump(MovementExecutionContext context) {
-        context.releaseJump();
-    }
-
-    default void handleWaterMovement(WaterMovementContext context) {
     }
 
     default MovementValidationResult validate(MovementValidationContext context) {

@@ -1,7 +1,9 @@
 package fr.riege.ebsl.pathfinding.check;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.annotation.PathCheckRole;
 
+@PathCheckRole("anomalous_cutoff_repair")
 final class AnomalousPathCutoffCheck implements PathCheck {
     private static final int MIN_SEGMENT_SKIP = 3;
     private static final double MAX_RECOVERY_CUTOFF_HORIZONTAL_DISTANCE = 5.5;

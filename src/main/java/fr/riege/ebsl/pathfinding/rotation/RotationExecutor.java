@@ -75,7 +75,7 @@ public final class RotationExecutor {
             } else {
                 float prevYaw = player.getYRot();
                 float prevPitch = player.getXRot();
-                float newYaw   = AngleUtils.normalizeAngle(applyGCD(result.yaw,   player.getYRot()));
+                float newYaw   = applyGCD(result.yaw, player.getYRot());
                 float newPitch = Math.max(-90f, Math.min(90f,
                         applyGCD(result.pitch, player.getXRot(), -90f, 90f)));
                 RotationDebug.log("rotation", "update apply raw=(yaw=%.2f,pitch=%.2f) prev=(yaw=%.2f,pitch=%.2f) final=(yaw=%.2f,pitch=%.2f)",

@@ -1,13 +1,10 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 
-public class WalkMovement implements PathMovement {
-    @Override
-    public Node.MoveType type() {
-        return Node.MoveType.WALK;
-    }
-
+@MovementHandler(Node.MoveType.WALK)
+class WalkMovementExecutor implements MovementExecutor {
     @Override
     public void handleJump(MovementExecutionContext context) {
         if (!context.canStartJump()) {

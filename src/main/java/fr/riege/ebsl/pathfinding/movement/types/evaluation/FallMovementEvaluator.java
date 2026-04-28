@@ -1,20 +1,15 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.evaluation;
 
 import fr.riege.ebsl.pathfinding.Node;
+import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.pathfinding.provider.impl.MinecraftNavigationProvider;
 
-public final class FallMovement extends WalkMovement {
-    @Override
-    public Node.MoveType type() {
-        return Node.MoveType.FALL;
-    }
-
+@MovementHandler(Node.MoveType.FALL)
+final class FallMovementEvaluator extends WalkMovementEvaluator {
     @Override
     public MovementValidationResult validate(MovementValidationContext context) {
-        int fromX = context.from().position.flooredX();
         int fromY = context.from().position.flooredY();
-        int fromZ = context.from().position.flooredZ();
         int x = context.targetX();
         int y = context.targetY();
         int z = context.targetZ();

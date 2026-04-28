@@ -1,4 +1,4 @@
-package fr.riege.ebsl.pathfinding.movement.types;
+package fr.riege.ebsl.pathfinding.movement.types.execution;
 
 import fr.riege.ebsl.pathfinding.Node;
 import net.minecraft.client.Minecraft;
