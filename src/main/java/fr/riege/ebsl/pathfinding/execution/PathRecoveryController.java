@@ -76,7 +76,7 @@ final class PathRecoveryController {
                 "drift stale=%.2f", progress.proximity().horizontalDistance()));
         }
 
-        if (allowReplan && progress.movementStale(PathfinderSettings.instance().stuckTimeMs.value() * 2L) && cooldownPassed) {
+        if (allowReplan && progress.movementStale(recoveryProfile.deadlockMs()) && cooldownPassed) {
             return RecoveryDecision.repairToSegment("deadlock stale=" + progress.movementStaleMs());
         }
 

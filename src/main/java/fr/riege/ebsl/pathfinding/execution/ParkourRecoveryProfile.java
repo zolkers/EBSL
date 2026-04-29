@@ -19,6 +19,13 @@ final class ParkourRecoveryProfile implements MovementRecoveryProfile {
     }
 
     @Override
+    public long deadlockMs() {
+        return Math.max(
+            PathfinderSettings.instance().stuckTimeMs.value() * 4L,
+            PathfinderSettings.instance().parkourPathReplanHardStaleMs.value());
+    }
+
+    @Override
     public boolean allowBackup() {
         return false;
     }

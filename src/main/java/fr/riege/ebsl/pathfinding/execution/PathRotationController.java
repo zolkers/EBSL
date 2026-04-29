@@ -20,6 +20,15 @@ import java.util.function.Consumer;
 
 final class PathRotationController {
     private List<Vec3> cameraPath = Collections.emptyList();
+    private static final double PARKOUR_LANDING_LOOK_MIN_DIST = 0.65;
+    private static final double PARKOUR_HARD_LANDING_LOOK_MIN_DIST = 0.45;
+    private static final double PARKOUR_LANDING_LOOK_PASSED_DOT = -0.20;
+    private static final double PARKOUR_HARD_LANDING_LOOK_PASSED_DOT = -0.05;
+    private static final double PARKOUR_HARD_TURN_DOT = 0.82;
+    private static final double PARKOUR_HARD_DRIFT_DISTANCE = 0.32;
+    private static final double PARKOUR_HARD_DRIFT_TAKEOFF_DIST = 5.0;
+    private static final int PARKOUR_NORMAL_LOOKAHEAD_NODES = 2;
+    private static final int PARKOUR_HARD_LOOKAHEAD_NODES = 4;
     private int cameraIndex;
     private Vec3 lastCameraCheckPos;
     private int camTargetIdx = -1;
@@ -88,7 +97,7 @@ final class PathRotationController {
 
     private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path,
                                                 int pursuitSegment, boolean alreadyRotating) {
-        Optional<RotationTarget> parkourLanding = selectParkourLandingTarget(path, pursuitSegment, alreadyRotating);
+        Optional<RotationTarget> parkourLanding = selectParkourLandingTarget(playerPos, path, pursuitSegment, alreadyRotating);
         if (parkourLanding.isPresent()) {
             return parkourLanding.get();
         }
@@ -127,20 +136,30 @@ final class PathRotationController {
             "legacy", camTarget, camTarget, rotTargetPos);
     }
 
-    private Optional<RotationTarget> selectParkourLandingTarget(List<Node> path, int pursuitSegment,
+    private Optional<RotationTarget> selectParkourLandingTarget(Vec3 playerPos, List<Node> path, int pursuitSegment,
                                                                boolean alreadyRotating) {
-        int landingIndex = findParkourLandingIndex(path, pursuitSegment);
+        int landingIndex = findParkourLandingIndex(path, pursuitSegment, PARKOUR_HARD_LOOKAHEAD_NODES);
         if (landingIndex < 0) {
             return Optional.empty();
         }
 
+        boolean hardToPrepare = requiresParkourAnticipation(playerPos, path, landingIndex);
+        if (landingIndex > Math.max(0, pursuitSegment) + PARKOUR_NORMAL_LOOKAHEAD_NODES && !hardToPrepare) {
+            return Optional.empty();
+        }
+
+        Node takeoff = path.get(Math.max(0, landingIndex - 1));
         Node landing = path.get(landingIndex);
+        if (shouldReleaseParkourLandingTarget(playerPos, takeoff, landing, hardToPrepare)) {
+            return Optional.empty();
+        }
+
         Vec3 landingTarget = new Vec3(
             landing.position.centeredX(),
             landing.position.flooredY() + 1.0,
             landing.position.centeredZ());
         return Optional.of(new RotationTarget(
-            "parkour_landing",
+            hardToPrepare ? "parkour_landing_hard" : "parkour_landing",
             landingIndex,
             landingIndex,
             landingTarget,
@@ -155,12 +174,82 @@ final class PathRotationController {
             true));
     }
 
-    private static int findParkourLandingIndex(List<Node> path, int pursuitSegment) {
+    private static boolean shouldReleaseParkourLandingTarget(Vec3 playerPos, Node takeoff, Node landing,
+                                                            boolean hardToPrepare) {
+        double tx = takeoff.position.centeredX();
+        double tz = takeoff.position.centeredZ();
+        double lx = landing.position.centeredX();
+        double lz = landing.position.centeredZ();
+        double pathDx = lx - tx;
+        double pathDz = lz - tz;
+        double pathLenSq = pathDx * pathDx + pathDz * pathDz;
+        if (pathLenSq < 1.0e-6) {
+            return true;
+        }
+
+        double toLandingX = lx - playerPos.x;
+        double toLandingZ = lz - playerPos.z;
+        double landingDist = Math.sqrt(toLandingX * toLandingX + toLandingZ * toLandingZ);
+        double releaseDist = hardToPrepare ? PARKOUR_HARD_LANDING_LOOK_MIN_DIST : PARKOUR_LANDING_LOOK_MIN_DIST;
+        if (landingDist <= releaseDist) {
+            return true;
+        }
+
+        double playerProgressDot = ((playerPos.x - tx) * pathDx + (playerPos.z - tz) * pathDz) / pathLenSq;
+        double landingAheadDot = (toLandingX * pathDx + toLandingZ * pathDz) / pathLenSq;
+        double progressRelease = hardToPrepare ? 1.05 : 0.95;
+        double passedDot = hardToPrepare ? PARKOUR_HARD_LANDING_LOOK_PASSED_DOT : PARKOUR_LANDING_LOOK_PASSED_DOT;
+        return playerProgressDot >= progressRelease || landingAheadDot < passedDot;
+    }
+
+    private static boolean requiresParkourAnticipation(Vec3 playerPos, List<Node> path, int landingIndex) {
+        if (landingIndex <= 0 || landingIndex >= path.size()) {
+            return false;
+        }
+
+        int takeoffIndex = landingIndex - 1;
+        Node takeoff = path.get(takeoffIndex);
+        Node landing = path.get(landingIndex);
+        double tx = takeoff.position.centeredX();
+        double tz = takeoff.position.centeredZ();
+        double lx = landing.position.centeredX();
+        double lz = landing.position.centeredZ();
+        double jumpDx = lx - tx;
+        double jumpDz = lz - tz;
+        double jumpLenSq = jumpDx * jumpDx + jumpDz * jumpDz;
+        if (jumpLenSq < 1.0e-6) {
+            return false;
+        }
+
+        boolean hardTurn = false;
+        if (takeoffIndex > 0) {
+            Node previous = path.get(takeoffIndex - 1);
+            double prevDx = tx - previous.position.centeredX();
+            double prevDz = tz - previous.position.centeredZ();
+            double prevLenSq = prevDx * prevDx + prevDz * prevDz;
+            if (prevLenSq > 1.0e-6) {
+                double turnDot = (prevDx * jumpDx + prevDz * jumpDz) / Math.sqrt(prevLenSq * jumpLenSq);
+                hardTurn = turnDot < PARKOUR_HARD_TURN_DOT;
+            }
+        }
+
+        double jumpLen = Math.sqrt(jumpLenSq);
+        double lateralDrift = Math.abs(((playerPos.x - tx) * jumpDz - (playerPos.z - tz) * jumpDx) / jumpLen);
+        double toTakeoffX = tx - playerPos.x;
+        double toTakeoffZ = tz - playerPos.z;
+        double takeoffDist = Math.sqrt(toTakeoffX * toTakeoffX + toTakeoffZ * toTakeoffZ);
+        boolean hardDrift = takeoffDist <= PARKOUR_HARD_DRIFT_TAKEOFF_DIST
+            && lateralDrift >= PARKOUR_HARD_DRIFT_DISTANCE;
+
+        return hardTurn || hardDrift;
+    }
+
+    private static int findParkourLandingIndex(List<Node> path, int pursuitSegment, int lookaheadNodes) {
         if (path == null || path.isEmpty()) {
             return -1;
         }
         int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + 2);
+        int end = Math.min(path.size() - 1, start + lookaheadNodes);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return i;
