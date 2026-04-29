@@ -88,6 +88,11 @@ final class PathRotationController {
 
     private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path,
                                                 int pursuitSegment, boolean alreadyRotating) {
+        Optional<RotationTarget> parkourLanding = selectParkourLandingTarget(path, pursuitSegment, alreadyRotating);
+        if (parkourLanding.isPresent()) {
+            return parkourLanding.get();
+        }
+
         Optional<MovementSmoothing.Plan> smoothing = MovementSmoothingRegistry.resolve(path, pursuitSegment, alreadyRotating);
         if (smoothing.isPresent()) {
             MovementSmoothing.Plan plan = smoothing.get();
@@ -120,6 +125,48 @@ final class PathRotationController {
             rotTarget.position.centeredZ());
         return defaultRotationTarget(mc, path, pursuitSegment, alreadyRotating,
             "legacy", camTarget, camTarget, rotTargetPos);
+    }
+
+    private Optional<RotationTarget> selectParkourLandingTarget(List<Node> path, int pursuitSegment,
+                                                               boolean alreadyRotating) {
+        int landingIndex = findParkourLandingIndex(path, pursuitSegment);
+        if (landingIndex < 0) {
+            return Optional.empty();
+        }
+
+        Node landing = path.get(landingIndex);
+        Vec3 landingTarget = new Vec3(
+            landing.position.centeredX(),
+            landing.position.flooredY() + 1.0,
+            landing.position.centeredZ());
+        return Optional.of(new RotationTarget(
+            "parkour_landing",
+            landingIndex,
+            landingIndex,
+            landingTarget,
+            (float) (double) (alreadyRotating
+                ? PathfinderSettings.instance().parkourActiveYawRetargetDeg.value()
+                : PathfinderSettings.instance().parkourIdleYawDeadbandDeg.value()),
+            (float) (double) (alreadyRotating
+                ? PathfinderSettings.instance().parkourActivePitchRetargetDeg.value()
+                : PathfinderSettings.instance().parkourIdlePitchDeadbandDeg.value()),
+            PathfinderSettings.instance().parkourRotationDurationMs.value(),
+            EasingType.EASE_OUT_CUBIC,
+            true));
+    }
+
+    private static int findParkourLandingIndex(List<Node> path, int pursuitSegment) {
+        if (path == null || path.isEmpty()) {
+            return -1;
+        }
+        int start = Math.max(0, pursuitSegment);
+        int end = Math.min(path.size() - 1, start + 2);
+        for (int i = start; i <= end; i++) {
+            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void dispatchRotationIfNeeded(Minecraft mc, List<Node> path, int pursuitSegment,

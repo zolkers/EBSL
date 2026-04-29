@@ -83,13 +83,13 @@ public final class PathfindingManager {
 
     public static void startPathfind(Minecraft mc, int x, int y, int z, boolean fly) {
         startGoal(mc, NavigationRequest.builder(new GoalBlock(x, y, z))
-            .mode(fly ? NavigationModeType.FLY : NavigationModeType.WALK)
+            .mode(NavigationModeType.WALK)
             .build());
     }
 
     public static void startFlyPathfind(Minecraft mc, int x, int y, int z) {
         startGoal(mc, NavigationRequest.builder(new GoalBlock(x, y, z))
-            .mode(NavigationModeType.FLY)
+            .mode(NavigationModeType.WALK)
             .build());
     }
 
@@ -132,7 +132,7 @@ public final class PathfindingManager {
             goalBlock.x(),
             goalBlock.y(),
             goalBlock.z(),
-            request.mode() == NavigationModeType.FLY);
+            false);
     }
 
     public static void startXZGoal(Minecraft mc, GoalXZ goalXZ, NavigationRequest request) {

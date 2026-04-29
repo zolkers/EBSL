@@ -318,6 +318,9 @@ final class PathTracker {
     }
 
     Node getMovementWaypoint() {
+        if (path.isEmpty()) {
+            return null;
+        }
         int targetIdx = Math.min(path.size() - 1, pursuitSegment + 1);
         return path.get(targetIdx);
     }

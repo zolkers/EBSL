@@ -54,6 +54,7 @@ public final class PathExecutor {
     private PathRepairRequest repairRequest;
     private String lastRepairReason = "";
     private long lastRepairReasonTime = 0;
+    private Node.MoveType lastKnownMoveType = Node.MoveType.WALK;
     private WalkMovementController movementController;
     @PathStatePersistence(PathStatePersistence.Scope.EXECUTION)
     private final PathTracker pathTracker = new PathTracker();
@@ -102,6 +103,7 @@ public final class PathExecutor {
         repairRequest             = null;
         lastRepairReason          = "";
         lastRepairReasonTime      = 0;
+        lastKnownMoveType         = Node.MoveType.WALK;
         sneakLatched              = false;
         recoveryController.reset();
     }
@@ -113,9 +115,13 @@ public final class PathExecutor {
 
     public State getState() { return state; }
     public Node.MoveType getCurrentMoveType() {
+        if (state == State.REPLANNING) return lastKnownMoveType;
         if (state != State.WALKING) return null;
         Node waypoint = pathTracker.getMovementWaypoint();
-        return waypoint != null ? waypoint.moveType : null;
+        if (waypoint != null && waypoint.moveType != null) {
+            lastKnownMoveType = waypoint.moveType;
+        }
+        return lastKnownMoveType;
     }
     public int getWaypointIndex() { return pathTracker.getPursuitSegment(); }
     public int getCamTargetIdx()  { return rotationController.getCamTargetIdx(); }

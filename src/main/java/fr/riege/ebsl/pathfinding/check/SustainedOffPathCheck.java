@@ -11,8 +11,8 @@ final class SustainedOffPathCheck implements PathCheck {
         boolean verticalDeviation = proximity.verticalDistance() >= PathfinderSettings.instance().offPathVerticalDistance.value();
         if (verticalDeviation
             && context.severeOffPathDurationMs() >= PathfinderSettings.instance().sustainedVerticalOffPathMaxMs.value()) {
-            return PathCheckResult.forceReplan(String.format(
-                "vertical off-path timeout dist3d=%.2f y=%.2f duration=%dms segment=%d",
+            return PathCheckResult.repairToSegment(proximity.nearestSegmentIndex(), String.format(
+                "vertical off-path repair dist3d=%.2f y=%.2f duration=%dms segment=%d",
                 proximity.distance3d(),
                 proximity.verticalDistance(),
                 context.severeOffPathDurationMs(),
@@ -21,8 +21,8 @@ final class SustainedOffPathCheck implements PathCheck {
 
         boolean horizontalDeviation = proximity.horizontalDistance() >= PathfinderSettings.instance().offPathHorizontalDistance.value();
         if (horizontalDeviation && context.severeOffPathDurationMs() >= PathfinderSettings.instance().sustainedOffPathMaxMs.value()) {
-            return PathCheckResult.forceReplan(String.format(
-                "horizontal off-path timeout dist3d=%.2f h=%.2f duration=%dms segment=%d",
+            return PathCheckResult.repairToSegment(proximity.nearestSegmentIndex(), String.format(
+                "horizontal off-path repair dist3d=%.2f h=%.2f duration=%dms segment=%d",
                 proximity.distance3d(),
                 proximity.horizontalDistance(),
                 context.severeOffPathDurationMs(),

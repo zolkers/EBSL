@@ -42,9 +42,19 @@ public final class DockingInputHandler {
         Minecraft minecraft = Minecraft.getInstance();
         Window window = minecraft.getWindow();
         if (event.getWindowHandle() != window.handle()) return;
-        if (minecraft.mouseHandler.isMouseGrabbed()) return;
         double[] x = {0}, y = {0};
         GLFW.glfwGetCursorPos(event.getWindowHandle(), x, y);
+
+        if (minecraft.screen != null) {
+            if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(x[0], y[0], window.getScreenWidth(), window.getScreenHeight())) {
+                event.cancel();
+            } else if (minecraft.mouseHandler.isMouseGrabbed()) {
+                minecraft.mouseHandler.releaseMouse();
+            }
+            return;
+        }
+
+        if (minecraft.mouseHandler.isMouseGrabbed()) return;
         if (!EbslImGuiOverlay.acceptsMinecraftFocusAt(x[0], y[0], window.getScreenWidth(), window.getScreenHeight())) {
             minecraft.mouseHandler.releaseMouse();
             event.cancel();

@@ -38,6 +38,7 @@ final class WalkNavigationService {
     }
 
     void startPathfind(Minecraft mc, int x, int y, int z, boolean fly, boolean clearLongRange) {
+        fly = false;
         if (mc.player == null) {
             return;
         }
@@ -149,6 +150,9 @@ final class WalkNavigationService {
     }
 
     boolean updateFlyExecution(Minecraft mc) {
+        if (runtime.state.activeMode() == NavigationMode.FLY) {
+            runtime.abortCurrentNavigation(mc);
+        }
         if (!runtime.state.isFlyExecutionActive(runtime.flyExecutor)) {
             return false;
         }

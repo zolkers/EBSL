@@ -10,6 +10,7 @@ import fr.riege.ebsl.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.pathfinding.pathing.processing.context.EvaluationContext;
+import fr.riege.ebsl.pathfinding.pathing.processing.context.SearchContext;
 import fr.riege.ebsl.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
 import net.minecraft.client.Minecraft;
@@ -50,6 +51,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     private final Minecraft mc = Minecraft.getInstance();
     private final WalkabilityChecker checker;
     private final double maxJumpHeight;
+    private final ThreadLocal<ParkourJumpPlanner> parkourPlanner = new ThreadLocal<>();
 
     // Cache for isInsideSolidSpace(prev) - prev is the same node for all neighbors in one expansion.
     // Avoids 2 redundant topY lookups per neighbor (saves 9 lookups per 10-neighbor expansion).
@@ -67,6 +69,19 @@ public final class MinecraftPathProcessor implements NodeProcessor {
     public MinecraftPathProcessor(WalkabilityChecker checker, double maxJumpHeight) {
         this.checker = checker;
         this.maxJumpHeight = Math.max(DEFAULT_MOB_JUMP_HEIGHT, maxJumpHeight);
+    }
+
+    @Override
+    public void initializeSearch(SearchContext context) {
+        parkourPlanner.set(new ParkourJumpPlanner(
+            checker,
+            context.getNavigationPointProvider(),
+            context.getEnvironmentContext()));
+    }
+
+    @Override
+    public void finalizeSearch(SearchContext context) {
+        parkourPlanner.remove();
     }
 
     @Override
@@ -145,7 +160,7 @@ public final class MinecraftPathProcessor implements NodeProcessor {
 
         return switch (Double.compare(dy, 0.0)) {
             case -1 -> dy < -0.5     // falling
-                    ? true
+                    ? currentPoint.hasFloor() || currentPoint.isLiquid() || currentPoint.isClimbable()
                     : currentPoint.hasFloor() || prevPoint.hasFloor()
                    || currentPoint.isClimbable() || prevPoint.isClimbable();
             case  1 -> dy > 0.5      // jumping/climbing
@@ -430,7 +445,10 @@ public final class MinecraftPathProcessor implements NodeProcessor {
                                        PathPosition to,
                                        NavigationPoint fromPoint,
                                        NavigationPoint toPoint) {
-        ParkourJumpPlanner planner = new ParkourJumpPlanner(checker, provider, env);
+        ParkourJumpPlanner planner = parkourPlanner.get();
+        if (planner == null) {
+            planner = new ParkourJumpPlanner(checker, provider, env);
+        }
         var plan = planner.plan(from, to, fromPoint, toPoint);
         ParkourEvaluationTelemetry.record(from, to, plan);
         return plan.feasible();

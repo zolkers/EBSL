@@ -50,7 +50,7 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting cornerSteeringCenterlineMax = registerSetting(new DoubleSetting(
         "corner_steering_centerline_max", "Centerline max", 0.58, 0.05, 2.0));
     public final IntSetting defaultWalkMaxIterations = registerSetting(new IntSetting(
-        "default_walk_max_iterations", "Default max iterations", 100000, 1000, 300000));
+        "default_walk_max_iterations", "Default max iterations", 24000, 1000, 300000));
     public final IntSetting defaultWalkMaxLength = registerSetting(new IntSetting(
         "default_walk_max_length", "Default max length", 12500, 100, 50000));
     public final IntSetting instantWalkMaxIterations = registerSetting(new IntSetting(

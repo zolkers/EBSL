@@ -13,19 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Fly executor inspired by FarmHelper's FlyPathFinderExecutor.
- *
- * Key design decisions mirroring FarmHelper:
- * - Rotation is horizontal only (yaw). The player looks toward the target,
- * BUT vertical movement is controlled entirely by Space/Shift based on
- * raycast collision checks in front of and behind the player - not by pitch.
- * - Waypoint advancement uses the closest reachable waypoint (1.5 block
- * radius).
- * - Stopping: once we'd arrive within stoppingThreshold after deceleration,
- * keys release.
- * - Stuck recovery: at 1.5s hold Space to climb; at 3s abort.
- */
+
 @PathingStage(PathingStage.Stage.EXECUTION)
 @NavigationModeHandler(NavigationMode.FLY)
 public final class FlyExecutor {

@@ -203,8 +203,7 @@ final class WalkPathProcessor {
                 double t = (double) step / steps;
                 int ix = (int) Math.floor(from.position.centeredX() + dx * t);
                 int iz = (int) Math.floor(from.position.centeredZ() + dz * t);
-                if (checker != null
-                    && (checker.getTopY(ix, y, iz) > 0.0 || checker.getTopY(ix, y + 1, iz) > 0.0)) {
+                if (checker != null && !checker.isWalkable(ix, y, iz)) {
                     continue;
                 }
                 Node intermediate = new Node(new PathPosition(ix, y, iz));

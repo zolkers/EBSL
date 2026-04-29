@@ -26,7 +26,7 @@ final class PathRecoveryController {
         keepSurfaceSwimming(mc, inWater);
 
         if (allowReplan && progress.pathStale(recoveryProfile.hardStaleMs()) && cooldownPassed) {
-            return RecoveryDecision.replanFromPlayer("hard stale path progress stale=" + progress.pathStaleMs());
+            return RecoveryDecision.repairToSegment("hard stale path progress stale=" + progress.pathStaleMs());
         }
 
         if (backupTicksLeft > 0 && horizontalSpeed(mc) > PathfinderSettings.instance().backupMaxHorizontalSpeed.value()) {
@@ -76,8 +76,8 @@ final class PathRecoveryController {
                 "drift stale=%.2f", progress.proximity().horizontalDistance()));
         }
 
-        if (progress.movementStale(PathfinderSettings.instance().stuckTimeMs.value() * 2L) && cooldownPassed) {
-            return RecoveryDecision.replanFromPlayer("deadlock stale=" + progress.movementStaleMs());
+        if (allowReplan && progress.movementStale(PathfinderSettings.instance().stuckTimeMs.value() * 2L) && cooldownPassed) {
+            return RecoveryDecision.repairToSegment("deadlock stale=" + progress.movementStaleMs());
         }
 
         return RecoveryDecision.continueMovement();
