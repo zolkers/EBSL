@@ -13,7 +13,7 @@ final class ParkourJumpRules {
         int dyBucket = dyBucket(verticalDelta);
         boolean diagonal = ParkourGeometry.isDiagonal(dx, dz);
 
-        if (Math.abs(dyBucket) > 1) {
+        if (dyBucket > 1 || dyBucket < -5) {
             return RuleResult.rejected("parkour vertical delta too high");
         }
 
@@ -35,7 +35,7 @@ final class ParkourJumpRules {
             return 1;
         }
         if (verticalDelta < -0.50) {
-            return -1;
+            return (int) Math.floor(verticalDelta + 0.50);
         }
         return 0;
     }

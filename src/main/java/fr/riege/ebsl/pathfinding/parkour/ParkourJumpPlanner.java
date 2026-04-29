@@ -46,8 +46,11 @@ public final class ParkourJumpPlanner {
         if (!rule.accepted()) {
             return ParkourJumpPlan.rejected(rule.reason());
         }
-        if (!hasJumpSupport(fromPoint) || !hasJumpSupport(toPoint)) {
-            return ParkourJumpPlan.rejected("missing takeoff or landing support");
+        if (!hasJumpSupport(fromPoint)) {
+            return ParkourJumpPlan.rejected("missing takeoff support");
+        }
+        if (!hasLandingSupport(to, toPoint)) {
+            return ParkourJumpPlan.rejected("missing landing support", landingSupportDetail(to));
         }
         if (fromPoint.isLiquid() || toPoint.isLiquid()) {
             return ParkourJumpPlan.rejected("parkour cannot start or land in liquid");
@@ -84,7 +87,8 @@ public final class ParkourJumpPlanner {
             requiredReach,
             estimatedReach,
             verticalDelta,
-            feasible ? "ok" : (rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum"));
+            feasible ? "ok" : (rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum"),
+            "");
     }
 
     private int countApproachBlocks(PathPosition from, int backX, int backZ) {
@@ -193,5 +197,32 @@ public final class ParkourJumpPlanner {
 
     private static boolean hasJumpSupport(NavigationPoint point) {
         return point.hasFloor() && !point.isLiquid();
+    }
+
+    private boolean hasLandingSupport(PathPosition to, NavigationPoint point) {
+        if (hasJumpSupport(point)) {
+            return true;
+        }
+        if (checker == null) {
+            return false;
+        }
+        int x = to.flooredX();
+        int y = to.flooredY();
+        int z = to.flooredZ();
+        return checker.isWalkable(x, y + 1, z) || checker.isWalkable(x, y - 1, z);
+    }
+
+    private String landingSupportDetail(PathPosition to) {
+        if (checker == null) {
+            return "no-checker";
+        }
+        int x = to.flooredX();
+        int y = to.flooredY();
+        int z = to.flooredZ();
+        return "landingWalkable[y-1=" + checker.isWalkable(x, y - 1, z)
+            + ",y=" + checker.isWalkable(x, y, z)
+            + ",y+1=" + checker.isWalkable(x, y + 1, z)
+            + "] topBelow=" + checker.getTopY(x, y - 1, z)
+            + " topAt=" + checker.getTopY(x, y, z);
     }
 }

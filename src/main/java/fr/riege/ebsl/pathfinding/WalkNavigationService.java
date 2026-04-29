@@ -83,7 +83,7 @@ final class WalkNavigationService {
         int finalY = checker.isSolid(x, y, z) ? y + 1 : y;
 
         fr.riege.ebsl.util.ClientUtils.sendMessage(mc,
-            "§ePath test: running A* to " + x + ", " + finalY + ", " + z + "...", false);
+            "§ePath test: running walk-mode A* to " + x + ", " + finalY + ", " + z + "...", false);
 
         Thread thread = new Thread(
             () -> runPathTest(mc, checker, startX, startY, startZ, x, finalY, z),
@@ -423,6 +423,7 @@ final class WalkNavigationService {
             }
             return;
         }
+        logChosenPath("walk", processedPath.navigationPath());
         PathVisualizer.setPath(processedPath.navigationPath(), 0);
         PathVisualizer.setCameraPath(Collections.emptyList());
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, x, y, z);
@@ -502,23 +503,42 @@ final class WalkNavigationService {
     private void runPathTest(Minecraft mc, WalkabilityChecker checker,
                              int startX, int startY, int startZ,
                              int targetX, int targetY, int targetZ) {
-        long startMs = System.currentTimeMillis();
-        PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true);
-        AStarPathfinder pathfinder = new AStarPathfinder(config);
         PathPosition start = new PathPosition(startX, startY, startZ);
         PathPosition target = new PathPosition(targetX, targetY, targetZ);
+        long startMs = System.currentTimeMillis();
+        PathfinderConfiguration config = PathPipeline.createInstantWalkPathfinderConfiguration(checker);
+        AStarPathfinder pathfinder = new AStarPathfinder(config);
 
         PathfinderResult result;
         try {
             result = pathfinder.findPath(start, target).toCompletableFuture().join();
         } catch (Exception exception) {
-            LOGGER.error("Path test calculation failed for target {}, {}, {}", targetX, targetY, targetZ, exception);
+            LOGGER.warn("Instant path test calculation failed for target {}, {}, {}; retrying full path",
+                targetX, targetY, targetZ, exception);
             result = null;
+        }
+
+        Collection<PathPosition> positions = result != null && result.getPath() != null
+            ? result.getPath().collect()
+            : Collections.emptyList();
+        if (PathResultClassifier.classifyWalkResult(result, positions, targetX, targetY, targetZ)
+            == PathResultClassifier.PathAvailability.FAILED) {
+            config = PathPipeline.createWalkPathfinderConfiguration(checker, true);
+            pathfinder = new AStarPathfinder(config);
+            try {
+                result = pathfinder.findPath(start, target).toCompletableFuture().join();
+            } catch (Exception exception) {
+                LOGGER.error("Full path test calculation failed for target {}, {}, {}",
+                    targetX, targetY, targetZ, exception);
+                result = null;
+            }
         }
 
         PathPipeline.pushExploredNodesToVisualizer(pathfinder);
         PathfinderResult finalResult = result;
-        mc.execute(() -> handlePathTestResult(mc, checker, config, pathfinder, finalResult, startMs));
+        PathfinderConfiguration finalConfig = config;
+        AStarPathfinder finalPathfinder = pathfinder;
+        mc.execute(() -> handlePathTestResult(mc, checker, finalConfig, finalPathfinder, finalResult, startMs));
     }
 
     private void handlePathTestResult(Minecraft mc, WalkabilityChecker checker,
@@ -542,6 +562,7 @@ final class WalkNavigationService {
             ProcessedPath processedPath = PathPipeline.processWalkPath(positions, config, checker);
             pathLen = processedPath.navigationPath().size();
             pathBlocks = processedPath.pathLength();
+            logChosenPath("test", processedPath.navigationPath());
             PathVisualizer.setPath(processedPath.navigationPath(), 0);
             PathVisualizer.setCameraPath(Collections.emptyList());
         } else {
@@ -567,5 +588,30 @@ final class WalkNavigationService {
             mc.player.getAbilities().flying = true;
             mc.player.onUpdateAbilities();
         }
+    }
+
+    private static void logChosenPath(String source, List<Node> path) {
+        if (!PathfinderSettings.instance().showDebug.value() || path == null || path.isEmpty()) {
+            return;
+        }
+        int parkour = 0;
+        int jump = 0;
+        int fall = 0;
+        StringBuilder firstMoves = new StringBuilder();
+        int limit = Math.min(path.size(), 18);
+        for (int i = 0; i < path.size(); i++) {
+            Node.MoveType moveType = path.get(i).moveType;
+            if (moveType == Node.MoveType.PARKOUR) parkour++;
+            if (moveType == Node.MoveType.JUMP) jump++;
+            if (moveType == Node.MoveType.FALL) fall++;
+            if (i < limit) {
+                if (!firstMoves.isEmpty()) {
+                    firstMoves.append(" -> ");
+                }
+                firstMoves.append(moveType);
+            }
+        }
+        LOGGER.info("{} path nodes={} parkour={} jump={} fall={} first={}",
+            source, path.size(), parkour, jump, fall, firstMoves);
     }
 }

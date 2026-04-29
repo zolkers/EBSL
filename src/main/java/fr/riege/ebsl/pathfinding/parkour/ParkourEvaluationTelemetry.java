@@ -3,10 +3,13 @@ package fr.riege.ebsl.pathfinding.parkour;
 import fr.riege.ebsl.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.pathfinding.wrapper.PathPosition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
 public final class ParkourEvaluationTelemetry {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-parkour-eval");
     private static final long MIN_INTERVAL_MS = 75;
     private static long lastRecordTime;
 
@@ -30,8 +33,9 @@ public final class ParkourEvaluationTelemetry {
             ? ParkourGeometry.diagonalGapBlocks(dx, dz)
             : ParkourGeometry.cardinalGapBlocks(dx, dz);
 
-        AnalyticsEventLog.record("parkour-eval", String.format(Locale.ROOT,
-            "%d,%d,%d -> %d,%d,%d gap=%d off=%d dy=%.2f approach=%d req=%.2f est=%.2f reason=%s",
+        String detail = plan.detail() == null || plan.detail().isBlank() ? "" : " detail=" + plan.detail();
+        String message = String.format(Locale.ROOT,
+            "%d,%d,%d -> %d,%d,%d gap=%d off=%d dy=%.2f approach=%d req=%.2f est=%.2f reason=%s%s",
             from.flooredX(), from.flooredY(), from.flooredZ(),
             to.flooredX(), to.flooredY(), to.flooredZ(),
             gap,
@@ -40,6 +44,16 @@ public final class ParkourEvaluationTelemetry {
             plan.approachBlocks(),
             plan.requiredReach(),
             plan.estimatedReach(),
-            plan.reason()));
+            plan.reason(),
+            detail);
+        AnalyticsEventLog.record("parkour-eval", message);
+        if (isInterestingConsoleReason(plan.reason())) {
+            LOGGER.info(message);
+        }
+    }
+
+    private static boolean isInterestingConsoleReason(String reason) {
+        return !"missing takeoff support".equals(reason)
+            && !"no gap — all intermediates are walkable".equals(reason);
     }
 }

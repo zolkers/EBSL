@@ -182,6 +182,9 @@ final class WalkPathProcessor {
             appendDistinct(result, keynodes.get(i));
             Node from = keynodes.get(i);
             Node to = keynodes.get(i + 1);
+            if (to.moveType == Node.MoveType.PARKOUR) {
+                continue;
+            }
             if (from.position.flooredY() != to.position.flooredY()) {
                 continue;
             }

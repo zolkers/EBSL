@@ -31,6 +31,15 @@ final class WalkMovementController {
     private static final double PARKOUR_GROUNDED_BRAKE_OVERSHOOT = -0.12;
     private static final double PARKOUR_MIN_BRAKE_SPEED = 0.035;
     private static final double PARKOUR_LATERAL_CORRECTION = 0.18;
+    private static final double PARKOUR_SHORT_TAKEOFF_MARGIN = 0.12;
+    private static final double PARKOUR_MEDIUM_TAKEOFF_MARGIN = 0.30;
+    private static final double PARKOUR_LONG_TAKEOFF_MARGIN = 0.45;
+    private static final double PARKOUR_AIR_DRAG = 0.91;
+    private static final double PARKOUR_GRAVITY = 0.08;
+    private static final double PARKOUR_VERTICAL_DRAG = 0.98;
+    private static final double PARKOUR_LANDING_FRONT_MARGIN = 0.38;
+    private static final double PARKOUR_LANDING_BACK_MARGIN = 0.34;
+    private static final double PARKOUR_SHORT_ASCENT_CARRY_SPEED = 0.17;
 
     WalkMovementController(List<Node> path) {
         this.path = path;
@@ -85,6 +94,10 @@ final class WalkMovementController {
         }
 
         String parkourDecision = "path";
+        String speedDecision = applyParkourVelocityControl(mc, playerPos, movementWaypoint, pursuitSegment);
+        if (!"path".equals(speedDecision)) {
+            parkourDecision = speedDecision;
+        }
         String landingDecision = applyParkourLandingControl(mc, playerPos, movementWaypoint, pursuitSegment);
         if (!"path".equals(landingDecision)) {
             parkourDecision = landingDecision;
@@ -186,11 +199,23 @@ final class WalkMovementController {
         double remaining = jumpLen - progress;
         double lateral = fromStartX * -dirZ + fromStartZ * dirX;
         double velocityAlong = mc.player.getDeltaMovement().x * dirX + mc.player.getDeltaMovement().z * dirZ;
+        double verticalDelta = waypoint.position.flooredY() - takeoff.position.flooredY();
+        int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
         boolean constrainedLanding = isConstrainedParkourLanding(mc, waypoint, dirX, dirZ);
-        double brakeRemaining = constrainedLanding ? PARKOUR_CONSTRAINED_BRAKE_REMAINING : PARKOUR_OPEN_BRAKE_REMAINING;
+        double brakeRemaining = landingBrakeRemaining(distance, verticalDelta, constrainedLanding);
         boolean inLandingColumn = mc.player.getBlockX() == waypoint.position.flooredX()
             && mc.player.getBlockZ() == waypoint.position.flooredZ();
-        boolean shouldBrake = !mc.player.onGround() && remaining <= brakeRemaining && velocityAlong > PARKOUR_MIN_BRAKE_SPEED;
+        boolean shouldBrake = false;
+        if (!mc.player.onGround() && remaining <= brakeRemaining && velocityAlong > PARKOUR_MIN_BRAKE_SPEED) {
+            ParkourAirPrediction prediction = predictParkourLanding(
+                playerPos.y,
+                mc.player.getDeltaMovement().y,
+                waypoint.position.flooredY(),
+                progress,
+                velocityAlong);
+            double targetProgress = jumpLen - landingAimOffset(distance, verticalDelta);
+            shouldBrake = prediction.progress() > targetProgress + PARKOUR_LANDING_FRONT_MARGIN;
+        }
         boolean shouldHoldLanding = constrainedLanding && mc.player.onGround()
             && (inLandingColumn || remaining <= PARKOUR_GROUNDED_BRAKE_OVERSHOOT);
 
@@ -206,6 +231,75 @@ final class WalkMovementController {
             mc.options.keyRight.setDown(false);
         }
         return shouldHoldLanding ? "landing-hold" : "landing-brake";
+    }
+
+    private String applyParkourVelocityControl(Minecraft mc, Vec3 playerPos, Node waypoint, int pursuitSegment) {
+        if (mc.player == null || waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
+            return "path";
+        }
+
+        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        double startX = takeoff.position.centeredX();
+        double startZ = takeoff.position.centeredZ();
+        double targetX = waypoint.position.centeredX();
+        double targetZ = waypoint.position.centeredZ();
+        double dirX = targetX - startX;
+        double dirZ = targetZ - startZ;
+        double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        if (jumpLen < 1.0e-6) {
+            return "path";
+        }
+
+        dirX /= jumpLen;
+        dirZ /= jumpLen;
+        double fromStartX = playerPos.x - startX;
+        double fromStartZ = playerPos.z - startZ;
+        double progress = fromStartX * dirX + fromStartZ * dirZ;
+        double remaining = jumpLen - progress;
+        double speedAlong = mc.player.getDeltaMovement().x * dirX + mc.player.getDeltaMovement().z * dirZ;
+        int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
+        double verticalDelta = waypoint.position.flooredY() - takeoff.position.flooredY();
+
+        if (mc.player.onGround()) {
+            double trigger = parkourJumpTriggerDistance(distance);
+            double targetSpeed = targetTakeoffSpeed(distance, verticalDelta);
+            boolean shortAscentCarry = distance <= 2 && verticalDelta > 0.25;
+            if (!shortAscentCarry && remaining <= trigger + 0.35 && speedAlong > targetSpeed + 0.025) {
+                pressParkourBrake(mc);
+                return "takeoff-speed-brake";
+            }
+            mc.options.keySprint.setDown(distance >= 3 && verticalDelta >= -1.0);
+            if (shortAscentCarry && speedAlong < PARKOUR_SHORT_ASCENT_CARRY_SPEED) {
+                applyParkourAxisInput(mc, dirX, dirZ, true);
+                return "takeoff-carry-forward";
+            }
+            return shortAscentCarry ? "takeoff-carry" : "takeoff-speed";
+        }
+
+        ParkourAirPrediction prediction = predictParkourLanding(
+            playerPos.y,
+            mc.player.getDeltaMovement().y,
+            waypoint.position.flooredY(),
+            progress,
+            speedAlong);
+        double targetProgress = jumpLen - landingAimOffset(distance, verticalDelta);
+        double frontLimit = targetProgress + PARKOUR_LANDING_FRONT_MARGIN;
+        double backLimit = targetProgress - PARKOUR_LANDING_BACK_MARGIN;
+        boolean inLandingColumn = mc.player.getBlockX() == waypoint.position.flooredX()
+            && mc.player.getBlockZ() == waypoint.position.flooredZ();
+        if (prediction.progress() > frontLimit) {
+            applyParkourAxisInput(mc, dirX, dirZ, false);
+            return "air-vector-back";
+        }
+        if (!inLandingColumn
+            || prediction.progress() < backLimit
+            || speedAlong < targetAirSpeed(distance, verticalDelta)) {
+            applyParkourAxisInput(mc, dirX, dirZ, true);
+            mc.options.keySprint.setDown(false);
+            return "air-vector-forward";
+        }
+        clearForwardBack(mc);
+        return "air-vector-neutral";
     }
 
     private boolean isConstrainedParkourLanding(Minecraft mc, Node landing, double dirX, double dirZ) {
@@ -231,17 +325,115 @@ final class WalkMovementController {
         double dz = waypoint.position.centeredZ() - playerPos.z;
         double hDist = Math.sqrt(dx * dx + dz * dz);
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
-        double jumpZone = Math.max(1.2, distance - 0.45);
+        double jumpZone = parkourJumpTriggerDistance(distance);
         if (hDist > jumpZone || (allowJumps && jumpCooldown == 0)) {
             return "path";
         }
 
+        pressParkourBrake(mc);
+        return "takeoff-guard";
+    }
+
+    private static double parkourJumpTriggerDistance(int distance) {
+        double margin = distance <= 2
+            ? PARKOUR_SHORT_TAKEOFF_MARGIN
+            : (distance == 3 ? PARKOUR_MEDIUM_TAKEOFF_MARGIN : PARKOUR_LONG_TAKEOFF_MARGIN);
+        return Math.max(1.2, distance - margin);
+    }
+
+    private static double targetTakeoffSpeed(int distance, double verticalDelta) {
+        if (distance <= 2) {
+            return verticalDelta > 0.25 ? 0.18 : 0.13;
+        }
+        if (distance == 3) {
+            return verticalDelta > 0.25 ? 0.28 : 0.24;
+        }
+        return 0.32;
+    }
+
+    private static double targetAirSpeed(int distance, double verticalDelta) {
+        double speed = distance <= 2 ? 0.08 : (distance == 3 ? 0.12 : 0.16);
+        if (verticalDelta < -1.0) {
+            speed += 0.04;
+        }
+        return speed;
+    }
+
+    private static ParkourAirPrediction predictParkourLanding(double playerY,
+                                                              double velocityY,
+                                                              int landingY,
+                                                              double progress,
+                                                              double speedAlong) {
+        double y = playerY;
+        double vy = velocityY;
+        double projectedProgress = progress;
+        double v = speedAlong;
+        int ticks = 0;
+        while (ticks < 40) {
+            projectedProgress += v;
+            v *= PARKOUR_AIR_DRAG;
+            y += vy;
+            vy = (vy - PARKOUR_GRAVITY) * PARKOUR_VERTICAL_DRAG;
+            ticks++;
+            if (vy <= 0.0 && y <= landingY + 0.08) {
+                break;
+            }
+        }
+        return new ParkourAirPrediction(ticks, projectedProgress);
+    }
+
+    private static double landingAimOffset(int distance, double verticalDelta) {
+        double offset = distance <= 2 ? 0.18 : (distance == 3 ? 0.12 : 0.06);
+        if (distance <= 2 && verticalDelta > 0.25) {
+            offset = 0.04;
+        }
+        if (verticalDelta < -1.0) {
+            offset += 0.10;
+        }
+        return offset;
+    }
+
+    private static void applyParkourAxisInput(Minecraft mc, double dirX, double dirZ, boolean forward) {
+        InputApplier.applyRelativeMovement(
+            mc,
+            forward ? dirX : -dirX,
+            forward ? dirZ : -dirZ,
+            0.15,
+            -0.15,
+            0.65);
+        mc.options.keySprint.setDown(false);
+    }
+
+    private static double landingBrakeRemaining(int distance, double verticalDelta, boolean constrainedLanding) {
+        double base = constrainedLanding ? PARKOUR_CONSTRAINED_BRAKE_REMAINING : PARKOUR_OPEN_BRAKE_REMAINING;
+        if (distance <= 2) {
+            base = Math.max(base, 0.72);
+        } else if (distance == 3) {
+            base = Math.max(base, 0.55);
+        } else {
+            base = Math.max(base, 0.38);
+        }
+        if (verticalDelta < -1.0) {
+            base += 0.15;
+        }
+        return base;
+    }
+
+    private static void pressParkourBrake(Minecraft mc) {
         mc.options.keyUp.setDown(false);
         mc.options.keyDown.setDown(true);
         mc.options.keySprint.setDown(false);
         mc.options.keyLeft.setDown(false);
         mc.options.keyRight.setDown(false);
-        return "takeoff-guard";
+    }
+
+    private static void clearForwardBack(Minecraft mc) {
+        mc.options.keyUp.setDown(false);
+        mc.options.keyDown.setDown(false);
+        mc.options.keySprint.setDown(false);
+    }
+
+    private record ParkourAirPrediction(int ticks, double progress) {
     }
 
     private boolean handleJump(PathExecutor executor, Minecraft mc, Node waypoint, Vec3 playerPos,

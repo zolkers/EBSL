@@ -55,14 +55,18 @@ public final class NeighborStrategies {
         for (int distance = 2; distance <= 4; distance++) {
             addCardinalParkourOffset(offsets, distance, 0);
             addCardinalParkourOffset(offsets, distance, 1);
-            addCardinalParkourOffset(offsets, distance, -1);
+            for (int dy = -1; dy >= -5; dy--) {
+                addCardinalParkourOffset(offsets, distance, dy);
+            }
         }
 
         for (int longAxis = 2; longAxis <= 3; longAxis++) {
             for (int shortAxis = 1; shortAxis <= longAxis; shortAxis++) {
                 addDiagonalParkourOffset(offsets, longAxis, shortAxis, 0);
                 addDiagonalParkourOffset(offsets, longAxis, shortAxis, 1);
-                addDiagonalParkourOffset(offsets, longAxis, shortAxis, -1);
+                for (int dy = -1; dy >= -5; dy--) {
+                    addDiagonalParkourOffset(offsets, longAxis, shortAxis, dy);
+                }
             }
         }
     }
