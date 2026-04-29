@@ -1,12 +1,11 @@
 package fr.riege.ebsl.pathfinding.movement.types.evaluation;
 
+import fr.riege.ebsl.registry.EnumRegistry;
 import fr.riege.ebsl.pathfinding.Node;
 
-import java.util.EnumMap;
-import java.util.Map;
-
 public final class MovementEvaluatorRegistry {
-    private static final Map<Node.MoveType, MovementEvaluator> EVALUATORS = new EnumMap<>(Node.MoveType.class);
+    private static final EnumRegistry<Node.MoveType, MovementEvaluator> EVALUATORS =
+        new EnumRegistry<>(Node.MoveType.class, new WalkMovementEvaluator());
 
     static {
         register(Node.MoveType.WALK, new WalkMovementEvaluator());
@@ -25,16 +24,16 @@ public final class MovementEvaluatorRegistry {
     }
 
     public static MovementEvaluator get(Node.MoveType type) {
-        return EVALUATORS.getOrDefault(type, EVALUATORS.get(Node.MoveType.WALK));
+        return EVALUATORS.get(type);
     }
 
     private static void register(Node.MoveType type, MovementEvaluator evaluator) {
-        EVALUATORS.put(type, evaluator);
+        EVALUATORS.register(type, evaluator);
     }
 
     private static void ensureComplete() {
         for (Node.MoveType type : Node.MoveType.values()) {
-            if (!EVALUATORS.containsKey(type)) {
+            if (!EVALUATORS.contains(type)) {
                 throw new IllegalStateException("Missing movement evaluator for " + type);
             }
         }

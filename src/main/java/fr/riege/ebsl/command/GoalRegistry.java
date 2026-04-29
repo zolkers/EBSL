@@ -1,25 +1,21 @@
 package fr.riege.ebsl.command;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import fr.riege.ebsl.command.goal.GoalUiDefinition;
+import fr.riege.ebsl.registry.MapRegistry;
 
 public final class GoalRegistry {
-    private static final Map<String, GoalCommandDefinition> COMMANDS = new LinkedHashMap<>();
+    private static final MapRegistry<String, GoalCommandDefinition> COMMANDS = new MapRegistry<>(null);
 
     private GoalRegistry() {
     }
 
     public static void register(GoalCommandDefinition definition) {
-        GoalCommandDefinition previous = COMMANDS.putIfAbsent(definition.id(), definition);
-        if (previous != null) {
-            throw new IllegalStateException("Duplicate goal command registration: " + definition.id());
-        }
+        COMMANDS.register(definition.id(), definition);
     }
 
     public static Collection<GoalCommandDefinition> commands() {
@@ -38,6 +34,6 @@ public final class GoalRegistry {
     }
 
     public static Set<String> commandIds() {
-        return Set.copyOf(COMMANDS.keySet());
+        return COMMANDS.keys();
     }
 }

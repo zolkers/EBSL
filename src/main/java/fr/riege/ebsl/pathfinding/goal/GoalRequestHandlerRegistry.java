@@ -1,22 +1,18 @@
 package fr.riege.ebsl.pathfinding.goal;
 
+import fr.riege.ebsl.registry.MapRegistry;
 import net.minecraft.client.Minecraft;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 public final class GoalRequestHandlerRegistry {
-    private static final Map<Class<? extends Goal>, GoalRequestHandler<?>> HANDLERS = new LinkedHashMap<>();
+    private static final MapRegistry<Class<? extends Goal>, GoalRequestHandler<?>> HANDLERS = new MapRegistry<>(null);
 
     private GoalRequestHandlerRegistry() {
     }
 
     public static <T extends Goal> void register(GoalRequestHandler<T> handler) {
-        GoalRequestHandler<?> previous = HANDLERS.putIfAbsent(handler.goalType(), handler);
-        if (previous != null) {
-            throw new IllegalStateException("Duplicate goal handler registration: " + handler.goalType().getSimpleName());
-        }
+        HANDLERS.register(handler.goalType(), handler);
     }
 
     public static void start(Minecraft mc, NavigationRequest request) {
@@ -41,7 +37,7 @@ public final class GoalRequestHandlerRegistry {
     }
 
     public static Set<Class<? extends Goal>> registeredGoalTypes() {
-        return Set.copyOf(HANDLERS.keySet());
+        return HANDLERS.keys();
     }
 
     private static <T extends Goal> void dispatch(GoalRequestHandler<T> handler, Minecraft mc, Goal goal, NavigationRequest request) {

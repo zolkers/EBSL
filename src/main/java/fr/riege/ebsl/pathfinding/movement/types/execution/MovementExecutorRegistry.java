@@ -1,12 +1,11 @@
 package fr.riege.ebsl.pathfinding.movement.types.execution;
 
+import fr.riege.ebsl.registry.EnumRegistry;
 import fr.riege.ebsl.pathfinding.Node;
 
-import java.util.EnumMap;
-import java.util.Map;
-
 public final class MovementExecutorRegistry {
-    private static final Map<Node.MoveType, MovementExecutor> EXECUTORS = new EnumMap<>(Node.MoveType.class);
+    private static final EnumRegistry<Node.MoveType, MovementExecutor> EXECUTORS =
+        new EnumRegistry<>(Node.MoveType.class, new WalkMovementExecutor());
 
     static {
         register(Node.MoveType.WALK, new WalkMovementExecutor());
@@ -25,16 +24,16 @@ public final class MovementExecutorRegistry {
     }
 
     public static MovementExecutor get(Node.MoveType type) {
-        return EXECUTORS.getOrDefault(type, EXECUTORS.get(Node.MoveType.WALK));
+        return EXECUTORS.get(type);
     }
 
     private static void register(Node.MoveType type, MovementExecutor executor) {
-        EXECUTORS.put(type, executor);
+        EXECUTORS.register(type, executor);
     }
 
     private static void ensureComplete() {
         for (Node.MoveType type : Node.MoveType.values()) {
-            if (!EXECUTORS.containsKey(type)) {
+            if (!EXECUTORS.contains(type)) {
                 throw new IllegalStateException("Missing movement executor for " + type);
             }
         }

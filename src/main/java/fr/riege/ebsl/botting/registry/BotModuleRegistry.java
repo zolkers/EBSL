@@ -7,15 +7,15 @@ import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.botting.module.PathfinderModule;
 import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.event.EventBus;
+import fr.riege.ebsl.registry.MapRegistry;
 import fr.riege.ebsl.settings.Setting;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class BotModuleRegistry {
-    private static final Map<String, PathfinderModule> MODULES = new LinkedHashMap<>();
+    private static final MapRegistry<String, PathfinderModule> MODULES = new MapRegistry<>(null);
     private static final Map<String, Boolean> lastEnabled = new HashMap<>();
     private static EventBus bus;
     private static boolean bootstrapped;
@@ -40,10 +40,7 @@ public final class BotModuleRegistry {
     }
 
     public static void register(PathfinderModule module) {
-        PathfinderModule previous = MODULES.putIfAbsent(module.id(), module);
-        if (previous != null) {
-            throw new IllegalStateException("Duplicate pathfinder module: " + module.id());
-        }
+        MODULES.register(module.id(), module);
     }
 
     public static void onSettingChanged(PathfinderModule module, Setting<?> setting) {

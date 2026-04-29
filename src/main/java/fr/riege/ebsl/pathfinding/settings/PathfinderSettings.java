@@ -177,6 +177,16 @@ public final class PathfinderSettings extends Settingable {
         "active_pitch_retarget_deg", "Active pitch retarget", 5.0, 0.0, 45.0));
     public final IntSetting rotationDurationMs = registerSetting(new IntSetting(
         "rotation_duration_ms", "Rotation duration ms", 550, 50, 3000));
+    public final DoubleSetting parkourIdleYawDeadbandDeg = registerSetting(new DoubleSetting(
+        "parkour_idle_yaw_deadband_deg", "Parkour idle yaw deadband", 1.0, 0.0, 30.0));
+    public final DoubleSetting parkourIdlePitchDeadbandDeg = registerSetting(new DoubleSetting(
+        "parkour_idle_pitch_deadband_deg", "Parkour idle pitch deadband", 2.0, 0.0, 30.0));
+    public final DoubleSetting parkourActiveYawRetargetDeg = registerSetting(new DoubleSetting(
+        "parkour_active_yaw_retarget_deg", "Parkour active yaw retarget", 3.0, 0.0, 45.0));
+    public final DoubleSetting parkourActivePitchRetargetDeg = registerSetting(new DoubleSetting(
+        "parkour_active_pitch_retarget_deg", "Parkour active pitch retarget", 3.0, 0.0, 45.0));
+    public final IntSetting parkourRotationDurationMs = registerSetting(new IntSetting(
+        "parkour_rotation_duration_ms", "Parkour rotation duration ms", 220, 50, 3000));
     public final DoubleSetting pitchMinHorizontalDistance = registerSetting(new DoubleSetting(
         "pitch_min_horizontal_distance", "Pitch min horizontal distance", 2.25, 0.0, 12.0));
     public final DoubleSetting pitchLandDeadbandDeg = registerSetting(new DoubleSetting(
@@ -371,6 +381,11 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.activeYawRetargetDeg,
             INSTANCE.activePitchRetargetDeg,
             INSTANCE.rotationDurationMs,
+            INSTANCE.parkourIdleYawDeadbandDeg,
+            INSTANCE.parkourIdlePitchDeadbandDeg,
+            INSTANCE.parkourActiveYawRetargetDeg,
+            INSTANCE.parkourActivePitchRetargetDeg,
+            INSTANCE.parkourRotationDurationMs,
             INSTANCE.pitchMinHorizontalDistance,
             INSTANCE.pitchLandDeadbandDeg,
             INSTANCE.pitchWaterDeadbandDeg,

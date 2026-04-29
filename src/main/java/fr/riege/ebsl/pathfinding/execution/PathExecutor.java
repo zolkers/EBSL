@@ -256,7 +256,7 @@ public final class PathExecutor {
             allowReplan,
             now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
             jumpCooldown,
-            isParkourRecoveryWindow(path, pathTracker.getPursuitSegment()));
+            recoveryMoveType(path, pathTracker.getPursuitSegment()));
         if (recovery.noteProgress()) {
             noteRecoveryMovement(playerPos);
         }
@@ -441,6 +441,17 @@ public final class PathExecutor {
             }
         }
         return false;
+    }
+
+    private Node.MoveType recoveryMoveType(List<Node> path, int pursuitSegment) {
+        if (isParkourRecoveryWindow(path, pursuitSegment)) {
+            return Node.MoveType.PARKOUR;
+        }
+        if (path == null || path.isEmpty()) {
+            return Node.MoveType.WALK;
+        }
+        int index = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+        return path.get(index).moveType;
     }
 
     private boolean isAtGoal(Vec3 playerPos) {

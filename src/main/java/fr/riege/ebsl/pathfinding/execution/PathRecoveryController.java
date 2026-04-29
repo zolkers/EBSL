@@ -1,5 +1,6 @@
 package fr.riege.ebsl.pathfinding.execution;
 
+import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.settings.PathfinderSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
@@ -15,18 +16,16 @@ final class PathRecoveryController {
 
     RecoveryDecision update(Minecraft mc, Vec3 playerPos,
                             PathProgressSnapshot progress, boolean allowReplan,
-                            boolean cooldownPassed, int jumpCooldown, boolean parkourWindow) {
+                            boolean cooldownPassed, int jumpCooldown, Node.MoveType recoveryMoveType) {
         if (mc.player == null) {
             return RecoveryDecision.continueMovement();
         }
+        MovementRecoveryProfile recoveryProfile = MovementRecoveryRegistry.get(recoveryMoveType);
 
         boolean inWater = mc.player.isInWater();
         keepSurfaceSwimming(mc, inWater);
 
-        long hardStaleMs = parkourWindow
-            ? PathfinderSettings.instance().parkourPathReplanHardStaleMs.value()
-            : PathfinderSettings.instance().pathReplanHardStaleMs.value();
-        if (allowReplan && progress.pathStale(hardStaleMs) && cooldownPassed) {
+        if (allowReplan && progress.pathStale(recoveryProfile.hardStaleMs()) && cooldownPassed) {
             return RecoveryDecision.replanFromPlayer("hard stale path progress stale=" + progress.pathStaleMs());
         }
 
@@ -40,17 +39,13 @@ final class PathRecoveryController {
         }
 
         boolean drifted = progress.drifted(PathfinderSettings.instance().driftDistance.value());
-        if (!parkourWindow && shouldBackup(mc, progress, drifted, inWater)) {
+        if (recoveryProfile.allowBackup() && shouldBackup(mc, progress, drifted, inWater)) {
             backupTicksLeft = PathfinderSettings.instance().backupTicks.value();
             applyBackupTick(mc);
             return RecoveryDecision.tickHandledWithProgress();
         }
 
-        long groundedNoProgressMs = parkourWindow
-            ? PathfinderSettings.instance().parkourGroundedNoProgressReplanMs.value()
-            : PathfinderSettings.instance().groundedNoProgressReplanMs.value();
-
-        boolean alignOffCorner = shouldAlignOffCorner(mc, progress, inWater, groundedNoProgressMs);
+        boolean alignOffCorner = shouldAlignOffCorner(mc, progress, inWater, recoveryProfile.groundedNoProgressMs());
         if (alignOffCorner && withinCornerAlignWindow()) {
             return RecoveryDecision.alignToPath();
         }
@@ -58,20 +53,17 @@ final class PathRecoveryController {
             cornerAlignStartMs = 0;
         }
 
-        if (!parkourWindow && shouldJumpForRecovery(mc, progress, drifted, jumpCooldown)) {
+        if (recoveryProfile.allowRecoveryJump() && shouldJumpForRecovery(mc, progress, drifted, jumpCooldown)) {
             mc.options.keyJump.setDown(true);
             return RecoveryDecision.recoveryJump();
         }
 
         if (allowReplan && mc.player.onGround()
-            && progress.pathStale(groundedNoProgressMs)) {
+            && progress.pathStale(recoveryProfile.groundedNoProgressMs())) {
             return RecoveryDecision.repairToSegment("grounded no progress stale=" + progress.pathStaleMs());
         }
 
-        long pathRepairStaleMs = parkourWindow
-            ? PathfinderSettings.instance().parkourPathReplanStaleMs.value()
-            : PathfinderSettings.instance().pathReplanStaleMs.value();
-        if (allowReplan && progress.pathStale(pathRepairStaleMs) && cooldownPassed
+        if (allowReplan && progress.pathStale(recoveryProfile.pathRepairStaleMs()) && cooldownPassed
             && (progress.proximity().horizontalDistance() > PathfinderSettings.instance().pathReplanDriftDistance.value()
             || progress.distanceMoved() >= PathfinderSettings.instance().stuckDistThreshold.value())) {
             return RecoveryDecision.repairToSegment(String.format(

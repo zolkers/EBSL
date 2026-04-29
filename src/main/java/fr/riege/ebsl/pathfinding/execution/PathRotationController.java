@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 final class PathRotationController {
@@ -52,7 +53,8 @@ final class PathRotationController {
             return;
         }
 
-        RotationTarget rotationTarget = selectRotationTarget(mc, playerPos, path, pursuitSegment);
+        boolean alreadyRotating = RotationExecutor.isRotating();
+        RotationTarget rotationTarget = selectRotationTarget(mc, playerPos, path, pursuitSegment, alreadyRotating);
         camTargetIdx = rotationTarget.visualizerIndex();
 
         if (lastRotationDebugCamTarget != camTargetIdx) {
@@ -69,7 +71,7 @@ final class PathRotationController {
 
         Rotation rawRot = AngleUtils.getRotation(rotationTarget.position());
         Rotation desiredRot = pitchStabilizer.stabilize(mc, rotationTarget.position(), rawRot, debug);
-        dispatchRotationIfNeeded(mc, path, pursuitSegment, debug, desiredRot);
+        dispatchRotationIfNeeded(mc, path, pursuitSegment, debug, desiredRot, rotationTarget);
     }
 
     List<Vec3> getCameraPath() {
@@ -84,12 +86,30 @@ final class PathRotationController {
         return camTargetIdx;
     }
 
-    private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment) {
+    private RotationTarget selectRotationTarget(Minecraft mc, Vec3 playerPos, List<Node> path,
+                                                int pursuitSegment, boolean alreadyRotating) {
+        Optional<MovementSmoothing.Plan> smoothing = MovementSmoothingRegistry.resolve(path, pursuitSegment, alreadyRotating);
+        if (smoothing.isPresent()) {
+            MovementSmoothing.Plan plan = smoothing.get();
+            return new RotationTarget(
+                plan.mode(),
+                plan.targetIndex(),
+                plan.visualizerIndex(),
+                plan.position(),
+                plan.yawThreshold(),
+                plan.pitchThreshold(),
+                plan.durationMs(),
+                plan.easing(),
+                true
+            );
+        }
+
         if (PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()) {
             int camTarget = pickCameraRailTarget(playerPos);
             Vec3 rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
             int visualizerIndex = Math.min(cameraPath.size() - 1, camTarget + 1);
-            return new RotationTarget("camera_rail", camTarget, visualizerIndex, rotTargetPos);
+            return defaultRotationTarget(mc, path, pursuitSegment, alreadyRotating,
+                "camera_rail", camTarget, visualizerIndex, rotTargetPos);
         }
 
         int camTarget = targetSelector.pickLegacyCamTarget(mc, playerPos, path, pursuitSegment);
@@ -98,11 +118,12 @@ final class PathRotationController {
             rotTarget.position.centeredX(),
             rotTarget.position.flooredY() + PathfinderSettings.instance().legacyCameraEyeY.value(),
             rotTarget.position.centeredZ());
-        return new RotationTarget("legacy", camTarget, camTarget, rotTargetPos);
+        return defaultRotationTarget(mc, path, pursuitSegment, alreadyRotating,
+            "legacy", camTarget, camTarget, rotTargetPos);
     }
 
     private void dispatchRotationIfNeeded(Minecraft mc, List<Node> path, int pursuitSegment,
-                                          Consumer<String> debug, Rotation desiredRot) {
+                                          Consumer<String> debug, Rotation desiredRot, RotationTarget rotationTarget) {
         boolean alreadyRotating = RotationExecutor.isRotating();
         float referenceYaw = alreadyRotating ? RotationExecutor.getTargetYaw() : mc.player.getYRot();
         float referencePitch = alreadyRotating ? RotationExecutor.getTargetPitch() : mc.player.getXRot();
@@ -119,30 +140,46 @@ final class PathRotationController {
             yawDrift,
             pitchDrift);
 
-        float yawThreshold = (float) (double) (alreadyRotating
-            ? PathfinderSettings.instance().activeYawRetargetDeg.value()
-            : PathfinderSettings.instance().idleYawDeadbandDeg.value());
-        float pitchThreshold = (float) (double) (alreadyRotating
-            ? PathfinderSettings.instance().activePitchRetargetDeg.value()
-            : PathfinderSettings.instance().idlePitchDeadbandDeg.value());
+        float yawThreshold = rotationTarget.yawThreshold();
+        float pitchThreshold = rotationTarget.pitchThreshold();
         long now = System.currentTimeMillis();
         if ((yawDrift > yawThreshold || pitchDrift > pitchThreshold)
             && (!alreadyRotating || now - lastRotationDispatchMs >= PathfinderSettings.instance().rotationRedispatchCooldownMs.value())) {
-            long durationMs = PathfinderSettings.instance().rotationDurationMs.value();
-            EasingType easing = PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()
-                ? EasingType.EASE_OUT_CUBIC
-                : computePathDifficulty(mc, path, pursuitSegment) < 0.4f
-                    ? EasingType.EASE_OUT_BACK
-                    : EasingType.EASE_OUT_CUBIC;
-            debug(debug, "rotateTo dispatch easing=%s durationMs=%d wp=%d camTargetIdx=%d",
-                easing, durationMs, pursuitSegment, camTargetIdx);
-            RotationExecutor.rotateTo(desiredRot, new TimedEaseStrategy(easing, durationMs));
+            debug(debug, "rotateTo dispatch easing=%s durationMs=%d wp=%d camTargetIdx=%d mode=%s registry=%s",
+                rotationTarget.easing(), rotationTarget.durationMs(), pursuitSegment, camTargetIdx,
+                rotationTarget.mode(), rotationTarget.registry());
+            RotationExecutor.rotateTo(desiredRot, new TimedEaseStrategy(rotationTarget.easing(), rotationTarget.durationMs()));
             lastRotationDispatchMs = now;
             return;
         }
 
         debug(debug, "rotateTo skipped small drift wp=%d camTargetIdx=%d",
             pursuitSegment, camTargetIdx);
+    }
+
+    private RotationTarget defaultRotationTarget(Minecraft mc, List<Node> path, int pursuitSegment, boolean alreadyRotating,
+                                                 String mode, int targetIndex, int visualizerIndex, Vec3 position) {
+        boolean cameraRail = "camera_rail".equals(mode);
+        EasingType easing = cameraRail
+            ? EasingType.EASE_OUT_CUBIC
+            : computePathDifficulty(mc, path, pursuitSegment) < 0.4f
+                ? EasingType.EASE_OUT_BACK
+                : EasingType.EASE_OUT_CUBIC;
+        return new RotationTarget(
+            mode,
+            targetIndex,
+            visualizerIndex,
+            position,
+            (float) (double) (alreadyRotating
+                ? PathfinderSettings.instance().activeYawRetargetDeg.value()
+                : PathfinderSettings.instance().idleYawDeadbandDeg.value()),
+            (float) (double) (alreadyRotating
+                ? PathfinderSettings.instance().activePitchRetargetDeg.value()
+                : PathfinderSettings.instance().idlePitchDeadbandDeg.value()),
+            PathfinderSettings.instance().rotationDurationMs.value(),
+            easing,
+            false
+        );
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {
@@ -281,6 +318,8 @@ final class PathRotationController {
             a.z + (b.z - a.z) * t);
     }
 
-    private record RotationTarget(String mode, int targetIndex, int visualizerIndex, Vec3 position) {
+    private record RotationTarget(String mode, int targetIndex, int visualizerIndex, Vec3 position,
+                                  float yawThreshold, float pitchThreshold, long durationMs,
+                                  EasingType easing, boolean registry) {
     }
 }

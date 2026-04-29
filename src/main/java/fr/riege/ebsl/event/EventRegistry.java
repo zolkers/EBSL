@@ -1,5 +1,7 @@
 package fr.riege.ebsl.event;
 
+import fr.riege.ebsl.registry.MapRegistry;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +12,7 @@ public final class EventRegistry {
     public record Entry(String category, String name, List<String> fields) {
     }
 
-    private static final List<Class<? extends Event>> CLASSES = new ArrayList<>();
+    private static final MapRegistry<Class<? extends Event>, Class<? extends Event>> CLASSES = new MapRegistry<>(null);
 
     private EventRegistry() {
     }
@@ -19,12 +21,12 @@ public final class EventRegistry {
         if (eventClass == null || CLASSES.contains(eventClass)) {
             return;
         }
-        CLASSES.add(eventClass);
+        CLASSES.register(eventClass, eventClass);
     }
 
     public static List<Entry> all() {
-        List<Entry> entries = new ArrayList<>(CLASSES.size());
-        for (Class<? extends Event> eventClass : CLASSES) {
+        List<Entry> entries = new ArrayList<>(CLASSES.values().size());
+        for (Class<? extends Event> eventClass : CLASSES.values()) {
             entries.add(entryOf(eventClass));
         }
         return Collections.unmodifiableList(entries);
