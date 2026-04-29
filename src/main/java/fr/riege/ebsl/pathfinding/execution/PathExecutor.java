@@ -255,7 +255,8 @@ public final class PathExecutor {
             progress,
             allowReplan,
             now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
-            jumpCooldown);
+            jumpCooldown,
+            isParkourRecoveryWindow(path, pathTracker.getPursuitSegment()));
         if (recovery.noteProgress()) {
             noteRecoveryMovement(playerPos);
         }
@@ -426,6 +427,20 @@ public final class PathExecutor {
         int target = base + lookahead;
         int maxJoinSegment = Math.max(0, path.size() - 2);
         return Math.max(0, Math.min(target, maxJoinSegment));
+    }
+
+    private boolean isParkourRecoveryWindow(List<Node> path, int pursuitSegment) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        int start = Math.max(0, pursuitSegment);
+        int end = Math.min(path.size() - 1, start + 2);
+        for (int i = start; i <= end; i++) {
+            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isAtGoal(Vec3 playerPos) {

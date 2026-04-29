@@ -11,7 +11,10 @@ import java.util.List;
 final class PathTargetSelector {
     int pickLegacyCamTarget(Minecraft mc, Vec3 playerPos, List<Node> path, int pursuitSegment) {
         int camTarget = pursuitSegment;
-        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + PathfinderSettings.instance().cameraLookahead.value());
+        int lookahead = isParkourWindow(path, pursuitSegment)
+            ? 1
+            : PathfinderSettings.instance().cameraLookahead.value();
+        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + lookahead);
         for (int i = camScanEnd; i >= pursuitSegment; i--) {
             if (!isWaypointVisible(mc, path.get(i))) {
                 continue;
@@ -29,6 +32,17 @@ final class PathTargetSelector {
             break;
         }
         return camTarget;
+    }
+
+    private static boolean isParkourWindow(List<Node> path, int pursuitSegment) {
+        int start = Math.max(0, pursuitSegment);
+        int end = Math.min(path.size() - 1, start + 1);
+        for (int i = start; i <= end; i++) {
+            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isWaypointVisible(Minecraft mc, Node wp) {

@@ -17,7 +17,7 @@ public final class ParkourEvaluationTelemetry {
     }
 
     public static void record(PathPosition from, PathPosition to, ParkourJumpPlan plan) {
-        if (!PathfinderSettings.instance().showDebug.value() || plan == null || plan.feasible()) {
+        if (plan == null || plan.feasible()) {
             return;
         }
         long now = System.currentTimeMillis();
@@ -47,7 +47,7 @@ public final class ParkourEvaluationTelemetry {
             plan.reason(),
             detail);
         AnalyticsEventLog.record("parkour-eval", message);
-        if (isInterestingConsoleReason(plan.reason())) {
+        if (PathfinderSettings.instance().showDebug.value() && isInterestingConsoleReason(plan.reason())) {
             LOGGER.info(message);
         }
     }

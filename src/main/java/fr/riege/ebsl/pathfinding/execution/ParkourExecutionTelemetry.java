@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Locale;
 
 final class ParkourExecutionTelemetry {
-    private static final long ANALYTICS_INTERVAL_MS = 100;
+    private static final long ANALYTICS_INTERVAL_MS = 0;
     private static final long CHAT_INTERVAL_MS = 450;
 
     private static long lastAnalyticsTime;
@@ -28,10 +28,6 @@ final class ParkourExecutionTelemetry {
         if (mc.player == null || path == null || waypoint == null || waypoint.moveType != Node.MoveType.PARKOUR) {
             return;
         }
-        if (!PathfinderSettings.instance().showDebug.value()) {
-            return;
-        }
-
         long now = System.currentTimeMillis();
         Metrics metrics = metrics(path, playerPos, waypoint, pursuitSegment);
         String signature = phase(mc) + "|" + decision + "|" + keyState(mc);
@@ -40,29 +36,51 @@ final class ParkourExecutionTelemetry {
         }
 
         String message = String.format(Locale.ROOT,
-            "seg=%d %s gap=%d off=%d h=%.2f prog=%.2f rem=%.2f lat=%.2f v=%.3f cd=%d allow=%s next=%s keys=%s pos=%.2f,%.2f,%.2f",
+            "seg=%d %s gap=%d off=%d dxz=%d,%d dy=%d h=%.2f blockRem=%.2f prog=%.2f rem=%.2f lat=%.2f vAlong=%.3f vel=%.3f,%.3f,%.3f cd=%d allow=%s phase=%s onGround=%s water=%s yaw=%.1f pitch=%.1f next=%s keys=%s pos=%.2f,%.2f,%.2f block=%d,%d,%d takeoff=%d,%d,%d landing=%d,%d,%d path=%s",
             pursuitSegment,
             decision,
             metrics.gapBlocks,
             metrics.distanceBlocks,
+            metrics.offsetX,
+            metrics.offsetZ,
+            metrics.verticalDelta,
             metrics.horizontalDistance,
+            metrics.blockRemaining,
             metrics.progress,
             metrics.remaining,
             metrics.lateral,
             metrics.velocityAlong,
+            mc.player.getDeltaMovement().x,
+            mc.player.getDeltaMovement().y,
+            mc.player.getDeltaMovement().z,
             jumpCooldown,
             allowJumps,
+            phase(mc),
+            mc.player.onGround(),
+            mc.player.isInWater(),
+            mc.player.getYRot(),
+            mc.player.getXRot(),
             nextMove(path, pursuitSegment),
             keyState(mc),
             playerPos.x,
             playerPos.y,
-            playerPos.z);
+            playerPos.z,
+            mc.player.getBlockX(),
+            mc.player.getBlockY(),
+            mc.player.getBlockZ(),
+            metrics.takeoffX,
+            metrics.takeoffY,
+            metrics.takeoffZ,
+            waypoint.position.flooredX(),
+            waypoint.position.flooredY(),
+            waypoint.position.flooredZ(),
+            pathWindow(path, pursuitSegment));
 
         AnalyticsEventLog.record("parkour", message);
         lastAnalyticsTime = now;
         lastSignature = signature;
 
-        if (now - lastChatTime >= CHAT_INTERVAL_MS) {
+        if (PathfinderSettings.instance().showDebug.value() && now - lastChatTime >= CHAT_INTERVAL_MS) {
             ClientUtils.sendDebugMessage(mc, "parkour " + message);
             lastChatTime = now;
         }
@@ -78,7 +96,21 @@ final class ParkourExecutionTelemetry {
         double dirZ = targetZ - startZ;
         double len = Math.sqrt(dirX * dirX + dirZ * dirZ);
         if (len < 1.0e-6) {
-            return new Metrics(0, 0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            return new Metrics(
+                takeoff.position.flooredX(),
+                takeoff.position.flooredY(),
+                takeoff.position.flooredZ(),
+                0,
+                0,
+                waypoint.position.flooredY() - takeoff.position.flooredY(),
+                0,
+                0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0);
         }
 
         dirX /= len;
@@ -90,6 +122,7 @@ final class ParkourExecutionTelemetry {
         double dx = waypoint.position.centeredX() - playerPos.x;
         double dz = waypoint.position.centeredZ() - playerPos.z;
         int offsetX = waypoint.position.flooredX() - takeoff.position.flooredX();
+        int offsetY = waypoint.position.flooredY() - takeoff.position.flooredY();
         int offsetZ = waypoint.position.flooredZ() - takeoff.position.flooredZ();
         int distanceBlocks = ParkourGeometry.distanceBlocks(offsetX, offsetZ);
         int gapBlocks = ParkourGeometry.isDiagonal(offsetX, offsetZ)
@@ -99,9 +132,16 @@ final class ParkourExecutionTelemetry {
         double velocityAlong = mc.player == null ? 0.0
             : mc.player.getDeltaMovement().x * dirX + mc.player.getDeltaMovement().z * dirZ;
         return new Metrics(
+            takeoff.position.flooredX(),
+            takeoff.position.flooredY(),
+            takeoff.position.flooredZ(),
+            offsetX,
+            offsetZ,
+            offsetY,
             gapBlocks,
             distanceBlocks,
             Math.sqrt(dx * dx + dz * dz),
+            Math.max(Math.abs(dx), Math.abs(dz)),
             progress,
             len - progress,
             lateral,
@@ -132,10 +172,43 @@ final class ParkourExecutionTelemetry {
         return path.get(index).moveType;
     }
 
+    private static String pathWindow(List<Node> path, int pursuitSegment) {
+        int start = Math.max(0, pursuitSegment - 2);
+        int end = Math.min(path.size() - 1, pursuitSegment + 4);
+        StringBuilder builder = new StringBuilder();
+        for (int i = start; i <= end; i++) {
+            if (!builder.isEmpty()) {
+                builder.append(";");
+            }
+            Node node = path.get(i);
+            if (i == pursuitSegment) {
+                builder.append("*");
+            }
+            builder
+                .append(i)
+                .append(":")
+                .append(node.moveType)
+                .append("@")
+                .append(node.position.flooredX())
+                .append(",")
+                .append(node.position.flooredY())
+                .append(",")
+                .append(node.position.flooredZ());
+        }
+        return builder.toString();
+    }
+
     private record Metrics(
+        int takeoffX,
+        int takeoffY,
+        int takeoffZ,
+        int offsetX,
+        int offsetZ,
+        int verticalDelta,
         int gapBlocks,
         int distanceBlocks,
         double horizontalDistance,
+        double blockRemaining,
         double progress,
         double remaining,
         double lateral,

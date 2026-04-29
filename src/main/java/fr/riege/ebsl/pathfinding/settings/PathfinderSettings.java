@@ -117,8 +117,14 @@ public final class PathfinderSettings extends Settingable {
         "path_replan_drift_distance", "Path stale drift distance", 1.25, 0.0, 8.0));
     public final IntSetting groundedNoProgressReplanMs = registerSetting(new IntSetting(
         "grounded_no_progress_replan_ms", "Grounded no progress ms", 400, 100, 5000));
+    public final IntSetting parkourGroundedNoProgressReplanMs = registerSetting(new IntSetting(
+        "parkour_grounded_no_progress_replan_ms", "Parkour grounded no progress ms", 1200, 100, 8000));
+    public final IntSetting parkourPathReplanStaleMs = registerSetting(new IntSetting(
+        "parkour_path_replan_stale_ms", "Parkour path stale repair ms", 1600, 100, 10000));
     public final IntSetting pathReplanHardStaleMs = registerSetting(new IntSetting(
         "path_replan_hard_stale_ms", "Hard stale replan ms", 1800, 100, 15000));
+    public final IntSetting parkourPathReplanHardStaleMs = registerSetting(new IntSetting(
+        "parkour_path_replan_hard_stale_ms", "Parkour hard stale replan ms", 4500, 100, 20000));
     public final DoubleSetting backupMaxHorizontalSpeed = registerSetting(new DoubleSetting(
         "backup_max_horizontal_speed", "Backup max speed", 0.22, 0.0, 1.0));
     public final DoubleSetting cornerAlignMinDistance = registerSetting(new DoubleSetting(
@@ -327,7 +333,10 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.pathReplanStaleMs,
             INSTANCE.pathReplanDriftDistance,
             INSTANCE.groundedNoProgressReplanMs,
+            INSTANCE.parkourGroundedNoProgressReplanMs,
+            INSTANCE.parkourPathReplanStaleMs,
             INSTANCE.pathReplanHardStaleMs,
+            INSTANCE.parkourPathReplanHardStaleMs,
             INSTANCE.backupMaxHorizontalSpeed,
             INSTANCE.cornerAlignMinDistance,
             INSTANCE.cornerAlignMaxDistance,
