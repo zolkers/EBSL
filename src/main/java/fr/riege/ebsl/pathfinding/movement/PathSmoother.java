@@ -31,7 +31,7 @@ public final class PathSmoother {
             for (int cand = anchorIdx + 2; cand <= maxCand; cand++) {
                 Node prevNode  = raw.get(cand - 1);
                 Node candidate = raw.get(cand);
-                // Never skip over a Y-changing node
+
                 if (prevNode.position.flooredY() != anchor.position.flooredY()
                         || candidate.position.flooredY() != anchor.position.flooredY()) break;
                 if (wouldSkipConstrainedCorner(raw, anchorIdx, cand, checker)) break;
@@ -53,7 +53,7 @@ public final class PathSmoother {
         if (raw == null || raw.size() <= 2) return raw;
 
         List<Node> result = new ArrayList<>();
-        result.add(raw.get(0));
+        result.add(raw.getFirst());
 
         int anchorIdx = 0;
         while (anchorIdx < raw.size() - 1) {
@@ -221,7 +221,6 @@ public final class PathSmoother {
                                                int toX, int toY, int toZ) {
         if (fromX == toX || fromZ == toZ) return false;
 
-        // For diagonal moves, ensure the swept side cells are open at feet/head.
         return sideCellBlocked(checker, toX, toY, fromZ)
                 || sideCellBlocked(checker, fromX, toY, toZ);
     }
