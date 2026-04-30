@@ -4,7 +4,8 @@ public enum CenterTab {
     GAME("Game"),
     PATHFINDER_SETTINGS("Pathfinder Settings"),
     PACKET("Packet"),
-    TERMINAL("Terminal");
+    TERMINAL("Terminal"),
+    MC_LOG("MC Log");
 
     private final String label;
 

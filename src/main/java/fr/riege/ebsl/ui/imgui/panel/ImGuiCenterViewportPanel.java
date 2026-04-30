@@ -4,10 +4,13 @@ import fr.riege.ebsl.EbslMod;
 import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.api.gui.GuiSettingsGroup;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
+import fr.riege.ebsl.mc.McChatLog;
+import fr.riege.ebsl.mc.McChatLog.McLogEntry;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.packet.PacketCaptureEvent;
 import fr.riege.ebsl.packet.PacketCaptureLog;
 import fr.riege.ebsl.terminal.CommandRegistry;
+import fr.riege.ebsl.terminal.CommandSuggestion;
 import fr.riege.ebsl.terminal.TerminalLog;
 import fr.riege.ebsl.terminal.TerminalLog.LogEntry;
 import imgui.ImGuiInputTextCallbackData;
@@ -42,7 +45,8 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private final ImString packetFilter = new ImString(64);
     private final ImString terminalInput = new ImString(256);
     private boolean terminalScrollToBottom = false;
-    private final List<String> suggestions = new ArrayList<>();
+    private boolean mcLogScrollToBottom = false;
+    private final List<CommandSuggestion> suggestions = new ArrayList<>();
     private int suggestionIdx = 0;
     private String lastSuggestInput = null;
     private boolean shouldApplyCompletion = false;
@@ -62,6 +66,8 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 renderPathfinderSettings(viewport);
             } else if (state.centerTab() == CenterTab.TERMINAL) {
                 renderTerminal(viewport);
+            } else if (state.centerTab() == CenterTab.MC_LOG) {
+                renderMcLog(viewport);
             } else {
                 renderPacketView(viewport);
             }
@@ -91,6 +97,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 case PACKET -> 86.0f;
                 case PATHFINDER_SETTINGS -> 148.0f;
                 case TERMINAL -> 86.0f;
+                case MC_LOG -> 72.0f;
             };
             if (ImGui.button(tab.label(), width, 22.0f)) {
                 state.setCenterTab(tab);
@@ -244,14 +251,10 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         final float boxRight = viewport.right() - 8.0f;
         final float boxW = boxRight - boxX;
 
-        // refresh suggestions when input changes
+        // fallback refresh when input field is not focused (e.g. after fillCompletion click)
         String currentInput = terminalInput.get();
         if (!currentInput.equals(lastSuggestInput)) {
-            lastSuggestInput = currentInput;
-            suggestions.clear();
-            suggestions.addAll(CommandRegistry.suggest(currentInput));
-            if (suggestionIdx >= suggestions.size()) suggestionIdx = 0;
-            scrollSuggestToSelected = true;
+            refreshSuggestions(currentInput);
         }
 
         int suggestCount = suggestions.size();
@@ -297,8 +300,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 float contentX = ImGui.getCursorScreenPosX();
                 float rowW     = ImGui.getContentRegionAvailX();
                 for (int i = 0; i < suggestCount; i++) {
-                    String name  = suggestions.get(i);
-                    String usage = CommandRegistry.usageFor(name);
+                    CommandSuggestion sug = suggestions.get(i);
                     boolean selected = i == suggestionIdx;
                     float rowY = ImGui.getCursorScreenPosY();
 
@@ -309,26 +311,23 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                         ImGui.getWindowDrawList().addRectFilled(
                             contentX - 2, rowY, contentX + rowW + 2, rowY + suggestRowH, 0xFF1E3A55);
                     }
-                    // invisible button for click + hover detection
                     if (ImGui.invisibleButton("##sug" + i, rowW, suggestRowH)) {
                         suggestionIdx = i;
-                        fillCompletion(name);
+                        fillCompletion(sug.fill());
                     }
                     if (ImGui.isItemHovered()) {
                         suggestionIdx = i;
                     }
-                    // draw text over the button
                     ImGui.setCursorScreenPos(contentX + 6.0f, rowY + 2.0f);
                     if (selected) {
-                        ImGui.textColored(1.0f, 0.85f, 0.40f, 1.0f, name);
+                        ImGui.textColored(1.0f, 0.85f, 0.40f, 1.0f, sug.fill());
                     } else {
-                        ImGui.textColored(0.70f, 0.82f, 0.95f, 1.0f, name);
+                        ImGui.textColored(0.70f, 0.82f, 0.95f, 1.0f, sug.fill());
                     }
-                    if (!usage.isEmpty()) {
+                    if (!sug.hint().isEmpty()) {
                         ImGui.sameLine();
-                        ImGui.textColored(0.38f, 0.45f, 0.54f, 1.0f, usage);
+                        ImGui.textColored(0.38f, 0.45f, 0.54f, 1.0f, sug.hint());
                     }
-                    // advance cursor to next row
                     ImGui.setCursorScreenPos(contentX, rowY + suggestRowH);
                 }
                 scrollSuggestToSelected = false;
@@ -352,13 +351,20 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImGui.pushStyleColor(imgui.flag.ImGuiCol.FrameBg, 0x00000000);
         boolean submitted = ImGui.inputText("##terminal-input", terminalInput,
             ImGuiInputTextFlags.EnterReturnsTrue
+                | ImGuiInputTextFlags.CallbackAlways
                 | ImGuiInputTextFlags.CallbackCompletion
                 | ImGuiInputTextFlags.CallbackHistory,
             new ImGuiInputTextCallback() {
                 @Override
                 public void accept(ImGuiInputTextCallbackData data) {
                     int flag = data.getEventFlag();
-                    if (flag == ImGuiInputTextFlags.CallbackCompletion && !suggestions.isEmpty()) {
+                    if (flag == ImGuiInputTextFlags.CallbackAlways) {
+                        // live buffer — update suggestions on every keystroke
+                        String buf = data.getBuf().substring(0, data.getBufTextLen());
+                        if (!buf.equals(lastSuggestInput)) {
+                            refreshSuggestions(buf);
+                        }
+                    } else if (flag == ImGuiInputTextFlags.CallbackCompletion && !suggestions.isEmpty()) {
                         shouldApplyCompletion = true;
                     } else if (flag == ImGuiInputTextFlags.CallbackHistory) {
                         if (data.getEventKey() == ImGuiKey.UpArrow) {
@@ -379,7 +385,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         }
 
         if (shouldApplyCompletion && !suggestions.isEmpty()) {
-            fillCompletion(suggestions.get(suggestionIdx));
+            fillCompletion(suggestions.get(suggestionIdx).fill());
             shouldApplyCompletion = false;
         }
         if (submitted && !terminalInput.get().isBlank()) {
@@ -392,11 +398,76 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         }
     }
 
+    private void refreshSuggestions(String input) {
+        lastSuggestInput = input;
+        suggestions.clear();
+        suggestions.addAll(CommandRegistry.suggest(input));
+        if (suggestionIdx >= suggestions.size()) suggestionIdx = 0;
+        scrollSuggestToSelected = true;
+    }
+
     private void fillCompletion(String suggestion) {
         String current = terminalInput.get();
         int spaceIdx = current.lastIndexOf(' ');
-        terminalInput.set(spaceIdx < 0 ? suggestion + " " : current.substring(0, spaceIdx + 1) + suggestion + " ");
+        String next = spaceIdx < 0 ? suggestion + " " : current.substring(0, spaceIdx + 1) + suggestion + " ";
+        terminalInput.set(next);
+        // force refresh on next frame (CallbackAlways will catch it once focused again)
         lastSuggestInput = null;
+    }
+
+    private void renderMcLog(UiRect viewport) {
+        ImDrawList drawList = ImGui.getWindowDrawList();
+        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), 0xEE0A0F14);
+
+        final float padX = 8.0f;
+        final float clearW = 44.0f;
+        final float clearPad = 6.0f;
+        final float headerH = 30.0f;
+
+        // header bar
+        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.y() + headerH, 0xEE131921);
+        ImGui.setCursorScreenPos(viewport.x() + padX, viewport.y() + 6.0f);
+        ImGui.textColored(0.60f, 0.72f, 0.90f, 1.0f, "Game Log");
+        ImGui.setCursorScreenPos(viewport.right() - clearW - clearPad, viewport.y() + 5.0f);
+        if (ImGui.button("Clear##mclog", clearW, 20.0f)) {
+            McChatLog.clear();
+        }
+
+        // log list
+        float listY = viewport.y() + headerH + 4.0f;
+        float listH = viewport.height() - headerH - 8.0f;
+        ImGui.setCursorScreenPos(viewport.x() + padX, listY);
+        if (ImGui.beginChild("##mclog-scroll", viewport.width() - padX * 2, listH, false)) {
+            if (McChatLog.consumeDirty()) mcLogScrollToBottom = true;
+            List<McLogEntry> entries = McChatLog.snapshot();
+            for (McLogEntry entry : entries) {
+                float[] color = levelColor(entry.level());
+                ImGui.textColored(0.35f, 0.42f, 0.52f, 1.0f, entry.time());
+                ImGui.sameLine();
+                ImGui.textColored(color[0], color[1], color[2], 1.0f, "[" + entry.level() + "]");
+                ImGui.sameLine();
+                ImGui.textColored(0.50f, 0.60f, 0.72f, 1.0f, entry.logger() + ":");
+                ImGui.sameLine();
+                ImGui.textColored(0.85f, 0.90f, 0.95f, 1.0f, entry.text());
+            }
+            if (entries.isEmpty()) {
+                ImGui.textDisabled("No log entries yet.");
+            }
+            if (mcLogScrollToBottom) {
+                ImGui.setScrollHereY(1.0f);
+                mcLogScrollToBottom = false;
+            }
+            ImGui.endChild();
+        }
+    }
+
+    private static float[] levelColor(String level) {
+        return switch (level) {
+            case "ERROR", "FATAL" -> new float[]{0.90f, 0.30f, 0.25f};
+            case "WARN"           -> new float[]{0.95f, 0.72f, 0.20f};
+            case "DEBUG", "TRACE" -> new float[]{0.42f, 0.52f, 0.62f};
+            default               -> new float[]{0.55f, 0.85f, 0.55f};
+        };
     }
 
     private void drawGameViewportShell(UiRect viewport) {

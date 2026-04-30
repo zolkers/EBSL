@@ -1,9 +1,9 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.api.EbslApi;
-import fr.riege.ebsl.command.GoalCommandSupport;
-import fr.riege.ebsl.command.goal.GoalParameter;
-import fr.riege.ebsl.command.goal.GoalUiDefinition;
+import fr.riege.ebsl.terminal.GoalCommandSupport;
+import fr.riege.ebsl.terminal.goal.GoalParameter;
+import fr.riege.ebsl.terminal.goal.GoalUiDefinition;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.ui.layout.ViewportLayout;
 import fr.riege.ebsl.ui.state.EbslUiState;

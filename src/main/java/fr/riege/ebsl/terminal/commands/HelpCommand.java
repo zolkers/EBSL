@@ -3,6 +3,7 @@ package fr.riege.ebsl.terminal.commands;
 import fr.riege.ebsl.terminal.Command;
 import fr.riege.ebsl.terminal.CommandContext;
 import fr.riege.ebsl.terminal.CommandHandler;
+import fr.riege.ebsl.terminal.CommandMeta;
 import fr.riege.ebsl.terminal.CommandRegistry;
 import fr.riege.ebsl.terminal.CommandResult;
 import fr.riege.ebsl.terminal.CommandScope;
@@ -16,10 +17,14 @@ public final class HelpCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {
         List<String> lines = new ArrayList<>();
-        for (Command meta : CommandRegistry.allMeta()) {
+        for (CommandMeta meta : CommandRegistry.allMeta()) {
             String scope = "[" + meta.scope().name().toLowerCase() + "]";
-            String line = String.format("%-16s %-10s %s", meta.name(),
-                meta.usage().isEmpty() ? "" : meta.usage().substring(meta.name().length()).trim(),
+            String args = meta.usage().startsWith(meta.name())
+                ? meta.usage().substring(meta.name().length()).trim()
+                : meta.usage();
+            String line = String.format("%-16s %-22s %s",
+                meta.name(),
+                args.isEmpty() ? "" : args,
                 scope + (meta.description().isEmpty() ? "" : "  " + meta.description()));
             lines.add(line);
         }

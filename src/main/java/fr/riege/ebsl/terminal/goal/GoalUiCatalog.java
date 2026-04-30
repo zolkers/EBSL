@@ -1,6 +1,6 @@
-package fr.riege.ebsl.command.goal;
+package fr.riege.ebsl.terminal.goal;
 
-import fr.riege.ebsl.command.GoalCommandSupport;
+import fr.riege.ebsl.terminal.GoalCommandSupport;
 import fr.riege.ebsl.pathfinding.goal.GoalAxisX;
 import fr.riege.ebsl.pathfinding.goal.GoalAxisZ;
 import fr.riege.ebsl.pathfinding.goal.GoalBlock;

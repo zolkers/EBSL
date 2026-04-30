@@ -7,9 +7,8 @@ import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
 import fr.riege.ebsl.general.module.PathfinderModule;
 import fr.riege.ebsl.general.task.BotTask;
-import fr.riege.ebsl.command.GoalCommands;
-import fr.riege.ebsl.command.GoalRegistry;
-import fr.riege.ebsl.command.goal.GoalUiDefinition;
+import fr.riege.ebsl.terminal.goal.GoalUiCatalog;
+import fr.riege.ebsl.terminal.goal.GoalUiDefinition;
 
 import java.util.List;
 
@@ -69,8 +68,7 @@ public final class GuiApi {
 
     @EbslApiOperation("Read path goal definitions for GUI rendering.")
     public List<GoalUiDefinition> goalDefinitions() {
-        GoalCommands.bootstrap();
-        return GoalRegistry.uiDefinitions();
+        return GoalUiCatalog.all();
     }
 
     @EbslApiOperation("Read the analytics summary used by the GUI.")

@@ -4,7 +4,7 @@ import fr.riege.ebsl.analytics.AnalyticsEvent;
 import fr.riege.ebsl.api.navigation.NavigationSnapshot;
 import fr.riege.ebsl.general.module.PathfinderModule;
 import fr.riege.ebsl.general.task.BotTask;
-import fr.riege.ebsl.command.goal.GoalUiDefinition;
+import fr.riege.ebsl.terminal.goal.GoalUiDefinition;
 
 import java.util.List;
 

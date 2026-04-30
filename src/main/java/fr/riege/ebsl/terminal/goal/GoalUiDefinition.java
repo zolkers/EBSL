@@ -1,4 +1,4 @@
-package fr.riege.ebsl.command.goal;
+package fr.riege.ebsl.terminal.goal;
 
 import java.util.ArrayList;
 import java.util.Collections;

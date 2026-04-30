@@ -8,9 +8,8 @@ import fr.riege.ebsl.event.EventPhase;
 import fr.riege.ebsl.event.EventRegistry;
 import fr.riege.ebsl.event.events.game.TickEvent;
 import fr.riege.ebsl.event.events.render.RenderWorldEvent;
-import fr.riege.ebsl.command.GoalCommands;
-import fr.riege.ebsl.command.GoalRegistry;
-import fr.riege.ebsl.command.PathCommand;
+import fr.riege.ebsl.mc.McChatLog;
+import fr.riege.ebsl.terminal.PathCommand;
 import fr.riege.ebsl.terminal.TerminalCommands;
 import fr.riege.ebsl.general.registry.BotModuleRegistry;
 import fr.riege.ebsl.general.registry.BotTaskRegistry;
@@ -64,10 +63,10 @@ public final class EbslMod implements ClientModInitializer {
             BotTaskRegistry.render(client);
             PathVisualizer.renderWorld(event);
         });
-        GoalCommands.bootstrap();
         GoalRequestHandlers.bootstrap();
         TerminalCommands.bootstrap();
-        LOGGER.info("[{}] Event bridge ready, pathfinding commands registered ({} goals).", MOD_ID, GoalRegistry.commands().size());
+        McChatLog.bootstrap();
+        LOGGER.info("[{}] Event bridge ready.", MOD_ID);
     }
 
     public static void onRenderWorld(Matrix4f projection, double camX, double camY, double camZ) {
