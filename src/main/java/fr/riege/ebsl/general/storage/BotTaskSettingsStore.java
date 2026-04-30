@@ -1,12 +1,12 @@
-package fr.riege.ebsl.botting.storage;
+package fr.riege.ebsl.general.storage;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import fr.riege.ebsl.EbslMod;
-import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.registry.BotTaskRegistry;
+import fr.riege.ebsl.general.task.BotTask;
 import fr.riege.ebsl.settings.Setting;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class BotModuleSettingsStore {
+public final class BotTaskSettingsStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("ebsl").resolve("modules.json");
+    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("ebsl").resolve("tasks.json");
 
-    private BotModuleSettingsStore() {
+    private BotTaskSettingsStore() {
     }
 
     public static void load() {
@@ -30,39 +30,39 @@ public final class BotModuleSettingsStore {
             if (root == null) {
                 return;
             }
-            for (PathfinderModule module : BotModuleRegistry.modules()) {
-                JsonObject moduleJson = root.has(module.id()) && root.get(module.id()).isJsonObject()
-                    ? root.getAsJsonObject(module.id())
+            for (BotTask task : BotTaskRegistry.tasks()) {
+                JsonObject taskJson = root.has(task.id()) && root.get(task.id()).isJsonObject()
+                    ? root.getAsJsonObject(task.id())
                     : null;
-                if (moduleJson == null) {
+                if (taskJson == null) {
                     continue;
                 }
-                for (Setting<?> setting : module.settings()) {
-                    JsonElement element = moduleJson.get(setting.id());
+                for (Setting<?> setting : task.settings()) {
+                    JsonElement element = taskJson.get(setting.id());
                     if (element != null) {
                         setting.load(element);
                     }
                 }
             }
         } catch (Exception exception) {
-            EbslMod.LOGGER.warn("Failed to load EBSL module settings.", exception);
+            EbslMod.LOGGER.warn("Failed to load EBSL task settings.", exception);
         }
     }
 
     public static void save() {
         JsonObject root = new JsonObject();
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
-            JsonObject moduleJson = new JsonObject();
-            for (Setting<?> setting : module.settings()) {
-                moduleJson.add(setting.id(), setting.toJson());
+        for (BotTask task : BotTaskRegistry.tasks()) {
+            JsonObject taskJson = new JsonObject();
+            for (Setting<?> setting : task.settings()) {
+                taskJson.add(setting.id(), setting.toJson());
             }
-            root.add(module.id(), moduleJson);
+            root.add(task.id(), taskJson);
         }
         try {
             Files.createDirectories(FILE.getParent());
             Files.writeString(FILE, GSON.toJson(root));
         } catch (IOException exception) {
-            EbslMod.LOGGER.warn("Failed to save EBSL module settings.", exception);
+            EbslMod.LOGGER.warn("Failed to save EBSL task settings.", exception);
         }
     }
 }

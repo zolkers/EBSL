@@ -1,13 +1,15 @@
 package fr.riege.ebsl.ui.state;
 
 import fr.riege.ebsl.api.EbslApi;
-import fr.riege.ebsl.botting.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.task.BotTask;
 
 public final class EbslUiState {
     private MainViewTab mainViewTab = MainViewTab.MAIN;
     private CenterTab centerTab = CenterTab.GAME;
     private RightPanelMode rightPanelMode = RightPanelMode.MODULE_LIST;
     private PathfinderModule selectedModule;
+    private BotTask selectedTask;
 
     public MainViewTab mainViewTab() {
         return mainViewTab;
@@ -33,9 +35,18 @@ public final class EbslUiState {
         rightPanelMode = RightPanelMode.MODULE_LIST;
     }
 
+    public void showTaskList() {
+        rightPanelMode = RightPanelMode.TASK_LIST;
+    }
+
     public void showModuleSettings(PathfinderModule module) {
         selectedModule = module;
         rightPanelMode = RightPanelMode.MODULE_SETTINGS;
+    }
+
+    public void showTaskSettings(BotTask task) {
+        selectedTask = task;
+        rightPanelMode = RightPanelMode.TASK_SETTINGS;
     }
 
     public PathfinderModule selectedModule() {
@@ -45,5 +56,14 @@ public final class EbslUiState {
             selectedModule = EbslApi.gui().module(selectedModule.id());
         }
         return selectedModule;
+    }
+
+    public BotTask selectedTask() {
+        if (selectedTask == null) {
+            selectedTask = EbslApi.gui().tasks().stream().findFirst().orElse(null);
+        } else {
+            selectedTask = EbslApi.gui().task(selectedTask.id());
+        }
+        return selectedTask;
     }
 }

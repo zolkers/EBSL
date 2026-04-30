@@ -11,7 +11,8 @@ import fr.riege.ebsl.event.events.render.RenderWorldEvent;
 import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.PathCommand;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.registry.BotTaskRegistry;
 import fr.riege.ebsl.input.EbslKeybinds;
 import fr.riege.ebsl.pathfinding.PathfindingManager;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
@@ -36,6 +37,7 @@ public final class EbslMod implements ClientModInitializer {
         eventBus = new EventBusImpl();
         PathfinderSettingsStore.load();
         BotModuleRegistry.bootstrap(eventBus);
+        BotTaskRegistry.bootstrap();
         EbslKeybinds.register();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
@@ -48,6 +50,7 @@ public final class EbslMod implements ClientModInitializer {
                 return;
             }
             PathfindingManager.update(event.getClient());
+            BotTaskRegistry.update(event.getClient());
         });
 
         eventBus.subscribe(RenderWorldEvent.class, event -> {
@@ -57,6 +60,7 @@ public final class EbslMod implements ClientModInitializer {
             }
             PathVisualizer.endFrame();
             RotationExecutor.update(client);
+            BotTaskRegistry.render(client);
             PathVisualizer.renderWorld(event);
         });
         GoalCommands.bootstrap();

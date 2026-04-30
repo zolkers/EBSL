@@ -1,4 +1,4 @@
-package fr.riege.ebsl.botting.module;
+package fr.riege.ebsl.general.module;
 
 public enum PathfinderModuleCategory {
     RENDER("Render"),

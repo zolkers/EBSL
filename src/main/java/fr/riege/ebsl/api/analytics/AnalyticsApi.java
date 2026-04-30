@@ -5,7 +5,7 @@ import fr.riege.ebsl.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.analytics.AnalyticsSnapshot;
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
-import fr.riege.ebsl.botting.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModule;
 
 import java.util.List;
 

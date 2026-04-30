@@ -121,6 +121,9 @@ public final class PathfindingManager {
             request.onFinished(),
             request.onFailed(),
             request.allowReplan(),
+            request.allowParkour(),
+            request.allowRotation(),
+            request.allowSneak(),
             request.preciseGoalTolerance());
         GoalRequestHandlerRegistry.start(mc, request);
     }

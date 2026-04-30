@@ -44,9 +44,15 @@ public final class NeighborStrategies {
         () -> HORIZONTAL_DIAGONAL_AND_VERTICAL_OFFSETS;
 
     public static INeighborStrategy horizontalDiagonalAndVertical(int maxJumpHeight) {
+        return horizontalDiagonalAndVertical(maxJumpHeight, true);
+    }
+
+    public static INeighborStrategy horizontalDiagonalAndVertical(int maxJumpHeight, boolean allowParkour) {
         int cappedJumpHeight = Math.max(1, maxJumpHeight);
         List<PathVector> offsets = new ArrayList<>(HORIZONTAL_DIAGONAL_AND_VERTICAL_OFFSETS);
-        addParkourOffsets(offsets);
+        if (allowParkour) {
+            addParkourOffsets(offsets);
+        }
         for (int height = 2; height <= cappedJumpHeight; height++) {
             offsets.add(new PathVector(0, height, 0));
         }

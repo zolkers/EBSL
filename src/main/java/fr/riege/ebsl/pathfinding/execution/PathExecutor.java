@@ -44,6 +44,7 @@ public final class PathExecutor {
     private boolean allowReplan       = true;
     private boolean allowJumps        = true;
     private boolean allowRotation     = true;
+    private boolean allowSneak        = true;
     private boolean exactGoalCentering = false;
     private double stickySneakDistance = -1.0;
     private boolean sneakLatched      = false;
@@ -81,12 +82,13 @@ public final class PathExecutor {
         this.allowReplan          = opts.allowReplan();
         this.allowJumps           = opts.allowJumps();
         this.allowRotation        = opts.allowRotation();
+        this.allowSneak           = opts.allowSneak();
         this.exactGoalCentering   = opts.exactGoalCentering();
-        this.stickySneakDistance  = opts.stickySneakDistance();
+        this.stickySneakDistance  = allowSneak ? opts.stickySneakDistance() : -1.0;
         this.preciseGoalTolerance = Math.max(0.01, opts.preciseGoalTolerance());
         this.goalCenterX          = opts.goalCenterX();
         this.goalCenterZ          = opts.goalCenterZ();
-        this.sneakLatched         = opts.sneakLatched();
+        this.sneakLatched         = allowSneak && opts.sneakLatched();
         this.finishAtPathEnd      = plan.finishAtPathEnd();
         resetTransientState();
         pathTracker.start(plan.path());
@@ -297,16 +299,18 @@ public final class PathExecutor {
         double finalDz = (goalZ + goalCenterZ) - playerPos.z;
         double distToFinal = Math.sqrt(finalDx * finalDx + finalDy * finalDy + finalDz * finalDz);
 
-        if (!sneakLatched && stickySneakDistance > 0 && distToFinal <= stickySneakDistance) {
+        if (allowSneak && !sneakLatched && stickySneakDistance > 0 && distToFinal <= stickySneakDistance) {
             sneakLatched = true;
         }
 
         Node movementWp = getMovementWaypoint();
         movementController.apply(this, mc, playerPos, movementWp, distToFinal,
-                allowJumps && !recoveryJump, sneakLatched, pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
+                allowJumps && !recoveryJump, allowSneak && sneakLatched, pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
 
-        if (sneakLatched) {
+        if (allowSneak && sneakLatched) {
             mc.options.keyShift.setDown(true);
+        } else {
+            mc.options.keyShift.setDown(false);
         }
     }
 
@@ -317,7 +321,7 @@ public final class PathExecutor {
     }
 
     public void releaseAll(Minecraft mc) {
-        InputApplier.releaseAll(mc, sneakLatched);
+        InputApplier.releaseAll(mc, allowSneak && sneakLatched);
     }
 
     void noteRecoveryMovement(Vec3 playerPos) {

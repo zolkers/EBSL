@@ -1,10 +1,12 @@
 package fr.riege.ebsl.ui.imgui.panel;
 
 import fr.riege.ebsl.api.EbslApi;
-import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.botting.module.PathfinderModuleCategory;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModuleCategory;
+import fr.riege.ebsl.general.task.BotTask;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.ColorSetting;
+import fr.riege.ebsl.settings.DoubleSetting;
 import fr.riege.ebsl.settings.EnumSetting;
 import fr.riege.ebsl.settings.IntSetting;
 import fr.riege.ebsl.settings.Setting;
@@ -30,11 +32,21 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
         ImGuiPanelUtil.nextFixedWindow(layout.right());
-        if (ImGui.begin("Pathfinder modules##ebsl-right", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
-            ImGui.text("Pathfinder modules");
+        if (ImGui.begin("Pathfinder botting##ebsl-right", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
+            if (ImGui.button("Modules", 84.0f, 24.0f)) {
+                state.showModuleList();
+            }
+            ImGui.sameLine();
+            if (ImGui.button("Tasks", 84.0f, 24.0f)) {
+                state.showTaskList();
+            }
             ImGui.separator();
             if (state.rightPanelMode() == RightPanelMode.MODULE_SETTINGS && state.selectedModule() != null) {
                 renderModuleSettings(state);
+            } else if (state.rightPanelMode() == RightPanelMode.TASK_SETTINGS && state.selectedTask() != null) {
+                renderTaskSettings(state);
+            } else if (state.rightPanelMode() == RightPanelMode.TASK_LIST) {
+                renderTaskList(state);
             } else {
                 renderModuleList(state);
             }
@@ -43,6 +55,8 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderModuleList(EbslUiState state) {
+        ImGui.text("Pathfinder modules");
+        ImGui.separator();
         for (PathfinderModule module : EbslApi.gui().modules()) {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
@@ -62,6 +76,22 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
     }
 
+    private void renderTaskList(EbslUiState state) {
+        ImGui.text("Task manager");
+        ImGui.separator();
+        for (BotTask task : EbslApi.gui().tasks()) {
+            pushTaskButtonColor(task);
+            if (ImGui.button(task.displayName(), -1.0f, 24.0f)) {
+                state.showTaskSettings(task);
+                EbslApi.analytics().record("task", "Opened settings for " + task.displayName());
+            }
+            ImGui.popStyleColor(3);
+        }
+        ImGui.separator();
+        ImGui.text("Registered tasks");
+        ImGui.textDisabled("Tasks: " + EbslApi.gui().tasks().size());
+    }
+
     private void renderModuleSettings(EbslUiState state) {
         PathfinderModule module = state.selectedModule();
         if (ImGui.button("Back", 72.0f, 24.0f)) {
@@ -78,40 +108,70 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImGui.spacing();
 
         for (Setting<?> setting : module.settings()) {
+            renderSetting(module.id(), setting, () -> saveSetting(module, setting));
+        }
+    }
+
+    private void renderTaskSettings(EbslUiState state) {
+        BotTask task = state.selectedTask();
+        if (ImGui.button("Back", 72.0f, 24.0f)) {
+            state.showTaskList();
+        }
+        ImGui.sameLine();
+        if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
+            EbslApi.tasks().resetToDefaultsAndSave(task);
+            EbslApi.analytics().record("task", "Reset " + task.displayName());
+        }
+        ImGui.separator();
+        ImGui.text(task.displayName());
+        ImGui.textDisabled(task.description());
+        ImGui.spacing();
+
+        for (Setting<?> setting : task.settings()) {
+            renderSetting(task.id(), setting, () -> saveSetting(task, setting));
+        }
+    }
+
+    private void renderSetting(String ownerId, Setting<?> setting, Runnable save) {
             if (setting instanceof BooleanSetting boolSetting) {
                 ImBoolean value = new ImBoolean(boolSetting.value());
                 if (ImGui.checkbox(setting.displayName(), value)) {
                     boolSetting.setValue(value.get());
-                    saveSetting(module, setting);
+                    save.run();
                 }
             } else if (setting instanceof IntSetting intSetting) {
                 int[] value = {intSetting.value()};
                 if (ImGui.sliderInt(setting.displayName(), value, intSetting.min(), intSetting.max())) {
                     intSetting.setValue(value[0]);
-                    saveSetting(module, setting);
+                    save.run();
+                }
+            } else if (setting instanceof DoubleSetting doubleSetting) {
+                float[] value = {(float) doubleSetting.value().doubleValue()};
+                if (ImGui.sliderFloat(setting.displayName(), value, (float) doubleSetting.min(), (float) doubleSetting.max())) {
+                    doubleSetting.setValue((double) value[0]);
+                    save.run();
                 }
             } else if (setting instanceof StringSetting stringSetting) {
                 ImString value = stringValues.computeIfAbsent(
-                    module.id() + "." + setting.id(),
+                    ownerId + "." + setting.id(),
                     ignored -> new ImString(stringSetting.value(), 512));
                 if (!value.get().equals(stringSetting.value())) {
                     value.set(stringSetting.value());
                 }
                 if (ImGui.inputText(setting.displayName(), value)) {
                     stringSetting.setValue(value.get());
-                    saveSetting(module, setting);
+                    save.run();
                 }
             } else if (setting instanceof ColorSetting colorSetting) {
-                renderColorSetting(module, colorSetting);
+                renderColorSetting(colorSetting, save);
             } else if (setting instanceof EnumSetting<?> enumSetting) {
-                renderEnumSetting(module, enumSetting);
+                renderEnumSetting(enumSetting, save);
             } else if (setting instanceof StringListSetting listSetting) {
-                renderStringListSetting(module, listSetting);
+                renderStringListSetting(ownerId, listSetting, save);
             }
-        }
     }
 
-    private void renderColorSetting(PathfinderModule module, ColorSetting setting) {
+    private void renderColorSetting(ColorSetting setting, Runnable save) {
         int argb = setting.value();
         float a = ((argb >> 24) & 0xFF) / 255.0f;
         float r = ((argb >> 16) & 0xFF) / 255.0f;
@@ -124,12 +184,12 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
                        | ((int)(col[1] * 255) <<  8)
                        |  (int)(col[2] * 255);
             setting.setValue(packed);
-            saveSetting(module, setting);
+            save.run();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <E extends Enum<E>> void renderEnumSetting(PathfinderModule module, EnumSetting<?> raw) {
+    private <E extends Enum<E>> void renderEnumSetting(EnumSetting<?> raw, Runnable save) {
         EnumSetting<E> setting = (EnumSetting<E>) raw;
         E[] values = setting.enumType().getEnumConstants();
         String[] labels = new String[values.length];
@@ -139,15 +199,15 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImInt idx = new ImInt(setting.value().ordinal());
         if (ImGui.combo(setting.displayName(), idx, labels)) {
             setting.setValue(values[idx.get()]);
-            saveSetting(module, setting);
+            save.run();
         }
     }
 
-    private void renderStringListSetting(PathfinderModule module, StringListSetting setting) {
+    private void renderStringListSetting(String ownerId, StringListSetting setting, Runnable save) {
         ImGui.text(setting.displayName());
-        if (ImGui.beginChild("##" + module.id() + "." + setting.id(), 0.0f, 124.0f, true)) {
+        if (ImGui.beginChild("##" + ownerId + "." + setting.id(), 0.0f, 124.0f, true)) {
             for (int i = 0; i < setting.value().size(); i++) {
-                String key = module.id() + "." + setting.id() + "." + i;
+                String key = ownerId + "." + setting.id() + "." + i;
                 String entry = setting.value().get(i);
                 ImString value = stringValues.computeIfAbsent(key, ignored -> new ImString(entry, 128));
                 if (!value.get().equals(entry)) {
@@ -156,22 +216,22 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
                 ImGui.pushItemWidth(-38.0f);
                 if (ImGui.inputText("##entry-" + key, value)) {
                     setting.setEntry(i, value.get());
-                    saveSetting(module, setting);
+                    save.run();
                 }
                 ImGui.popItemWidth();
                 ImGui.sameLine();
                 if (ImGui.button("X##delete-" + key, 24.0f, 22.0f)) {
                     setting.removeEntry(i);
                     stringValues.remove(key);
-                    saveSetting(module, setting);
+                    save.run();
                     break;
                 }
             }
             ImGui.endChild();
         }
-        if (ImGui.button("Add row##" + module.id() + "." + setting.id(), 86.0f, 24.0f)) {
+        if (ImGui.button("Add row##" + ownerId + "." + setting.id(), 86.0f, 24.0f)) {
             setting.addEntry("minecraft:stone");
-            saveSetting(module, setting);
+            save.run();
         }
     }
 
@@ -184,9 +244,24 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, active);
     }
 
+    private static void pushTaskButtonColor(BotTask task) {
+        int base = task.isEnabled() ? 0xFF1B6F7F : 0xFF5C6570;
+        int hover = task.isEnabled() ? 0xFF23889D : 0xFF747F8C;
+        int active = task.isEnabled() ? 0xFF28A0B5 : 0xFF8A96A5;
+        ImGui.pushStyleColor(ImGuiCol.Button, base);
+        ImGui.pushStyleColor(ImGuiCol.ButtonHovered, hover);
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, active);
+    }
+
     private void saveSetting(PathfinderModule module, Setting<?> setting) {
         EbslApi.modules().saveSettings();
         EbslApi.modules().notifySettingChanged(module, setting);
         EbslApi.analytics().record("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
+    }
+
+    private void saveSetting(BotTask task, Setting<?> setting) {
+        EbslApi.tasks().saveSettings();
+        EbslApi.tasks().notifySettingChanged(task, setting);
+        EbslApi.analytics().record("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
     }
 }

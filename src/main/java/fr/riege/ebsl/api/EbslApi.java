@@ -8,12 +8,14 @@ import fr.riege.ebsl.api.gui.GuiApi;
 import fr.riege.ebsl.api.modules.ModulesApi;
 import fr.riege.ebsl.api.navigation.NavigationApi;
 import fr.riege.ebsl.api.settings.ModSettingsApi;
+import fr.riege.ebsl.api.tasks.TasksApi;
 
 @EbslApiSurface(EbslApiSurface.Domain.CORE)
 public final class EbslApi {
     private static final NavigationApi NAVIGATION = new NavigationApi();
     private static final ModSettingsApi SETTINGS = new ModSettingsApi();
     private static final ModulesApi MODULES = new ModulesApi();
+    private static final TasksApi TASKS = new TasksApi();
     private static final EventsApi EVENTS = new EventsApi();
     private static final AnalyticsApi ANALYTICS = new AnalyticsApi();
     private static final GuiApi GUI = new GuiApi();
@@ -34,6 +36,11 @@ public final class EbslApi {
     @EbslApiOperation("Access bot/pathfinder modules.")
     public static ModulesApi modules() {
         return MODULES;
+    }
+
+    @EbslApiOperation("Access bot tasks.")
+    public static TasksApi tasks() {
+        return TASKS;
     }
 
     @EbslApiOperation("Access the client event bus.")

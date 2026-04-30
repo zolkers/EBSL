@@ -2,7 +2,7 @@ package fr.riege.ebsl.analytics;
 
 import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.api.navigation.NavigationSnapshot;
-import fr.riege.ebsl.botting.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModule;
 
 public record AnalyticsSnapshot(
     String navigationState,

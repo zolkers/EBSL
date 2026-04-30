@@ -15,6 +15,7 @@ public @interface EbslApiSurface {
         NAVIGATION,
         SETTINGS,
         MODULES,
+        TASKS,
         EVENTS,
         ANALYTICS,
         UI

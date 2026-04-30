@@ -6,6 +6,9 @@ public record NavigationRequest(
     Goal goal,
     NavigationModeType mode,
     boolean allowReplan,
+    boolean allowParkour,
+    boolean allowRotation,
+    boolean allowSneak,
     double preciseGoalTolerance,
     Runnable onFinished,
     Runnable onFailed
@@ -30,6 +33,9 @@ public record NavigationRequest(
         private final Goal goal;
         private NavigationModeType mode = NavigationModeType.WALK;
         private boolean allowReplan = true;
+        private boolean allowParkour = true;
+        private boolean allowRotation = true;
+        private boolean allowSneak = true;
         private double preciseGoalTolerance = 0.5;
         private Runnable onFinished;
         private Runnable onFailed;
@@ -45,6 +51,21 @@ public record NavigationRequest(
 
         public Builder allowReplan(boolean allowReplan) {
             this.allowReplan = allowReplan;
+            return this;
+        }
+
+        public Builder allowParkour(boolean allowParkour) {
+            this.allowParkour = allowParkour;
+            return this;
+        }
+
+        public Builder allowRotation(boolean allowRotation) {
+            this.allowRotation = allowRotation;
+            return this;
+        }
+
+        public Builder allowSneak(boolean allowSneak) {
+            this.allowSneak = allowSneak;
             return this;
         }
 
@@ -68,6 +89,9 @@ public record NavigationRequest(
                 goal,
                 mode,
                 allowReplan,
+                allowParkour,
+                allowRotation,
+                allowSneak,
                 preciseGoalTolerance,
                 onFinished,
                 onFailed

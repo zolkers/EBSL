@@ -2,10 +2,10 @@ package fr.riege.ebsl.api.navigation;
 
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
-import fr.riege.ebsl.botting.module.BlockBlacklist;
-import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
-import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
+import fr.riege.ebsl.general.module.BlockBlacklist;
+import fr.riege.ebsl.general.module.PathfinderBlockBlacklistModule;
+import fr.riege.ebsl.general.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.storage.BotModuleSettingsStore;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 

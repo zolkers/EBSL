@@ -1,4 +1,4 @@
-package fr.riege.ebsl.botting.module;
+package fr.riege.ebsl.general.module;
 
 import fr.riege.ebsl.event.EventBus;
 import fr.riege.ebsl.event.Subscription;

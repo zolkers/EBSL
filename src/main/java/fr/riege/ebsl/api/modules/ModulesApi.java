@@ -2,9 +2,9 @@ package fr.riege.ebsl.api.modules;
 
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
-import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.botting.registry.BotModuleRegistry;
-import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.settings.Setting;
 
 import java.util.Collection;

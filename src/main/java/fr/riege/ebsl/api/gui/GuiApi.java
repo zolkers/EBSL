@@ -5,7 +5,8 @@ import fr.riege.ebsl.analytics.AnalyticsSnapshot;
 import fr.riege.ebsl.api.EbslApi;
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
-import fr.riege.ebsl.botting.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.task.BotTask;
 import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.goal.GoalUiDefinition;
@@ -22,6 +23,7 @@ public final class GuiApi {
         return new GuiSnapshot(
             EbslApi.navigation().snapshot(),
             modules(),
+            tasks(),
             pathfinderSettingsGroups(),
             goalDefinitions(),
             latestAnalyticsEvents(eventCount)
@@ -36,6 +38,16 @@ public final class GuiApi {
     @EbslApiOperation("Find the GUI-selected module by id.")
     public PathfinderModule module(String id) {
         return EbslApi.modules().get(id);
+    }
+
+    @EbslApiOperation("Read all bot tasks for GUI rendering.")
+    public List<BotTask> tasks() {
+        return List.copyOf(EbslApi.tasks().all());
+    }
+
+    @EbslApiOperation("Find the GUI-selected task by id.")
+    public BotTask task(String id) {
+        return EbslApi.tasks().get(id);
     }
 
     @EbslApiOperation("Read settings grouped for the pathfinder settings screen.")

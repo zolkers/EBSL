@@ -19,27 +19,45 @@ final class PathPipeline {
     }
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async) {
+        return createWalkPathfinderConfiguration(checker, async, true);
+    }
+
+    static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,
+                                                                     boolean allowParkour) {
         return createWalkPathfinderConfiguration(
             checker,
             async,
             PathfinderSettings.instance().defaultWalkMaxIterations.value(),
-            PathfinderSettings.instance().defaultWalkMaxLength.value());
+            PathfinderSettings.instance().defaultWalkMaxLength.value(),
+            allowParkour);
     }
 
     static PathfinderConfiguration createInstantWalkPathfinderConfiguration(WalkabilityChecker checker) {
+        return createInstantWalkPathfinderConfiguration(checker, true);
+    }
+
+    static PathfinderConfiguration createInstantWalkPathfinderConfiguration(WalkabilityChecker checker,
+                                                                           boolean allowParkour) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
             PathfinderSettings.instance().instantWalkMaxIterations.value(),
-            PathfinderSettings.instance().instantWalkMaxLength.value());
+            PathfinderSettings.instance().instantWalkMaxLength.value(),
+            allowParkour);
     }
 
     static PathfinderConfiguration createRepairWalkPathfinderConfiguration(WalkabilityChecker checker) {
+        return createRepairWalkPathfinderConfiguration(checker, true);
+    }
+
+    static PathfinderConfiguration createRepairWalkPathfinderConfiguration(WalkabilityChecker checker,
+                                                                          boolean allowParkour) {
         return createWalkPathfinderConfiguration(
             checker,
             true,
             PathfinderSettings.instance().repairWalkMaxIterations.value(),
-            PathfinderSettings.instance().repairWalkMaxLength.value());
+            PathfinderSettings.instance().repairWalkMaxLength.value(),
+            allowParkour);
     }
 
     static PathfinderConfiguration createQueuedLongRangeSegmentConfiguration(WalkabilityChecker checker) {
@@ -52,12 +70,18 @@ final class PathPipeline {
 
     static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,
                                                                      int maxIterations, int maxLength) {
+        return createWalkPathfinderConfiguration(checker, async, maxIterations, maxLength, true);
+    }
+
+    static PathfinderConfiguration createWalkPathfinderConfiguration(WalkabilityChecker checker, boolean async,
+                                                                     int maxIterations, int maxLength,
+                                                                     boolean allowParkour) {
         return PathfinderConfiguration.builder()
             .provider(new MinecraftNavigationProvider(checker))
             .processors(List.of(new MinecraftPathProcessor(checker,
                 PathfinderSettings.instance().maxJumpHeight.value())))
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
-                PathfinderSettings.instance().maxJumpHeight.value()))
+                PathfinderSettings.instance().maxJumpHeight.value(), allowParkour))
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .async(async)

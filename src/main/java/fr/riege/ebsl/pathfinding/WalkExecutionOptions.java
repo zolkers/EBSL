@@ -15,6 +15,8 @@ final class WalkExecutionOptions {
     private boolean sneakLatched;
     private boolean allowJumps;
     private boolean allowRotation;
+    private boolean allowParkour;
+    private boolean allowSneak;
     private boolean exactGoalCentering;
 
     WalkExecutionOptions() {
@@ -32,22 +34,35 @@ final class WalkExecutionOptions {
         sneakLatched = false;
         allowJumps = true;
         allowRotation = true;
+        allowParkour = true;
+        allowSneak = true;
         exactGoalCentering = false;
     }
 
     void configure(Runnable onFinished, Runnable onFailed, boolean allowReplan, double preciseGoalTolerance) {
+        configure(onFinished, onFailed, allowReplan, true, true, true, preciseGoalTolerance);
+    }
+
+    void configure(Runnable onFinished, Runnable onFailed, boolean allowReplan, boolean allowParkour,
+                   boolean allowRotation, boolean allowSneak, double preciseGoalTolerance) {
         this.onFinished = onFinished;
         this.onFailed = onFailed;
         this.allowReplan = allowReplan;
+        this.allowParkour = allowParkour;
+        this.allowRotation = allowRotation;
+        this.allowSneak = allowSneak;
         this.preciseGoalTolerance = preciseGoalTolerance;
         exactGoalCentering = preciseGoalTolerance != DEFAULT_PRECISE_GOAL_TOLERANCE;
-        stickySneakDistance = exactGoalCentering ? 5.0 : -1.0;
+        stickySneakDistance = exactGoalCentering && allowSneak ? 5.0 : -1.0;
+        if (!allowSneak) {
+            sneakLatched = false;
+        }
     }
 
     ExecutionOptions snapshot() {
         return new ExecutionOptions(
-            allowReplan, allowJumps, allowRotation, exactGoalCentering,
-            stickySneakDistance, sneakLatched, goalCenterX, goalCenterZ, preciseGoalTolerance);
+            allowReplan, allowJumps, allowRotation, allowSneak, exactGoalCentering,
+            stickySneakDistance, allowSneak && sneakLatched, goalCenterX, goalCenterZ, preciseGoalTolerance);
     }
 
     boolean isPreciseExecution() {
@@ -77,6 +92,22 @@ final class WalkExecutionOptions {
 
     void setAllowReplan(boolean allowReplan) {
         this.allowReplan = allowReplan;
+    }
+
+    boolean allowParkour() {
+        return allowParkour;
+    }
+
+    void setAllowParkour(boolean allowParkour) {
+        this.allowParkour = allowParkour;
+    }
+
+    void setAllowSneak(boolean allowSneak) {
+        this.allowSneak = allowSneak;
+        if (!allowSneak) {
+            sneakLatched = false;
+            stickySneakDistance = -1.0;
+        }
     }
 
     void setExactGoalCentering(boolean exactGoalCentering) {

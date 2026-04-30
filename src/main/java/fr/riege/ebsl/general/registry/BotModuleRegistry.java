@@ -1,11 +1,11 @@
-package fr.riege.ebsl.botting.registry;
+package fr.riege.ebsl.general.registry;
 
-import fr.riege.ebsl.botting.module.BlockTargetModule;
-import fr.riege.ebsl.botting.module.KeyDisplayModule;
-import fr.riege.ebsl.botting.module.MoveTypeOverlayModule;
-import fr.riege.ebsl.botting.module.PathfinderBlockBlacklistModule;
-import fr.riege.ebsl.botting.module.PathfinderModule;
-import fr.riege.ebsl.botting.storage.BotModuleSettingsStore;
+import fr.riege.ebsl.general.module.BlockTargetModule;
+import fr.riege.ebsl.general.module.KeyDisplayModule;
+import fr.riege.ebsl.general.module.MoveTypeOverlayModule;
+import fr.riege.ebsl.general.module.PathfinderBlockBlacklistModule;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.event.EventBus;
 import fr.riege.ebsl.registry.MapRegistry;
 import fr.riege.ebsl.settings.Setting;

@@ -105,6 +105,9 @@ public final class GoalRequestHandlers {
         return NavigationRequest.builder(goal)
             .mode(request.mode())
             .allowReplan(request.allowReplan())
+            .allowParkour(request.allowParkour())
+            .allowRotation(request.allowRotation())
+            .allowSneak(request.allowSneak())
             .preciseGoalTolerance(request.preciseGoalTolerance())
             .onFinished(request.onFinished())
             .onFailed(request.onFailed());
