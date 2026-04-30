@@ -376,9 +376,9 @@ public final class PathExecutor {
         List<Node> updatedPath = pathTracker.getPath();
         rotationController.rebuild(updatedPath);
         movementController.setPath(updatedPath);
-        PathVisualizer.setPath(updatedPath, 0);
+        PathVisualizer.setPath(updatedPath);
         PathVisualizer.setCameraPath(rotationController.getCameraPath());
-        PathVisualizer.updateExecution(pathTracker.getPursuitSegment(), rotationController.getCamTargetIdx());
+        PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
         return PathCheckHandling.continueWith(updatedPath, pathTracker.analyzePathProximity(playerPos));
     }
 

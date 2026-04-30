@@ -20,9 +20,7 @@ public final class PathVisualizer {
     private static final int MAX_CAMERA_RENDER = 480;
     private static final double RENDER_Y_OFFSET = 0.9;
 
-    private static final float NODE_BOX_SIZE = 0.25f;
-    private static final float LINE_WIDTH = 1.5f;
-    private static final float PATH_LINE_WIDTH = 2.0f;
+    private static final float NODE_BOX_SIZE = 0.25f;private static final float PATH_LINE_WIDTH = 2.0f;
     private static final float CAMERA_NODE_SIZE = 0.10f;
     private static final float CAMERA_LINE_WIDTH = 1.25f;
 
@@ -38,7 +36,6 @@ public final class PathVisualizer {
     private static final EbslMeshRenderer MESH_RENDERER = new EbslMeshRenderer();
 
     private static volatile List<Node> currentPath = Collections.emptyList();
-    private static volatile int currentWaypointIndex = 0;
     private static volatile List<Vec3> cameraPath = Collections.emptyList();
     private static volatile int currentCameraRailIndex = -1;
     private static final Set<Long> exploredNodes = Collections.synchronizedSet(new LinkedHashSet<>());
@@ -50,10 +47,8 @@ public final class PathVisualizer {
         MESH_RENDERER.endFrame();
     }
 
-    public static void setPath(List<Node> path, int wpIndex) {
-        List<Node> snapshot = path != null ? List.copyOf(path) : Collections.emptyList();
-        currentPath = snapshot;
-        currentWaypointIndex = clampIndex(wpIndex, snapshot.size());
+    public static void setPath(List<Node> path) {
+        currentPath = path != null ? List.copyOf(path) : Collections.emptyList();
     }
 
     public static void setCameraPath(List<Vec3> path) {
@@ -70,21 +65,15 @@ public final class PathVisualizer {
         }
     }
 
-    public static void updateExecution(int wpIndex, int camTargetIdx) {
-        currentWaypointIndex = clampIndex(wpIndex, currentPath.size());
+    public static void updateExecution(int camTargetIdx) {
         if (camTargetIdx >= 0) {
             currentCameraRailIndex = clampIndex(camTargetIdx, cameraPath.size());
         }
     }
 
-    public static void updateCameraExecution(int camRailIdx) {
-        currentCameraRailIndex = clampIndex(camRailIdx, cameraPath.size());
-    }
-
     public static void clear() {
         currentPath = Collections.emptyList();
         cameraPath = Collections.emptyList();
-        currentWaypointIndex = 0;
         currentCameraRailIndex = -1;
         exploredNodes.clear();
     }

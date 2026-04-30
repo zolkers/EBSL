@@ -141,7 +141,7 @@ final class WalkNavigationService {
         PathPosition targetPos = new PathPosition(target.x, target.y, target.z);
         List<Node> directPath = PathPipeline.buildLinearWalkPath(start, targetPos);
 
-        PathVisualizer.setPath(directPath, 0);
+        PathVisualizer.setPath(directPath);
         runtime.executor.start(new ExecutionPlan(
             directPath, tx, ty, tz,
             runtime.walkOptions.isPreciseExecution(),
@@ -204,7 +204,7 @@ final class WalkNavigationService {
 
     void refreshWalkVisualizer() {
         PathVisualizer.setCameraPath(runtime.executor.getCameraPath());
-        PathVisualizer.updateExecution(runtime.executor.getWaypointIndex(), runtime.executor.getCamTargetIdx());
+        PathVisualizer.updateExecution(runtime.executor.getCamTargetIdx());
     }
 
     void startPreparedWalkSegment(LongRangePathSession.PendingSegment pendingSegment) {
@@ -236,7 +236,7 @@ final class WalkNavigationService {
             runtime.walkOptions.snapshot(),
             !pendingSegment.needsContinuation()));
         }
-        PathVisualizer.setPath(runtime.executor.getPathSnapshot(), runtime.executor.getWaypointIndex());
+        PathVisualizer.setPath(runtime.executor.getPathSnapshot());
         refreshWalkVisualizer();
     }
 
@@ -254,7 +254,7 @@ final class WalkNavigationService {
             return;
         }
 
-        PathVisualizer.setPath(smoothed, 0);
+        PathVisualizer.setPath(smoothed);
         if (mc.player != null) {
             fr.riege.ebsl.util.ClientUtils.sendMessage(mc,
                 "§aFly path: " + smoothed.size() + " waypoints (direct LOS). Flying...", false);
@@ -394,7 +394,7 @@ final class WalkNavigationService {
             opts,
             true));
         runtime.executor.rememberRecentRepair(request.reason());
-        PathVisualizer.setPath(mergedPath, 0);
+        PathVisualizer.setPath(mergedPath);
         refreshWalkVisualizer();
 
         fr.riege.ebsl.util.ClientUtils.sendDebugMessage(mc,
@@ -436,7 +436,7 @@ final class WalkNavigationService {
             return;
         }
         logChosenPath("walk", processedPath.navigationPath());
-        PathVisualizer.setPath(processedPath.navigationPath(), 0);
+        PathVisualizer.setPath(processedPath.navigationPath());
         PathVisualizer.setCameraPath(Collections.emptyList());
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, x, y, z);
         if (partial && !runtime.longRangeSession.isActive()) {
@@ -575,7 +575,7 @@ final class WalkNavigationService {
             pathLen = processedPath.navigationPath().size();
             pathBlocks = processedPath.pathLength();
             logChosenPath("test", processedPath.navigationPath());
-            PathVisualizer.setPath(processedPath.navigationPath(), 0);
+            PathVisualizer.setPath(processedPath.navigationPath());
             PathVisualizer.setCameraPath(Collections.emptyList());
         } else {
             typeStr = "§cNone";

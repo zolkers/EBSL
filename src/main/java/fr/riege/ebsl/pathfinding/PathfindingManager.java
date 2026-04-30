@@ -62,7 +62,7 @@ public final class PathfindingManager {
         runtime.executor.tick(mc);
         boolean longRangeKeepsNavigationAlive = longRangeController.handleProgress(mc, modeBeforeTick);
         if (PathVisualizer.isEnabled() && runtime.state.activeMode() == modeBeforeTick) {
-            PathVisualizer.updateExecution(runtime.executor.getWaypointIndex(), runtime.executor.getCamTargetIdx());
+            PathVisualizer.updateExecution(runtime.executor.getCamTargetIdx());
         }
         if (runtime.state.activeMode() == modeBeforeTick
             && walkService.isWalkExecutionDone()
