@@ -39,7 +39,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
+public final class  ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private static final DateTimeFormatter PACKET_TIME_FORMAT =
         DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
     private final ImString packetFilter = new ImString(64);
@@ -49,8 +49,8 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private final List<CommandSuggestion> suggestions = new ArrayList<>();
     private int suggestionIdx = 0;
     private String lastSuggestInput = null;
-    private boolean shouldApplyCompletion = false;
     private boolean scrollSuggestToSelected = false;
+    private boolean terminalFocused = false;
 
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
@@ -61,14 +61,18 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             UiRect viewport = viewportRect(layout);
             drawTabs(state, tabs);
             if (state.centerTab() == CenterTab.GAME) {
+                terminalFocused = false;
                 drawGameViewportShell(viewport);
             } else if (state.centerTab() == CenterTab.PATHFINDER_SETTINGS) {
+                terminalFocused = false;
                 renderPathfinderSettings(viewport);
             } else if (state.centerTab() == CenterTab.TERMINAL) {
                 renderTerminal(viewport);
             } else if (state.centerTab() == CenterTab.MC_LOG) {
+                terminalFocused = false;
                 renderMcLog(viewport);
             } else {
+                terminalFocused = false;
                 renderPacketView(viewport);
             }
             drawViewportFrame(viewport);
@@ -251,7 +255,12 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         final float boxRight = viewport.right() - 8.0f;
         final float boxW = boxRight - boxX;
 
-        int suggestCount = suggestions.size();
+        // populate suggestions on first render (field not yet focused, CallbackAlways hasn't fired)
+        if (lastSuggestInput == null) refreshSuggestions("");
+
+        // snapshot suggestions once per frame — prevents mid-loop mutation from fillCompletion/callback
+        List<CommandSuggestion> snapSuggestions = List.copyOf(suggestions);
+        int suggestCount = snapSuggestions.size();
         float suggestBoxH = suggestCount > 0
             ? Math.min(suggestCount, maxSuggestVisible) * suggestRowH + 8.0f
             : 0.0f;
@@ -294,7 +303,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 float contentX = ImGui.getCursorScreenPosX();
                 float rowW     = ImGui.getContentRegionAvailX();
                 for (int i = 0; i < suggestCount; i++) {
-                    CommandSuggestion sug = suggestions.get(i);
+                    CommandSuggestion sug = snapSuggestions.get(i);
                     boolean selected = i == suggestionIdx;
                     float rowY = ImGui.getCursorScreenPosY();
 
@@ -304,13 +313,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                     if (selected) {
                         ImGui.getWindowDrawList().addRectFilled(
                             contentX - 2, rowY, contentX + rowW + 2, rowY + suggestRowH, 0xFF1E3A55);
-                    }
-                    if (ImGui.invisibleButton("##sug" + i, rowW, suggestRowH)) {
-                        suggestionIdx = i;
-                        fillCompletion(sug.fill());
-                    }
-                    if (ImGui.isItemHovered()) {
-                        suggestionIdx = i;
                     }
                     ImGui.setCursorScreenPos(contentX + 6.0f, rowY + 2.0f);
                     if (selected) {
@@ -333,15 +335,18 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         // --- input bar ---
         drawList.addRectFilled(boxX, inputY, boxRight, inputY + inputH, 0xFF131921);
 
-        final float clearW   = 44.0f;
-        final float clearPad = 6.0f;
         final float promptW  = 18.0f;
 
         ImGui.setCursorScreenPos(boxX + 4.0f, inputY + 6.0f);
         ImGui.textColored(0.45f, 0.75f, 0.45f, 1.0f, ">");
 
+        // focus the input once per terminal session (on first frame after tab switch)
+        if (!terminalFocused) {
+            ImGui.setKeyboardFocusHere(0);
+            terminalFocused = true;
+        }
         ImGui.setCursorScreenPos(boxX + promptW, inputY + 5.0f);
-        ImGui.setNextItemWidth(boxW - promptW - clearW - clearPad * 2);
+        ImGui.setNextItemWidth(boxW - promptW);
         ImGui.pushStyleColor(imgui.flag.ImGuiCol.FrameBg, 0x00000000);
         boolean submitted = ImGui.inputText("##terminal-input", terminalInput,
             ImGuiInputTextFlags.EnterReturnsTrue
@@ -358,7 +363,15 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                             refreshSuggestions(buf);
                         }
                     } else if (flag == ImGuiInputTextFlags.CallbackCompletion && !suggestions.isEmpty()) {
-                        shouldApplyCompletion = true;
+                        CommandSuggestion top = suggestions.get(Math.min(suggestionIdx, suggestions.size() - 1));
+                        String current = data.getBuf().substring(0, data.getBufTextLen());
+                        int spaceIdx = current.lastIndexOf(' ');
+                        String newText = spaceIdx < 0
+                            ? top.fill() + " "
+                            : current.substring(0, spaceIdx + 1) + top.fill() + " ";
+                        data.deleteChars(0, data.getBufTextLen());
+                        data.insertChars(0, newText);
+                        refreshSuggestions(newText);
                     } else if (flag == ImGuiInputTextFlags.CallbackHistory) {
                         if (data.getEventKey() == ImGuiKey.UpArrow) {
                             suggestionIdx = Math.max(0, suggestionIdx - 1);
@@ -372,17 +385,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             });
         ImGui.popStyleColor();
 
-        ImGui.sameLine(0, clearPad);
-        if (ImGui.button("Clear##terminal", clearW, 20.0f)) {
-            TerminalLog.clear();
-            suggestions.clear();
-            lastSuggestInput = null;
-        }
-
-        if (shouldApplyCompletion && !suggestions.isEmpty()) {
-            fillCompletion(suggestions.get(suggestionIdx).fill());
-            shouldApplyCompletion = false;
-        }
         if (submitted && !terminalInput.get().isBlank()) {
             CommandRegistry.dispatch(terminalInput.get(), net.minecraft.client.Minecraft.getInstance());
             terminalInput.set("");
@@ -399,14 +401,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         suggestions.addAll(CommandRegistry.suggest(input));
         if (suggestionIdx >= suggestions.size()) suggestionIdx = 0;
         scrollSuggestToSelected = true;
-    }
-
-    private void fillCompletion(String suggestion) {
-        String current = terminalInput.get();
-        int spaceIdx = current.lastIndexOf(' ');
-        String next = spaceIdx < 0 ? suggestion + " " : current.substring(0, spaceIdx + 1) + suggestion + " ";
-        terminalInput.set(next);
-        refreshSuggestions(next);
     }
 
     private void renderMcLog(UiRect viewport) {

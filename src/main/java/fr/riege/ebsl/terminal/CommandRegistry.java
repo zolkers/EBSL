@@ -180,7 +180,8 @@ public final class CommandRegistry {
     private static String argsHint(Entry entry) {
         String usage = entry.meta().usage();
         String name = entry.meta().name();
-        return usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
+        String args = usage.startsWith(name) ? usage.substring(name.length()).trim() : usage;
+        return args.isEmpty() ? entry.meta().description() : args;
     }
 
     private static int fuzzyScore(String target, String query) {
