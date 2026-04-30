@@ -7,6 +7,13 @@ import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
 import fr.riege.ebsl.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.packet.PacketCaptureEvent;
 import fr.riege.ebsl.packet.PacketCaptureLog;
+import fr.riege.ebsl.terminal.CommandRegistry;
+import fr.riege.ebsl.terminal.TerminalLog;
+import fr.riege.ebsl.terminal.TerminalLog.LogEntry;
+import imgui.ImGuiInputTextCallbackData;
+import imgui.callback.ImGuiInputTextCallback;
+import imgui.flag.ImGuiInputTextFlags;
+import imgui.flag.ImGuiKey;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.DoubleSetting;
 import fr.riege.ebsl.settings.IntSetting;
@@ -26,12 +33,20 @@ import imgui.type.ImString;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private static final DateTimeFormatter PACKET_TIME_FORMAT =
         DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
     private final ImString packetFilter = new ImString(64);
+    private final ImString terminalInput = new ImString(256);
+    private boolean terminalScrollToBottom = false;
+    private final List<String> suggestions = new ArrayList<>();
+    private int suggestionIdx = 0;
+    private String lastSuggestInput = null;
+    private boolean shouldApplyCompletion = false;
+    private boolean scrollSuggestToSelected = false;
 
     @Override
     public void render(EbslUiState state, ViewportLayout layout) {
@@ -45,6 +60,8 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 drawGameViewportShell(viewport);
             } else if (state.centerTab() == CenterTab.PATHFINDER_SETTINGS) {
                 renderPathfinderSettings(viewport);
+            } else if (state.centerTab() == CenterTab.TERMINAL) {
+                renderTerminal(viewport);
             } else {
                 renderPacketView(viewport);
             }
@@ -73,6 +90,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 case GAME -> 72.0f;
                 case PACKET -> 86.0f;
                 case PATHFINDER_SETTINGS -> 148.0f;
+                case TERMINAL -> 86.0f;
             };
             if (ImGui.button(tab.label(), width, 22.0f)) {
                 state.setCenterTab(tab);
@@ -213,6 +231,172 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             + " " + event.packetId()
             + " [" + event.packetClass() + "]"
             + flags;
+    }
+
+    private void renderTerminal(UiRect viewport) {
+        ImDrawList drawList = ImGui.getWindowDrawList();
+        drawList.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), 0xEE0D1117);
+
+        final float inputH = 28.0f;
+        final float suggestRowH = 20.0f;
+        final int maxSuggestVisible = 6;
+        final float boxX = viewport.x() + 8.0f;
+        final float boxRight = viewport.right() - 8.0f;
+        final float boxW = boxRight - boxX;
+
+        // refresh suggestions when input changes
+        String currentInput = terminalInput.get();
+        if (!currentInput.equals(lastSuggestInput)) {
+            lastSuggestInput = currentInput;
+            suggestions.clear();
+            suggestions.addAll(CommandRegistry.suggest(currentInput));
+            if (suggestionIdx >= suggestions.size()) suggestionIdx = 0;
+            scrollSuggestToSelected = true;
+        }
+
+        int suggestCount = suggestions.size();
+        float suggestBoxH = suggestCount > 0
+            ? Math.min(suggestCount, maxSuggestVisible) * suggestRowH + 8.0f
+            : 0.0f;
+        float logH = viewport.height() - inputH - 16.0f
+            - (suggestCount > 0 ? suggestBoxH + 4.0f : 0.0f);
+
+        // --- log ---
+        ImGui.setCursorScreenPos(boxX, viewport.y() + 8.0f);
+        if (ImGui.beginChild("##terminal-log", boxW, logH, false)) {
+            if (TerminalLog.consumeDirty()) terminalScrollToBottom = true;
+            for (LogEntry entry : TerminalLog.snapshot()) {
+                switch (entry.type()) {
+                    case INPUT  -> ImGui.textColored(0.45f, 0.55f, 0.65f, 1.0f, entry.text());
+                    case OUTPUT -> ImGui.textColored(0.87f, 0.93f, 0.97f, 1.0f, entry.text());
+                    case ERROR  -> ImGui.textColored(0.90f, 0.35f, 0.30f, 1.0f, entry.text());
+                }
+            }
+            if (terminalScrollToBottom) {
+                ImGui.setScrollHereY(1.0f);
+                terminalScrollToBottom = false;
+            }
+            ImGui.endChild();
+        }
+
+        float suggestY = viewport.y() + 8.0f + logH + 4.0f;
+        float inputY  = suggestY + suggestBoxH + (suggestCount > 0 ? 4.0f : 0.0f);
+
+        // --- suggestion list ---
+        if (suggestCount > 0) {
+            drawList.addRectFilled(boxX, suggestY, boxRight, suggestY + suggestBoxH, 0xF01A2230);
+            drawList.addRect(boxX, suggestY, boxRight, suggestY + suggestBoxH, 0xFF2D4A6A, 0, 0, 1.0f);
+
+            ImGui.setCursorScreenPos(boxX + 1, suggestY + 4.0f);
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.ChildBg,          0x00000000);
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.ScrollbarBg,      0x00000000);
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.ScrollbarGrab,    0xFF334455);
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.ScrollbarGrabHovered, 0xFF4466AA);
+            ImGui.pushStyleColor(imgui.flag.ImGuiCol.ScrollbarGrabActive,  0xFF5588CC);
+            if (ImGui.beginChild("##terminal-suggest", boxW - 2, suggestBoxH - 8.0f)) {
+                float contentX = ImGui.getCursorScreenPosX();
+                float rowW     = ImGui.getContentRegionAvailX();
+                for (int i = 0; i < suggestCount; i++) {
+                    String name  = suggestions.get(i);
+                    String usage = CommandRegistry.usageFor(name);
+                    boolean selected = i == suggestionIdx;
+                    float rowY = ImGui.getCursorScreenPosY();
+
+                    if (selected && scrollSuggestToSelected) {
+                        ImGui.setScrollHereY(0.5f);
+                    }
+                    if (selected) {
+                        ImGui.getWindowDrawList().addRectFilled(
+                            contentX - 2, rowY, contentX + rowW + 2, rowY + suggestRowH, 0xFF1E3A55);
+                    }
+                    // invisible button for click + hover detection
+                    if (ImGui.invisibleButton("##sug" + i, rowW, suggestRowH)) {
+                        suggestionIdx = i;
+                        fillCompletion(name);
+                    }
+                    if (ImGui.isItemHovered()) {
+                        suggestionIdx = i;
+                    }
+                    // draw text over the button
+                    ImGui.setCursorScreenPos(contentX + 6.0f, rowY + 2.0f);
+                    if (selected) {
+                        ImGui.textColored(1.0f, 0.85f, 0.40f, 1.0f, name);
+                    } else {
+                        ImGui.textColored(0.70f, 0.82f, 0.95f, 1.0f, name);
+                    }
+                    if (!usage.isEmpty()) {
+                        ImGui.sameLine();
+                        ImGui.textColored(0.38f, 0.45f, 0.54f, 1.0f, usage);
+                    }
+                    // advance cursor to next row
+                    ImGui.setCursorScreenPos(contentX, rowY + suggestRowH);
+                }
+                scrollSuggestToSelected = false;
+                ImGui.endChild();
+            }
+            ImGui.popStyleColor(5);
+        }
+
+        // --- input bar ---
+        drawList.addRectFilled(boxX, inputY, boxRight, inputY + inputH, 0xFF131921);
+
+        final float clearW   = 44.0f;
+        final float clearPad = 6.0f;
+        final float promptW  = 18.0f;
+
+        ImGui.setCursorScreenPos(boxX + 4.0f, inputY + 6.0f);
+        ImGui.textColored(0.45f, 0.75f, 0.45f, 1.0f, ">");
+
+        ImGui.setCursorScreenPos(boxX + promptW, inputY + 5.0f);
+        ImGui.setNextItemWidth(boxW - promptW - clearW - clearPad * 2);
+        ImGui.pushStyleColor(imgui.flag.ImGuiCol.FrameBg, 0x00000000);
+        boolean submitted = ImGui.inputText("##terminal-input", terminalInput,
+            ImGuiInputTextFlags.EnterReturnsTrue
+                | ImGuiInputTextFlags.CallbackCompletion
+                | ImGuiInputTextFlags.CallbackHistory,
+            new ImGuiInputTextCallback() {
+                @Override
+                public void accept(ImGuiInputTextCallbackData data) {
+                    int flag = data.getEventFlag();
+                    if (flag == ImGuiInputTextFlags.CallbackCompletion && !suggestions.isEmpty()) {
+                        shouldApplyCompletion = true;
+                    } else if (flag == ImGuiInputTextFlags.CallbackHistory) {
+                        if (data.getEventKey() == ImGuiKey.UpArrow) {
+                            suggestionIdx = Math.max(0, suggestionIdx - 1);
+                            scrollSuggestToSelected = true;
+                        } else if (data.getEventKey() == ImGuiKey.DownArrow) {
+                            suggestionIdx = Math.min(suggestions.size() - 1, suggestionIdx + 1);
+                            scrollSuggestToSelected = true;
+                        }
+                    }
+                }
+            });
+        ImGui.popStyleColor();
+
+        ImGui.setCursorScreenPos(boxRight - clearW - clearPad, inputY + 4.0f);
+        if (ImGui.button("Clear", clearW, 20.0f)) {
+            TerminalLog.clear();
+        }
+
+        if (shouldApplyCompletion && !suggestions.isEmpty()) {
+            fillCompletion(suggestions.get(suggestionIdx));
+            shouldApplyCompletion = false;
+        }
+        if (submitted && !terminalInput.get().isBlank()) {
+            CommandRegistry.dispatch(terminalInput.get(), net.minecraft.client.Minecraft.getInstance());
+            terminalInput.set("");
+            lastSuggestInput = null;
+            suggestions.clear();
+            terminalScrollToBottom = true;
+            ImGui.setKeyboardFocusHere(-1);
+        }
+    }
+
+    private void fillCompletion(String suggestion) {
+        String current = terminalInput.get();
+        int spaceIdx = current.lastIndexOf(' ');
+        terminalInput.set(spaceIdx < 0 ? suggestion + " " : current.substring(0, spaceIdx + 1) + suggestion + " ");
+        lastSuggestInput = null;
     }
 
     private void drawGameViewportShell(UiRect viewport) {

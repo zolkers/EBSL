@@ -3,7 +3,8 @@ package fr.riege.ebsl.ui.state;
 public enum CenterTab {
     GAME("Game"),
     PATHFINDER_SETTINGS("Pathfinder Settings"),
-    PACKET("Packet");
+    PACKET("Packet"),
+    TERMINAL("Terminal");
 
     private final String label;
 

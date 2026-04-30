@@ -11,6 +11,7 @@ import fr.riege.ebsl.event.events.render.RenderWorldEvent;
 import fr.riege.ebsl.command.GoalCommands;
 import fr.riege.ebsl.command.GoalRegistry;
 import fr.riege.ebsl.command.PathCommand;
+import fr.riege.ebsl.terminal.TerminalCommands;
 import fr.riege.ebsl.general.registry.BotModuleRegistry;
 import fr.riege.ebsl.general.registry.BotTaskRegistry;
 import fr.riege.ebsl.input.EbslKeybinds;
@@ -65,6 +66,7 @@ public final class EbslMod implements ClientModInitializer {
         });
         GoalCommands.bootstrap();
         GoalRequestHandlers.bootstrap();
+        TerminalCommands.bootstrap();
         LOGGER.info("[{}] Event bridge ready, pathfinding commands registered ({} goals).", MOD_ID, GoalRegistry.commands().size());
     }
 
