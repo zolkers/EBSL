@@ -9,6 +9,12 @@ public record NavigationRequest(
     boolean allowParkour,
     boolean allowRotation,
     boolean allowSneak,
+    boolean allowJump,
+    boolean allowFall,
+    boolean allowClimb,
+    boolean allowSwim,
+    boolean allowStepUp,
+    boolean allowWalkDiagonal,
     double preciseGoalTolerance,
     Runnable onFinished,
     Runnable onFailed
@@ -36,6 +42,12 @@ public record NavigationRequest(
         private boolean allowParkour = true;
         private boolean allowRotation = true;
         private boolean allowSneak = true;
+        private boolean allowJump = true;
+        private boolean allowFall = true;
+        private boolean allowClimb = true;
+        private boolean allowSwim = true;
+        private boolean allowStepUp = true;
+        private boolean allowWalkDiagonal = true;
         private double preciseGoalTolerance = 0.5;
         private Runnable onFinished;
         private Runnable onFailed;
@@ -69,6 +81,36 @@ public record NavigationRequest(
             return this;
         }
 
+        public Builder allowJump(boolean allowJump) {
+            this.allowJump = allowJump;
+            return this;
+        }
+
+        public Builder allowFall(boolean allowFall) {
+            this.allowFall = allowFall;
+            return this;
+        }
+
+        public Builder allowClimb(boolean allowClimb) {
+            this.allowClimb = allowClimb;
+            return this;
+        }
+
+        public Builder allowSwim(boolean allowSwim) {
+            this.allowSwim = allowSwim;
+            return this;
+        }
+
+        public Builder allowStepUp(boolean allowStepUp) {
+            this.allowStepUp = allowStepUp;
+            return this;
+        }
+
+        public Builder allowWalkDiagonal(boolean allowWalkDiagonal) {
+            this.allowWalkDiagonal = allowWalkDiagonal;
+            return this;
+        }
+
         public Builder preciseGoalTolerance(double preciseGoalTolerance) {
             this.preciseGoalTolerance = preciseGoalTolerance;
             return this;
@@ -92,6 +134,12 @@ public record NavigationRequest(
                 allowParkour,
                 allowRotation,
                 allowSneak,
+                allowJump,
+                allowFall,
+                allowClimb,
+                allowSwim,
+                allowStepUp,
+                allowWalkDiagonal,
                 preciseGoalTolerance,
                 onFinished,
                 onFailed

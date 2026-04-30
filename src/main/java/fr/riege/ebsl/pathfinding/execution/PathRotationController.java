@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 
 final class PathRotationController {
     private List<Vec3> cameraPath = Collections.emptyList();
-    private static final double PARKOUR_LANDING_LOOK_MIN_DIST = 0.65;
-    private static final double PARKOUR_HARD_LANDING_LOOK_MIN_DIST = 0.45;
+    private static final double PARKOUR_LANDING_LOOK_MIN_DIST = 0.70;
+    private static final double PARKOUR_HARD_LANDING_LOOK_MIN_DIST = 0.50;
     private static final double PARKOUR_LANDING_LOOK_PASSED_DOT = -0.20;
     private static final double PARKOUR_HARD_LANDING_LOOK_PASSED_DOT = -0.05;
     private static final double PARKOUR_HARD_TURN_DOT = 0.82;

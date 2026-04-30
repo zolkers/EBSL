@@ -184,7 +184,9 @@ final class WalkNavigationService {
         Runnable capturedOnFinished  = runtime.walkOptions.onFinished();
 
         WalkabilityChecker checker = new WalkabilityChecker(mc.level);
-        PathfinderConfiguration config = PathPipeline.createRepairWalkPathfinderConfiguration(checker, runtime.walkOptions.allowParkour());
+        PathfinderConfiguration config = PathPipeline.createRepairWalkPathfinderConfiguration(checker,
+            runtime.walkOptions.allowParkour(), runtime.walkOptions.allowJump(),
+            runtime.walkOptions.allowFall(), runtime.walkOptions.allowWalkDiagonal());
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         runtime.state.setCurrentPathfinder(pathfinder);
 
@@ -269,7 +271,9 @@ final class WalkNavigationService {
         Runnable         capturedOnFinished = runtime.walkOptions.onFinished();
         Runnable         capturedOnFailed   = runtime.walkOptions.onFailed();
 
-        PathfinderConfiguration config = PathPipeline.createInstantWalkPathfinderConfiguration(checker, runtime.walkOptions.allowParkour());
+        PathfinderConfiguration config = PathPipeline.createInstantWalkPathfinderConfiguration(checker,
+            runtime.walkOptions.allowParkour(), runtime.walkOptions.allowJump(),
+            runtime.walkOptions.allowFall(), runtime.walkOptions.allowWalkDiagonal());
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         runtime.state.setCurrentPathfinder(pathfinder);
         long startMs = System.currentTimeMillis();
@@ -297,7 +301,9 @@ final class WalkNavigationService {
                                          ExecutionOptions capturedOpts,
                                          Runnable capturedOnFinished,
                                          Runnable capturedOnFailed) {
-        PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true, runtime.walkOptions.allowParkour());
+        PathfinderConfiguration config = PathPipeline.createWalkPathfinderConfiguration(checker, true,
+            runtime.walkOptions.allowParkour(), runtime.walkOptions.allowJump(),
+            runtime.walkOptions.allowFall(), runtime.walkOptions.allowWalkDiagonal());
         AStarPathfinder pathfinder = new AStarPathfinder(config);
         runtime.state.setCurrentPathfinder(pathfinder);
         long startMs = System.currentTimeMillis();

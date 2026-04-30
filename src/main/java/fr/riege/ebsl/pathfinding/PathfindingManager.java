@@ -1,9 +1,7 @@
 package fr.riege.ebsl.pathfinding;
 
-import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.pathfinding.execution.PathRepairRequest;
-import fr.riege.ebsl.pathfinding.goal.Goal;
 import fr.riege.ebsl.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlerRegistry;
 import fr.riege.ebsl.pathfinding.goal.GoalXZ;
@@ -12,10 +10,7 @@ import fr.riege.ebsl.pathfinding.goal.NavigationRequest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Orchestrates navigation requests and delegates state, path shaping and walk options
- * to dedicated pathfinding components.
- */
+
 public final class PathfindingManager {
     private static final PathfindingManager INSTANCE = new PathfindingManager();
 
@@ -125,6 +120,12 @@ public final class PathfindingManager {
             request.allowRotation(),
             request.allowSneak(),
             request.preciseGoalTolerance());
+        runtime.walkOptions.setAllowJump(request.allowJump());
+        runtime.walkOptions.setAllowFall(request.allowFall());
+        runtime.walkOptions.setAllowClimb(request.allowClimb());
+        runtime.walkOptions.setAllowSwim(request.allowSwim());
+        runtime.walkOptions.setAllowStepUp(request.allowStepUp());
+        runtime.walkOptions.setAllowWalkDiagonal(request.allowWalkDiagonal());
         GoalRequestHandlerRegistry.start(mc, request);
     }
 
@@ -188,5 +189,33 @@ public final class PathfindingManager {
 
     public static void setWalkSneakLatched(boolean walkSneakLatched) {
         INSTANCE.runtime.executor.setSneakLatched(walkSneakLatched);
+    }
+
+    public static void setAllowParkour(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowParkour(v);
+    }
+
+    public static void setAllowJump(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowJump(v);
+    }
+
+    public static void setAllowFall(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowFall(v);
+    }
+
+    public static void setAllowClimb(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowClimb(v);
+    }
+
+    public static void setAllowSwim(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowSwim(v);
+    }
+
+    public static void setAllowStepUp(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowStepUp(v);
+    }
+
+    public static void setAllowWalkDiagonal(boolean v) {
+        INSTANCE.runtime.walkOptions.setAllowWalkDiagonal(v);
     }
 }

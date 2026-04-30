@@ -14,7 +14,7 @@ public final class ImGuiHeaderPanel implements ImGuiUiPanel {
             ImGui.text("EBSL");
             ImGui.sameLine(72.0f);
             for (MainViewTab tab : MainViewTab.values()) {
-                if (ImGui.button(tab.label(), 72.0f, 22.0f)) {
+                if (ImGui.button(tab.label(), 72.0f, 18.0f)) {
                     state.setMainViewTab(tab);
                 }
                 ImGui.sameLine();

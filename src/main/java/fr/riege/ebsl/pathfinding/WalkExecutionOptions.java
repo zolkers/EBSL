@@ -17,6 +17,12 @@ final class WalkExecutionOptions {
     private boolean allowRotation;
     private boolean allowParkour;
     private boolean allowSneak;
+    private boolean allowJump;
+    private boolean allowFall;
+    private boolean allowClimb;
+    private boolean allowSwim;
+    private boolean allowStepUp;
+    private boolean allowWalkDiagonal;
     private boolean exactGoalCentering;
 
     WalkExecutionOptions() {
@@ -36,6 +42,12 @@ final class WalkExecutionOptions {
         allowRotation = true;
         allowParkour = true;
         allowSneak = true;
+        allowJump = true;
+        allowFall = true;
+        allowClimb = true;
+        allowSwim = true;
+        allowStepUp = true;
+        allowWalkDiagonal = true;
         exactGoalCentering = false;
     }
 
@@ -100,6 +112,54 @@ final class WalkExecutionOptions {
 
     void setAllowParkour(boolean allowParkour) {
         this.allowParkour = allowParkour;
+    }
+
+    boolean allowJump() {
+        return allowJump;
+    }
+
+    void setAllowJump(boolean allowJump) {
+        this.allowJump = allowJump;
+    }
+
+    boolean allowFall() {
+        return allowFall;
+    }
+
+    void setAllowFall(boolean allowFall) {
+        this.allowFall = allowFall;
+    }
+
+    boolean allowClimb() {
+        return allowClimb;
+    }
+
+    void setAllowClimb(boolean allowClimb) {
+        this.allowClimb = allowClimb;
+    }
+
+    boolean allowSwim() {
+        return allowSwim;
+    }
+
+    void setAllowSwim(boolean allowSwim) {
+        this.allowSwim = allowSwim;
+    }
+
+    boolean allowStepUp() {
+        return allowStepUp;
+    }
+
+    void setAllowStepUp(boolean allowStepUp) {
+        this.allowStepUp = allowStepUp;
+    }
+
+    boolean allowWalkDiagonal() {
+        return allowWalkDiagonal;
+    }
+
+    void setAllowWalkDiagonal(boolean allowWalkDiagonal) {
+        this.allowWalkDiagonal = allowWalkDiagonal;
     }
 
     void setAllowSneak(boolean allowSneak) {

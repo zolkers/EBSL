@@ -40,6 +40,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     private final DoubleSetting distance = registerSetting(new DoubleSetting("distance", "Distance", 3.0, 1.0, 24.0));
     private final DoubleSetting tolerance = registerSetting(new DoubleSetting("tolerance", "Tolerance", 0.35, 0.1, 4.0));
     private final IntSetting searchRadius = registerSetting(new IntSetting("search_radius", "Search radius", 32, 4, 128));
+    private final BooleanSetting trackUntilDeath = registerSetting(new BooleanSetting("track_until_death", "Track until death", false));
 
     private Entity explicitTarget;
     private Entity currentTarget;
@@ -108,6 +109,9 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     }
 
     private Entity selectTarget(Minecraft mc) {
+        if (trackUntilDeath.value() && isUsableTarget(mc, currentTarget)) {
+            return currentTarget;
+        }
         if (isUsableTarget(mc, explicitTarget)) {
             return explicitTarget;
         }
@@ -192,10 +196,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
         lastGoal = goal;
         replanCooldown = MIN_REPLAN_TICKS;
         PathfindingManager.startGoal(mc, NavigationRequest.builder(new GoalBlock(goal.getX(), goal.getY(), goal.getZ()))
-            .allowParkour(false)
-            .allowRotation(false)
-            .allowSneak(false)
-            .allowReplan(true)
+            .allowParkour(false).allowRotation(false).allowSneak(false).allowReplan(true).allowFall(false)
             .build());
     }
 
