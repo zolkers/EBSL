@@ -11,7 +11,7 @@ final class InputApplier {
     }
 
     static void releaseAll(Minecraft mc, boolean keepSneaking) {
-        if (mc == null || mc.options == null) {
+        if (mc == null) {
             return;
         }
         mc.options.keyUp.setDown(false);

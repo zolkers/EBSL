@@ -10,9 +10,6 @@ final class MovementSmoothingRegistry {
     private static final EnumRegistry<Node.MoveType, MovementSmoothing> STRATEGIES =
         new EnumRegistry<>(Node.MoveType.class, null);
 
-    static {
-    }
-
     private MovementSmoothingRegistry() {
     }
 

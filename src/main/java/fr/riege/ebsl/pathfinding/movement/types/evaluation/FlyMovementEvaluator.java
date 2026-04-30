@@ -4,9 +4,4 @@ import fr.riege.ebsl.pathfinding.Node;
 import fr.riege.ebsl.pathfinding.movement.types.annotation.MovementHandler;
 
 @MovementHandler(Node.MoveType.FLY)
-final class FlyMovementEvaluator extends WalkMovementEvaluator {
-    @Override
-    public MovementValidationResult validate(MovementValidationContext context) {
-        return MovementValidationResult.ok();
-    }
-}
+final class FlyMovementEvaluator extends WalkMovementEvaluator {}
