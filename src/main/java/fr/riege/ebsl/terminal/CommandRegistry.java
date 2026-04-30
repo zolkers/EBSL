@@ -82,6 +82,11 @@ public final class CommandRegistry {
         return Collections.unmodifiableList(out);
     }
 
+    public static CommandHandler handler(String name) {
+        Entry e = COMMANDS.get(name.toLowerCase());
+        return e != null ? e.handler() : null;
+    }
+
     public static List<CommandSuggestion> suggest(String input) {
         if (input.isBlank()) {
             return COMMANDS.entrySet().stream()
@@ -106,29 +111,43 @@ public final class CommandRegistry {
                 .toList();
         }
 
-        // arg phase: live param defaults or static completer
+        // arg phase
         String name = input.substring(0, spaceIdx).toLowerCase();
         Entry entry = COMMANDS.get(name);
         if (entry == null) return List.of();
 
+        String afterName = input.substring(spaceIdx + 1);
+        Map<String, CommandHandler> subs = entry.handler().subcommands();
+
+        if (!subs.isEmpty()) {
+            // subcommand phase: "goal <partial>" or "goal <sub> <args>"
+            int subSpaceIdx = afterName.indexOf(' ');
+            if (subSpaceIdx < 0) {
+                // still typing subcommand name — fuzzy filter subcommand names
+                String query = afterName.toLowerCase();
+                return subs.entrySet().stream()
+                    .map(e -> Map.entry(e.getKey(), fuzzyScore(e.getKey(), query)))
+                    .filter(e -> query.isEmpty() || e.getValue() >= 0)
+                    .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+                    .map(e -> {
+                        CommandHandler sub = subs.get(e.getKey());
+                        String hint = sub.params().stream()
+                            .map(p -> "<" + p.label() + ">").collect(java.util.stream.Collectors.joining(" "));
+                        return CommandSuggestion.of(e.getKey(), hint);
+                    })
+                    .toList();
+            }
+            // subcommand name typed, now in its arg phase
+            String subName = afterName.substring(0, subSpaceIdx).toLowerCase();
+            CommandHandler sub = subs.get(subName);
+            if (sub == null) return List.of();
+            return suggestParams(sub.params(), afterName.substring(subSpaceIdx + 1));
+        }
+
+        // direct params
         List<GoalParameter> params = entry.handler().params();
         if (!params.isEmpty()) {
-            Minecraft mc = Minecraft.getInstance();
-            String argsStr = input.substring(spaceIdx + 1);
-            String[] parts = argsStr.split(" ", -1);
-            int filled = parts.length - 1; // complete args (last token may be partial/empty)
-            if (filled >= params.size()) return List.of();
-
-            StringBuilder fillSb = new StringBuilder();
-            StringBuilder hintSb = new StringBuilder();
-            for (int i = filled; i < params.size(); i++) {
-                if (fillSb.length() > 0) { fillSb.append(' '); hintSb.append(' '); }
-                fillSb.append(params.get(i).defaultValue(mc));
-                hintSb.append('<').append(params.get(i).label()).append('>');
-            }
-            return fillSb.length() > 0
-                ? List.of(CommandSuggestion.of(fillSb.toString(), hintSb.toString()))
-                : List.of();
+            return suggestParams(params, afterName);
         }
 
         // static completer fallback
@@ -138,6 +157,24 @@ public final class CommandRegistry {
         return entry.handler().completer().suggest(argIndex, partial).stream()
             .map(s -> CommandSuggestion.of(s, ""))
             .toList();
+    }
+
+    private static List<CommandSuggestion> suggestParams(List<GoalParameter> params, String argsStr) {
+        if (params.isEmpty()) return List.of();
+        Minecraft mc = Minecraft.getInstance();
+        String[] parts = argsStr.split(" ", -1);
+        int filled = parts.length - 1;
+        if (filled >= params.size()) return List.of();
+        StringBuilder fillSb = new StringBuilder();
+        StringBuilder hintSb = new StringBuilder();
+        for (int i = filled; i < params.size(); i++) {
+            if (fillSb.length() > 0) { fillSb.append(' '); hintSb.append(' '); }
+            fillSb.append(params.get(i).defaultValue(mc));
+            hintSb.append('<').append(params.get(i).label()).append('>');
+        }
+        return fillSb.length() > 0
+            ? List.of(CommandSuggestion.of(fillSb.toString(), hintSb.toString()))
+            : List.of();
     }
 
     private static String argsHint(Entry entry) {

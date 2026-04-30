@@ -23,4 +23,10 @@ public record CommandContext(Minecraft mc, String[] args) {
     public double argDouble(int index) {
         return Double.parseDouble(args[index]);
     }
+
+    public CommandContext shift(int n) {
+        String[] shifted = new String[Math.max(0, args.length - n)];
+        System.arraycopy(args, n, shifted, 0, shifted.length);
+        return new CommandContext(mc, shifted);
+    }
 }

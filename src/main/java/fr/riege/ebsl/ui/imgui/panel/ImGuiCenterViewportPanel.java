@@ -251,12 +251,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         final float boxRight = viewport.right() - 8.0f;
         final float boxW = boxRight - boxX;
 
-        // fallback refresh when input field is not focused (e.g. after fillCompletion click)
-        String currentInput = terminalInput.get();
-        if (!currentInput.equals(lastSuggestInput)) {
-            refreshSuggestions(currentInput);
-        }
-
         int suggestCount = suggestions.size();
         float suggestBoxH = suggestCount > 0
             ? Math.min(suggestCount, maxSuggestVisible) * suggestRowH + 8.0f
@@ -359,7 +353,6 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 public void accept(ImGuiInputTextCallbackData data) {
                     int flag = data.getEventFlag();
                     if (flag == ImGuiInputTextFlags.CallbackAlways) {
-                        // live buffer — update suggestions on every keystroke
                         String buf = data.getBuf().substring(0, data.getBufTextLen());
                         if (!buf.equals(lastSuggestInput)) {
                             refreshSuggestions(buf);
@@ -379,9 +372,11 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             });
         ImGui.popStyleColor();
 
-        ImGui.setCursorScreenPos(boxRight - clearW - clearPad, inputY + 4.0f);
-        if (ImGui.button("Clear", clearW, 20.0f)) {
+        ImGui.sameLine(0, clearPad);
+        if (ImGui.button("Clear##terminal", clearW, 20.0f)) {
             TerminalLog.clear();
+            suggestions.clear();
+            lastSuggestInput = null;
         }
 
         if (shouldApplyCompletion && !suggestions.isEmpty()) {
@@ -391,7 +386,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         if (submitted && !terminalInput.get().isBlank()) {
             CommandRegistry.dispatch(terminalInput.get(), net.minecraft.client.Minecraft.getInstance());
             terminalInput.set("");
-            lastSuggestInput = null;
+            lastSuggestInput = "";
             suggestions.clear();
             terminalScrollToBottom = true;
             ImGui.setKeyboardFocusHere(-1);
@@ -411,8 +406,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         int spaceIdx = current.lastIndexOf(' ');
         String next = spaceIdx < 0 ? suggestion + " " : current.substring(0, spaceIdx + 1) + suggestion + " ";
         terminalInput.set(next);
-        // force refresh on next frame (CallbackAlways will catch it once focused again)
-        lastSuggestInput = null;
+        refreshSuggestions(next);
     }
 
     private void renderMcLog(UiRect viewport) {
