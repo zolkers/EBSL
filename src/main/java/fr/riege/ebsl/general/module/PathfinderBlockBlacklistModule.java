@@ -18,7 +18,7 @@ public final class PathfinderBlockBlacklistModule extends Settingable implements
     private final StringListSetting blockIds = registerSetting(new StringListSetting(
         "blocks",
         "Blocks",
-        List.of("minecraft:slime_block")));
+        List.of("minecraft:barrier")));
 
     private Set<Identifier> parsedBlockIds = parseBlockIds(blockIds.value());
 

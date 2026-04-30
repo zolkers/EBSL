@@ -18,7 +18,7 @@ public final class GuiApi {
     }
 
     @EbslApiOperation("Capture the data required to populate the ImGui interface.")
-    public GuiSnapshot snapshot(PathfinderModule selectedModule, int eventCount) {
+    public GuiSnapshot snapshot(int eventCount) {
         return new GuiSnapshot(
             EbslApi.navigation().snapshot(),
             modules(),
