@@ -1,4 +1,4 @@
-package fr.riege.ebsl.general.module;
+package fr.riege.ebsl.general.module.overlay;
 
 import fr.riege.ebsl.ui.layout.UiRect;
 

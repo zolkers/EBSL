@@ -2,8 +2,8 @@ package fr.riege.ebsl.api.navigation;
 
 import fr.riege.ebsl.api.annotation.EbslApiOperation;
 import fr.riege.ebsl.api.annotation.EbslApiSurface;
-import fr.riege.ebsl.general.module.BlockBlacklist;
-import fr.riege.ebsl.general.module.PathfinderBlockBlacklistModule;
+import fr.riege.ebsl.general.module.blacklist.BlockBlacklist;
+import fr.riege.ebsl.general.module.blacklist.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.general.registry.BotModuleRegistry;
 import fr.riege.ebsl.general.storage.BotModuleSettingsStore;
 import net.minecraft.resources.Identifier;

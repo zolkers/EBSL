@@ -1,6 +1,6 @@
 package fr.riege.ebsl.pathfinding.provider.impl;
 
-import fr.riege.ebsl.general.module.BlockBlacklist;
+import fr.riege.ebsl.general.module.blacklist.BlockBlacklist;
 import fr.riege.ebsl.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.pathfinding.provider.NavigationPoint;

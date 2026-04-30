@@ -1,6 +1,8 @@
-package fr.riege.ebsl.general.module;
+package fr.riege.ebsl.general.module.blacklist;
 
 import fr.riege.ebsl.event.EventBus;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModuleCategory;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.Setting;
 import fr.riege.ebsl.settings.Settingable;

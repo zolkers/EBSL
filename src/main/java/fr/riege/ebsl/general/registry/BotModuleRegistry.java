@@ -1,9 +1,9 @@
 package fr.riege.ebsl.general.registry;
 
-import fr.riege.ebsl.general.module.BlockTargetModule;
-import fr.riege.ebsl.general.module.KeyDisplayModule;
-import fr.riege.ebsl.general.module.MoveTypeOverlayModule;
-import fr.riege.ebsl.general.module.PathfinderBlockBlacklistModule;
+import fr.riege.ebsl.general.module.overlay.BlockTargetModule;
+import fr.riege.ebsl.general.module.overlay.KeyDisplayModule;
+import fr.riege.ebsl.general.module.overlay.MoveTypeOverlayModule;
+import fr.riege.ebsl.general.module.blacklist.PathfinderBlockBlacklistModule;
 import fr.riege.ebsl.general.module.PathfinderModule;
 import fr.riege.ebsl.general.storage.BotModuleSettingsStore;
 import fr.riege.ebsl.event.EventBus;

@@ -1,4 +1,4 @@
-package fr.riege.ebsl.general.module;
+package fr.riege.ebsl.general.module.blacklist;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;

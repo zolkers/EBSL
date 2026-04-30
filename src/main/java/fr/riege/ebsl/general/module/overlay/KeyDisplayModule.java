@@ -1,8 +1,10 @@
-package fr.riege.ebsl.general.module;
+package fr.riege.ebsl.general.module.overlay;
 
 import fr.riege.ebsl.event.EventBus;
 import fr.riege.ebsl.event.Subscription;
 import fr.riege.ebsl.event.events.render.RenderGameViewportEvent;
+import fr.riege.ebsl.general.module.PathfinderModule;
+import fr.riege.ebsl.general.module.PathfinderModuleCategory;
 import fr.riege.ebsl.settings.BooleanSetting;
 import fr.riege.ebsl.settings.ColorSetting;
 import fr.riege.ebsl.settings.EnumSetting;
