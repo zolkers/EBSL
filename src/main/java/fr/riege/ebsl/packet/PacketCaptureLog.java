@@ -32,8 +32,7 @@ public final class PacketCaptureLog {
         PacketCaptureEvent event = new PacketCaptureEvent(
             ++nextSequence,
             System.currentTimeMillis(),
-            direction,
-            type != null && type.id() != null ? type.id().toString() : "unknown",
+            direction, type.id().toString(),
             packet.getClass().getSimpleName(),
             packet.isTerminal(),
             packet.isSkippable());

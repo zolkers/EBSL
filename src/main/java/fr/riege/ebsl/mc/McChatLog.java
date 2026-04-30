@@ -36,7 +36,6 @@ public final class McChatLog {
                 String time = TIME_FORMAT.format(Instant.ofEpochMilli(event.getTimeMillis()));
                 String level = event.getLevel().name();
                 String loggerName = event.getLoggerName();
-                // shorten logger name to last segment
                 int dot = loggerName.lastIndexOf('.');
                 String shortLogger = dot >= 0 ? loggerName.substring(dot + 1) : loggerName;
                 String msg = event.getMessage().getFormattedMessage();
