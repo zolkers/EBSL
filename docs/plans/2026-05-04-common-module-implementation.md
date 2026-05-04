@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Refactor the EBSL mod into a `common` module (zero MC imports, Java 21) and a `fabric-1-21-11` module that implements 8 layer interfaces and wires everything together.
+**Goal:** Refactor the EBSL mod into a `common` module (zero MC imports, Java 21) and nested loader subprojects (e.g. `minecraft-1-21-11/fabric`) that implement 8 layer interfaces and wire everything together.
 
-**Architecture:** Layered Platform + Composition Root. `common` defines all logic and 8 layer interfaces. `fabric-1-21-11` implements each interface against the MC API and assembles `EbslPlatform` which is injected into `EbslCore`. Adding a new MC version = implement 8 interfaces only.
+**Architecture:** Layered Platform + Composition Root. `common` defines all logic and 8 layer interfaces. Each loader subproject implements the interfaces and assembles `EbslPlatform` injected into `EbslCore`. Adding a new MC version = new `minecraft-X/fabric` subproject, implement 8 interfaces only.
 
 **Tech Stack:** Java 21, Gradle multi-project, Fabric Loom, imgui-java-binding, JUnit 5
 
@@ -39,21 +39,26 @@ pluginManagement {
 
 rootProject.name = 'ebsl'
 include('common')
-include('fabric-1-21-11')
+include('minecraft-1-21-11:common')
+include('minecraft-1-21-11:fabric')
+// future: include('minecraft-1-21-11:forge')
+// future: include('minecraft-1-22:common')
+// future: include('minecraft-1-22:fabric')
 ```
 
 **Step 2: Create subproject directories**
 
 ```bash
 mkdir -p common/src/main/java
-mkdir -p fabric-1-21-11/src/main/java
+mkdir -p minecraft-1-21-11/common/src/main/java
+mkdir -p minecraft-1-21-11/fabric/src/main/java
 ```
 
 **Step 3: Commit**
 
 ```bash
 git add settings.gradle
-git commit -m "build: add common and fabric-1-21-11 subprojects to settings"
+git commit -m "build: add common and minecraft-1-21-11:fabric subprojects to settings"
 ```
 
 ---
@@ -124,13 +129,20 @@ git commit -m "build: add common subproject with java-library and MC import guar
 
 ---
 
-### Task 3: Create fabric-1-21-11/build.gradle
+### Task 3: Create minecraft-1-21-11/fabric/build.gradle
 
 **Files:**
-- Create: `fabric-1-21-11/build.gradle`
-- Create: `fabric-1-21-11/gradle.properties`
+- Create: `minecraft-1-21-11/gradle.properties`  (MC version shared by all loaders)
+- Create: `minecraft-1-21-11/fabric/build.gradle`
+- Create: `minecraft-1-21-11/fabric/gradle.properties`
 
-**Step 1: Write fabric-1-21-11/build.gradle**
+**Step 1: Write minecraft-1-21-11/gradle.properties**
+
+```properties
+minecraft_version=1.21.11
+```
+
+**Step 2: Write minecraft-1-21-11/fabric/build.gradle**
 
 ```groovy
 plugins {
@@ -146,6 +158,7 @@ repositories {
 
 dependencies {
     implementation project(':common')
+    implementation project(':minecraft-1-21-11:common')
 
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
@@ -184,14 +197,13 @@ jar {
 }
 ```
 
-**Step 2: Write fabric-1-21-11/gradle.properties**
+**Step 3: Write minecraft-1-21-11/fabric/gradle.properties**
 
 ```properties
 org.gradle.jvmargs=-Xmx1G
 org.gradle.parallel=true
 org.gradle.configuration-cache=false
 
-minecraft_version=1.21.11
 loader_version=0.18.4
 loom_version=1.16-SNAPSHOT
 
@@ -202,11 +214,11 @@ fabric_api_version=0.141.3+1.21.11
 fabric_gui_imgui_version=1.21.11-1.0.7+imgui.1.90.0
 ```
 
-**Step 3: Commit**
+**Step 4: Commit**
 
 ```bash
-git add fabric-1-21-11/build.gradle fabric-1-21-11/gradle.properties
-git commit -m "build: add fabric-1-21-11 subproject with loom and common dependency"
+git add minecraft-1-21-11/
+git commit -m "build: add minecraft-1-21-11/fabric subproject with loom and common dependency"
 ```
 
 ---
@@ -221,17 +233,18 @@ git commit -m "build: add fabric-1-21-11 subproject with loom and common depende
 ```groovy
 // Root project — coordination and convenience tasks only
 
-tasks.register('runClient121') {
+tasks.register('runClient121Fabric') {
     group = 'ebsl'
-    description = 'Run Minecraft 1.21.11 client'
-    dependsOn ':fabric-1-21-11:runClient'
+    description = 'Run Minecraft 1.21.11 (Fabric) client'
+    dependsOn ':minecraft-1-21-11:fabric:runClient'
 }
 
-tasks.register('buildMod121') {
+tasks.register('buildMod121Fabric') {
     group = 'ebsl'
-    description = 'Build fabric-1-21-11 mod jar'
-    dependsOn ':fabric-1-21-11:build'
+    description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
+    dependsOn ':minecraft-1-21-11:fabric:build'
 }
+// future: runClient121Forge, runClient122Fabric, etc.
 ```
 
 **Step 2: Commit**
@@ -243,16 +256,15 @@ git commit -m "build: simplify root build.gradle to custom tasks only"
 
 ---
 
-### Task 5: Move existing source into fabric-1-21-11
+### Task 5: Move existing source into minecraft-1-21-11/fabric
 
 **Files:**
-- Move: `src/` → `fabric-1-21-11/src/`
-- Move: `src/main/resources/` → `fabric-1-21-11/src/main/resources/`
+- Move: `src/` → `minecraft-1-21-11/fabric/src/`
 
 **Step 1: Move source tree**
 
 ```bash
-cp -r src fabric-1-21-11/src
+cp -r src minecraft-1-21-11/fabric/src
 ```
 
 **Step 2: Remove old root src**
@@ -264,8 +276,8 @@ git rm -r src/
 **Step 3: Stage and commit**
 
 ```bash
-git add fabric-1-21-11/src/
-git commit -m "build: move existing source into fabric-1-21-11 subproject"
+git add minecraft-1-21-11/fabric/src/
+git commit -m "build: move existing source into minecraft-1-21-11/fabric subproject"
 ```
 
 ---
@@ -275,7 +287,7 @@ git commit -m "build: move existing source into fabric-1-21-11 subproject"
 **Step 1: Run build with WSL gradle home workaround**
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :fabric-1-21-11:build --info 2>&1 | tail -30
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :minecraft-1-21-11:fabric:build --info 2>&1 | tail -30
 ```
 
 Expected: `BUILD SUCCESSFUL`
@@ -299,7 +311,7 @@ git commit -m "build: phase 1 complete — gradle skeleton verified"
 
 ## PHASE 2 — Layer Interfaces + Value Types
 
-> Goal: all 8 layer interfaces exist in common, stub Fabric*Layer implementations exist in fabric-1-21-11, EbslPlatform and EbslCore exist but do nothing. Mod still runs.
+> Goal: all 8 layer interfaces exist in common, 4 `Mc*Layer` stubs in minecraft-1-21-11/common, 4 `Fabric*Layer` stubs in minecraft-1-21-11/fabric, EbslPlatform and EbslCore exist but do nothing. Mod still runs.
 
 ---
 
@@ -720,30 +732,32 @@ git commit -m "feat(common): add EbslCore stub composition root"
 
 ---
 
-### Task 12: Stub Fabric*Layer implementations
+### Task 12: Stub layer implementations (split between mc-common and fabric)
 
-**Files:**
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricWorldLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricPlayerLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricPhysicsLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricEventBus.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricRenderLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricCommandLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricStorageLayer.java`
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricImGuiLayer.java`
+**In minecraft-1-21-11/common** — loader-agnostic MC layers (package `fr.riege.ebsl.mc`):
+- Create: `McWorldLayer.java` implements `IWorldLayer`
+- Create: `McPlayerLayer.java` implements `IPlayerLayer`
+- Create: `McRenderLayer.java` implements `IRenderLayer`
+- Create: `McStorageLayer.java` implements `IStorageLayer`
 
-**Step 1: Pattern for each stub — use `FabricWorldLayer` as example**
+**In minecraft-1-21-11/fabric** — Fabric-specific layers (package `fr.riege.ebsl.fabric.layer`):
+- Create: `FabricPhysicsLayer.java` implements `IPhysicsLayer`
+- Create: `FabricEventBus.java` implements `IEventBus`
+- Create: `FabricCommandLayer.java` implements `ICommandLayer`
+- Create: `FabricImGuiLayer.java` implements `IImGuiLayer`
+
+**Step 1: Pattern for mc-common stub — use `McWorldLayer` as example**
 
 ```java
-package fr.riege.ebsl.fabric.layer;
+package fr.riege.ebsl.mc;
 
 import fr.riege.ebsl.common.layer.IWorldLayer;
 import fr.riege.ebsl.common.world.BlockId;
 import net.minecraft.client.Minecraft;
 
-public class FabricWorldLayer implements IWorldLayer {
+public class McWorldLayer implements IWorldLayer {
     private final Minecraft client;
-    public FabricWorldLayer(Minecraft client) { this.client = client; }
+    public McWorldLayer(Minecraft client) { this.client = client; }
 
     @Override public BlockId getBlock(int x, int y, int z) { throw new UnsupportedOperationException("TODO"); }
     @Override public boolean isAir(int x, int y, int z) { throw new UnsupportedOperationException("TODO"); }
@@ -760,21 +774,41 @@ public class FabricWorldLayer implements IWorldLayer {
 }
 ```
 
-Write the same stub pattern for all 8 layers. `FabricEventBus` and `FabricImGuiLayer` don't take `Minecraft client` in constructor (they use fabric callbacks). `FabricStorageLayer` takes `java.nio.file.Path configDir`.
+Apply the same pattern for `McPlayerLayer`, `McRenderLayer`, `McStorageLayer` (takes `Path configDir`).  
+Apply for the 4 Fabric stubs: `FabricEventBus` and `FabricImGuiLayer` take no MC client in constructor.
 
-**Step 2: Compile**
+**Step 2: Also create minecraft-1-21-11/common/build.gradle**
+
+```groovy
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+dependencies {
+    implementation project(':common')
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modCompileOnly "net.fabricmc:fabric-loader:${loader_version}"
+}
+
+tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
+```
+
+And add `include('minecraft-1-21-11:common')` to `settings.gradle`.
+
+**Step 3: Compile both**
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :fabric-1-21-11:compileJava
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :minecraft-1-21-11:common:compileJava :minecraft-1-21-11:fabric:compileJava
 ```
 
 Expected: `BUILD SUCCESSFUL`
 
-**Step 3: Commit**
+**Step 4: Commit**
 
 ```bash
-git add fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/
-git commit -m "feat(fabric): add stub Fabric*Layer implementations"
+git add minecraft-1-21-11/
+git commit -m "feat: add Mc*Layer stubs in mc-common and Fabric*Layer stubs in fabric"
 ```
 
 ---
@@ -782,7 +816,7 @@ git commit -m "feat(fabric): add stub Fabric*Layer implementations"
 ### Task 13: FabricMod entry point (wires platform, coexists with old EbslMod)
 
 **Files:**
-- Create: `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/FabricEbslMod.java`
+- Create: `minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/fabric/FabricEbslMod.java`
 
 **Step 1: Write FabricEbslMod**
 
@@ -801,14 +835,18 @@ public class FabricEbslMod implements ClientModInitializer {
     public void onInitializeClient() {
         Minecraft client = Minecraft.getInstance();
 
+        Path configDir = FabricLoader.getInstance().getConfigDir().resolve("ebsl");
+
         EbslPlatform platform = EbslPlatform.builder()
-            .world(new FabricWorldLayer(client))
-            .player(new FabricPlayerLayer(client))
+            // from minecraft-1-21-11/common — loader-agnostic
+            .world(new McWorldLayer(client))
+            .player(new McPlayerLayer(client))
+            .render(new McRenderLayer())
+            .storage(new McStorageLayer(configDir))
+            // from minecraft-1-21-11/fabric — Fabric-specific
             .physics(new FabricPhysicsLayer(client))
             .events(new FabricEventBus())
-            .render(new FabricRenderLayer())
             .commands(new FabricCommandLayer())
-            .storage(new FabricStorageLayer(FabricLoader.getInstance().getConfigDir().resolve("ebsl")))
             .imgui(new FabricImGuiLayer(client))
             .build();
 
@@ -823,8 +861,8 @@ Note: do NOT add `FabricEbslMod` to `fabric.mod.json` entrypoints yet — `EbslM
 **Step 2: Compile and commit**
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :fabric-1-21-11:compileJava
-git add fabric-1-21-11/src/
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :minecraft-1-21-11:fabric:compileJava
+git add minecraft-1-21-11/fabric/src/
 git commit -m "feat(fabric): add FabricEbslMod entry point stub"
 ```
 
@@ -832,7 +870,7 @@ git commit -m "feat(fabric): add FabricEbslMod entry point stub"
 
 ## PHASE 3 — Pure Subsystems (no MC to strip)
 
-> Copy subsystems that have zero MC dependencies into common and fix package names. Delete from fabric-1-21-11 once the subsystem is wired into EbslCore.
+> Copy subsystems that have zero MC dependencies into common and fix package names. Delete from minecraft-1-21-11/fabric once the subsystem is wired into EbslCore.
 
 > **Pattern for each task:** copy files → fix package → adjust imports → compile common → compile fabric → commit.
 
@@ -841,7 +879,7 @@ git commit -m "feat(fabric): add FabricEbslMod entry point stub"
 ### Task 14: Migrate settings/ framework
 
 **Files:**
-- Copy: `fabric-1-21-11/src/main/java/fr/riege/ebsl/settings/` → `common/src/main/java/fr/riege/ebsl/common/settings/`
+- Copy: `minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/settings/` → `common/src/main/java/fr/riege/ebsl/common/settings/`
 - Files: `AbstractSetting`, `BooleanSetting`, `ColorSetting`, `DoubleSetting`, `EnumSetting`, `IntSetting`, `Setting`, `Settingable`, `StringListSetting`, `StringSetting`
 
 **Step 1: Copy files and update package declaration**
@@ -863,28 +901,28 @@ package fr.riege.ebsl.common.settings;
 GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :common:compileJava
 ```
 
-**Step 4: Update fabric references** — find all usages of `fr.riege.ebsl.settings` in fabric-1-21-11 and update imports to `fr.riege.ebsl.common.settings`.
+**Step 4: Update fabric references** — find all usages of `fr.riege.ebsl.settings` in minecraft-1-21-11/fabric and update imports to `fr.riege.ebsl.common.settings`.
 
 ```bash
-grep -r "fr.riege.ebsl.settings" fabric-1-21-11/src/ --include="*.java" -l
+grep -r "fr.riege.ebsl.settings" minecraft-1-21-11/fabric/src/ --include="*.java" -l
 ```
 
 **Step 5: Compile fabric**
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :fabric-1-21-11:compileJava
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :minecraft-1-21-11:fabric:compileJava
 ```
 
 **Step 6: Delete old settings from fabric** (keep only if it has MC-specific subclasses)
 
 ```bash
-git rm -r fabric-1-21-11/src/main/java/fr/riege/ebsl/settings/
+git rm -r minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/settings/
 ```
 
 **Step 7: Commit**
 
 ```bash
-git add common/src/ fabric-1-21-11/src/
+git add common/src/ minecraft-1-21-11/fabric/src/
 git commit -m "refactor: migrate settings framework to common"
 ```
 
@@ -913,7 +951,7 @@ Same pattern.
 Check for any MC imports in these files before moving.
 
 ```bash
-grep -r "net.minecraft" fabric-1-21-11/src/main/java/fr/riege/ebsl/analytics/ --include="*.java"
+grep -r "net.minecraft" minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/analytics/ --include="*.java"
 ```
 
 ```bash
@@ -935,7 +973,7 @@ The existing event system (`EventBus`, `EventBusImpl`, `EventBridge`, etc.) uses
 **Step 3: Wire** — `FabricEventBus` will use the internal event bus machinery to dispatch to common event consumers.
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :common:compileJava :fabric-1-21-11:compileJava
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :common:compileJava :minecraft-1-21-11:fabric:compileJava
 git commit -m "refactor: migrate event bus infrastructure to common"
 ```
 
@@ -950,7 +988,7 @@ Goal classes use `BlockPos` from MC — replace with `Vec3i` from common.
 **Step 1: Check MC imports**
 
 ```bash
-grep -r "net.minecraft" fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/goal/ --include="*.java"
+grep -r "net.minecraft" minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/goal/ --include="*.java"
 ```
 
 **Step 2:** For each `BlockPos` usage, replace with `fr.riege.ebsl.common.math.Vec3i`.
@@ -974,7 +1012,7 @@ These call `IWorldLayer` equivalents — currently they use MC world directly vi
 **Step 1:** Check what world data they access:
 
 ```bash
-grep -r "net.minecraft" fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/pathfinder/ --include="*.java"
+grep -r "net.minecraft" minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/pathfinder/ --include="*.java"
 ```
 
 **Step 2:** Replace any direct MC world calls with `IWorldLayer` method calls. `EvaluationContextImpl` likely takes a world reference — replace with `IWorldLayer`.
@@ -997,7 +1035,7 @@ Also: `PathPosition`, `PathVector`, `BlockPosUtil`, `RegionKey`
 `BlockPosUtil` may reference MC `BlockPos` — replace with `Vec3i`. `PathPosition`/`PathVector` likely wrap `BlockPos` — replace with `Vec3i`/`Vec3d`.
 
 ```bash
-grep -r "net.minecraft" fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/rotation/ fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/wrapper/ fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/util/ --include="*.java"
+grep -r "net.minecraft" minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/rotation/ minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/wrapper/ minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/util/ --include="*.java"
 ```
 
 ```bash
@@ -1008,13 +1046,13 @@ git commit -m "refactor: migrate rotation, path wrappers, and utils to common"
 
 ## PHASE 4 — Layer Implementations + Layer-Dependent Subsystems
 
-> Fill in each Fabric*Layer one by one, then migrate subsystems that depend on it.
+> Fill in each `Mc*Layer` (in minecraft-1-21-11/common) and `Fabric*Layer` (in minecraft-1-21-11/fabric) one by one, then migrate subsystems that depend on them.
 
 ---
 
-### Task 21: Implement FabricWorldLayer
+### Task 21: Implement McWorldLayer
 
-**File:** `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricWorldLayer.java`
+**File:** `minecraft-1-21-11/common/src/main/java/fr/riege/ebsl/mc/McWorldLayer.java`
 
 **Step 1: Implement each method using MC APIs**
 
@@ -1047,13 +1085,13 @@ public boolean isSolid(int x, int y, int z) {
 **Step 2: Compile**
 
 ```bash
-GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :fabric-1-21-11:compileJava
+GRADLE_USER_HOME=/home/riege/gradle-home-test ./gradlew :minecraft-1-21-11:common:compileJava
 ```
 
 **Step 3: Commit**
 
 ```bash
-git commit -m "feat(fabric): implement FabricWorldLayer"
+git commit -m "feat(mc-common): implement McWorldLayer"
 ```
 
 ---
@@ -1070,7 +1108,7 @@ These files currently take an MC `Level` or `BlockPos`. Replace those parameters
 **Step 1: For each evaluator, find MC dependencies**
 
 ```bash
-grep -rn "net.minecraft" fabric-1-21-11/src/main/java/fr/riege/ebsl/pathfinding/movement/ --include="*.java" | grep -v "//.*net.minecraft"
+grep -rn "net.minecraft" minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/pathfinding/movement/ --include="*.java" | grep -v "//.*net.minecraft"
 ```
 
 **Step 2:** Replace `Level level` / `BlockPos pos` parameters with `IWorldLayer world` / `Vec3i pos`. Update method calls accordingly.
@@ -1085,9 +1123,9 @@ git commit -m "refactor: migrate WalkabilityChecker and movement evaluators to c
 
 ---
 
-### Task 23: Implement FabricPlayerLayer + FabricPhysicsLayer
+### Task 23: Implement McPlayerLayer + FabricPhysicsLayer
 
-**File:** `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricPlayerLayer.java`
+**File:** `minecraft-1-21-11/common/src/main/java/fr/riege/ebsl/mc/McPlayerLayer.java`
 
 ```java
 @Override
@@ -1128,7 +1166,7 @@ public void setForward(float value) {
 **Step 2: Compile + commit**
 
 ```bash
-git commit -m "feat(fabric): implement FabricPlayerLayer and FabricPhysicsLayer"
+git commit -m "feat(mc-common): implement McPlayerLayer and FabricPhysicsLayer"
 ```
 
 ---
@@ -1147,7 +1185,7 @@ git commit -m "refactor: migrate movement executors to common"
 
 ### Task 25: Implement FabricEventBus
 
-**File:** `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricEventBus.java`
+**File:** `minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/fabric/layer/FabricEventBus.java`
 
 Wire Fabric events to common event consumers. Use the existing `EventBridge` as reference.
 
@@ -1177,14 +1215,14 @@ git commit -m "feat(fabric): implement FabricEventBus wired to Fabric events"
 
 ---
 
-### Task 26: Implement FabricRenderLayer
+### Task 26: Implement McRenderLayer
 
-**File:** `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricRenderLayer.java`
+**File:** `minecraft-1-21-11/common/src/main/java/fr/riege/ebsl/mc/McRenderLayer.java`
 
 Port rendering from `EbslMeshRenderer` / `EbslRenderPipelines`. The layer stores the current frame's camera + matrices set by `beginFrame()`, then uses them in draw calls.
 
 ```java
-public class FabricRenderLayer implements IRenderLayer {
+public class McRenderLayer implements IRenderLayer {
     private double camX, camY, camZ;
     private float[] viewMatrix, projMatrix;
 
@@ -1203,7 +1241,7 @@ public class FabricRenderLayer implements IRenderLayer {
 ```
 
 ```bash
-git commit -m "feat(fabric): implement FabricRenderLayer"
+git commit -m "feat(mc-common): implement McRenderLayer"
 ```
 
 ---
@@ -1218,7 +1256,7 @@ git commit -m "refactor: migrate PathVisualizer to common using IRenderLayer"
 
 ### Task 28: Implement FabricImGuiLayer
 
-**File:** `fabric-1-21-11/src/main/java/fr/riege/ebsl/fabric/layer/FabricImGuiLayer.java`
+**File:** `minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/fabric/layer/FabricImGuiLayer.java`
 
 Port the existing `EbslImGuiService` / `EbslImGuiOverlay` logic. The layer calls `drawPanels.run()` inside the imgui frame loop.
 
@@ -1274,12 +1312,12 @@ git commit -m "feat(fabric): implement FabricCommandLayer; refactor: migrate ter
 
 ---
 
-### Task 31: Implement FabricStorageLayer + migrate settings stores
+### Task 31: Implement McStorageLayer + migrate settings stores
 
 ```java
-public class FabricStorageLayer implements IStorageLayer {
+public class McStorageLayer implements IStorageLayer {
     private final Path dir;
-    public FabricStorageLayer(Path dir) { this.dir = dir; }
+    public McStorageLayer(Path dir) { this.dir = dir; }
 
     @Override
     public void save(String key, String json) {
@@ -1300,7 +1338,7 @@ public class FabricStorageLayer implements IStorageLayer {
 ```
 
 ```bash
-git commit -m "feat(fabric): implement FabricStorageLayer; refactor: migrate settings stores to common"
+git commit -m "feat(mc-common): implement McStorageLayer; refactor: migrate settings stores to common"
 ```
 
 ---
@@ -1343,7 +1381,7 @@ public class EbslCore {
 **Step 3: Remove old EbslMod.java and EventBridge**
 
 ```bash
-git rm fabric-1-21-11/src/main/java/fr/riege/ebsl/EbslMod.java
+git rm minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl/EbslMod.java
 ```
 
 **Step 4: Build and run to verify**
@@ -1391,11 +1429,11 @@ git commit -m "build: verify MC import guard works in common"
 
 ### Task 34: Final cleanup
 
-**Step 1: Find any remaining dead code in fabric-1-21-11**
+**Step 1: Find any remaining dead code in minecraft-1-21-11/fabric**
 
 ```bash
 # Check for any logic packages that should have been moved
-find fabric-1-21-11/src/main/java/fr/riege/ebsl -name "*.java" ! -path "*/fabric/*" ! -path "*/mixin/*" | head -30
+find minecraft-1-21-11/fabric/src/main/java/fr/riege/ebsl -name "*.java" ! -path "*/fabric/*" ! -path "*/mixin/*" | head -30
 ```
 
 **Step 2: Verify common has no MC imports at all**
@@ -1425,7 +1463,7 @@ git commit -m "refactor: phase 5 complete — common module enforced, cleanup do
 ## Adding a New MC Version (reference)
 
 ```bash
-cp -r fabric-1-21-11 fabric-1-22
+see design doc — adding a new MC version
 # Update gradle.properties in fabric-1-22:
 #   minecraft_version=1.22
 #   fabric_api_version=...

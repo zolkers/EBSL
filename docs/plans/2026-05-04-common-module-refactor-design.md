@@ -7,73 +7,128 @@
 
 ## Goal
 
-Extract all mod logic into a `common` module with zero Minecraft dependencies. Each MC version (e.g. `fabric-1-21-11`) implements the layer interfaces and wires everything together. Adding support for a new MC version means only implementing 8 interfaces — all logic stays in `common`.
+Extract all mod logic into a `common` module with zero Minecraft dependencies. Each MC version has its own parent module (e.g. `minecraft-1-21-11`) containing one submodule per mod loader (e.g. `fabric`, `forge`). Adding support for a new MC version or loader means only implementing 8 interfaces — all logic stays in `common`.
 
 ---
 
 ## Gradle Structure
 
-Mono-repo, two Gradle subprojects:
+Three-level mono-repo (inspired by Architectury):
 
 ```
 ebsl/
-├── settings.gradle              # includes common, fabric-1-21-11
-├── common/
-│   ├── build.gradle             # java-library, Java 21, imgui-java-binding
+├── settings.gradle
+├── build.gradle                           # custom tasks only
+├── common/                                # pure Java 21, zero MC
+│   ├── build.gradle
 │   └── src/main/java/fr/riege/ebsl/
-│       ├── core/
-│       │   └── EbslCore.java    # composition root
-│       ├── platform/
-│       │   ├── EbslPlatform.java  # record + Builder
-│       │   └── layer/           # 8 layer interfaces
+│       ├── core/EbslCore.java             # composition root
+│       ├── platform/EbslPlatform.java     # record + Builder
+│       ├── layer/                         # 8 layer interfaces
 │       ├── pathfinding/
 │       ├── terminal/
 │       ├── event/
 │       ├── settings/
 │       ├── analytics/
-│       ├── ui/                  # ImGui panels
+│       ├── ui/                            # ImGui panels
 │       ├── general/
 │       └── registry/
-└── fabric-1-21-11/
-    ├── build.gradle             # fabric loom, depends on common
-    └── src/main/java/fr/riege/ebsl/fabric/
-        ├── FabricMod.java       # entry point, builds EbslPlatform
-        ├── layer/               # Fabric*Layer implementations
-        ├── mixin/               # all mixins stay here
-        └── render/              # MC render pipeline bootstrap
+└── minecraft-1-21-11/
+    ├── gradle.properties                  # minecraft_version=1.21.11
+    ├── common/                            # MC API, loader-agnostic implementations
+    │   ├── build.gradle                   # loom (MC jars only, no loader API)
+    │   └── src/main/java/fr/riege/ebsl/mc/
+    │       ├── McWorldLayer.java
+    │       ├── McPlayerLayer.java
+    │       ├── McRenderLayer.java
+    │       └── McStorageLayer.java
+    └── fabric/                            # Fabric-specific only
+        ├── build.gradle                   # loom + fabric-api + fabric-gui-imgui
+        └── src/main/java/fr/riege/ebsl/fabric/
+            ├── FabricMod.java             # entry point, assembles EbslPlatform
+            ├── layer/
+            │   ├── FabricEventBus.java
+            │   ├── FabricPhysicsLayer.java
+            │   ├── FabricCommandLayer.java
+            │   └── FabricImGuiLayer.java
+            └── mixin/
+```
+
+**Layer split between mc-common and fabric:**
+
+| Layer | Where | Why |
+|---|---|---|
+| `IWorldLayer` | `minecraft-1-21-11/common` | vanilla MC API, same across loaders |
+| `IPlayerLayer` | `minecraft-1-21-11/common` | vanilla MC API |
+| `IRenderLayer` | `minecraft-1-21-11/common` | MC render pipeline, loader-agnostic |
+| `IStorageLayer` | `minecraft-1-21-11/common` | java.nio + config path injection |
+| `IPhysicsLayer` | `minecraft-1-21-11/fabric` | input injection is loader-specific |
+| `IEventBus` | `minecraft-1-21-11/fabric` | Fabric event API |
+| `ICommandLayer` | `minecraft-1-21-11/fabric` | Brigadier via Fabric API |
+| `IImGuiLayer` | `minecraft-1-21-11/fabric` | fabric-gui-imgui is Fabric-only |
+
+In `settings.gradle`:
+```groovy
+include('common')
+include('minecraft-1-21-11:common')
+include('minecraft-1-21-11:fabric')
+// future: include('minecraft-1-21-11:forge')
+// future: include('minecraft-1-22:common')
+// future: include('minecraft-1-22:fabric')
 ```
 
 ### build.gradle — common
 
 ```groovy
-plugins {
-    id 'java-library'
-}
+plugins { id 'java-library' }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+repositories { mavenCentral() }
+
 dependencies {
-    implementation 'io.github.spair:imgui-java-binding:1.90.0'
-    implementation 'io.github.spair:imgui-java-natives-windows:1.90.0'
+    compileOnly 'io.github.spair:imgui-java-binding:1.90.0'
+    testImplementation 'io.github.spair:imgui-java-binding:1.90.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 ```
 
-### build.gradle — fabric-1-21-11
+### build.gradle — minecraft-1-21-11/common
 
 ```groovy
 plugins {
-    id 'fabric-loom'
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
 }
 
 dependencies {
     implementation project(':common')
-    minecraft "com.mojang:minecraft:1.21.11"
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    // Loom requires fabric-loader for MC jar setup — not used in code
+    modCompileOnly "net.fabricmc:fabric-loader:${loader_version}"
+}
+```
+
+### build.gradle — minecraft-1-21-11/fabric
+
+```groovy
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+dependencies {
+    implementation project(':common')
+    implementation project(':minecraft-1-21-11:common')
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    modImplementation "fr.ycx:fabric-gui-imgui:1.21.11-1.0.7+imgui.1.90.0"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
+    include "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
 }
 ```
 
@@ -81,17 +136,18 @@ dependencies {
 
 ```groovy
 // root build.gradle
-tasks.register('runClient121') {
+tasks.register('runClient121Fabric') {
     group = 'ebsl'
-    description = 'Run Minecraft 1.21.11 client'
-    dependsOn ':fabric-1-21-11:runClient'
+    description = 'Run Minecraft 1.21.11 (Fabric) client'
+    dependsOn ':minecraft-1-21-11:fabric:runClient'
 }
 
-tasks.register('buildMod121') {
+tasks.register('buildMod121Fabric') {
     group = 'ebsl'
-    description = 'Build fabric-1-21-11 jar'
-    dependsOn ':fabric-1-21-11:build'
+    description = 'Build Minecraft 1.21.11 (Fabric) jar'
+    dependsOn ':minecraft-1-21-11:fabric:build'
 }
+// future: runClient121Forge, runClient122Fabric, etc.
 ```
 
 ---
@@ -245,22 +301,25 @@ public class EbslCore {
 }
 ```
 
-### FabricMod (fabric-1-21-11 — entry point)
+### FabricMod (minecraft-1-21-11/fabric — entry point)
 
 ```java
 public class FabricMod implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
+        Path configDir = FabricLoader.getInstance().getConfigDir().resolve("ebsl");
 
         EbslPlatform platform = EbslPlatform.builder()
-            .world(new FabricWorldLayer(client))
-            .player(new FabricPlayerLayer(client))
+            // from minecraft-1-21-11/common — loader-agnostic MC implementations
+            .world(new McWorldLayer(client))
+            .player(new McPlayerLayer(client))
+            .render(new McRenderLayer())
+            .storage(new McStorageLayer(configDir))
+            // from minecraft-1-21-11/fabric — Fabric-specific
             .physics(new FabricPhysicsLayer(client))
             .events(new FabricEventBus())
-            .render(new FabricRenderLayer())
             .commands(new FabricCommandLayer())
-            .storage(new FabricStorageLayer(FabricLoader.getInstance().getConfigDir()))
             .imgui(new FabricImGuiLayer(client))
             .build();
 
@@ -311,13 +370,14 @@ tasks.named('compileJava') {
 ## Migration Phases
 
 ### Phase 1 — Gradle skeleton
-- Convert root to multi-project (`settings.gradle` includes both subprojects)
-- Move all existing `src/` into `fabric-1-21-11/src/` unchanged
-- `common/` is empty — mod still compiles and runs
+- Convert root to multi-project: `common`, `minecraft-1-21-11:common`, `minecraft-1-21-11:fabric`
+- Move all existing `src/` into `minecraft-1-21-11/fabric/src/` unchanged
+- `common/` and `minecraft-1-21-11/common/` are empty — mod still compiles and runs
 
 ### Phase 2 — Layer interfaces + stubs
 - Define all 8 interfaces + value types in `common`
-- Create `Fabric*Layer` stub classes in `fabric-1-21-11` (throw `UnsupportedOperationException`)
+- Create `Mc*Layer` stubs in `minecraft-1-21-11/common` (4 loader-agnostic layers)
+- Create `Fabric*Layer` stubs in `minecraft-1-21-11/fabric` (4 loader-specific layers)
 - `EbslPlatform` + `EbslCore` exist but do nothing
 - `FabricMod` builds the platform and creates `EbslCore`
 
@@ -353,9 +413,21 @@ Fill in `Fabric*Layer` implementations one by one, migrate subsystems as their l
 
 ## Adding a New MC Version
 
-To support e.g. `fabric-1-22`:
-1. Copy `fabric-1-21-11/` → `fabric-1-22/`
-2. Update `minecraft_version`, `loader_version`, `fabric_version` in its `gradle.properties`
-3. Fix compilation errors in the 8 `Fabric*Layer` classes (API changes between MC versions)
-4. Add `runClient122` / `buildMod122` tasks to root
-5. Zero changes to `common/`
+To support e.g. MC 1.22 with Fabric:
+1. Create `minecraft-1-22/gradle.properties` with `minecraft_version=1.22`
+2. Copy `minecraft-1-21-11/common/` → `minecraft-1-22/common/`
+3. Copy `minecraft-1-21-11/fabric/` → `minecraft-1-22/fabric/`
+4. Fix compilation errors in `Mc*Layer` and `Fabric*Layer` classes (MC API changes only)
+5. Add to `settings.gradle`: `include('minecraft-1-22:common')`, `include('minecraft-1-22:fabric')`
+6. Add `runClient122Fabric` / `buildMod122Fabric` tasks to root `build.gradle`
+7. Zero changes to `common/`
+
+## Adding a New Loader (e.g. Forge on 1.21.11)
+
+1. Create `minecraft-1-21-11/forge/` with a ForgeGradle build
+2. Implement only the 4 loader-specific layers against the Forge API:
+   - `ForgePhysicsLayer`, `ForgeEventBus`, `ForgeCommandLayer`, `ForgeImGuiLayer`
+3. Reuse `minecraft-1-21-11:common` for the 4 loader-agnostic `Mc*Layer` implementations
+4. Add `include('minecraft-1-21-11:forge')` to `settings.gradle`
+5. Add `runClient121Forge` task to root
+6. Zero changes to `common/` or `minecraft-1-21-11/common/`
