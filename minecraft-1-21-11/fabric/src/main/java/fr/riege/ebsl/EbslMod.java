@@ -1,0 +1,90 @@
+package fr.riege.ebsl;
+
+import fr.riege.ebsl.event.Event;
+import fr.riege.ebsl.event.EventBridge;
+import fr.riege.ebsl.event.EventBus;
+import fr.riege.ebsl.event.EventBusImpl;
+import fr.riege.ebsl.event.EventPhase;
+import fr.riege.ebsl.event.EventRegistry;
+import fr.riege.ebsl.event.events.game.TickEvent;
+import fr.riege.ebsl.event.events.render.RenderWorldEvent;
+import fr.riege.ebsl.mc.McChatLog;
+import fr.riege.ebsl.terminal.PathCommand;
+import fr.riege.ebsl.terminal.TerminalCommands;
+import fr.riege.ebsl.general.registry.BotModuleRegistry;
+import fr.riege.ebsl.general.registry.BotTaskRegistry;
+import fr.riege.ebsl.input.EbslKeybinds;
+import fr.riege.ebsl.pathfinding.PathfindingManager;
+import fr.riege.ebsl.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.pathfinding.goal.GoalRequestHandlers;
+import fr.riege.ebsl.pathfinding.settings.PathfinderSettingsStore;
+import fr.riege.ebsl.pathfinding.rotation.RotationExecutor;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import org.joml.Matrix4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+public final class EbslMod implements ClientModInitializer {
+    public static final String MOD_ID = "ebsl";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static EventBus eventBus;
+
+    @Override
+    public void onInitializeClient() {
+        eventBus = new EventBusImpl();
+        PathfinderSettingsStore.load();
+        BotModuleRegistry.bootstrap(eventBus);
+        BotTaskRegistry.bootstrap();
+        EbslKeybinds.register();
+
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
+            PathCommand.register(dispatcher));
+
+        new EventBridge(eventBus).register();
+
+        eventBus.subscribe(TickEvent.class, EventPhase.POST, event -> {
+            if (event.getClient().player == null || event.getClient().level == null) {
+                return;
+            }
+            PathfindingManager.update(event.getClient());
+            BotTaskRegistry.update(event.getClient());
+        });
+
+        eventBus.subscribe(RenderWorldEvent.class, event -> {
+            var client = net.minecraft.client.Minecraft.getInstance();
+            if (client.player == null) {
+                return;
+            }
+            PathVisualizer.endFrame();
+            RotationExecutor.update(client);
+            BotTaskRegistry.render(client);
+            PathVisualizer.renderWorld(event);
+        });
+        GoalRequestHandlers.bootstrap();
+        TerminalCommands.bootstrap();
+        McChatLog.bootstrap();
+        LOGGER.info("[{}] Event bridge ready.", MOD_ID);
+    }
+
+    public static void onRenderWorld(Matrix4f projection, double camX, double camY, double camZ) {
+        postClientEvent(new RenderWorldEvent(projection, camX, camY, camZ));
+    }
+
+    public static <T extends Event> T postClientEvent(T event) {
+        if (eventBus != null && event != null) {
+            eventBus.post(event);
+        }
+        return event;
+    }
+
+    public static EventBus events() {
+        return eventBus;
+    }
+
+    public static List<EventRegistry.Entry> registeredEvents() {
+        return EventRegistry.all();
+    }
+}
