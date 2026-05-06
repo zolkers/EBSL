@@ -111,7 +111,7 @@ public final class WalkPathProcessor {
             double t = (double) step / checks;
             int x = (int) Math.floor(previous.centeredX() + (current.centeredX() - previous.centeredX()) * t);
             int z = (int) Math.floor(previous.centeredZ() + (current.centeredZ() - previous.centeredZ()) * t);
-            if (!checker.isWalkable(x, previous.flooredY(), z)) {
+            if (!checker.isWalkable(x, Math.min(previous.flooredY(), current.flooredY()), z)) {
                 return true;
             }
         }

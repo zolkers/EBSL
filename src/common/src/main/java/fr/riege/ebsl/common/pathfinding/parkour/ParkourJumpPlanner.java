@@ -147,7 +147,7 @@ public final class ParkourJumpPlanner {
     }
 
     private boolean hasActualGap(PathPosition from, PathPosition to, int distanceBlocks) {
-        int floorY = from.flooredY() - 1;
+        int floorY = Math.min(from.flooredY(), to.flooredY()) - 1;
         int checks = Math.max(2, distanceBlocks * 2);
         for (int step = 1; step < checks; step++) {
             double t = (double) step / checks;

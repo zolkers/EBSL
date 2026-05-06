@@ -10,6 +10,17 @@ def archiveProjectName = project.name
 
 evaluationDependsOn(mcCommonProject.path)
 
+loom {
+    runs {
+        client {
+            runDir = projectDir.toPath().relativize(rootProject.file('run').toPath()).toString()
+        }
+        server {
+            runDir = projectDir.toPath().relativize(rootProject.file('run/server').toPath()).toString()
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }

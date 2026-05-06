@@ -149,7 +149,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
         Integer playerId = platform.player().entityId();
         return entity != null
             && entity.living()
-            && !Integer.valueOf(entity.id()).equals(playerId)
+            && (playerId == null || entity.id() != (int) playerId)
             && entity.alive()
             && !entity.removed()
             && entity.health() > 0.0f;
