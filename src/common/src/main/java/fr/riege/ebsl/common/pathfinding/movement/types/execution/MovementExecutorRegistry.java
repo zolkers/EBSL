@@ -11,6 +11,7 @@ public final class MovementExecutorRegistry {
         register(Node.MoveType.WALK, new WalkMovementExecutor());
         register(Node.MoveType.WALK_DIAGONAL, new WalkDiagonalMovementExecutor());
         register(Node.MoveType.STEP_UP, new StepUpMovementExecutor());
+        register(Node.MoveType.STEP_DOWN, new StepDownMovementExecutor());
         register(Node.MoveType.JUMP, new JumpMovementExecutor());
         register(Node.MoveType.PARKOUR, new ParkourMovementExecutor());
         register(Node.MoveType.FALL, new FallMovementExecutor());

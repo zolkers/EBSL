@@ -1,15 +1,11 @@
 package fr.riege.ebsl.common.pathfinding.parkour;
 
 import fr.riege.ebsl.common.analytics.AnalyticsEventLog;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
 public final class ParkourEvaluationTelemetry {
-    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-parkour-eval");
     private static final long MIN_INTERVAL_MS = 75;
     private static long lastRecordTime;
 
@@ -47,13 +43,5 @@ public final class ParkourEvaluationTelemetry {
             plan.reason(),
             detail);
         AnalyticsEventLog.record("parkour-eval", message);
-        if (PathfinderSettings.instance().showDebug.value() && isInterestingConsoleReason(plan.reason())) {
-            LOGGER.info(message);
-        }
-    }
-
-    private static boolean isInterestingConsoleReason(String reason) {
-        return !"missing takeoff support".equals(reason)
-            && !"no gap — all intermediates are walkable".equals(reason);
     }
 }

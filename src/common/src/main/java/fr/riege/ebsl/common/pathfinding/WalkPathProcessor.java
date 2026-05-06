@@ -63,6 +63,8 @@ public final class WalkPathProcessor {
         return nodes;
     }
 
+    private static final double STEP_DOWN_DY_THRESHOLD = -1.1;
+
     private static Node.MoveType inferMoveType(PathPosition previous, PathPosition current,
                                                WalkabilityChecker checker) {
         double dy = checker == null
@@ -85,7 +87,7 @@ public final class WalkPathProcessor {
             return Node.MoveType.STEP_UP;
         }
         if (dy < PathfinderSettings.instance().descentThreshold.value()) {
-            return Node.MoveType.FALL;
+            return dy >= STEP_DOWN_DY_THRESHOLD ? Node.MoveType.STEP_DOWN : Node.MoveType.FALL;
         }
         if (absDx + absDz >= 2) {
             return Node.MoveType.WALK_DIAGONAL;

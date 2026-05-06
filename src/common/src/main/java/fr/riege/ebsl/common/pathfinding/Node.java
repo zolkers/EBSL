@@ -25,7 +25,7 @@ public final class Node implements Comparable<Node> {
     public double   cachedFCost = Double.NaN;
 
     public enum MoveType {
-        WALK, WALK_DIAGONAL, STEP_UP, JUMP, PARKOUR, FALL, SWIM, CLIMB, FLY
+        WALK, WALK_DIAGONAL, STEP_UP, STEP_DOWN, JUMP, PARKOUR, FALL, SWIM, CLIMB, FLY
     }
 
     /** Constructor for intermediate tracking nodes (no heuristic needed). */

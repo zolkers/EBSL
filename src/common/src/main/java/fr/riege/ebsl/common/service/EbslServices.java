@@ -35,6 +35,10 @@ public final class EbslServices {
         return navigation;
     }
 
+    public static boolean isNavigationActive() {
+        return navigation != null && navigation.isNavigating();
+    }
+
     public static UiService ui() {
         if (ui == null) {
             throw new IllegalStateException("UiService has not been installed");

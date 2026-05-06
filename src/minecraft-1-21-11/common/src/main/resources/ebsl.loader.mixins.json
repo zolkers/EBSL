@@ -9,7 +9,8 @@
     "WorldRendererMixin",
     "MouseHandlerDockingMixin",
     "KeyboardHandlerDockingMixin",
-    "ConnectionPacketCaptureMixin"
+    "ConnectionPacketCaptureMixin",
+    "KeyMappingNavigationMixin"
   ],
   "injectors": {
     "defaultRequire": 1

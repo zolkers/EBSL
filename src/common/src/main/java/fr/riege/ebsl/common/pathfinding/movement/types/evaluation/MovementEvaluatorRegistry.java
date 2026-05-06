@@ -11,6 +11,7 @@ public final class MovementEvaluatorRegistry {
         register(Node.MoveType.WALK, new WalkMovementEvaluator());
         register(Node.MoveType.WALK_DIAGONAL, new WalkDiagonalMovementEvaluator());
         register(Node.MoveType.STEP_UP, new StepUpMovementEvaluator());
+        register(Node.MoveType.STEP_DOWN, new StepDownMovementEvaluator());
         register(Node.MoveType.JUMP, new JumpMovementEvaluator());
         register(Node.MoveType.PARKOUR, new ParkourMovementEvaluator());
         register(Node.MoveType.FALL, new FallMovementEvaluator());
