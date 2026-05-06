@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: imgui-binding
+Implementation-Version: 1.90.0
+Build-Timestamp: 2025-08-26T13:20:28.651+0000
+Build-Revision: c80552861d5de1c929dbe3210cba8b72792e4471
+Build-Jdk: 1.8.0_462-b08 (Eclipse Temurin)
+Source-Compatibility: 1.8
+Target-Compatibility: 1.8
+Created-By: Gradle 8.14.3 
+

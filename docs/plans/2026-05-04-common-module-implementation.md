@@ -6,9 +6,30 @@
 
 **Architecture:** Layered Platform + Composition Root. `common` defines all logic and 8 layer interfaces. Each loader subproject implements the interfaces and assembles `EbslPlatform` injected into `EbslCore`. Adding a new MC version = new `minecraft-X/fabric` subproject, implement 8 interfaces only.
 
+**Physical layout:** Gradle project names stay short (`:common`, `:minecraft-1-21-11:common`, `:minecraft-1-21-11:fabric`), but all module directories live under `src/`: `src/common`, `src/minecraft-1-21-11/common`, and `src/minecraft-1-21-11/fabric`.
+
 **Tech Stack:** Java 21, Gradle multi-project, Fabric Loom, imgui-java-binding, JUnit 5
 
 **Design doc:** `docs/plans/2026-05-04-common-module-refactor-design.md`
+
+---
+
+## Status 2026-05-05
+
+Implemented:
+
+- Gradle modules live under `src/`.
+- `src/common` compiles cleanly without Minecraft/Fabric/Mojang imports.
+- `src/minecraft-1-21-11/common` is the version-scoped common loader layer: `ModloaderCommonBootstrap`, shared loader-neutral services/adapters, common mixins, `McWorldLayer`, `McPlayerLayer`, `McRenderLayer`, `McStorageLayer`, `MinecraftPhysicsLayer`, and shared MC resources.
+- `src/minecraft-1-21-11/fabric` is physically reduced to Fabric metadata, `FabricEbslMod`, and the tiny `FabricCommandLayer` bridge needed to register client commands through Fabric API.
+- `fabric.mod.json` points to `fr.riege.ebsl.fabric.FabricEbslMod`.
+- `fabric.mod.json` loads common mixins from `ebsl.loader.mixins.json`, bundled from `src/minecraft-1-21-11/common`.
+- Shared MC assets (`assets/ebsl/icon.png`, lang, and core shaders) live in `src/minecraft-1-21-11/common/src/main/resources` and are bundled into the Fabric jar from there.
+- Fabric no longer compiles or contains old backend packages such as `pathfinding`, `general`, `terminal`, `ui`, `api`, `event`, or `settings`.
+- Common owns the navigation backend via `CommonNavigationBackend`, `LayerNavigationPointProvider`, and `LayerPathProcessor`.
+- `buildMod121Fabric` passes.
+
+Remaining backend growth should happen only in `src/common`; version/common may fill vanilla MC data/resources/lifecycle adapters, and Fabric may fill loader-specific entrypoint or API hooks only.
 
 ---
 
@@ -44,14 +65,19 @@ include('minecraft-1-21-11:fabric')
 // future: include('minecraft-1-21-11:forge')
 // future: include('minecraft-1-22:common')
 // future: include('minecraft-1-22:fabric')
+
+project(':common').projectDir = file('src/common')
+project(':minecraft-1-21-11').projectDir = file('src/minecraft-1-21-11')
+project(':minecraft-1-21-11:common').projectDir = file('src/minecraft-1-21-11/common')
+project(':minecraft-1-21-11:fabric').projectDir = file('src/minecraft-1-21-11/fabric')
 ```
 
 **Step 2: Create subproject directories**
 
 ```bash
-mkdir -p common/src/main/java
-mkdir -p minecraft-1-21-11/common/src/main/java
-mkdir -p minecraft-1-21-11/fabric/src/main/java
+mkdir -p src/common/src/main/java
+mkdir -p src/minecraft-1-21-11/common/src/main/java
+mkdir -p src/minecraft-1-21-11/fabric/src/main/java
 ```
 
 **Step 3: Commit**
@@ -311,7 +337,7 @@ git commit -m "build: phase 1 complete — gradle skeleton verified"
 
 ## PHASE 2 — Layer Interfaces + Value Types
 
-> Goal: all 8 layer interfaces exist in common, 4 `Mc*Layer` stubs in minecraft-1-21-11/common, 4 `Fabric*Layer` stubs in minecraft-1-21-11/fabric, EbslPlatform and EbslCore exist but do nothing. Mod still runs.
+> Goal: all layer interfaces exist in common, vanilla/shared MC adapter stubs live in minecraft-1-21-11/common, Fabric keeps only its entrypoint/metadata unless a Fabric API hook is required. EbslPlatform and EbslCore exist but do nothing. Mod still runs.
 
 ---
 
@@ -740,11 +766,9 @@ git commit -m "feat(common): add EbslCore stub composition root"
 - Create: `McRenderLayer.java` implements `IRenderLayer`
 - Create: `McStorageLayer.java` implements `IStorageLayer`
 
-**In minecraft-1-21-11/fabric** — Fabric-specific layers (package `fr.riege.ebsl.fabric.layer`):
-- Create: `FabricPhysicsLayer.java` implements `IPhysicsLayer`
-- Create: `FabricEventBus.java` implements `IEventBus`
-- Create: `FabricCommandLayer.java` implements `ICommandLayer`
-- Create: `FabricImGuiLayer.java` implements `IImGuiLayer`
+**In minecraft-1-21-11/fabric** — Fabric-specific hooks:
+- Keep only the entrypoint, loader metadata, and small Fabric API bridges such as client-command registration
+- Put shared version-common implementations in `minecraft-1-21-11/common` when they only depend on vanilla MC APIs
 
 **Step 1: Pattern for mc-common stub — use `McWorldLayer` as example**
 
@@ -775,7 +799,7 @@ public class McWorldLayer implements IWorldLayer {
 ```
 
 Apply the same pattern for `McPlayerLayer`, `McRenderLayer`, `McStorageLayer` (takes `Path configDir`).  
-Apply for the 4 Fabric stubs: `FabricEventBus` and `FabricImGuiLayer` take no MC client in constructor.
+Apply for loader-specific stubs only when a layer truly depends on the loader API.
 
 **Step 2: Also create minecraft-1-21-11/common/build.gradle**
 
@@ -844,10 +868,10 @@ public class FabricEbslMod implements ClientModInitializer {
             .render(new McRenderLayer())
             .storage(new McStorageLayer(configDir))
             // from minecraft-1-21-11/fabric — Fabric-specific
-            .physics(new FabricPhysicsLayer(client))
-            .events(new FabricEventBus())
+            .physics(new MinecraftPhysicsLayer(client))
+            .events(new ModloaderEventBus())
             .commands(new FabricCommandLayer())
-            .imgui(new FabricImGuiLayer(client))
+            .imgui(new MinecraftImGuiLayer(client))
             .build();
 
         new EbslCore(platform);
@@ -1123,7 +1147,7 @@ git commit -m "refactor: migrate WalkabilityChecker and movement evaluators to c
 
 ---
 
-### Task 23: Implement McPlayerLayer + FabricPhysicsLayer
+### Task 23: Implement McPlayerLayer + MinecraftPhysicsLayer
 
 **File:** `minecraft-1-21-11/common/src/main/java/fr/riege/ebsl/mc/McPlayerLayer.java`
 
@@ -1152,7 +1176,7 @@ public Vec3d velocity() {
 // ... implement remaining
 ```
 
-**FabricPhysicsLayer:**
+**MinecraftPhysicsLayer:**
 
 ```java
 @Override
@@ -1166,7 +1190,7 @@ public void setForward(float value) {
 **Step 2: Compile + commit**
 
 ```bash
-git commit -m "feat(mc-common): implement McPlayerLayer and FabricPhysicsLayer"
+git commit -m "feat(mc-common): implement McPlayerLayer and MinecraftPhysicsLayer"
 ```
 
 ---

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "fr.riege.ebsl.loader.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "WorldRendererMixin",
+    "MouseHandlerDockingMixin",
+    "KeyboardHandlerDockingMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

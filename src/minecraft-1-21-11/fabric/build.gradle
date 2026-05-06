@@ -1,0 +1,54 @@
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+evaluationDependsOn(':minecraft-1-21-11:common')
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':common')
+    // Bypass Loom's project dependency substitution (same workaround as mc-common uses for :common)
+    compileOnly files(project(':minecraft-1-21-11:common').sourceSets.main.output.classesDirs)
+
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    modImplementation "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
+    include "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    inputs.property "projectName", project.name
+    from(project(':minecraft-1-21-11:common').sourceSets.main.output)
+    from("LICENSE") {
+        rename { "${it}_${project.name}" }
+    }
+}
