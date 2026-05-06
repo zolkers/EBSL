@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.service;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 
 public interface NavigationService {
     void startBlockGoal(int x, int y, int z);
@@ -13,6 +14,9 @@ public interface NavigationService {
     void startPathTestXZ(int x, int z);
 
     void stop(boolean announce);
+
+    default void startNavigation(NavigationRequest request) {
+    }
 
     boolean isNavigating();
 

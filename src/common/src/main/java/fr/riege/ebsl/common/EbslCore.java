@@ -11,6 +11,9 @@ import fr.riege.ebsl.common.terminal.CommandRegistry;
 import fr.riege.ebsl.common.terminal.CommandResult;
 import fr.riege.ebsl.common.terminal.CommandScope;
 import fr.riege.ebsl.common.terminal.TerminalCommands;
+import fr.riege.ebsl.common.log.AppLog;
+import fr.riege.ebsl.common.module.BotModuleRegistry;
+import fr.riege.ebsl.common.task.BotTaskRegistry;
 import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
 
 import java.util.StringJoiner;
@@ -30,6 +33,7 @@ public class EbslCore {
         CommonEventTypes.bootstrap();
         CommonSettingsStore.load(platform.storage());
         TerminalCommands.bootstrap();
+        BotModuleRegistry.bootstrap(platform.events());
         registerCommands(platform);
         platform.input().registerUnfocusKeybind(() -> {
             platform.input().releaseMouse();
@@ -38,6 +42,8 @@ public class EbslCore {
             }
         });
         platform.events().onTick(event -> navigationService.tick());
+        platform.events().onTick(event -> BotTaskRegistry.update(platform));
+        platform.events().onRenderWorld(event -> BotTaskRegistry.render(platform));
         platform.events().onTick(event -> {
             if (uiService.isVisible() && !platform.input().isMouseGrabbed()) {
                 platform.input().releaseGameplayKeys();

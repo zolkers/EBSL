@@ -13,7 +13,7 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
-import fr.riege.ebsl.common.ui.CommonImGuiOverlay.Rect;
+import fr.riege.ebsl.common.ui.layout.UiRect;
 import fr.riege.ebsl.loader.render.EbslRenderPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -74,7 +74,7 @@ public final class DockedMinecraftCompositor {
 
     private static void drawCopyIntoViewport(RenderTarget target, RenderTarget source) {
         Window window = Minecraft.getInstance().getWindow();
-        Rect viewport = minecraftGuiRectForImGuiViewport(window);
+        UiRect viewport = minecraftGuiRectForImGuiViewport(window);
         BlitRenderState blit = new BlitRenderState(
             EbslRenderPipelines.DOCKED_VIEWPORT,
             TextureSetup.singleTexture(
@@ -98,15 +98,15 @@ public final class DockedMinecraftCompositor {
         }
     }
 
-    private static Rect minecraftGuiRectForImGuiViewport(Window window) {
-        Rect physical = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+    private static UiRect minecraftGuiRectForImGuiViewport(Window window) {
+        UiRect physical = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         float scaleX = (float) window.getScreenWidth() / (float) window.getGuiScaledWidth();
         float scaleY = (float) window.getScreenHeight() / (float) window.getGuiScaledHeight();
         int x = Math.round(physical.x() / scaleX);
         int y = Math.round(physical.y() / scaleY);
         int right = Math.round(physical.right() / scaleX);
         int bottom = Math.round(physical.bottom() / scaleY);
-        return new Rect(x, y, Math.max(1, right - x), Math.max(1, bottom - y));
+        return new UiRect(x, y, Math.max(1, right - x), Math.max(1, bottom - y));
     }
 
     private static void drawMesh(RenderTarget target, RenderTarget source, MeshData mesh) {

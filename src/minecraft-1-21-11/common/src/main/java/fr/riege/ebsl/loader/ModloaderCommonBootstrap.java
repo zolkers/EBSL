@@ -3,6 +3,7 @@ package fr.riege.ebsl.loader;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import fr.riege.ebsl.common.EbslCore;
+import fr.riege.ebsl.common.log.AppLog;
 import fr.riege.ebsl.common.event.CharTypedEvent;
 import fr.riege.ebsl.common.event.KeyPressEvent;
 import fr.riege.ebsl.common.event.MouseButtonEvent;
@@ -66,6 +67,7 @@ public final class ModloaderCommonBootstrap {
             .input(input)
             .build();
 
+        bootstrapAppLog();
         new EbslCore(platform, navigation, ui);
         if (ModloaderCommonBootstrap.imgui != null) {
             docking = DockingInputHandler.register(events, client, ui, ModloaderCommonBootstrap.imgui);
@@ -129,6 +131,35 @@ public final class ModloaderCommonBootstrap {
 
     public static boolean shouldSuppressImGuiInput() {
         return docking != null && docking.shouldSuppressImGuiInput();
+    }
+
+    private static void bootstrapAppLog() {
+        AppLog.setAppender(receiver -> {
+            try {
+                org.apache.logging.log4j.core.LoggerContext ctx =
+                    (org.apache.logging.log4j.core.LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+                var config = ctx.getConfiguration();
+                var appender = new org.apache.logging.log4j.core.appender.AbstractAppender(
+                    "EbslUiAppender", null, null, true,
+                    org.apache.logging.log4j.core.config.Property.EMPTY_ARRAY) {
+                    @Override public void append(org.apache.logging.log4j.core.LogEvent event) {
+                        String time = java.time.format.DateTimeFormatter
+                            .ofPattern("HH:mm:ss")
+                            .withZone(java.time.ZoneId.systemDefault())
+                            .format(java.time.Instant.ofEpochMilli(event.getTimeMillis()));
+                        String loggerName = event.getLoggerName();
+                        int dot = loggerName.lastIndexOf('.');
+                        String shortLogger = dot >= 0 ? loggerName.substring(dot + 1) : loggerName;
+                        receiver.receive(new AppLog.LogEntry(time, event.getLevel().name(), shortLogger,
+                            event.getMessage().getFormattedMessage()));
+                    }
+                };
+                appender.start();
+                config.getRootLogger().addAppender(appender, org.apache.logging.log4j.Level.INFO, null);
+                ctx.updateLoggers();
+            } catch (Exception ignored) {}
+        });
+        AppLog.bootstrap();
     }
 
     private static float[] toArray(Matrix4f matrix) {

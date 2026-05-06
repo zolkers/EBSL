@@ -3,7 +3,7 @@ package fr.riege.ebsl.loader.viewport;
 import com.mojang.blaze3d.platform.Window;
 import fr.riege.ebsl.common.service.UiService;
 import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
-import fr.riege.ebsl.common.ui.CommonImGuiOverlay.Rect;
+import fr.riege.ebsl.common.ui.layout.UiRect;
 import net.minecraft.client.Minecraft;
 
 public final class DockedMouseCoordinates {
@@ -16,7 +16,7 @@ public final class DockedMouseCoordinates {
         if (!shouldRemap(ui)) {
             return vanillaScaledX;
         }
-        Rect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+        UiRect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         if (rawX < viewport.x() || rawX > viewport.right()) {
             return OUTSIDE_VIEWPORT;
         }
@@ -28,7 +28,7 @@ public final class DockedMouseCoordinates {
         if (!shouldRemap(ui)) {
             return vanillaScaledY;
         }
-        Rect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+        UiRect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         if (rawY < viewport.y() || rawY > viewport.bottom()) {
             return OUTSIDE_VIEWPORT;
         }

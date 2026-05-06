@@ -430,4 +430,8 @@ public final class PathfinderSettings extends Settingable {
     public static void resetToDefaults() {
         INSTANCE.resetSettings();
     }
+
+    public static void save() {
+        // autosaved by EbslCore every 100 ticks via CommonSettingsStore
+    }
 }

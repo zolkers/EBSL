@@ -8,7 +8,8 @@
     "GuiHudMixin",
     "WorldRendererMixin",
     "MouseHandlerDockingMixin",
-    "KeyboardHandlerDockingMixin"
+    "KeyboardHandlerDockingMixin",
+    "ConnectionPacketCaptureMixin"
   ],
   "injectors": {
     "defaultRequire": 1

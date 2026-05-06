@@ -21,6 +21,17 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.goal.GoalAxisX;
+import fr.riege.ebsl.common.pathfinding.goal.GoalAxisZ;
+import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
+import fr.riege.ebsl.common.pathfinding.goal.GoalChunk;
+import fr.riege.ebsl.common.pathfinding.goal.GoalColumn;
+import fr.riege.ebsl.common.pathfinding.goal.GoalGetToBlock;
+import fr.riege.ebsl.common.pathfinding.goal.GoalNear;
+import fr.riege.ebsl.common.pathfinding.goal.GoalRectangleXZ;
+import fr.riege.ebsl.common.pathfinding.goal.GoalXZ;
+import fr.riege.ebsl.common.pathfinding.goal.GoalYLevel;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.service.NavigationService;
@@ -54,6 +65,37 @@ public final class CommonNavigationBackend implements NavigationService {
         this.checker = new WalkabilityChecker(world);
         this.provider = new LayerNavigationPointProvider(checker);
         this.executor = new PathExecutor(world, player, physics);
+    }
+
+    @Override public void startNavigation(NavigationRequest request) {
+        Vec3d pos = player.position();
+        int px = (int) Math.floor(pos.x());
+        int py = (int) Math.floor(pos.y());
+        int pz = (int) Math.floor(pos.z());
+        if (request.goal() instanceof GoalBlock g) {
+            longRangeSession.clear();
+            startPathTo(new PathPosition(g.x(), g.y(), g.z()), request.onFinished(), true, true);
+        } else if (request.goal() instanceof GoalXZ g) {
+            startColumnGoal(g.x(), g.z());
+        } else if (request.goal() instanceof GoalColumn g) {
+            startColumnGoal(g.x(), g.z());
+        } else if (request.goal() instanceof GoalNear g) {
+            startBlockGoal(g.x(), g.y(), g.z());
+        } else if (request.goal() instanceof GoalGetToBlock g) {
+            startBlockGoal(g.x(), g.y(), g.z());
+        } else if (request.goal() instanceof GoalAxisX g) {
+            startColumnGoal(g.x(), pz);
+        } else if (request.goal() instanceof GoalAxisZ g) {
+            startColumnGoal(px, g.z());
+        } else if (request.goal() instanceof GoalYLevel g) {
+            startBlockGoal(px, g.y(), pz);
+        } else if (request.goal() instanceof GoalRectangleXZ g) {
+            startColumnGoal((g.minX() + g.maxX()) / 2, (g.minZ() + g.maxZ()) / 2);
+        } else if (request.goal() instanceof GoalChunk g) {
+            startColumnGoal(g.chunkX() * 16 + 8, g.chunkZ() * 16 + 8);
+        } else {
+            startBlockGoal(px, py, pz);
+        }
     }
 
     @Override public void startBlockGoal(int x, int y, int z) {

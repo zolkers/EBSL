@@ -1,0 +1,15 @@
+package fr.riege.ebsl.common.ui.state;
+
+public enum CenterTab {
+    GAME("Game"),
+    PATHFINDER_SETTINGS("Pathfinder Settings"),
+    PACKET("Packet"),
+    TERMINAL("Terminal"),
+    MC_LOG("MC Log");
+
+    private final String label;
+
+    CenterTab(String label) { this.label = label; }
+
+    public String label() { return label; }
+}
