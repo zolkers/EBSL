@@ -8,6 +8,7 @@ import fr.riege.ebsl.common.layer.IRenderLayer;
 import fr.riege.ebsl.common.layer.ICommandLayer;
 import fr.riege.ebsl.common.layer.IStorageLayer;
 import fr.riege.ebsl.common.layer.IImGuiLayer;
+import fr.riege.ebsl.common.layer.IInputLayer;
 
 public record EbslPlatform(
     IWorldLayer world,
@@ -17,7 +18,8 @@ public record EbslPlatform(
     IRenderLayer render,
     ICommandLayer commands,
     IStorageLayer storage,
-    IImGuiLayer imgui
+    IImGuiLayer imgui,
+    IInputLayer input
 ) {
     public EbslPlatform {
         if (world == null)    throw new NullPointerException("world layer required");
@@ -28,6 +30,7 @@ public record EbslPlatform(
         if (commands == null) throw new NullPointerException("commands layer required");
         if (storage == null)  throw new NullPointerException("storage layer required");
         if (imgui == null)    throw new NullPointerException("imgui layer required");
+        if (input == null)    throw new NullPointerException("input layer required");
     }
 
     public static Builder builder() { return new Builder(); }
@@ -41,6 +44,7 @@ public record EbslPlatform(
         private ICommandLayer commands;
         private IStorageLayer storage;
         private IImGuiLayer imgui;
+        private IInputLayer input;
 
         public Builder world(IWorldLayer v)      { this.world = v;    return this; }
         public Builder player(IPlayerLayer v)    { this.player = v;   return this; }
@@ -50,9 +54,10 @@ public record EbslPlatform(
         public Builder commands(ICommandLayer v) { this.commands = v; return this; }
         public Builder storage(IStorageLayer v)  { this.storage = v;  return this; }
         public Builder imgui(IImGuiLayer v)      { this.imgui = v;    return this; }
+        public Builder input(IInputLayer v)      { this.input = v;    return this; }
 
         public EbslPlatform build() {
-            return new EbslPlatform(world, player, physics, events, render, commands, storage, imgui);
+            return new EbslPlatform(world, player, physics, events, render, commands, storage, imgui, input);
         }
     }
 }

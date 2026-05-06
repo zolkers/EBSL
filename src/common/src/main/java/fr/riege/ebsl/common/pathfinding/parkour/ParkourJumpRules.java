@@ -1,10 +1,10 @@
 package fr.riege.ebsl.common.pathfinding.parkour;
 
-final class ParkourJumpRules {
+public final class ParkourJumpRules {
     private ParkourJumpRules() {
     }
 
-    static RuleResult evaluate(int dx, int dz, double verticalDelta) {
+    public static RuleResult evaluate(int dx, int dz, double verticalDelta) {
         if (!ParkourGeometry.isCandidateOffset(dx, dz)) {
             return RuleResult.rejected("unsupported parkour gap");
         }
@@ -40,7 +40,7 @@ final class ParkourJumpRules {
         return 0;
     }
 
-    record RuleResult(boolean accepted, boolean requiresApproach, boolean forceReach, String reason) {
+    public record RuleResult(boolean accepted, boolean requiresApproach, boolean forceReach, String reason) {
         static RuleResult accepted(boolean requiresApproach) {
             return accepted(requiresApproach, false);
         }

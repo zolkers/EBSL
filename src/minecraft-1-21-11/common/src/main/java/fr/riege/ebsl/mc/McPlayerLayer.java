@@ -14,6 +14,37 @@ public class McPlayerLayer implements IPlayerLayer {
         return player == null ? zero() : new Vec3d(player.getX(), player.getY(), player.getZ());
     }
 
+    @Override public Vec3d velocity() {
+        LocalPlayer player = player();
+        if (player == null) return zero();
+        return new Vec3d(player.getDeltaMovement().x, player.getDeltaMovement().y, player.getDeltaMovement().z);
+    }
+
+    @Override public Vec3d eyePosition() {
+        LocalPlayer player = player();
+        return player == null ? zero() : new Vec3d(player.getX(), player.getEyeY(), player.getZ());
+    }
+
+    @Override public float yaw() {
+        LocalPlayer player = player();
+        return player == null ? 0.0f : player.getYRot();
+    }
+
+    @Override public float pitch() {
+        LocalPlayer player = player();
+        return player == null ? 0.0f : player.getXRot();
+    }
+
+    @Override public boolean onGround() {
+        LocalPlayer player = player();
+        return player != null && player.onGround();
+    }
+
+    @Override public boolean isFlying() {
+        LocalPlayer player = player();
+        return player != null && player.getAbilities().flying;
+    }
+
     @Override public boolean isInWater() {
         LocalPlayer player = player();
         return player != null && player.isInWater();

@@ -14,7 +14,7 @@ public record ExecutionOptions(
 ) {
     public static final double DEFAULT_TOLERANCE = 0.5;
 
-    static ExecutionOptions defaults() {
+    public static ExecutionOptions defaults() {
         return new ExecutionOptions(true, true, true, true, false, -1.0, false, 0.5, 0.5, DEFAULT_TOLERANCE);
     }
 }

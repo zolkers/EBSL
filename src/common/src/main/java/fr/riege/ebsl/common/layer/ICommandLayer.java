@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.layer;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface ICommandLayer {
@@ -9,4 +10,19 @@ public interface ICommandLayer {
     }
 
     void register(String name, String description, CommandHandler handler);
+
+    default void print(String message) {
+    }
+
+    default void printError(String message) {
+        print(message);
+    }
+
+    default void printSuccess(String message) {
+        print(message);
+    }
+
+    default List<String> getSuggestions(String input) {
+        return List.of();
+    }
 }

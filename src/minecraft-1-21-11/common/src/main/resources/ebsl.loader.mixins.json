@@ -3,6 +3,9 @@
   "package": "fr.riege.ebsl.loader.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "GameRendererImGuiMixin",
+    "RenderTargetDockingMixin",
+    "GuiHudMixin",
     "WorldRendererMixin",
     "MouseHandlerDockingMixin",
     "KeyboardHandlerDockingMixin"

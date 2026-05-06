@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common;
 
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.event.CommonEventTypes;
 import fr.riege.ebsl.common.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.service.EbslServices;
 import fr.riege.ebsl.common.service.NavigationService;
@@ -8,7 +9,9 @@ import fr.riege.ebsl.common.service.UiService;
 import fr.riege.ebsl.common.terminal.CommandMeta;
 import fr.riege.ebsl.common.terminal.CommandRegistry;
 import fr.riege.ebsl.common.terminal.CommandResult;
+import fr.riege.ebsl.common.terminal.CommandScope;
 import fr.riege.ebsl.common.terminal.TerminalCommands;
+import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
 
 import java.util.StringJoiner;
 
@@ -24,10 +27,22 @@ public class EbslCore {
         this.platform = platform;
         EbslServices.installPlatform(platform);
         EbslServices.install(navigationService, uiService);
+        CommonEventTypes.bootstrap();
         CommonSettingsStore.load(platform.storage());
         TerminalCommands.bootstrap();
         registerCommands(platform);
+        platform.input().registerUnfocusKeybind(() -> {
+            platform.input().releaseMouse();
+            if (uiService.isVisible()) {
+                platform.input().releaseGameplayKeys();
+            }
+        });
         platform.events().onTick(event -> navigationService.tick());
+        platform.events().onTick(event -> {
+            if (uiService.isVisible() && !platform.input().isMouseGrabbed()) {
+                platform.input().releaseGameplayKeys();
+            }
+        });
         platform.events().onTick(event -> autosaveSettings(platform, event.tick()));
         platform.events().onRenderWorld(event -> {
             platform.render().beginFrame(
@@ -39,10 +54,7 @@ public class EbslCore {
             platform.render().endFrame();
         });
         platform.imgui().registerFrame(() -> {
-            if (uiService.isVisible()) {
-                platform.imgui().getViewportWidth();
-                platform.imgui().getViewportHeight();
-            }
+            CommonImGuiOverlay.render(platform, navigationService, uiService);
         });
     }
 
@@ -52,10 +64,17 @@ public class EbslCore {
 
     private static void registerCommands(EbslPlatform platform) {
         for (CommandMeta meta : CommandRegistry.allMeta()) {
+            if (meta.scope() == CommandScope.TERMINAL) {
+                continue;
+            }
             platform.commands().register(meta.name(), meta.description(), (args, output) -> {
                 CommandResult result = CommandRegistry.dispatch(commandLine(meta.name(), args));
                 for (String line : result.lines()) {
-                    output.accept(line);
+                    if (result.success()) {
+                        platform.commands().printSuccess(line);
+                    } else {
+                        platform.commands().printError(line);
+                    }
                 }
             });
         }

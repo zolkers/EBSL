@@ -6,6 +6,8 @@ import fr.riege.ebsl.common.event.RenderHudEvent;
 import fr.riege.ebsl.common.event.KeyPressEvent;
 import fr.riege.ebsl.common.event.MouseButtonEvent;
 import fr.riege.ebsl.common.event.CharTypedEvent;
+import fr.riege.ebsl.common.event.Event;
+import fr.riege.ebsl.common.event.EventHandler;
 import java.util.function.Consumer;
 
 public interface IEventBus {
@@ -15,4 +17,6 @@ public interface IEventBus {
     void onKeyPress(Consumer<KeyPressEvent> handler);
     void onMouseButton(Consumer<MouseButtonEvent> handler);
     void onCharTyped(Consumer<CharTypedEvent> handler);
+    default <T extends Event> void subscribe(Class<T> type, EventHandler<T> handler) {}
+    default <T extends Event> T post(T event) { return event; }
 }

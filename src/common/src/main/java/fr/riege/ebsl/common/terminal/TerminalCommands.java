@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.terminal;
 
 import fr.riege.ebsl.common.terminal.commands.DebugCommand;
+import fr.riege.ebsl.common.terminal.commands.GoalCommand;
 import fr.riege.ebsl.common.terminal.commands.HelpCommand;
 import fr.riege.ebsl.common.terminal.commands.JumpHeightCommand;
 import fr.riege.ebsl.common.terminal.commands.PosCommand;
@@ -24,5 +25,6 @@ public final class TerminalCommands {
         CommandRegistry.register(new UiCommand());
         CommandRegistry.register(new TestCommand());
         CommandRegistry.register(new TestXzCommand());
+        CommandRegistry.register(new GoalCommand());
     }
 }

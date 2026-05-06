@@ -1,7 +1,6 @@
 package fr.riege.ebsl.fabric;
 
 import fr.riege.ebsl.loader.ModloaderCommonBootstrap;
-import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.layer.MinecraftPhysicsLayer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -20,7 +19,8 @@ public class FabricEbslMod implements ClientModInitializer {
             configDir,
             new MinecraftPhysicsLayer(client),
             new FabricCommandLayer(),
-            new MinecraftImGuiLayer(client));
+            new FabricImGuiLayer(client),
+            new FabricInputLayer(client));
 
         ClientTickEvents.END_CLIENT_TICK.register(ignored -> ModloaderCommonBootstrap.tick());
     }

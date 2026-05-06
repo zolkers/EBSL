@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.event;
 
 import fr.riege.ebsl.common.registry.MapRegistry;
 
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,12 +13,12 @@ public final class EventRegistry {
     public record Entry(String category, String name, List<String> fields) {
     }
 
-    private static final MapRegistry<Class<? extends Event>, Class<? extends Event>> CLASSES = new MapRegistry<>(null);
+    private static final MapRegistry<Class<?>, Class<?>> CLASSES = new MapRegistry<>(null);
 
     private EventRegistry() {
     }
 
-    public static void register(Class<? extends Event> eventClass) {
+    public static void register(Class<?> eventClass) {
         if (eventClass == null || CLASSES.contains(eventClass)) {
             return;
         }
@@ -26,16 +27,23 @@ public final class EventRegistry {
 
     public static List<Entry> all() {
         List<Entry> entries = new ArrayList<>(CLASSES.values().size());
-        for (Class<? extends Event> eventClass : CLASSES.values()) {
+        for (Class<?> eventClass : CLASSES.values()) {
             entries.add(entryOf(eventClass));
         }
         return Collections.unmodifiableList(entries);
     }
 
-    private static Entry entryOf(Class<? extends Event> eventClass) {
+    private static Entry entryOf(Class<?> eventClass) {
         String category = lastPackageSegment(eventClass);
         String name = eventClass.getSimpleName().replaceFirst("Event$", "");
         List<String> fields = new ArrayList<>();
+
+        if (eventClass.isRecord()) {
+            for (RecordComponent component : eventClass.getRecordComponents()) {
+                fields.add(component.getName() + ": " + component.getType().getSimpleName());
+            }
+            return new Entry(category, name, Collections.unmodifiableList(fields));
+        }
 
         for (Method method : eventClass.getDeclaredMethods()) {
             if (!method.getName().startsWith("get") || method.getParameterCount() != 0) {

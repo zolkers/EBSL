@@ -7,4 +7,3 @@ Build-Jdk: 1.8.0_462-b08 (Eclipse Temurin)
 Source-Compatibility: 1.8
 Target-Compatibility: 1.8
 Created-By: Gradle 8.14.3 
-

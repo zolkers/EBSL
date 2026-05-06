@@ -1,14 +1,45 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing.impl;
 
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
+import fr.riege.ebsl.common.pathfinding.parkour.ParkourEvaluationTelemetry;
+import fr.riege.ebsl.common.pathfinding.parkour.ParkourGeometry;
+import fr.riege.ebsl.common.pathfinding.parkour.ParkourJumpPlanner;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
 
 public final class LayerPathProcessor implements NodeProcessor {
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125;
+    private static final double ASCENT_DY_THRESHOLD = 0.5;
+    private static final double PARTIAL_ASCENT_DY_THRESHOLD = 0.2;
+    private static final double DESCENT_DY_THRESHOLD = -0.1;
+    private static final double PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY = 0.12;
+    private static final int APPROACH_LOOKAHEAD_DIST = 3;
+    private static final double APPROACH_MULTIPLIER_DIST_1 = 0.85;
+    private static final double APPROACH_MULTIPLIER_DIST_2 = 0.55;
+    private static final double APPROACH_MULTIPLIER_DIST_3 = 0.30;
+    private static final double APPROACH_OPENING_IMBALANCE_PENALTY = 0.18;
+
+    private final ThreadLocal<ParkourJumpPlanner> parkourPlanner = new ThreadLocal<>();
+    private PathPosition lastCheckedPrev;
+    private boolean lastPrevInsideSolid;
+
+    @Override
+    public void initializeSearch(SearchContext context) {
+        if (context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+            parkourPlanner.set(new ParkourJumpPlanner(layerProvider.checker(), context.getNavigationPointProvider(), context.getEnvironmentContext()));
+        }
+    }
+
+    @Override
+    public void finalizeSearch(SearchContext context) {
+        parkourPlanner.remove();
+        lastCheckedPrev = null;
+        lastPrevInsideSolid = false;
+    }
 
     @Override
     public boolean isValid(EvaluationContext context) {
@@ -16,6 +47,16 @@ public final class LayerPathProcessor implements NodeProcessor {
         PathPosition previous = context.getPreviousPathPosition();
         NavigationPoint currentPoint = context.getNavigationPointProvider()
             .getNavigationPoint(current, context.getEnvironmentContext());
+
+        if (previous != null) {
+            if (previous != lastCheckedPrev) {
+                lastCheckedPrev = previous;
+                lastPrevInsideSolid = isInsideSolidSpace(context, previous);
+            }
+            if (lastPrevInsideSolid || isInsideSolidSpace(context, current)) {
+                return false;
+            }
+        }
 
         if (!currentPoint.isTraversable()) return false;
         if (previous == null) return true;
@@ -27,13 +68,27 @@ public final class LayerPathProcessor implements NodeProcessor {
         int dx = current.flooredX() - previous.flooredX();
         int dz = current.flooredZ() - previous.flooredZ();
 
-        if (dy > Math.max(DEFAULT_MOB_JUMP_HEIGHT, PathfinderSettings.instance().maxJumpHeight.value())) {
+        double maxJumpHeight = Math.max(DEFAULT_MOB_JUMP_HEIGHT, PathfinderSettings.instance().maxJumpHeight.value());
+        if (dy > maxJumpHeight) {
             return false;
         }
         if (dy > DEFAULT_MOB_JUMP_HEIGHT && (previousPoint.isLiquid() || currentPoint.isLiquid())) {
             return false;
         }
+        if (dy > ASCENT_DY_THRESHOLD && hasJumpSupport(previousPoint) && !hasJumpHeadroom(context, previous)) {
+            return false;
+        }
+        if (isParkourOffset(dx, dz) && !isValidParkourMove(context, previous, current, previousPoint, currentPoint)) {
+            return false;
+        }
         if (Math.abs(dx) == 1 && Math.abs(dz) == 1 && !hasOpenDiagonalCorners(context, previous, dx, dz)) {
+            return false;
+        }
+        if (Math.abs(dx) == 1 && Math.abs(dz) == 1 && hasPartialSupportCornerClip(context, previous, current, dx, dz)) {
+            return false;
+        }
+
+        if (dy >= -0.5 && requiresJumpForStep(context, current, dx, dz) && (!hasJumpSupport(previousPoint) || !hasJumpHeadroom(context, previous))) {
             return false;
         }
 
@@ -63,22 +118,100 @@ public final class LayerPathProcessor implements NodeProcessor {
         int dx = current.flooredX() - previous.flooredX();
         int dz = current.flooredZ() - previous.flooredZ();
         double dy = currentPoint.getFloorLevel() - previousPoint.getFloorLevel();
-        double cost = Math.abs(dx) == 1 && Math.abs(dz) == 1
-            ? PathfinderSettings.instance().diagonalCost.value()
-            : PathfinderSettings.instance().walkCost.value();
+        int cx = current.flooredX();
+        int cy = current.flooredY();
+        int cz = current.flooredZ();
+        int px = previous.flooredX();
+        int py = previous.flooredY();
+        int pz = previous.flooredZ();
+        boolean fullStepSupport = isFullStepSupport(context, cx, cy - 1, cz);
+        boolean partialAscent = dy > PARTIAL_ASCENT_DY_THRESHOLD && !fullStepSupport;
+        boolean diagonalMove = Math.abs(cx - px) == 1 && Math.abs(cz - pz) == 1;
+        double additionalCost = movementTypeCost(currentPoint, previousPoint, dy, diagonalMove, partialAscent);
 
-        if (currentPoint.isLiquid() || previousPoint.isLiquid()) {
-            cost += PathfinderSettings.instance().swimCost.value();
+        if (dy > ASCENT_DY_THRESHOLD) {
+            if (fullStepSupport) {
+                additionalCost += PathfinderSettings.instance().fullStepAscentDyCost.value() * dy
+                    + PathfinderSettings.instance().fullStepAscentBaseCost.value();
+            }
+        } else if (dy < DESCENT_DY_THRESHOLD) {
+            additionalCost += PathfinderSettings.instance().fallDyCost.value() * Math.abs(dy);
         }
-        if (currentPoint.isClimbable() || previousPoint.isClimbable()) {
-            cost += PathfinderSettings.instance().climbCost.value();
+
+        int moveDx = cx - px;
+        int moveDz = cz - pz;
+        if (isParkourOffset(moveDx, moveDz)) {
+            additionalCost += PathfinderSettings.instance().parkourCost.value();
         }
-        if (dy > 0.5) {
-            cost += PathfinderSettings.instance().jumpCost.value();
-        } else if (dy < -0.1) {
-            cost += PathfinderSettings.instance().fallDyCost.value() * Math.abs(dy);
+
+        for (int i = 2; i <= 3; i++) {
+            if (canOcclude(context, cx, cy + i, cz)) {
+                additionalCost += 0.1 / i;
+            }
         }
-        return Cost.of(Math.max(0.0, cost));
+
+        boolean wallN = isFullWallBlock(context, cx, cy, cz - 1);
+        boolean wallS = isFullWallBlock(context, cx, cy, cz + 1);
+        boolean wallW = isFullWallBlock(context, cx - 1, cy, cz);
+        boolean wallE = isFullWallBlock(context, cx + 1, cy, cz);
+        boolean wallNW = isFullWallBlock(context, cx - 1, cy, cz - 1);
+        boolean wallNE = isFullWallBlock(context, cx + 1, cy, cz - 1);
+        boolean wallSW = isFullWallBlock(context, cx - 1, cy, cz + 1);
+        boolean wallSE = isFullWallBlock(context, cx + 1, cy, cz + 1);
+
+        int cardinalWalls = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallW ? 1 : 0) + (wallE ? 1 : 0);
+        int diagonalWalls = (wallNW ? 1 : 0) + (wallNE ? 1 : 0) + (wallSW ? 1 : 0) + (wallSE ? 1 : 0);
+
+        double cardinalWallWeight = PathfinderSettings.instance().cardinalWallCost.value();
+        double diagonalWallWeight = PathfinderSettings.instance().diagonalWallCost.value();
+        if (partialAscent) {
+            cardinalWallWeight += PathfinderSettings.instance().partialAscentEdgeCost.value();
+            diagonalWallWeight += PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY;
+        }
+        additionalCost += cardinalWalls * cardinalWallWeight + diagonalWalls * diagonalWallWeight;
+
+        if (cardinalWalls > 0 || diagonalWalls > 0) {
+            int ascentDist = detectPartialAscentAhead(context, cx, cy, cz, moveDx, moveDz);
+            int openingDist = detectOpeningAhead(context, cx, cy, cz, moveDx, moveDz);
+            int transitionDist = (ascentDist > 0 && openingDist > 0)
+                ? Math.min(ascentDist, openingDist)
+                : Math.max(ascentDist, openingDist);
+
+            if (transitionDist > 0) {
+                double multiplier = switch (transitionDist) {
+                    case 1 -> APPROACH_MULTIPLIER_DIST_1;
+                    case 2 -> APPROACH_MULTIPLIER_DIST_2;
+                    default -> APPROACH_MULTIPLIER_DIST_3;
+                };
+                additionalCost += cardinalWalls * (PathfinderSettings.instance().cardinalWallCost.value() * multiplier);
+                additionalCost += diagonalWalls * (PathfinderSettings.instance().diagonalWallCost.value() * multiplier);
+            }
+
+            if (openingDist > 0 && isCardinalMove(moveDx, moveDz)) {
+                int imbalance = countLateralImbalance(moveDx, moveDz, wallN, wallS, wallW, wallE);
+                double decay = switch (openingDist) {
+                    case 1 -> 1.0;
+                    case 2 -> 0.65;
+                    default -> 0.35;
+                };
+                additionalCost += imbalance * APPROACH_OPENING_IMBALANCE_PENALTY * decay;
+            }
+
+            if (partialAscent) {
+                int entrySideWalls = countEntrySideWalls(context, px, py, pz, moveDx, moveDz);
+                entrySideWalls += countEntrySideWalls(context, cx, cy, cz, moveDx, moveDz);
+                additionalCost += entrySideWalls * PathfinderSettings.instance().partialAscentEntrySideCost.value();
+            }
+
+            if (isRoomOpeningTransition(context, px, py, pz, cx, cy, cz, moveDx, moveDz)) {
+                int imbalance = countLateralImbalanceAt(context, px, py, pz, moveDx, moveDz)
+                    + countLateralImbalanceAt(context, cx, cy, cz, moveDx, moveDz);
+                additionalCost += imbalance * PathfinderSettings.instance().openingEntryImbalanceCost.value();
+            }
+        }
+
+        additionalCost += directionCost(context, current, previous);
+        return Cost.of(Math.max(0.0, additionalCost));
     }
 
     private static boolean hasOpenDiagonalCorners(EvaluationContext context, PathPosition previous, int dx, int dz) {
@@ -91,5 +224,258 @@ public final class LayerPathProcessor implements NodeProcessor {
 
     private static boolean hasJumpSupport(NavigationPoint point) {
         return point.hasFloor() && !point.isLiquid();
+    }
+
+    private static boolean hasJumpHeadroom(EvaluationContext context, PathPosition pos) {
+        return isPassable(context, pos.flooredX(), pos.flooredY() + 2, pos.flooredZ());
+    }
+
+    private static boolean requiresJumpForStep(EvaluationContext context, PathPosition pos, int dx, int dz) {
+        if (context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+            return layerProvider.checker().world().requiresJumpForStep(pos.flooredX(), pos.flooredY(), pos.flooredZ(), dx, dz);
+        }
+        return false;
+    }
+
+    private boolean isValidParkourMove(EvaluationContext context, PathPosition from, PathPosition to,
+                                       NavigationPoint fromPoint, NavigationPoint toPoint) {
+        ParkourJumpPlanner planner = parkourPlanner.get();
+        if (planner == null && context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+            planner = new ParkourJumpPlanner(layerProvider.checker(), context.getNavigationPointProvider(), context.getEnvironmentContext());
+        }
+        if (planner == null) {
+            return false;
+        }
+        var plan = planner.plan(from, to, fromPoint, toPoint);
+        ParkourEvaluationTelemetry.record(from, to, plan);
+        return plan.feasible();
+    }
+
+    private static boolean isParkourOffset(int dx, int dz) {
+        return ParkourGeometry.isCandidateOffset(dx, dz);
+    }
+
+    private static boolean hasPartialSupportCornerClip(EvaluationContext context, PathPosition previous,
+                                                       PathPosition current, int dx, int dz) {
+        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+            return false;
+        }
+        var checker = layerProvider.checker();
+        int fy = previous.flooredY();
+        double srcFloor = checker.getTopY(previous.flooredX(), fy - 1, previous.flooredZ());
+        double dstFloor = checker.getTopY(current.flooredX(), fy - 1, current.flooredZ());
+        if (!((srcFloor > 0.1 && srcFloor < 0.95) || (dstFloor > 0.1 && dstFloor < 0.95))) {
+            return false;
+        }
+        PathPosition corner1 = previous.add(dx, 0.0, 0.0);
+        PathPosition corner2 = previous.add(0.0, 0.0, dz);
+        return checker.isFullWall(corner1.flooredX(), fy - 1, corner1.flooredZ())
+            || checker.isFullWall(corner2.flooredX(), fy - 1, corner2.flooredZ());
+    }
+
+    private static boolean isInsideSolidSpace(EvaluationContext context, PathPosition pos) {
+        return isBlockingPlayerSpace(context, pos.flooredX(), pos.flooredY(), pos.flooredZ())
+            || isBlockingPlayerSpace(context, pos.flooredX(), pos.flooredY() + 1, pos.flooredZ());
+    }
+
+    private static boolean isBlockingPlayerSpace(EvaluationContext context, int x, int y, int z) {
+        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+            return false;
+        }
+        var checker = layerProvider.checker();
+        if (checker.isLowPartialSupport(x, y, z)) {
+            return false;
+        }
+        return !checker.isPassable(x, y, z) && checker.getTopY(x, y, z) > 0.0;
+    }
+
+    private static double movementTypeCost(NavigationPoint currentPoint, NavigationPoint previousPoint,
+                                           double dy, boolean diagonalMove, boolean partialAscent) {
+        double cost = diagonalMove
+            ? PathfinderSettings.instance().diagonalCost.value()
+            : PathfinderSettings.instance().walkCost.value();
+        if (currentPoint.isLiquid() || previousPoint.isLiquid()) {
+            cost += PathfinderSettings.instance().swimCost.value();
+        }
+        if (currentPoint.isClimbable() || previousPoint.isClimbable()) {
+            cost += PathfinderSettings.instance().climbCost.value();
+        }
+        if (partialAscent) {
+            cost += PathfinderSettings.instance().partialAscentCost.value();
+        } else if (dy > ASCENT_DY_THRESHOLD) {
+            cost += PathfinderSettings.instance().jumpCost.value();
+        }
+        return cost;
+    }
+
+    private static boolean isFullStepSupport(EvaluationContext context, int x, int y, int z) {
+        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+            && layerProvider.checker().isFullWall(x, y, z);
+    }
+
+    private static boolean isFullWallBlock(EvaluationContext context, int x, int y, int z) {
+        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+            && layerProvider.checker().isFullWallBlock(x, y, z);
+    }
+
+    private static boolean canOcclude(EvaluationContext context, int x, int y, int z) {
+        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+            && layerProvider.checker().canOcclude(x, y, z);
+    }
+
+    private static boolean isPassable(EvaluationContext context, int x, int y, int z) {
+        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+            && layerProvider.checker().isPassable(x, y, z);
+    }
+
+    private static int countEntrySideWalls(EvaluationContext context, int x, int y, int z, int moveDx, int moveDz) {
+        if (Math.abs(moveDx) > Math.abs(moveDz)) {
+            int walls = 0;
+            if (isFullWallBlock(context, x, y, z - 1)) walls++;
+            if (isFullWallBlock(context, x, y, z + 1)) walls++;
+            return walls;
+        }
+        if (Math.abs(moveDz) > Math.abs(moveDx)) {
+            int walls = 0;
+            if (isFullWallBlock(context, x - 1, y, z)) walls++;
+            if (isFullWallBlock(context, x + 1, y, z)) walls++;
+            return walls;
+        }
+        int walls = 0;
+        if (isFullWallBlock(context, x, y, z - 1)) walls++;
+        if (isFullWallBlock(context, x, y, z + 1)) walls++;
+        if (isFullWallBlock(context, x - 1, y, z)) walls++;
+        if (isFullWallBlock(context, x + 1, y, z)) walls++;
+        return walls;
+    }
+
+    private static boolean isRoomOpeningTransition(EvaluationContext context, int px, int py, int pz, int cx, int cy, int cz,
+                                                   int moveDx, int moveDz) {
+        if (!isCardinalMove(moveDx, moveDz)) return false;
+        int prevSides = countCardinalSideWalls(context, px, py, pz, moveDx, moveDz);
+        int curSides = countCardinalSideWalls(context, cx, cy, cz, moveDx, moveDz);
+        return curSides > prevSides && curSides >= 1;
+    }
+
+    private static int countLateralImbalance(int moveDx, int moveDz, boolean wallN, boolean wallS, boolean wallW, boolean wallE) {
+        if (!isCardinalMove(moveDx, moveDz)) return 0;
+        boolean sideA;
+        boolean sideB;
+        if (Math.abs(moveDx) > Math.abs(moveDz)) {
+            sideA = wallN;
+            sideB = wallS;
+        } else {
+            sideA = wallW;
+            sideB = wallE;
+        }
+        return sideA ^ sideB ? 1 : 0;
+    }
+
+    private static int countLateralImbalanceAt(EvaluationContext context, int x, int y, int z, int moveDx, int moveDz) {
+        if (!isCardinalMove(moveDx, moveDz)) return 0;
+        boolean sideA;
+        boolean sideB;
+        if (Math.abs(moveDx) > Math.abs(moveDz)) {
+            sideA = isFullWallBlock(context, x, y, z - 1);
+            sideB = isFullWallBlock(context, x, y, z + 1);
+        } else {
+            sideA = isFullWallBlock(context, x - 1, y, z);
+            sideB = isFullWallBlock(context, x + 1, y, z);
+        }
+        return sideA ^ sideB ? 1 : 0;
+    }
+
+    private static int countCardinalSideWalls(EvaluationContext context, int x, int y, int z, int moveDx, int moveDz) {
+        if (!isCardinalMove(moveDx, moveDz)) return 0;
+        if (Math.abs(moveDx) > Math.abs(moveDz)) {
+            int walls = 0;
+            if (isFullWallBlock(context, x, y, z - 1)) walls++;
+            if (isFullWallBlock(context, x, y, z + 1)) walls++;
+            return walls;
+        }
+        int walls = 0;
+        if (isFullWallBlock(context, x - 1, y, z)) walls++;
+        if (isFullWallBlock(context, x + 1, y, z)) walls++;
+        return walls;
+    }
+
+    private static boolean isCardinalMove(int moveDx, int moveDz) {
+        return (moveDx == 0) != (moveDz == 0);
+    }
+
+    private static int detectPartialAscentAhead(EvaluationContext context, int bx, int by, int bz, int moveDx, int moveDz) {
+        if (moveDx == 0 && moveDz == 0) return 0;
+        int stepX = Integer.signum(moveDx);
+        int stepZ = Integer.signum(moveDz);
+        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+            return 0;
+        }
+        var checker = layerProvider.checker();
+        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST; dist++) {
+            int ax = bx + stepX * dist;
+            int az = bz + stepZ * dist;
+            if (isFullWallBlock(context, ax, by, az)) break;
+            int belowY = by - 1;
+            if (checker.isAir(ax, belowY, az)) continue;
+            if (!checker.isFullWallBlock(ax, belowY, az)) {
+                double topY = checker.getTopY(ax, belowY, az);
+                if (topY > 0.2 && topY < 0.95) return dist;
+            }
+        }
+        return 0;
+    }
+
+    private static int detectOpeningAhead(EvaluationContext context, int bx, int by, int bz, int moveDx, int moveDz) {
+        if (!isCardinalMove(moveDx, moveDz)) return 0;
+        int stepX = Integer.signum(moveDx);
+        int stepZ = Integer.signum(moveDz);
+        int prevSides = countCardinalSideWalls(context, bx, by, bz, moveDx, moveDz);
+        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST; dist++) {
+            int ax = bx + stepX * dist;
+            int az = bz + stepZ * dist;
+            if (isFullWallBlock(context, ax, by, az) || isFullWallBlock(context, ax, by + 1, az)) break;
+            int aheadSides = countCardinalSideWalls(context, ax, by, az, moveDx, moveDz);
+            if (aheadSides > prevSides && aheadSides >= 1) return dist;
+            prevSides = aheadSides;
+        }
+        return 0;
+    }
+
+    private static double directionCost(EvaluationContext context, PathPosition current, PathPosition previous) {
+        PathPosition gpPos = context.getGrandparentPathPosition();
+        PathPosition ggpPos = context.getGreatGrandparentPathPosition();
+        double avgX = 0.0;
+        double avgZ = 0.0;
+        double totalW = 0.0;
+        if (gpPos != null) {
+            double dx1 = previous.x - gpPos.x;
+            double dz1 = previous.z - gpPos.z;
+            double len1 = Math.sqrt(dx1 * dx1 + dz1 * dz1);
+            if (len1 > 0.1) {
+                avgX += dx1 / len1;
+                avgZ += dz1 / len1;
+                totalW += 1.0;
+            }
+        }
+        if (ggpPos != null && gpPos != null) {
+            double dx2 = gpPos.x - ggpPos.x;
+            double dz2 = gpPos.z - ggpPos.z;
+            double len2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
+            if (len2 > 0.1) {
+                avgX += dx2 / len2 * 0.6;
+                avgZ += dz2 / len2 * 0.6;
+                totalW += 0.6;
+            }
+        }
+        if (totalW <= 0.1) return 0.0;
+        avgX /= totalW;
+        avgZ /= totalW;
+        double cdx = current.x - previous.x;
+        double cdz = current.z - previous.z;
+        double curLen = Math.sqrt(cdx * cdx + cdz * cdz);
+        if (curLen <= 0.1) return 0.0;
+        double dot = (cdx / curLen) * avgX + (cdz / curLen) * avgZ;
+        double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
+        return angleDeg < 5.0 ? -0.3 : (angleDeg / 90.0) * 0.8;
     }
 }

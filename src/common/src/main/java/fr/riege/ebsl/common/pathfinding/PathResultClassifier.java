@@ -10,17 +10,17 @@ import java.util.Collection;
 import java.util.List;
 
 @PathingStage(PathingStage.Stage.RESULT_CLASSIFICATION)
-final class PathResultClassifier {
+public final class PathResultClassifier {
     private PathResultClassifier() {
     }
 
-    enum PathAvailability {
+    public enum PathAvailability {
         COMPLETE,
         PARTIAL_USABLE,
         FAILED
     }
 
-    static PathAvailability classifyWalkResult(PathfinderResult result, Collection<PathPosition> positions,
+    public static PathAvailability classifyWalkResult(PathfinderResult result, Collection<PathPosition> positions,
                                                int requestedX, int requestedY, int requestedZ) {
         if (!hasUsablePath(result, positions)) {
             return PathAvailability.FAILED;
@@ -30,7 +30,7 @@ final class PathResultClassifier {
             : PathAvailability.COMPLETE;
     }
 
-    static boolean hasUsablePath(PathfinderResult result, Collection<PathPosition> positions) {
+    public static boolean hasUsablePath(PathfinderResult result, Collection<PathPosition> positions) {
         return result != null
             && result.getPath() != null
             && (result.successful() || result.hasFallenBack())
@@ -39,7 +39,7 @@ final class PathResultClassifier {
             && result.getPathState() != PathState.ABORTED;
     }
 
-    static boolean isPartialWalkResult(PathfinderResult result, Collection<PathPosition> positions,
+    public static boolean isPartialWalkResult(PathfinderResult result, Collection<PathPosition> positions,
                                        int requestedX, int requestedY, int requestedZ) {
         if (result == null || positions == null || positions.isEmpty()) {
             return true;

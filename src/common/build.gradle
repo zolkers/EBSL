@@ -6,6 +6,9 @@ group = 'fr.riege.ebsl'
 version = rootProject.findProperty('mod_version') ?: '1.0.0'
 
 java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
@@ -15,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    // imgui-java binding — pure Java, no natives; natives provided at runtime by fabric-gui-imgui
+    // imgui-java binding is pure Java; platform natives are provided by the Fabric ImGui runtime.
     compileOnly 'io.github.spair:imgui-java-binding:1.90.0'
     api 'com.google.code.gson:gson:2.11.0'
     api 'org.slf4j:slf4j-api:2.0.16'
@@ -27,6 +30,11 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
 }
 
 // Fail build if any MC import leaks into common

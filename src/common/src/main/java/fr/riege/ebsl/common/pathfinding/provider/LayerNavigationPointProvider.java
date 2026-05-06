@@ -13,6 +13,10 @@ public final class LayerNavigationPointProvider implements NavigationPointProvid
         this.checker = checker;
     }
 
+    public WalkabilityChecker checker() {
+        return checker;
+    }
+
     @Override
     public NavigationPoint getNavigationPoint(PathPosition position, EnvironmentContext environmentContext) {
         int x = position.flooredX();

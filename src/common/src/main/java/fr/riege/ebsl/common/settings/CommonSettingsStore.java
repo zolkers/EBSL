@@ -12,18 +12,30 @@ public final class CommonSettingsStore {
     }
 
     public static void load(IStorageLayer storage) {
-        storage.load(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
+        try {
+            storage.load(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
+        } catch (RuntimeException ignored) {
+            // Keep defaults when the persisted config is unreadable or from an incompatible version.
+        }
     }
 
     public static void save(IStorageLayer storage) {
-        storage.save(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
+        try {
+            storage.save(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
+        } catch (RuntimeException ignored) {
+            // Settings persistence should not be able to crash the client tick.
+        }
     }
 
     private static void loadSettings(Iterable<Setting<?>> settings, String json) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
         for (Setting<?> setting : settings) {
             if (root.has(setting.id())) {
-                setting.load(root.get(setting.id()));
+                try {
+                    setting.load(root.get(setting.id()));
+                } catch (RuntimeException ignored) {
+                    // Ignore invalid values one by one so the rest of the file still loads.
+                }
             }
         }
     }

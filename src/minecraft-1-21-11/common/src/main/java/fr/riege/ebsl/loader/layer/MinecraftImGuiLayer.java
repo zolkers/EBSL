@@ -16,16 +16,20 @@ public class MinecraftImGuiLayer implements IImGuiLayer {
     }
 
     public void drawFrame() {
+        drawRegisteredFrame();
+    }
+
+    protected final void drawRegisteredFrame() {
         if (drawPanels != null) {
             drawPanels.run();
         }
     }
 
     @Override public int getViewportWidth() {
-        return client.getWindow().getGuiScaledWidth();
+        return client.getWindow().getScreenWidth();
     }
 
     @Override public int getViewportHeight() {
-        return client.getWindow().getGuiScaledHeight();
+        return client.getWindow().getScreenHeight();
     }
 }

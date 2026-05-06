@@ -22,6 +22,14 @@ public interface NavigationService {
 
     void setWalkSneakLatched(boolean value);
 
+    default String pathStatus() {
+        return isNavigating() ? "running" : "idle";
+    }
+
+    default int lastPathNodeCount() {
+        return 0;
+    }
+
     default void tick() {
     }
 

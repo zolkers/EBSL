@@ -1,6 +1,7 @@
 package fr.riege.ebsl.mc;
 
 import fr.riege.ebsl.common.layer.IWorldLayer;
+import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.world.BlockId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.BasePressurePlateBlock;
 import net.minecraft.world.level.block.BaseRailBlock;
 import net.minecraft.world.level.block.BannerBlock;
@@ -20,6 +22,7 @@ import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SignBlock;
@@ -34,6 +37,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class McWorldLayer implements IWorldLayer {
     private final Minecraft client;
@@ -104,6 +109,40 @@ public class McWorldLayer implements IWorldLayer {
     @Override public double getBlockHeight(int x, int y, int z) {
         Level level = level();
         return level == null ? 0.0 : getBlockHeight(level, x, y, z);
+    }
+
+    @Override public boolean requiresJumpForStep(int x, int y, int z, int moveDx, int moveDz) {
+        Level level = level();
+        if (level == null) return false;
+        BlockState support = state(level, x, y - 1, z);
+        return support.getBlock() instanceof StairBlock;
+    }
+
+    @Override public boolean hasLineOfSight(Vec3d from, Vec3d to) {
+        Level level = level();
+        if (level == null) return false;
+        var hit = level.clip(new ClipContext(
+            new Vec3(from.x(), from.y(), from.z()),
+            new Vec3(to.x(), to.y(), to.z()),
+            ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE,
+            CollisionContext.empty()));
+        return hit.getType() == HitResult.Type.MISS;
+    }
+
+    @Override public boolean isPartialSupport(int x, int y, int z) {
+        Level level = level();
+        if (level == null) return false;
+        BlockPos support = new BlockPos(x, y - 1, z);
+        BlockState supportState = state(level, support.getX(), support.getY(), support.getZ());
+        VoxelShape shape = supportState.getCollisionShape(level, support);
+        if (shape.isEmpty()) return false;
+        return !supportState.isCollisionShapeFullBlock(level, support);
+    }
+
+    @Override public boolean isSlime(int x, int y, int z) {
+        Level level = level();
+        return level != null && state(level, x, y, z).is(Blocks.SLIME_BLOCK);
     }
 
     private Level level() {
