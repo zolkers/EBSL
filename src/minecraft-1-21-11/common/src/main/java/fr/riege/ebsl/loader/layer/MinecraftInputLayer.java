@@ -33,4 +33,11 @@ public class MinecraftInputLayer implements IInputLayer {
         client.options.keyUse.setDown(false);
         client.options.keyPickItem.setDown(false);
     }
+
+    @Override public boolean forwardDown() { return client.options.keyUp.isDown(); }
+    @Override public boolean backwardDown() { return client.options.keyDown.isDown(); }
+    @Override public boolean leftDown() { return client.options.keyLeft.isDown(); }
+    @Override public boolean rightDown() { return client.options.keyRight.isDown(); }
+    @Override public boolean jumpDown() { return client.options.keyJump.isDown(); }
+    @Override public boolean sneakDown() { return client.options.keyShift.isDown(); }
 }

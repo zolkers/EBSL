@@ -103,6 +103,14 @@ final class PathRotationController {
         return camTargetIdx;
     }
 
+    int getCameraIndex() {
+        return cameraIndex;
+    }
+
+    List<Vec3d> getCameraPath() {
+        return cameraPath;
+    }
+
     private RotationTarget selectRotationTarget(Vec3d playerPos, List<Node> path, int pursuitSegment, boolean alreadyRotating) {
         Optional<RotationTarget> parkourLanding = selectParkourLandingTarget(playerPos, path, pursuitSegment, alreadyRotating);
         if (parkourLanding.isPresent()) {

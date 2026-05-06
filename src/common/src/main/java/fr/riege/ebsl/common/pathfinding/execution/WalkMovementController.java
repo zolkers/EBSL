@@ -7,6 +7,8 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
+import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationContext;
+import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutionContext;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.WaterMovementContext;
@@ -48,6 +50,25 @@ final class WalkMovementController {
 
     void setPath(List<Node> path) {
         this.path = path;
+    }
+
+    MovementValidationResult validateCurrentSegment(Vec3d playerPos, int pursuitSegment) {
+        if (path == null || path.size() < 2 || pursuitSegment + 1 >= path.size()) {
+            return MovementValidationResult.ok();
+        }
+        int currentIndex = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+        int targetIndex = Math.min(path.size() - 1, currentIndex + 1);
+        Node from = path.get(currentIndex);
+        Node target = path.get(targetIndex);
+        Node next = path.get(Math.min(path.size() - 1, targetIndex + 1));
+        MovementValidationContext context = new MovementValidationContext(
+            checker,
+            from,
+            target,
+            next,
+            playerPos,
+            pursuitSegment);
+        return MovementEvaluatorRegistry.get(target.moveType).validate(context);
     }
 
     void apply(PathExecutor executor, Vec3d playerPos, Node movementWaypoint,

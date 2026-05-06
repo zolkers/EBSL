@@ -19,6 +19,16 @@ public final class BotTaskRegistry {
         lastEnabled.put(task.id(), task.isEnabled());
     }
 
+    public static void bootstrap() {
+        registerIfAbsent(SpaceMobTask.INSTANCE);
+    }
+
+    private static void registerIfAbsent(BotTask task) {
+        if (TASKS.get(task.id()) == null) {
+            register(task);
+        }
+    }
+
     public static void update(EbslPlatform platform) {
         for (BotTask task : TASKS.values()) {
             syncLifecycle(task);

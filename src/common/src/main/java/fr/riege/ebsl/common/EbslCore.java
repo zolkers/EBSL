@@ -13,6 +13,7 @@ import fr.riege.ebsl.common.terminal.CommandScope;
 import fr.riege.ebsl.common.terminal.TerminalCommands;
 import fr.riege.ebsl.common.log.AppLog;
 import fr.riege.ebsl.common.module.BotModuleRegistry;
+import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.common.task.BotTaskRegistry;
 import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
 
@@ -33,7 +34,9 @@ public class EbslCore {
         CommonEventTypes.bootstrap();
         CommonSettingsStore.load(platform.storage());
         TerminalCommands.bootstrap();
+        BotTaskRegistry.bootstrap();
         BotModuleRegistry.bootstrap(platform.events());
+        CommonSettingsStore.loadBotSettings(platform.storage());
         registerCommands(platform);
         platform.input().registerUnfocusKeybind(() -> {
             platform.input().releaseMouse();
@@ -57,6 +60,8 @@ public class EbslCore {
                 event.camZ(),
                 event.viewMatrix(),
                 event.projMatrix());
+            navigationService.renderWorld();
+            PathVisualizer.renderWorld(platform.render());
             platform.render().endFrame();
         });
         platform.imgui().registerFrame(() -> {

@@ -1,5 +1,6 @@
 package fr.riege.ebsl.loader.render;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -11,8 +12,13 @@ public final class EbslRenderPipelines {
     private static final String MOD_ID = "ebsl";
     private static final Identifier POSITION_TEX_SHADER =
         Identifier.fromNamespaceAndPath("minecraft", "core/position_tex");
+    private static final Identifier POSITION_COLOR_SHADER =
+        Identifier.fromNamespaceAndPath(MOD_ID, "core/pos_color");
     private static final Identifier DOCKED_VIEWPORT_SHADER =
         Identifier.fromNamespaceAndPath(MOD_ID, "core/docked_viewport");
+
+    public static final RenderPipeline LINES_WITH_DEPTH = createLines(DepthTestFunction.LEQUAL_DEPTH_TEST, "lines_depth");
+    public static final RenderPipeline LINES_NO_DEPTH = createLines(DepthTestFunction.NO_DEPTH_TEST, "lines_no_depth");
 
     public static final RenderPipeline DOCKED_VIEWPORT = RenderPipeline.builder()
         .withLocation(Identifier.fromNamespaceAndPath(MOD_ID, "pipelines/docked_viewport"))
@@ -28,5 +34,19 @@ public final class EbslRenderPipelines {
         .build();
 
     private EbslRenderPipelines() {
+    }
+
+    private static RenderPipeline createLines(DepthTestFunction depthTest, String name) {
+        return RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath(MOD_ID, "pipelines/" + name))
+            .withVertexShader(POSITION_COLOR_SHADER)
+            .withFragmentShader(POSITION_COLOR_SHADER)
+            .withUniform("MeshData", UniformType.UNIFORM_BUFFER)
+            .withBlend(BlendFunction.TRANSLUCENT)
+            .withCull(false)
+            .withDepthWrite(false)
+            .withDepthTestFunction(depthTest)
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
+            .build();
     }
 }

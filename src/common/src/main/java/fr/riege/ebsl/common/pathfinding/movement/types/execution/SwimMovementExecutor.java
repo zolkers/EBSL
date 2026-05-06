@@ -15,12 +15,7 @@ final class SwimMovementExecutor extends WalkMovementExecutor {
         if (!context.playerInWater()) {
             return;
         }
-        int waypointY = context.waypoint().position.flooredY();
-        int playerY = (int) Math.floor(context.playerPos().y());
-        boolean needUp = waypointY >= playerY || context.headUnderWater();
-        boolean needDown = waypointY < playerY - 1;
-
-        context.setVerticalControls(needUp && !needDown, needDown && !needUp);
+        context.setVerticalControls(true, false);
         context.setSprintPressed(true);
     }
 }

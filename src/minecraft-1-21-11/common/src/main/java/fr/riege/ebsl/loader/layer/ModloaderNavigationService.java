@@ -8,12 +8,13 @@ import fr.riege.ebsl.common.navigation.CommonNavigationBackend;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.service.NavigationService;
+import net.minecraft.client.Minecraft;
 
 public final class ModloaderNavigationService implements NavigationService {
     private final CommonNavigationBackend backend;
 
     public ModloaderNavigationService(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
-        this.backend = new CommonNavigationBackend(world, player, physics);
+        this.backend = new CommonNavigationBackend(world, player, physics, Minecraft.getInstance()::execute);
     }
 
     @Override public void startBlockGoal(int x, int y, int z) { backend.startBlockGoal(x, y, z); }
@@ -35,5 +36,10 @@ public final class ModloaderNavigationService implements NavigationService {
     @Override
     public void tick() {
         backend.tick();
+    }
+
+    @Override
+    public void renderWorld() {
+        backend.renderWorld();
     }
 }

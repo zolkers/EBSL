@@ -9,7 +9,9 @@ import fr.riege.ebsl.common.pathfinding.check.PathCheckContext;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckRegistry;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckResult;
 import fr.riege.ebsl.common.pathfinding.check.PathProximitySnapshot;
+import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.common.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
@@ -89,6 +91,7 @@ public final class PathExecutor {
         pathTracker.start(plan.path());
         movementController.setPath(plan.path());
         rotationController.rebuild(plan.path());
+        refreshVisualizer();
         state = State.WALKING;
     }
 
@@ -106,6 +109,8 @@ public final class PathExecutor {
 
     public int getWaypointIndex() { return pathTracker.getPursuitSegment(); }
     public int getCamTargetIdx() { return rotationController.getCamTargetIdx(); }
+    public int getCameraIndex() { return rotationController.getCameraIndex(); }
+    public List<Vec3d> getCameraPath() { return rotationController.getCameraPath(); }
     public List<Node> getPathSnapshot() { return pathTracker.getPathSnapshot(); }
     public boolean isSneakLatched() { return sneakLatched; }
     public void setSneakLatched(boolean sneakLatched) { this.sneakLatched = sneakLatched; }
@@ -142,6 +147,7 @@ public final class PathExecutor {
         pathTracker.continueWith(continuationPath);
         movementController.setPath(pathTracker.getPath());
         rotationController.rebuild(pathTracker.getPath());
+        refreshVisualizer();
     }
 
     public void trimAndContinueWith(double trimRatio, List<Node> newPath, int goalX, int goalY, int goalZ) {
@@ -152,10 +158,12 @@ public final class PathExecutor {
         pathTracker.trimAndContinueWith(trimRatio, newPath);
         movementController.setPath(pathTracker.getPath());
         rotationController.rebuild(pathTracker.getPath());
+        refreshVisualizer();
     }
 
     public void tick() {
         if (state != State.WALKING && state != State.REPLANNING) return;
+        if (state == State.REPLANNING) return;
         if (!player.isAlive()) {
             stop();
             return;
@@ -187,6 +195,15 @@ public final class PathExecutor {
         if (handlePathChecks(playerPos, path, proximity, now)) return;
         path = pathTracker.getPath();
         proximity = pathTracker.analyzePathProximity(playerPos);
+
+        MovementValidationResult movementValidation = movementController.validateCurrentSegment(
+            playerPos, pathTracker.getPursuitSegment());
+        if (!movementValidation.valid()) {
+            triggerRepair(
+                Math.min(path.size() - 2, pathTracker.getPursuitSegment() + 1),
+                movementValidation.reason());
+            return;
+        }
 
         if (pathTracker.getPursuitSegment() >= path.size() - 1) {
             tickGoalCoasting(playerPos);
@@ -230,7 +247,7 @@ public final class PathExecutor {
         Node movementWp = pathTracker.getMovementWaypoint();
         if (allowRotation) {
             rotationController.updateRotation(playerPos, path, pathTracker.getPursuitSegment(), null);
-            rotationController.tickExecutor();
+            PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
         }
         double finalDx = (goalX + goalCenterX) - playerPos.x();
         double finalDy = goalY - playerPos.y();
@@ -252,6 +269,11 @@ public final class PathExecutor {
         state = State.IDLE;
         rotationController.stop();
         releaseAll();
+        PathVisualizer.clear();
+    }
+
+    public void tickRotation() {
+        rotationController.tickExecutor();
     }
 
     public void releaseAll() {
@@ -305,30 +327,34 @@ public final class PathExecutor {
             return false;
         }
         lastSmartCutoffTime = now;
+        movementController.setPath(pathTracker.getPath());
+        rotationController.rebuild(pathTracker.getPath());
+        refreshVisualizer();
         return false;
     }
 
     private void tickGoalCoasting(Vec3d playerPos) {
-        double dx = (goalX + goalCenterX) - playerPos.x();
-        double dy = goalY - playerPos.y();
-        double dz = (goalZ + goalCenterZ) - playerPos.z();
-        double hDist = Math.sqrt(dx * dx + dz * dz);
-        double vDist = Math.abs(dy);
-        double tolerance = precise ? preciseGoalTolerance : PathfinderSettings.instance().goalReachedHDist.value();
-        if (hDist <= tolerance && vDist <= PathfinderSettings.instance().goalReachedVDist.value()) {
-            finish();
+        if (!finishAtPathEnd && !isAtGoal(playerPos)) {
+            triggerReplan(false, true, "path ended before final goal");
             return;
         }
-        if (!finishAtPathEnd) {
+        if (!precise) {
             finish();
             return;
         }
         if (coastStartTime == 0) coastStartTime = System.currentTimeMillis();
-        if (System.currentTimeMillis() - coastStartTime > PathfinderSettings.instance().coastTimeoutMs.value()) {
-            finish();
-            return;
+        double dx = (goalX + goalCenterX) - playerPos.x();
+        double dz = (goalZ + goalCenterZ) - playerPos.z();
+        double hDist = Math.sqrt(dx * dx + dz * dz);
+        if (exactGoalCentering && hDist > preciseGoalTolerance) {
+            InputApplier.applyGoalCentering(player, physics, dx, dz);
+        } else {
+            releaseAll();
         }
-        InputApplier.applyGoalCentering(player, physics, dx, dz);
+        if (hDist <= preciseGoalTolerance
+            || System.currentTimeMillis() - coastStartTime > PathfinderSettings.instance().coastTimeoutMs.value()) {
+            finish();
+        }
     }
 
     private boolean isAtGoal(Vec3d playerPos) {
@@ -341,9 +367,29 @@ public final class PathExecutor {
     }
 
     private Node.MoveType recoveryMoveType(List<Node> path, int pursuitSegment) {
-        int idx = Math.max(0, Math.min(path.size() - 1, pursuitSegment + 1));
+        if (isParkourRecoveryWindow(path, pursuitSegment)) {
+            return Node.MoveType.PARKOUR;
+        }
+        if (path == null || path.isEmpty()) {
+            return Node.MoveType.WALK;
+        }
+        int idx = Math.max(0, Math.min(path.size() - 1, pursuitSegment));
         Node.MoveType type = path.get(idx).moveType;
         return type == null ? Node.MoveType.WALK : type;
+    }
+
+    private boolean isParkourRecoveryWindow(List<Node> path, int pursuitSegment) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        int start = Math.max(0, pursuitSegment);
+        int end = Math.min(path.size() - 1, start + 2);
+        for (int i = start; i <= end; i++) {
+            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void triggerReplan(boolean force, boolean fromPlayer, String reason) {
@@ -356,24 +402,35 @@ public final class PathExecutor {
 
     private void triggerRepair(int segmentIndex, String reason) {
         long now = System.currentTimeMillis();
-        if (reason.equals(lastRepairReason) && now - lastRepairReasonTime < 750) {
-            triggerReplan(true, true, reason);
+        if (reason.equals(lastRepairReason) && now - lastRepairReasonTime < 1500) {
+            triggerReplan(false, true, "repair loop suppressed: " + reason);
             return;
         }
         repairRequest = pathTracker.createRepairRequest(segmentIndex, reason, goalX, goalY, goalZ).orElse(null);
         if (repairRequest == null) {
-            triggerReplan(true, true, reason);
+            triggerReplan(false, true, reason);
             return;
         }
         releaseAll();
+        lastRepairReason = reason;
+        lastRepairReasonTime = now;
+        lastReplanTime = now;
+        pathTracker.markReplanTriggered(lastReplanTime);
         state = State.REPLANNING;
     }
 
     private int chooseLocalRepairSegment(PathProximitySnapshot proximity) {
+        List<Node> path = pathTracker.getPath();
+        if (path == null || path.size() < 2) {
+            return 0;
+        }
+        int base = Math.max(pathTracker.getPursuitSegment(), proximity.nearestSegmentIndex());
         int lookahead = proximity.horizontalDistance() >= PathfinderSettings.instance().localRepairDriftThreshold.value()
             ? PathfinderSettings.instance().localRepairDriftLookahead.value()
             : PathfinderSettings.instance().localRepairLookahead.value();
-        return Math.min(pathTracker.getPath().size() - 2, proximity.nearestSegmentIndex() + lookahead);
+        int target = base + lookahead;
+        int maxJoinSegment = Math.max(0, path.size() - 2);
+        return Math.max(0, Math.min(target, maxJoinSegment));
     }
 
     private void finish() {
@@ -383,6 +440,12 @@ public final class PathExecutor {
         Runnable finished = onFinished;
         onFinished = null;
         if (finished != null) finished.run();
+    }
+
+    private void refreshVisualizer() {
+        PathVisualizer.setPath(pathTracker.getPathSnapshot());
+        PathVisualizer.setCameraPath(rotationController.getCameraPath());
+        PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
     }
 
 }

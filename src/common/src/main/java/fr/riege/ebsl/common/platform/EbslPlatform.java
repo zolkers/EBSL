@@ -9,6 +9,7 @@ import fr.riege.ebsl.common.layer.ICommandLayer;
 import fr.riege.ebsl.common.layer.IStorageLayer;
 import fr.riege.ebsl.common.layer.IImGuiLayer;
 import fr.riege.ebsl.common.layer.IInputLayer;
+import fr.riege.ebsl.common.layer.IEntityLayer;
 
 public record EbslPlatform(
     IWorldLayer world,
@@ -19,7 +20,8 @@ public record EbslPlatform(
     ICommandLayer commands,
     IStorageLayer storage,
     IImGuiLayer imgui,
-    IInputLayer input
+    IInputLayer input,
+    IEntityLayer entities
 ) {
     public EbslPlatform {
         if (world == null)    throw new NullPointerException("world layer required");
@@ -31,6 +33,7 @@ public record EbslPlatform(
         if (storage == null)  throw new NullPointerException("storage layer required");
         if (imgui == null)    throw new NullPointerException("imgui layer required");
         if (input == null)    throw new NullPointerException("input layer required");
+        if (entities == null) throw new NullPointerException("entity layer required");
     }
 
     public static Builder builder() { return new Builder(); }
@@ -45,6 +48,7 @@ public record EbslPlatform(
         private IStorageLayer storage;
         private IImGuiLayer imgui;
         private IInputLayer input;
+        private IEntityLayer entities = new IEntityLayer() {};
 
         public Builder world(IWorldLayer v)      { this.world = v;    return this; }
         public Builder player(IPlayerLayer v)    { this.player = v;   return this; }
@@ -55,9 +59,10 @@ public record EbslPlatform(
         public Builder storage(IStorageLayer v)  { this.storage = v;  return this; }
         public Builder imgui(IImGuiLayer v)      { this.imgui = v;    return this; }
         public Builder input(IInputLayer v)      { this.input = v;    return this; }
+        public Builder entities(IEntityLayer v)  { this.entities = v; return this; }
 
         public EbslPlatform build() {
-            return new EbslPlatform(world, player, physics, events, render, commands, storage, imgui, input);
+            return new EbslPlatform(world, player, physics, events, render, commands, storage, imgui, input, entities);
         }
     }
 }

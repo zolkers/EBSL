@@ -10,6 +10,7 @@ import fr.riege.ebsl.common.pathfinding.LongRangePathSession;
 import fr.riege.ebsl.common.pathfinding.PathResultClassifier;
 import fr.riege.ebsl.common.pathfinding.WalkPathProcessor;
 import fr.riege.ebsl.common.pathfinding.execution.ExecutionPlan;
+import fr.riege.ebsl.common.pathfinding.execution.ExecutionOptions;
 import fr.riege.ebsl.common.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.common.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
@@ -38,7 +39,7 @@ import fr.riege.ebsl.common.service.NavigationService;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public final class CommonNavigationBackend implements NavigationService {
     private final IWorldLayer world;
@@ -48,26 +49,40 @@ public final class CommonNavigationBackend implements NavigationService {
     private final LayerNavigationPointProvider provider;
     private final PathExecutor executor;
     private final LongRangePathSession longRangeSession = new LongRangePathSession();
+    private final Consumer<Runnable> gameThread;
 
     private AStarPathfinder pathfinder;
     private volatile PathfinderResult lastResult;
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
     private Runnable onFinished;
+    private Runnable onFailed;
     private List<Node> activeNodes = List.of();
     private int goalX, goalY, goalZ;
     private boolean executePath;
+    private ExecutionOptions executionOptions = ExecutionOptions.defaults();
+    private boolean preciseExecution;
+    private boolean allowParkour = true;
+    private boolean allowJump = true;
+    private boolean allowFall = true;
+    private boolean allowWalkDiagonal = true;
 
     public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
+        this(world, player, physics, Runnable::run);
+    }
+
+    public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, Consumer<Runnable> gameThread) {
         this.world = world;
         this.player = player;
         this.physics = physics;
+        this.gameThread = gameThread == null ? Runnable::run : gameThread;
         this.checker = new WalkabilityChecker(world);
         this.provider = new LayerNavigationPointProvider(checker);
         this.executor = new PathExecutor(world, player, physics);
     }
 
     @Override public void startNavigation(NavigationRequest request) {
+        configureOptions(request);
         Vec3d pos = player.position();
         int px = (int) Math.floor(pos.x());
         int py = (int) Math.floor(pos.y());
@@ -76,34 +91,44 @@ public final class CommonNavigationBackend implements NavigationService {
             longRangeSession.clear();
             startPathTo(new PathPosition(g.x(), g.y(), g.z()), request.onFinished(), true, true);
         } else if (request.goal() instanceof GoalXZ g) {
-            startColumnGoal(g.x(), g.z());
+            startColumnGoalConfigured(g.x(), g.z());
         } else if (request.goal() instanceof GoalColumn g) {
-            startColumnGoal(g.x(), g.z());
+            startColumnGoalConfigured(g.x(), g.z());
         } else if (request.goal() instanceof GoalNear g) {
-            startBlockGoal(g.x(), g.y(), g.z());
+            startBlockGoalConfigured(g.x(), g.y(), g.z());
         } else if (request.goal() instanceof GoalGetToBlock g) {
-            startBlockGoal(g.x(), g.y(), g.z());
+            startBlockGoalConfigured(g.x(), g.y(), g.z());
         } else if (request.goal() instanceof GoalAxisX g) {
-            startColumnGoal(g.x(), pz);
+            startColumnGoalConfigured(g.x(), pz);
         } else if (request.goal() instanceof GoalAxisZ g) {
-            startColumnGoal(px, g.z());
+            startColumnGoalConfigured(px, g.z());
         } else if (request.goal() instanceof GoalYLevel g) {
-            startBlockGoal(px, g.y(), pz);
+            startBlockGoalConfigured(px, g.y(), pz);
         } else if (request.goal() instanceof GoalRectangleXZ g) {
-            startColumnGoal((g.minX() + g.maxX()) / 2, (g.minZ() + g.maxZ()) / 2);
+            startColumnGoalConfigured((g.minX() + g.maxX()) / 2, (g.minZ() + g.maxZ()) / 2);
         } else if (request.goal() instanceof GoalChunk g) {
-            startColumnGoal(g.chunkX() * 16 + 8, g.chunkZ() * 16 + 8);
+            startColumnGoalConfigured(g.chunkX() * 16 + 8, g.chunkZ() * 16 + 8);
         } else {
-            startBlockGoal(px, py, pz);
+            startBlockGoalConfigured(px, py, pz);
         }
     }
 
     @Override public void startBlockGoal(int x, int y, int z) {
+        configureDefaults();
+        startBlockGoalConfigured(x, y, z);
+    }
+
+    private void startBlockGoalConfigured(int x, int y, int z) {
         longRangeSession.clear();
         startPathTo(new PathPosition(x, y, z), null, true, true);
     }
 
     @Override public void startColumnGoal(int x, int z) {
+        configureDefaults();
+        startColumnGoalConfigured(x, z);
+    }
+
+    private void startColumnGoalConfigured(int x, int z) {
         Vec3d pos = player.position();
         longRangeSession.start(x, z);
         LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(pos.x(), pos.z());
@@ -112,10 +137,12 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     @Override public void startPathTest(int x, int y, int z) {
+        configureDefaults();
         startPathTo(new PathPosition(x, y, z), null, false, true);
     }
 
     @Override public void startPathTestXZ(int x, int z) {
+        configureDefaults();
         Vec3d pos = player.position();
         startPathTest(x, resolveGoalYForXZ(x, (int) Math.floor(pos.y()), z), z);
     }
@@ -123,13 +150,12 @@ public final class CommonNavigationBackend implements NavigationService {
     @Override public void stop(boolean announce) {
         navigating = false;
         onFinished = null;
+        onFailed = null;
         activeNodes = List.of();
         executePath = false;
         executor.stop();
         longRangeSession.clear();
-        if (pathfinder != null) {
-            pathfinder.abort();
-        }
+        abortActiveSearch();
     }
 
     @Override public boolean isNavigating() {
@@ -182,6 +208,10 @@ public final class CommonNavigationBackend implements NavigationService {
         return lastPathPositions().size();
     }
 
+    @Override public void renderWorld() {
+        executor.tickRotation();
+    }
+
     @Override public void tick() {
         if (!navigating) return;
         if (!player.isAlive()) {
@@ -189,7 +219,12 @@ public final class CommonNavigationBackend implements NavigationService {
             return;
         }
 
-        if (executor.getState() == PathExecutor.State.WALKING || executor.getState() == PathExecutor.State.REPLANNING) {
+        if (executor.getState() == PathExecutor.State.REPLANNING) {
+            handleExecutorReplan();
+            return;
+        }
+
+        if (executor.getState() == PathExecutor.State.WALKING) {
             executor.tick();
             Node.MoveType moveType = executor.getCurrentMoveType();
             if (moveType != null) currentMoveType = moveType;
@@ -197,8 +232,6 @@ public final class CommonNavigationBackend implements NavigationService {
                 if (!handleLongRangeProgress(true)) {
                     markIdle(false);
                 }
-            } else if (executor.getState() == PathExecutor.State.REPLANNING) {
-                handleExecutorReplan();
             } else {
                 handleLongRangeProgress(false);
             }
@@ -222,6 +255,9 @@ public final class CommonNavigationBackend implements NavigationService {
         PathRepairRequest repairRequest = executor.consumeRepairRequest();
         if (repairRequest != null) {
             startPathRepair(repairRequest);
+            return;
+        }
+        if (pathfinder != null) {
             return;
         }
         if (executor.consumeReplanFromPlayerRequest() && longRangeSession.isActive()) {
@@ -253,7 +289,8 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private void startPathTo(PathPosition target, Runnable onFinished, boolean executePath, boolean clearLongRange) {
-        checker.clearCache();
+        abortActiveSearch();
+        clearPathCaches();
         if (clearLongRange) {
             longRangeSession.clear();
         }
@@ -274,11 +311,15 @@ public final class CommonNavigationBackend implements NavigationService {
         goalY = effectiveTarget.flooredY();
         goalZ = effectiveTarget.flooredZ();
         PathfinderConfiguration config = instantConfiguration();
-        pathfinder = new AStarPathfinder(config);
+        AStarPathfinder activePathfinder = new AStarPathfinder(config);
+        pathfinder = activePathfinder;
 
-        CompletableFuture
-            .supplyAsync(() -> pathfinder.findPath(start, effectiveTarget).toCompletableFuture().join())
-            .whenComplete((result, throwable) -> {
+        activePathfinder.findPath(start, effectiveTarget)
+            .whenComplete((result, throwable) -> onGameThread(() -> {
+                if (pathfinder != activePathfinder) {
+                    return;
+                }
+                pathfinder = null;
                 if (throwable != null) {
                     startFullPathTo(start, effectiveTarget, executePath);
                     return;
@@ -292,23 +333,29 @@ public final class CommonNavigationBackend implements NavigationService {
                     return;
                 }
                 handleWalkResult(result, config, executePath);
-            });
+            }));
     }
 
     private void startFullPathTo(PathPosition start, PathPosition effectiveTarget, boolean executePath) {
+        abortActiveSearch();
         PathfinderConfiguration config = fullConfiguration();
-        pathfinder = new AStarPathfinder(config);
-        CompletableFuture
-            .supplyAsync(() -> pathfinder.findPath(start, effectiveTarget).toCompletableFuture().join())
-            .whenComplete((result, throwable) -> {
+        AStarPathfinder activePathfinder = new AStarPathfinder(config);
+        pathfinder = activePathfinder;
+        activePathfinder.findPath(start, effectiveTarget)
+            .whenComplete((result, throwable) -> onGameThread(() -> {
+                if (pathfinder != activePathfinder) {
+                    return;
+                }
+                pathfinder = null;
                 if (throwable != null) {
                     navigating = false;
                     lastResult = null;
                     physics.clearInputs();
+                    if (onFailed != null) onFailed.run();
                     return;
                 }
                 handleWalkResult(result, config, executePath);
-            });
+            }));
     }
 
     private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config, boolean executePath) {
@@ -319,6 +366,7 @@ public final class CommonNavigationBackend implements NavigationService {
         if (!PathResultClassifier.hasUsablePath(result, positions)) {
             navigating = false;
             physics.clearInputs();
+            if (onFailed != null) onFailed.run();
             return;
         }
 
@@ -351,15 +399,19 @@ public final class CommonNavigationBackend implements NavigationService {
             startPathTo(new PathPosition(goalX, goalY, goalZ), onFinished, true, !longRangeSession.isActive());
             return;
         }
-        checker.clearCache();
+        abortActiveSearch();
+        clearPathCaches();
         Vec3d pos = player.position();
         PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
         PathfinderConfiguration config = repairConfiguration();
         AStarPathfinder repairPathfinder = new AStarPathfinder(config);
         pathfinder = repairPathfinder;
-        CompletableFuture
-            .supplyAsync(() -> repairPathfinder.findPath(start, request.joinNode().position).toCompletableFuture().join())
-            .whenComplete((result, throwable) -> {
+        repairPathfinder.findPath(start, request.joinNode().position)
+            .whenComplete((result, throwable) -> onGameThread(() -> {
+                if (pathfinder != repairPathfinder) {
+                    return;
+                }
+                pathfinder = null;
                 Collection<PathPosition> positions = result != null && result.getPath() != null
                     ? result.getPath().collect()
                     : List.of();
@@ -376,7 +428,7 @@ public final class CommonNavigationBackend implements NavigationService {
                 activeNodes = merged;
                 startExecutor(merged, request.goalX(), request.goalY(), request.goalZ(), true);
                 executor.rememberRecentRepair(request.reason());
-            });
+            }));
     }
 
     private void startExecutor(List<Node> path, int goalX, int goalY, int goalZ, boolean finishAtPathEnd) {
@@ -385,8 +437,8 @@ public final class CommonNavigationBackend implements NavigationService {
             return;
         }
         Runnable segmentFinished = finishAtPathEnd ? onFinished : null;
-        executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, false, segmentFinished,
-            fr.riege.ebsl.common.pathfinding.execution.ExecutionOptions.defaults(), finishAtPathEnd));
+        executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, preciseExecution, segmentFinished,
+            executionOptions, finishAtPathEnd));
     }
 
     private boolean handleLongRangeProgress(boolean walkExecutionDone) {
@@ -465,10 +517,9 @@ public final class CommonNavigationBackend implements NavigationService {
             ? LongRangePathSession.SegmentAttachment.REPLACE_FROM_PLAYER
             : LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT;
         boolean finalRollingHorizon = rollingHorizon;
-        CompletableFuture
-            .supplyAsync(() -> queuedPathfinder.findPath(start, target).toCompletableFuture().join())
-            .whenComplete((result, throwable) -> handleQueuedLongRangeResult(
-                requestId, result, throwable, config, attachment, finalRollingHorizon, segmentGoal.x(), gy, segmentGoal.z()));
+        queuedPathfinder.findPath(start, target)
+            .whenComplete((result, throwable) -> onGameThread(() -> handleQueuedLongRangeResult(
+                requestId, result, throwable, config, attachment, finalRollingHorizon, segmentGoal.x(), gy, segmentGoal.z())));
     }
 
     private void handleQueuedLongRangeResult(int requestId, PathfinderResult result, Throwable throwable,
@@ -590,9 +641,41 @@ public final class CommonNavigationBackend implements NavigationService {
             .provider(provider)
             .processors(List.of(new LayerPathProcessor()))
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
-                PathfinderSettings.instance().maxJumpHeight.value(), true, true, true, true))
+                PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
+            .async(true)
             .fallback(true)
             .build();
+    }
+
+    private void configureOptions(NavigationRequest request) {
+        this.onFailed = request.onFailed();
+        this.allowParkour = request.allowParkour();
+        this.allowJump = request.allowJump();
+        this.allowFall = request.allowFall();
+        this.allowWalkDiagonal = request.allowWalkDiagonal();
+        this.preciseExecution = request.preciseGoalTolerance() != ExecutionOptions.DEFAULT_TOLERANCE;
+        double stickySneakDistance = preciseExecution && request.allowSneak() ? 5.0 : -1.0;
+        this.executionOptions = new ExecutionOptions(
+            request.allowReplan(),
+            request.allowJump(),
+            request.allowRotation(),
+            request.allowSneak(),
+            preciseExecution,
+            stickySneakDistance,
+            request.allowSneak() && executor.isSneakLatched(),
+            0.5,
+            0.5,
+            request.preciseGoalTolerance());
+    }
+
+    private void configureDefaults() {
+        this.onFailed = null;
+        this.executionOptions = ExecutionOptions.defaults();
+        this.preciseExecution = false;
+        this.allowParkour = true;
+        this.allowJump = true;
+        this.allowFall = true;
+        this.allowWalkDiagonal = true;
     }
 
     private static List<Node> mergePathPrefixWithTail(List<Node> prefix, List<Node> tail) {
@@ -609,5 +692,22 @@ public final class CommonNavigationBackend implements NavigationService {
             if (!merged.isEmpty() && merged.getLast().position.equals(candidate.position)) continue;
             merged.add(candidate);
         }
+    }
+
+    private void onGameThread(Runnable action) {
+        gameThread.accept(action);
+    }
+
+    private void abortActiveSearch() {
+        AStarPathfinder active = pathfinder;
+        pathfinder = null;
+        if (active != null) {
+            active.abort();
+        }
+    }
+
+    private void clearPathCaches() {
+        checker.clearCache();
+        provider.clearCache();
     }
 }

@@ -37,6 +37,9 @@ public interface NavigationService {
     default void tick() {
     }
 
+    default void renderWorld() {
+    }
+
     default void startGreenhouseWalk(Vec3d target, Runnable onFinished, boolean isFirst) {
         startBlockGoal((int) Math.floor(target.x()), (int) Math.floor(target.y()), (int) Math.floor(target.z()));
         if (onFinished != null) {

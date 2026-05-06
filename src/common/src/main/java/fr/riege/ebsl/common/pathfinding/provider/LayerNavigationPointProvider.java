@@ -2,12 +2,15 @@ package fr.riege.ebsl.common.pathfinding.provider;
 
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public final class LayerNavigationPointProvider implements NavigationPointProvider {
     private static final NavigationPoint BLOCKED = point(false, false, 0.0, false, false);
 
     private final WalkabilityChecker checker;
+    private final Long2ObjectOpenHashMap<NavigationPoint> navPointCache = new Long2ObjectOpenHashMap<>(512);
 
     public LayerNavigationPointProvider(WalkabilityChecker checker) {
         this.checker = checker;
@@ -17,13 +20,26 @@ public final class LayerNavigationPointProvider implements NavigationPointProvid
         return checker;
     }
 
+    public void clearCache() {
+        navPointCache.clear();
+    }
+
     @Override
     public NavigationPoint getNavigationPoint(PathPosition position, EnvironmentContext environmentContext) {
         int x = position.flooredX();
         int y = position.flooredY();
         int z = position.flooredZ();
+        long key = BlockPosUtil.pack(x, y, z);
+        NavigationPoint cached = navPointCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
 
         if (!checker.world().isLoaded(x, y, z)) {
+            return BLOCKED;
+        }
+        if (checker.isBlacklisted(x, y - 1, z) || checker.isBlacklisted(x, y, z) || checker.isBlacklisted(x, y + 1, z)) {
+            navPointCache.put(key, BLOCKED);
             return BLOCKED;
         }
 
@@ -36,7 +52,9 @@ public final class LayerNavigationPointProvider implements NavigationPointProvid
         boolean dangerous = checker.isDangerous(x, y, z) || checker.isDangerous(x, y + 1, z);
         double floorLevel = floorLevel(x, y, z, liquid, lowPartialFeet);
 
-        return point(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
+        NavigationPoint point = point(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
+        navPointCache.put(key, point);
+        return point;
     }
 
     private double floorLevel(int x, int y, int z, boolean liquid, boolean lowPartialFeet) {

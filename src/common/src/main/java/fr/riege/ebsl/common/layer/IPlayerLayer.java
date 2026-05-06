@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.layer;
 
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.world.BlockId;
 
 public interface IPlayerLayer {
     Vec3d position();
@@ -18,4 +19,6 @@ public interface IPlayerLayer {
     boolean isSprinting();
     boolean isAlive();
     float getHealth();
+    default BlockId targetedBlock() { return null; }
+    default Integer entityId() { return null; }
 }

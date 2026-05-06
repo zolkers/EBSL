@@ -20,6 +20,7 @@ import fr.riege.ebsl.loader.layer.ModloaderNavigationService;
 import fr.riege.ebsl.loader.layer.ModloaderUiService;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.ui.DockingInputHandler;
+import fr.riege.ebsl.mc.McEntityLayer;
 import fr.riege.ebsl.mc.McPlayerLayer;
 import fr.riege.ebsl.mc.McRenderLayer;
 import fr.riege.ebsl.mc.McStorageLayer;
@@ -65,6 +66,7 @@ public final class ModloaderCommonBootstrap {
             .commands(commands)
             .imgui(imgui)
             .input(input)
+            .entities(new McEntityLayer(client))
             .build();
 
         bootstrapAppLog();

@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.ui;
 
 import fr.riege.ebsl.common.layer.IImGuiLayer;
+import fr.riege.ebsl.common.module.BotModuleRegistry;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.service.NavigationService;
 import fr.riege.ebsl.common.service.UiService;
@@ -39,5 +40,8 @@ public final class CommonImGuiOverlay {
         IImGuiLayer imgui = platform.imgui();
         ViewportLayout layout = ViewportLayout.create(imgui.getViewportWidth(), imgui.getViewportHeight());
         RENDERER.render(STATE, layout, navigation);
+        if (STATE.centerTab() == CenterTab.GAME) {
+            BotModuleRegistry.renderGameViewport(platform, navigation, gameViewportRect(imgui.getViewportWidth(), imgui.getViewportHeight()));
+        }
     }
 }

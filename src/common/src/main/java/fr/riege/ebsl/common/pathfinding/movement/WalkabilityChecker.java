@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.movement;
 
 import fr.riege.ebsl.common.layer.IWorldLayer;
+import fr.riege.ebsl.common.module.blacklist.BlockBlacklist;
 import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
 import fr.riege.ebsl.common.world.BlockId;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
@@ -50,6 +51,9 @@ public final class WalkabilityChecker {
     }
 
     public boolean isWalkable(int x, int y, int z) {
+        if (isBlacklisted(x, y - 1, z) || isBlacklisted(x, y, z) || isBlacklisted(x, y + 1, z)) {
+            return false;
+        }
         boolean lowPartialFeet = isLowPartialSupport(x, y, z);
         return (isPassable(x, y, z) || lowPartialFeet)
                 && isPassable(x, y + 1, z)
@@ -71,15 +75,24 @@ public final class WalkabilityChecker {
     }
 
     public boolean hasWalkableTop(int x, int y, int z) {
+        if (isBlacklisted(x, y, z)) {
+            return false;
+        }
         return getTopY(x, y, z) >= 0.5;
     }
 
     public boolean isLowPartialSupport(int x, int y, int z) {
+        if (isBlacklisted(x, y, z)) {
+            return false;
+        }
         double topY = getTopY(x, y, z);
         return topY > 0.0 && topY <= 0.5;
     }
 
     public boolean isFullWallBlock(int x, int y, int z) {
+        if (isBlacklisted(x, y, z)) {
+            return true;
+        }
         return world.isSolid(x, y, z) && world.getBlockHeight(x, y, z) >= 0.95;
     }
 
@@ -93,6 +106,7 @@ public final class WalkabilityChecker {
 
     public boolean safeToFall(int fromY, int toX, int toY, int toZ) {
         int fallDistance = fromY - toY;
+        if (isBlacklisted(toX, toY - 1, toZ) || isBlacklisted(toX, toY, toZ)) return false;
         if (fallDistance <= 3) return true;
         if (isWater(toX, toY, toZ)) return true;
         for (int checkY = toY + 1; checkY < fromY; checkY++) {
@@ -111,7 +125,7 @@ public final class WalkabilityChecker {
     }
 
     public boolean canOcclude(int x, int y, int z) {
-        return world.isSolid(x, y, z);
+        return isBlacklisted(x, y, z) || world.isSolid(x, y, z);
     }
 
     public BlockId getBlock(int x, int y, int z) {
@@ -121,6 +135,10 @@ public final class WalkabilityChecker {
         block = world.getBlock(x, y, z);
         blockCache.put(key, block);
         return block;
+    }
+
+    public boolean isBlacklisted(int x, int y, int z) {
+        return BlockBlacklist.isBlacklisted(getBlock(x, y, z));
     }
 
     private byte getFlags(int x, int y, int z) {
