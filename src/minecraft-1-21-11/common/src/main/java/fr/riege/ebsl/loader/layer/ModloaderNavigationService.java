@@ -6,6 +6,7 @@ import fr.riege.ebsl.common.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.CommonNavigationBackend;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.service.NavigationService;
 
 public final class ModloaderNavigationService implements NavigationService {
@@ -20,6 +21,7 @@ public final class ModloaderNavigationService implements NavigationService {
     @Override public void startPathTest(int x, int y, int z) { backend.startPathTest(x, y, z); }
     @Override public void startPathTestXZ(int x, int z) { backend.startPathTestXZ(x, z); }
     @Override public void stop(boolean announce) { backend.stop(announce); }
+    @Override public void startNavigation(NavigationRequest request) { backend.startNavigation(request); }
     @Override public boolean isNavigating() { return backend.isNavigating(); }
     @Override public Node.MoveType currentMoveType() { return backend.currentMoveType(); }
     @Override public boolean isWalkSneakLatched() { return backend.isWalkSneakLatched(); }

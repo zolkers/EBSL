@@ -43,7 +43,7 @@ public class MinecraftPhysicsLayer implements IPhysicsLayer {
         if (player == null) {
             return;
         }
-        float clampedPitch = Math.max(-90.0f, Math.min(90.0f, pitch));
+        float clampedPitch = Math.clamp(pitch, -90.0f, 90.0f);
         float prevYaw = player.getYRot();
         float prevPitch = player.getXRot();
         player.setYRot(yaw);
