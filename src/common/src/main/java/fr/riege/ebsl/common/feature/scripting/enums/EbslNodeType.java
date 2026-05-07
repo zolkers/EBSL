@@ -31,6 +31,7 @@ public enum EbslNodeType {
     OPERATOR_MOD(EbslNodeCategory.DATA, true),
     OPERATOR_RANDOM(EbslNodeCategory.DATA, true),
     GOTO(EbslNodeCategory.WORLD, true),
+    GOAL_NEAREST_BLOCK(EbslNodeCategory.WORLD, true),
     TRAVEL(EbslNodeCategory.WORLD, true),
     GOAL(EbslNodeCategory.WORLD, true),
     PATH(EbslNodeCategory.WORLD, true),

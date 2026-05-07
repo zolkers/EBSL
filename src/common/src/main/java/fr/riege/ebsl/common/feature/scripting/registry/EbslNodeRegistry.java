@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.feature.scripting.nodes.CreateListNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CrouchNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.EventCallNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.GoalNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.GoalNearestBlockNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.GotoNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.InteractNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.JumpNode;
@@ -65,6 +66,7 @@ public final class EbslNodeRegistry {
         register(new OperatorRandomNode());
         register(new OperatorModNode());
         register(new GotoNode());
+        register(new GoalNearestBlockNode());
         register(new TravelNode());
         register(new GoalNode());
         register(new PathNode());
