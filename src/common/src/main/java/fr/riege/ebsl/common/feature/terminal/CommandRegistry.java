@@ -11,11 +11,20 @@ public final class CommandRegistry {
     }
 
     public static void register(CommandHandler handler) {
+        if (handler instanceof CommandSpec spec) {
+            register(spec);
+            return;
+        }
         Command ann = handler.getClass().getAnnotation(Command.class);
         if (ann == null) {
             throw new IllegalArgumentException(handler.getClass().getName() + " is missing @Command");
         }
         register(ann.name(), ann.description(), ann.usage(), ann.scope(), handler);
+    }
+
+    public static void register(CommandSpec spec) {
+        CommandMeta meta = spec.meta();
+        register(meta.name(), meta.description(), meta.usage(), meta.scope(), spec);
     }
 
     public static void register(String name, String description, String usage,

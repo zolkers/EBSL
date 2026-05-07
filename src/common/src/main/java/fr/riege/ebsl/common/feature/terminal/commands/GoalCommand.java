@@ -5,29 +5,41 @@ import fr.riege.ebsl.common.feature.terminal.*;
 
 import java.util.Locale;
 
-@Command(name = "goal", description = "Run a navigation goal", usage = "goal <walk|column|test|testxz> [args]", scope = CommandScope.MC)
-public final class GoalCommand implements CommandHandler {
-    @Override
-    public CommandResult execute(CommandContext ctx) {
+public final class GoalCommand {
+    private static final String WALK = "walk";
+    private static final String BLOCK = "block";
+    private static final String COLUMN = "column";
+    private static final String WALK_XZ = "walkxz";
+    private static final String TEST = "test";
+    private static final String TEST_XZ = "testxz";
+    private static final String GOAL_LIST = String.join(", ", WALK, COLUMN, TEST, TEST_XZ);
+
+    private GoalCommand() {
+    }
+
+    public static CommandSpec spec() {
+        return CommandSpec.named(CommandIds.GOAL)
+            .description("Run a navigation goal")
+            .usage(CommandIds.GOAL + " <walk|column|test|testxz> [args]")
+            .mcOnly()
+            .choices("goal", WALK, BLOCK, COLUMN, WALK_XZ, TEST, TEST_XZ)
+            .executes(GoalCommand::execute)
+            .build();
+    }
+
+    private static CommandResult execute(CommandContext ctx) {
         if (ctx.argCount() == 0) {
-            return CommandResult.ok("Goals: walk, column, test, testxz");
+            return CommandResult.ok("Goals: " + GOAL_LIST);
         }
 
         String goal = ctx.arg(0).toLowerCase(Locale.ROOT);
         return switch (goal) {
-            case "walk", "block" -> startBlock(ctx.shift(1), "goal " + goal + " <x> <y> <z>");
-            case "column", "walkxz" -> startColumn(ctx.shift(1), "goal " + goal + " <x> <z>");
-            case "test" -> startPathTest(ctx.shift(1), "goal test <x> <y> <z>");
-            case "testxz" -> startPathTestXZ(ctx.shift(1), "goal testxz <x> <z>");
-            default -> CommandResult.error("Unknown goal: " + goal + "  (type 'goal' for list)");
+            case WALK, BLOCK -> startBlock(ctx.shift(1), CommandIds.GOAL + " " + goal + " <x> <y> <z>");
+            case COLUMN, WALK_XZ -> startColumn(ctx.shift(1), CommandIds.GOAL + " " + goal + " <x> <z>");
+            case TEST -> startPathTest(ctx.shift(1), CommandIds.GOAL + " " + TEST + " <x> <y> <z>");
+            case TEST_XZ -> startPathTestXZ(ctx.shift(1), CommandIds.GOAL + " " + TEST_XZ + " <x> <z>");
+            default -> CommandResult.error("Unknown goal: " + goal + "  (type '" + CommandIds.GOAL + "' for list)");
         };
-    }
-
-    @Override
-    public CommandCompletion completer() {
-        return CommandCompletion.builder()
-            .arg("walk", "block", "column", "walkxz", "test", "testxz")
-            .build();
     }
 
     private static CommandResult startBlock(CommandContext ctx, String usage) {

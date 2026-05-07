@@ -4,7 +4,7 @@ import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.feature.terminal.*;
 
-@Command(name = "status", description = "Show navigation status", usage = "status", scope = CommandScope.MC)
+@Command(name = CommandIds.STATUS, description = "Show navigation status", usage = CommandIds.STATUS, scope = CommandScope.MC)
 public final class StatusCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {

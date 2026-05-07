@@ -3,7 +3,7 @@ package fr.riege.ebsl.common.feature.terminal.commands;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.feature.terminal.*;
 
-@Command(name = "debug", description = "Toggle pathfinder debug overlay", usage = "debug", scope = CommandScope.BOTH)
+@Command(name = CommandIds.DEBUG, description = "Toggle pathfinder debug overlay", usage = CommandIds.DEBUG, scope = CommandScope.BOTH)
 public final class DebugCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {

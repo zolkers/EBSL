@@ -5,7 +5,7 @@ import fr.riege.ebsl.common.feature.terminal.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Command(name = "help", description = "List available commands", scope = CommandScope.TERMINAL)
+@Command(name = CommandIds.HELP, description = "List available commands", scope = CommandScope.TERMINAL)
 public final class HelpCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {

@@ -3,7 +3,7 @@ package fr.riege.ebsl.common.feature.terminal.commands;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.feature.terminal.*;
 
-@Command(name = "ui", description = "Toggle the EBSL ImGui overlay", usage = "ui", scope = CommandScope.BOTH)
+@Command(name = CommandIds.UI, description = "Toggle the EBSL ImGui overlay", usage = CommandIds.UI, scope = CommandScope.BOTH)
 public final class UiCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {

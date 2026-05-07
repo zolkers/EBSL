@@ -16,6 +16,6 @@ public final class TerminalCommands {
         CommandRegistry.register(new UiCommand());
         CommandRegistry.register(new TestCommand());
         CommandRegistry.register(new TestXzCommand());
-        CommandRegistry.register(new GoalCommand());
+        CommandRegistry.register(GoalCommand.spec());
     }
 }
