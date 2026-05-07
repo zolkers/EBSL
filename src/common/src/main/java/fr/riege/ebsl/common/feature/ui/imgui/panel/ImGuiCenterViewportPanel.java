@@ -4,8 +4,11 @@ import fr.riege.ebsl.common.core.log.AppLog;
 import fr.riege.ebsl.common.domain.packet.PacketCaptureEvent;
 import fr.riege.ebsl.common.domain.packet.PacketCaptureLog;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.platform.render.RenderBatch;
+import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.core.settings.BooleanSetting;
+import fr.riege.ebsl.common.core.settings.ColorSetting;
 import fr.riege.ebsl.common.core.settings.DoubleSetting;
 import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.core.settings.Setting;
@@ -61,6 +64,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             switch (state.centerTab()) {
                 case GAME                -> { terminalFocused = false; drawGameViewportShell(viewport); }
                 case PATHFINDER_SETTINGS -> { terminalFocused = false; renderPathfinderSettings(viewport); }
+                case RENDER_SETTINGS     -> { terminalFocused = false; renderRenderSettings(viewport); }
                 case PACKET              -> { terminalFocused = false; renderPacketView(viewport); }
                 case TERMINAL            -> renderTerminal(viewport);
                 case MC_LOG              -> { terminalFocused = false; renderMcLog(viewport); }
@@ -90,6 +94,7 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                 case GAME                -> 72.0f;
                 case PACKET              -> 86.0f;
                 case PATHFINDER_SETTINGS -> 148.0f;
+                case RENDER_SETTINGS     -> 78.0f;
                 case TERMINAL            -> 86.0f;
                 case MC_LOG              -> 72.0f;
             };
@@ -122,6 +127,50 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImGui.endChild();
     }
 
+    private void renderRenderSettings(UiRect viewport) {
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.bottom(), UiTheme.BG_PANEL_DARK);
+        dl.addRectFilled(viewport.x(), viewport.y(), viewport.right(), viewport.y() + 34.0f, UiTheme.BG_PANEL);
+        dl.addLine(viewport.x(), viewport.y() + 34.0f, viewport.right(), viewport.y() + 34.0f, UiTheme.BORDER, 1.0f);
+        ImGui.setCursorScreenPos(viewport.x() + 14.0f, viewport.y() + 14.0f);
+        ImGui.beginChild("##render-settings-scroll", viewport.width() - 28.0f, viewport.height() - 28.0f, false);
+        ImGui.text("Render Settings");
+        ImGui.sameLine();
+        if (ImGui.button("Reset render", 112.0f, 18.0f)) resetSettings(PathfinderSettings.renderingSettings());
+        ImGui.sameLine();
+        if (ImGui.button("Clear batches", 112.0f, 18.0f)) RenderingSystem.clear();
+        ImGui.spacing();
+        renderRenderRuntime();
+        renderSettingsGroup("Path visualizer", PathfinderSettings.renderingSettings());
+        ImGui.endChild();
+    }
+
+    private void renderRenderRuntime() {
+        List<RenderBatch> batches = RenderingSystem.batches();
+        ImGui.setNextItemOpen(true, ImGuiCond.Once);
+        if (!ImGui.collapsingHeader("Runtime")) return;
+        ImGui.indent(10.0f);
+        ImGui.textDisabled("API batches: " + batches.size());
+        int shown = 0;
+        for (RenderBatch batch : batches) {
+            if (shown >= 8) {
+                ImGui.textDisabled("... +" + (batches.size() - shown) + " more");
+                break;
+            }
+            ImGui.textDisabled(batch.id() + " | " + batch.stage() + " | primitives: " + batch.primitives().size());
+            shown++;
+        }
+        ImGui.unindent(10.0f);
+        ImGui.spacing();
+    }
+
+    private void resetSettings(List<Setting<?>> settings) {
+        for (Setting<?> setting : settings) {
+            setting.resetToDefault();
+        }
+        PathfinderSettings.save();
+    }
+
     private void renderSettingsGroup(String label, List<Setting<?>> settings) {
         ImGui.setNextItemOpen(true, ImGuiCond.Once);
         if (!ImGui.collapsingHeader(label)) return;
@@ -142,6 +191,22 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
             float[] v = {(float) s.value().doubleValue()};
             if (ImGui.sliderFloat(setting.displayName(), v, (float) s.min(), (float) s.max(), "%.2f")) {
                 s.setValue((double) v[0]); PathfinderSettings.save();
+            }
+        } else if (setting instanceof ColorSetting s) {
+            int argb = s.value();
+            float[] col = {
+                ((argb >> 16) & 0xFF) / 255.0f,
+                ((argb >> 8) & 0xFF) / 255.0f,
+                (argb & 0xFF) / 255.0f,
+                ((argb >> 24) & 0xFF) / 255.0f
+            };
+            if (ImGui.colorEdit4(setting.displayName(), col)) {
+                int packed = ((int) (col[3] * 255) << 24)
+                    | ((int) (col[0] * 255) << 16)
+                    | ((int) (col[1] * 255) << 8)
+                    | (int) (col[2] * 255);
+                s.setValue(packed);
+                PathfinderSettings.save();
             }
         }
     }

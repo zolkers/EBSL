@@ -8,6 +8,38 @@ public final class PathfinderSettings extends Settingable {
     private static final PathfinderSettings INSTANCE = new PathfinderSettings();
     public final BooleanSetting showDebug = registerSetting(new BooleanSetting("show_debug", "Show debug", true));
     public final IntSetting maxJumpHeight = registerSetting(new IntSetting("max_jump_height", "Max jump height", 1, 1, 20));
+    public final BooleanSetting renderPathNodes = registerSetting(new BooleanSetting(
+        "render_path_nodes", "Render path nodes", true));
+    public final BooleanSetting renderPathLines = registerSetting(new BooleanSetting(
+        "render_path_lines", "Render path lines", true));
+    public final BooleanSetting renderCameraRail = registerSetting(new BooleanSetting(
+        "render_camera_rail", "Render camera rail", true));
+    public final IntSetting renderMaxPathNodes = registerSetting(new IntSetting(
+        "render_max_path_nodes", "Max rendered path nodes", 300, 1, 4000));
+    public final IntSetting renderMaxCameraNodes = registerSetting(new IntSetting(
+        "render_max_camera_nodes", "Max rendered camera nodes", 480, 1, 4000));
+    public final DoubleSetting renderPathLineWidth = registerSetting(new DoubleSetting(
+        "render_path_line_width", "Path line width", 2.0, 0.25, 8.0));
+    public final DoubleSetting renderCameraLineWidth = registerSetting(new DoubleSetting(
+        "render_camera_line_width", "Camera rail line width", 1.25, 0.25, 8.0));
+    public final ColorSetting renderNodeColor = registerSetting(new ColorSetting(
+        "render_node_color", "Node fill", 0x705A8CFF));
+    public final ColorSetting renderStartColor = registerSetting(new ColorSetting(
+        "render_start_color", "Start node", 0xE600FFFF));
+    public final ColorSetting renderEndColor = registerSetting(new ColorSetting(
+        "render_end_color", "End node", 0xE6FF00FF));
+    public final ColorSetting renderWalkColor = registerSetting(new ColorSetting(
+        "render_walk_color", "Walk path", 0xC8F2F2F2));
+    public final ColorSetting renderJumpColor = registerSetting(new ColorSetting(
+        "render_jump_color", "Jump path", 0xE6FFD166));
+    public final ColorSetting renderFallColor = registerSetting(new ColorSetting(
+        "render_fall_color", "Fall path", 0xE6FF6B6B));
+    public final ColorSetting renderWaterColor = registerSetting(new ColorSetting(
+        "render_water_color", "Water path", 0xE65CC8FF));
+    public final ColorSetting renderClimbColor = registerSetting(new ColorSetting(
+        "render_climb_color", "Climb path", 0xE687D37C));
+    public final ColorSetting renderFlyColor = registerSetting(new ColorSetting(
+        "render_fly_color", "Fly path", 0xE6C792EA));
     public final DoubleSetting walkCost = registerSetting(new DoubleSetting("walk_cost", "Walk", 0.0, 0.0, 10.0));
     public final DoubleSetting diagonalCost = registerSetting(new DoubleSetting("diagonal_cost", "Diagonal", 0.0, 0.0, 10.0));
     public final DoubleSetting fullStepAscentBaseCost = registerSetting(new DoubleSetting(
@@ -273,6 +305,26 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.fallDyCost,
             INSTANCE.swimCost,
             INSTANCE.climbCost);
+    }
+
+    public static List<Setting<?>> renderingSettings() {
+        return List.of(
+            INSTANCE.renderPathNodes,
+            INSTANCE.renderPathLines,
+            INSTANCE.renderCameraRail,
+            INSTANCE.renderMaxPathNodes,
+            INSTANCE.renderMaxCameraNodes,
+            INSTANCE.renderPathLineWidth,
+            INSTANCE.renderCameraLineWidth,
+            INSTANCE.renderNodeColor,
+            INSTANCE.renderStartColor,
+            INSTANCE.renderEndColor,
+            INSTANCE.renderWalkColor,
+            INSTANCE.renderJumpColor,
+            INSTANCE.renderFallColor,
+            INSTANCE.renderWaterColor,
+            INSTANCE.renderClimbColor,
+            INSTANCE.renderFlyColor);
     }
 
     public static List<Setting<?>> corridorCostSettings() {

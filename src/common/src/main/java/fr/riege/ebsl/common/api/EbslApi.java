@@ -7,6 +7,7 @@ import fr.riege.ebsl.common.api.core.events.EventsApi;
 import fr.riege.ebsl.common.api.feature.modules.ModulesApi;
 import fr.riege.ebsl.common.api.navigation.NavigationApi;
 import fr.riege.ebsl.common.api.pathfinding.PathfindingApi;
+import fr.riege.ebsl.common.api.rendering.RenderingApi;
 import fr.riege.ebsl.common.api.navigation.runtime.RuntimeApi;
 import fr.riege.ebsl.common.api.core.settings.ModSettingsApi;
 
@@ -19,6 +20,7 @@ public final class EbslApi {
     private static final ModulesApi MODULES = new ModulesApi();
     private static final EventsApi EVENTS = new EventsApi();
     private static final AnalyticsApi ANALYTICS = new AnalyticsApi();
+    private static final RenderingApi RENDERING = new RenderingApi();
 
     private EbslApi() {
     }
@@ -56,5 +58,10 @@ public final class EbslApi {
     @EbslApiOperation("Access analytics snapshots and event logs.")
     public static AnalyticsApi analytics() {
         return ANALYTICS;
+    }
+
+    @EbslApiOperation("Access world rendering commands and styles.")
+    public static RenderingApi rendering() {
+        return RENDERING;
     }
 }

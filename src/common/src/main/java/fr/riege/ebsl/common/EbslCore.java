@@ -4,6 +4,7 @@ import fr.riege.ebsl.common.core.event.CommonEventTypes;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.platform.service.UiService;
@@ -37,6 +38,7 @@ public class EbslCore {
         });
         platform.events().onTick(event -> navigationService.tick());
         platform.events().onTick(event -> BotTaskRegistry.update(platform));
+        platform.events().onTick(event -> RenderingSystem.tick());
         platform.events().onRenderWorld(event -> BotTaskRegistry.render(platform));
         platform.events().onTick(event -> {
             if (uiService.isVisible() && !platform.input().isMouseGrabbed()) {
@@ -51,6 +53,7 @@ public class EbslCore {
                 event.camZ(),
                 event.viewMatrix(),
                 event.projMatrix());
+            RenderingSystem.renderWorld(platform.render());
             navigationService.renderWorld();
             PathVisualizer.renderWorld(platform.render());
             platform.render().endFrame();

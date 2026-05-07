@@ -19,6 +19,7 @@ public @interface EbslApiSurface {
         MODULES,
         EVENTS,
         ANALYTICS,
+        RENDERING,
         UI
     }
 }

@@ -30,6 +30,10 @@ public class McRenderLayer implements IRenderLayer {
     }
 
     @Override public void beginLines(float r, float g, float b, float a) {
+        beginTriangles(r, g, b, a);
+    }
+
+    @Override public void beginTriangles(float r, float g, float b, float a) {
         color[0] = r;
         color[1] = g;
         color[2] = b;
@@ -90,6 +94,21 @@ public class McRenderLayer implements IRenderLayer {
         bufferBuilder.addVertex(bx, by, bz).setColor(r, g, b, a);
         bufferBuilder.addVertex(dxw, dyw, dzw).setColor(r, g, b, a);
         bufferBuilder.addVertex(cx, cy, cz).setColor(r, g, b, a);
+    }
+
+    @Override public void emitTriangle(double x1, double y1, double z1,
+                                       double x2, double y2, double z2,
+                                       double x3, double y3, double z3) {
+        if (bufferBuilder == null) {
+            return;
+        }
+        float r = color[0];
+        float g = color[1];
+        float b = color[2];
+        float a = color[3];
+        bufferBuilder.addVertex((float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
+        bufferBuilder.addVertex((float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
+        bufferBuilder.addVertex((float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
     }
 
     @Override public void end(boolean ignoreDepth) {

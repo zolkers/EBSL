@@ -29,6 +29,11 @@ public final class PathfindingSettingsApi {
         return PathfinderSettings.movementCostSettings();
     }
 
+    @EbslApiOperation("Read world rendering and path visualizer settings.")
+    public List<Setting<?>> rendering() {
+        return PathfinderSettings.renderingSettings();
+    }
+
     @EbslApiOperation("Read corridor and centering cost settings.")
     public List<Setting<?>> corridorCosts() {
         return PathfinderSettings.corridorCostSettings();
