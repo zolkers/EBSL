@@ -9,12 +9,11 @@ class PathPitchStabilizerTest {
     void convergesFromZeroTowardPositiveCandidate() {
         var s = new PathPitchStabilizer();
         s.reset(0f);
-        float result = 0f;
-        for (int i = 0; i < 40; i++) {
-            result = s.tick(20f, false);
-        }
-        // Underdamped spring may micro-overshoot the clamp boundary; overall it must converge well above 10°
-        assertTrue(result > 10f, "Should reach well above 10° after 40 ticks, got " + result);
+        // Run 80 ticks: spring should converge near 20° despite slight underdamped overshoot
+        for (int i = 0; i < 80; i++) s.tick(20f, false);
+        float settled = s.getStablePitch();
+        assertTrue(settled > 15f, "Should settle near 20° after 80 ticks, got " + settled);
+        assertTrue(settled <= 22f, "Should not exceed land max of 22°, got " + settled);
     }
 
     @Test

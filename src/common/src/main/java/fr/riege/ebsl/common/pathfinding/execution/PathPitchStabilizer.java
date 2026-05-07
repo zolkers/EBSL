@@ -18,6 +18,7 @@ final class PathPitchStabilizer {
     }
 
     void reset(float initialPitch) {
+        // use land limit conservatively — spring enforces water limit on next tick
         float max = maxAbsPitch(false);
         stablePitch = Math.clamp(initialPitch, -max, max);
         velocity = 0f;
