@@ -50,7 +50,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
-        this.pitchStabilizer.reset();
+        this.pitchStabilizer.reset(player.pitch());
     }
 
     void reset() {
@@ -60,7 +60,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
-        this.pitchStabilizer.reset();
+        this.pitchStabilizer.reset(player.pitch());
     }
 
     void updateRotation(Vec3d playerPos, List<Node> path, int pursuitSegment, Consumer<String> debug) {
@@ -83,12 +83,22 @@ final class PathRotationController {
             rotationTarget.position().x(), rotationTarget.position().y(), rotationTarget.position().z());
 
         Rotation rawRot = AngleUtils.getRotation(player.eyePosition(), rotationTarget.position());
-        Rotation desiredRot = pitchStabilizer.stabilize(player, rotationTarget.position(), rawRot, debug);
-        dispatchRotationIfNeeded(pursuitSegment, debug, desiredRot, rotationTarget);
+
+        Vec3d eye = player.eyePosition();
+        double dx = rotationTarget.position().x() - eye.x();
+        double dz = rotationTarget.position().z() - eye.z();
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        float candidatePitch = horizDist >= PathfinderSettings.instance().pitchMinHorizontalDistance.value()
+            ? rawRot.pitch : 0f;
+        pitchStabilizer.tick(candidatePitch, player.isInWater());
+        debug(debug, "pitch spring stable=%.2f candidate=%.2f horizDist=%.2f",
+            pitchStabilizer.getStablePitch(), candidatePitch, horizDist);
+
+        dispatchYawIfNeeded(pursuitSegment, debug, rawRot.yaw, rotationTarget);
     }
 
     void tickExecutor() {
-        rotationExecutor.update();
+        rotationExecutor.update(pitchStabilizer.getStablePitch());
     }
 
     void stop() {
@@ -253,29 +263,28 @@ final class PathRotationController {
         return -1;
     }
 
-    private void dispatchRotationIfNeeded(int pursuitSegment, Consumer<String> debug,
-                                          Rotation desiredRot, RotationTarget rotationTarget) {
+    private void dispatchYawIfNeeded(int pursuitSegment, Consumer<String> debug,
+                                      float desiredYaw, RotationTarget rotationTarget) {
         boolean alreadyRotating = rotationExecutor.isRotating();
         float referenceYaw = alreadyRotating ? rotationExecutor.getTargetYaw() : player.yaw();
-        float referencePitch = alreadyRotating ? rotationExecutor.getTargetPitch() : player.pitch();
-        float yawDrift = Math.abs(AngleUtils.getRotationDelta(referenceYaw, desiredRot.yaw));
-        float pitchDrift = Math.abs(AngleUtils.getRotationDelta(referencePitch, desiredRot.pitch));
+        float yawDrift = Math.abs(AngleUtils.getRotationDelta(referenceYaw, desiredYaw));
 
-        debug(debug, "desired=(yaw=%.2f,pitch=%.2f) currentTarget=(yaw=%.2f,pitch=%.2f) drift=(yaw=%.2f,pitch=%.2f)",
-            desiredRot.yaw, desiredRot.pitch, referenceYaw, referencePitch, yawDrift, pitchDrift);
+        debug(debug, "desired yaw=%.2f reference=%.2f drift=%.2f", desiredYaw, referenceYaw, yawDrift);
 
         long now = System.currentTimeMillis();
-        if ((yawDrift > rotationTarget.yawThreshold() || pitchDrift > rotationTarget.pitchThreshold())
-            && (!alreadyRotating || now - lastRotationDispatchMs >= PathfinderSettings.instance().rotationRedispatchCooldownMs.value())) {
+        if (yawDrift > rotationTarget.yawThreshold()
+            && (!alreadyRotating || now - lastRotationDispatchMs
+                >= PathfinderSettings.instance().rotationRedispatchCooldownMs.value())) {
             debug(debug, "rotateTo dispatch easing=%s durationMs=%d wp=%d camTargetIdx=%d mode=%s registry=%s",
                 rotationTarget.easing(), rotationTarget.durationMs(), pursuitSegment, camTargetIdx,
                 rotationTarget.mode(), rotationTarget.registry());
-            rotationExecutor.rotateTo(desiredRot, new TimedEaseStrategy(rotationTarget.easing(), rotationTarget.durationMs()));
+            rotationExecutor.rotateTo(new Rotation(desiredYaw, 0f),
+                new TimedEaseStrategy(rotationTarget.easing(), rotationTarget.durationMs()));
             lastRotationDispatchMs = now;
             return;
         }
 
-        debug(debug, "rotateTo skipped small drift wp=%d camTargetIdx=%d", pursuitSegment, camTargetIdx);
+        debug(debug, "rotateTo skipped small yaw drift wp=%d camTargetIdx=%d", pursuitSegment, camTargetIdx);
     }
 
     private RotationTarget defaultRotationTarget(List<Node> path, int pursuitSegment, boolean alreadyRotating,
