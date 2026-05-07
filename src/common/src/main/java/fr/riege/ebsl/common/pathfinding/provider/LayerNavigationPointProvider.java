@@ -7,7 +7,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public final class LayerNavigationPointProvider implements NavigationPointProvider {
-    private static final NavigationPoint BLOCKED = point(false, false, 0.0, false, false);
+    private static final NavigationPoint BLOCKED = NavigationPointImpl.BLOCKED;
 
     private final WalkabilityChecker checker;
     private final Long2ObjectOpenHashMap<NavigationPoint> navPointCache = new Long2ObjectOpenHashMap<>(512);
@@ -52,7 +52,7 @@ public final class LayerNavigationPointProvider implements NavigationPointProvid
         boolean dangerous = checker.isDangerous(x, y, z) || checker.isDangerous(x, y + 1, z);
         double floorLevel = floorLevel(x, y, z, liquid, lowPartialFeet);
 
-        NavigationPoint point = point(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
+        NavigationPoint point = new NavigationPointImpl(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
         navPointCache.put(key, point);
         return point;
     }
@@ -64,14 +64,4 @@ public final class LayerNavigationPointProvider implements NavigationPointProvid
         return belowTop <= 0.0 ? y - 1.0 : y - 1.0 + belowTop;
     }
 
-    private static NavigationPoint point(boolean traversable, boolean floor, double floorLevel,
-                                         boolean climbable, boolean liquid) {
-        return new NavigationPoint() {
-            @Override public boolean isTraversable() { return traversable; }
-            @Override public boolean hasFloor() { return floor; }
-            @Override public double getFloorLevel() { return floorLevel; }
-            @Override public boolean isClimbable() { return climbable; }
-            @Override public boolean isLiquid() { return liquid; }
-        };
-    }
 }

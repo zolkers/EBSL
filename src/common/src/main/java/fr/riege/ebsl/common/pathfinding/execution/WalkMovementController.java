@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValida
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutionContext;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.WaterMovementContext;
+import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
@@ -39,22 +40,35 @@ final class WalkMovementController {
     private final IPlayerLayer player;
     private final IPhysicsLayer physics;
     private final WalkabilityChecker checker;
+    private final LayerNavigationPointProvider navigationPointProvider;
     private List<Node> path;
+    private int lastValidatedSegment = -1;
+    private int validationTick;
+    private MovementValidationResult lastValidationResult = MovementValidationResult.ok();
 
     WalkMovementController(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, WalkabilityChecker checker) {
         this.world = world;
         this.player = player;
         this.physics = physics;
         this.checker = checker;
+        this.navigationPointProvider = new LayerNavigationPointProvider(checker);
     }
 
     void setPath(List<Node> path) {
         this.path = path;
+        this.lastValidatedSegment = -1;
+        this.validationTick = 0;
+        this.lastValidationResult = MovementValidationResult.ok();
+        this.navigationPointProvider.clearCache();
     }
 
     MovementValidationResult validateCurrentSegment(Vec3d playerPos, int pursuitSegment) {
         if (path == null || path.size() < 2 || pursuitSegment + 1 >= path.size()) {
             return MovementValidationResult.ok();
+        }
+        validationTick++;
+        if (pursuitSegment == lastValidatedSegment && validationTick % 5 != 0) {
+            return lastValidationResult;
         }
         int currentIndex = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int targetIndex = Math.min(path.size() - 1, currentIndex + 1);
@@ -63,12 +77,15 @@ final class WalkMovementController {
         Node next = path.get(Math.min(path.size() - 1, targetIndex + 1));
         MovementValidationContext context = new MovementValidationContext(
             checker,
+            navigationPointProvider,
             from,
             target,
             next,
             playerPos,
             pursuitSegment);
-        return MovementEvaluatorRegistry.get(target.moveType).validate(context);
+        lastValidatedSegment = pursuitSegment;
+        lastValidationResult = MovementEvaluatorRegistry.get(target.moveType).validate(context);
+        return lastValidationResult;
     }
 
     void apply(PathExecutor executor, Vec3d playerPos, Node movementWaypoint,
@@ -117,7 +134,9 @@ final class WalkMovementController {
         double dz = targetWp.position.centeredZ() - playerPos.z();
         double hDist = Math.sqrt(dx * dx + dz * dz);
 
-        if (hDist < PathfinderSettings.instance().walkTargetDeadzone.value()
+        PathfinderSettings settings = PathfinderSettings.instance();
+        double walkTargetDeadzone = settings.walkTargetDeadzone.value();
+        if (hDist < walkTargetDeadzone
             && pursuitSegment + 2 < path.size()
             && !isParkourTransitionWindow(pursuitSegment)) {
             targetWp = path.get(pursuitSegment + 2);
@@ -126,7 +145,7 @@ final class WalkMovementController {
             hDist = Math.sqrt(dx * dx + dz * dz);
         }
 
-        if (hDist < PathfinderSettings.instance().walkTargetDeadzone.value()) {
+        if (hDist < walkTargetDeadzone) {
             physics.setForward(forceForwardWhenCentered);
             physics.setBackward(false);
             physics.setLeft(false);
@@ -138,13 +157,13 @@ final class WalkMovementController {
         PathSteering.SteeringVector steering = PathSteering.steer(checker, path, playerPos, targetWp, pursuitSegment);
         InputApplier.applyRelativeMovement(
             player, physics, steering.x(), steering.z(),
-            PathfinderSettings.instance().walkForwardDot.value(),
-            PathfinderSettings.instance().walkBackwardDot.value(),
-            PathfinderSettings.instance().walkStrafeDot.value());
-        physics.setSprint(isForwardPressed(steering.x(), steering.z())
+            settings.walkForwardDot.value(),
+            settings.walkBackwardDot.value(),
+            settings.walkStrafeDot.value());
+        physics.setSprint(isForwardPressed(steering.x(), steering.z(), settings.walkForwardDot.value())
             && distToFinal > 2.0
             && !nearStepUp
-            && (!steering.nearCorner() || !PathfinderSettings.instance().cornerSteeringSlowdown.value()));
+            && (!steering.nearCorner() || !settings.cornerSteeringSlowdown.value()));
     }
 
     private boolean isParkourTransitionWindow(int pursuitSegment) {
@@ -359,6 +378,7 @@ final class WalkMovementController {
             ? parkourJumpRemainingBlocks(waypoint, playerPos)
             : hDist;
         long millisSinceProgress = System.currentTimeMillis() - lastProgressTime;
+        PathfinderSettings settings = PathfinderSettings.instance();
 
         MovementExecutionContext context = new MovementExecutionContext(
             waypoint,
@@ -370,23 +390,23 @@ final class WalkMovementController {
             millisSinceProgress,
             jumpDistance,
             dy,
-            PathfinderSettings.instance().stepUpTriggerDist.value(),
-            PathfinderSettings.instance().jumpTriggerDist.value(),
+            settings.stepUpTriggerDist.value(),
+            settings.jumpTriggerDist.value(),
             1.2,
             parkourDistanceBlocks(waypoint, pursuitSegment),
-            PathfinderSettings.instance().jumpCooldownTicks.value(),
-            PathfinderSettings.instance().stallJumpProgressMs.value());
+            settings.jumpCooldownTicks.value(),
+            settings.stallJumpProgressMs.value());
         MovementExecutorRegistry.get(waypoint.moveType).handleJump(context);
         physics.setJump(context.jumpPressed());
         if (shouldAssistSlimeAscent(waypoint, hDist, jumpCooldown)) {
             physics.setJump(true);
-            executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
+            executor.setJumpCooldown(settings.jumpCooldownTicks.value());
             return;
         }
         if (context.jumpCooldownConsumed()) {
             executor.setJumpCooldown(waypoint.moveType == Node.MoveType.PARKOUR
                 ? 0
-                : PathfinderSettings.instance().jumpCooldownTicks.value());
+                : settings.jumpCooldownTicks.value());
         }
         if (waypoint.moveType == Node.MoveType.PARKOUR && context.jumpPressed()) {
             physics.setBackward(false);
@@ -557,11 +577,11 @@ final class WalkMovementController {
             && pos.y() - y <= WATER_ENTRY_SURFACE_DROP;
     }
 
-    private boolean isForwardPressed(double dx, double dz) {
+    private boolean isForwardPressed(double dx, double dz, double forwardDot) {
         float yawRad = (float) Math.toRadians(player.yaw());
         double forwardX = -Math.sin(yawRad);
         double forwardZ = Math.cos(yawRad);
-        return dx * forwardX + dz * forwardZ > PathfinderSettings.instance().walkForwardDot.value();
+        return dx * forwardX + dz * forwardZ > forwardDot;
     }
 
     private void applyParkourAxisInput(double dirX, double dirZ, boolean forward) {

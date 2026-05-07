@@ -2,8 +2,6 @@ package fr.riege.ebsl.common.pathfinding.movement.types.evaluation;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.types.annotation.MovementHandler;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
-
 @MovementHandler(Node.MoveType.FALL)
 final class FallMovementEvaluator extends WalkMovementEvaluator {
     @Override
@@ -15,7 +13,7 @@ final class FallMovementEvaluator extends WalkMovementEvaluator {
         if (!context.checker().safeToFall(fromY, x, y, z)) {
             return MovementValidationResult.invalid("fall segment became unsafe at " + x + ", " + y + ", " + z);
         }
-        if (new LayerNavigationPointProvider(context.checker())
+        if (context.navigationPointProvider()
             .getNavigationPoint(context.target().position, null)
             .isTraversable()) {
             return MovementValidationResult.ok();

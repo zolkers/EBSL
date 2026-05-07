@@ -107,7 +107,14 @@ public abstract class AbstractPathfinder implements Pathfinder {
             var  startCtx  = new EvaluationContextImpl(searchContext, startNode, null,
                     pathfinderConfiguration.heuristicStrategy);
 
-            if (processors.stream().anyMatch(p -> !p.isValid(startCtx))) {
+            boolean startValid = true;
+            for (NodeProcessor processor : processors) {
+                if (!processor.isValid(startCtx)) {
+                    startValid = false;
+                    break;
+                }
+            }
+            if (!startValid) {
                 return new PathfinderResultImpl(PathState.FAILED,
                         new PathImpl(start, target, EMPTY_PATH_POSITIONS));
             }

@@ -154,9 +154,12 @@ public final class WalkabilityChecker {
 
     private byte computeFlags(int x, int y, int z) {
         byte flags = 0;
-        if (world.isSolid(x, y, z)) flags |= FLAG_SOLID;
-        if (world.isAir(x, y, z) || world.isWater(x, y, z) || !world.isSolid(x, y, z)) flags |= FLAG_PASSABLE;
-        if (world.isWater(x, y, z)) flags |= FLAG_WATER;
+        boolean solid = world.isSolid(x, y, z);
+        boolean water = world.isWater(x, y, z);
+        boolean air = world.isAir(x, y, z);
+        if (solid) flags |= FLAG_SOLID;
+        if (air || water || !solid) flags |= FLAG_PASSABLE;
+        if (water) flags |= FLAG_WATER;
         if (world.isLava(x, y, z) || world.isDangerous(x, y, z)) flags |= FLAG_DANGEROUS;
         if (world.isClimbable(x, y, z)) flags |= FLAG_CLIMBABLE;
         return flags;

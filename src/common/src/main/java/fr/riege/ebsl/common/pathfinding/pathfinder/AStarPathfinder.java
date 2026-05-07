@@ -32,6 +32,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
     private long profHeapNanos         = 0;
     private long profIsValidRejects    = 0;
     private long profGCostRejects      = 0;
+    private boolean profiling;
+    private boolean captureClosedSet;
 
     public AStarPathfinder(PathfinderConfiguration configuration) {
         super(configuration);
@@ -64,6 +66,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
         profHeapNanos = 0;
         profIsValidRejects = 0;
         profGCostRejects = 0;
+        profiling = pathfinderConfiguration.profiling;
+        captureClosedSet = PathVisualizer.isEnabled();
     }
 
     @Override
@@ -74,19 +78,19 @@ public final class AStarPathfinder extends AbstractPathfinder {
         Iterable<PathVector> offsets = neighborStrategy.getOffsets(currentNode.position);
 
         for (PathVector offset : offsets) {
-            profNeighborCount++;
+            if (profiling) profNeighborCount++;
             PathPosition neighborPos = currentNode.position.add(offset);
             long          packedPos  = RegionKey.pack(neighborPos);
 
             Node candidate = session.nodes.get(packedPos);
             if (candidate == null) {
-                long t0 = System.nanoTime();
+                long t0 = profiling ? System.nanoTime() : 0L;
                 candidate = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
                 candidate.moveType = inferMoveType(offset);
                 // Sentinel: gCost = POSITIVE_INFINITY means "not yet settled"
                 candidate.gCost = Double.POSITIVE_INFINITY;
                 session.nodes.put(packedPos, candidate);
-                profNodeCreateNanos += System.nanoTime() - t0;
+                if (profiling) profNodeCreateNanos += System.nanoTime() - t0;
             }
 
             // Skip already-expanded nodes (consistent heuristic guarantees optimality on first expansion)
@@ -96,19 +100,22 @@ public final class AStarPathfinder extends AbstractPathfinder {
             session.reusableContext.update(searchContext, candidate, currentNode,
                     pathfinderConfiguration.heuristicStrategy);
 
-            long t1 = System.nanoTime();
+            long t1 = profiling ? System.nanoTime() : 0L;
             boolean valid = isValidByProcessors(session.reusableContext);
-            profIsValidNanos += System.nanoTime() - t1;
-            if (!valid) { profIsValidRejects++; continue; }
+            if (profiling) profIsValidNanos += System.nanoTime() - t1;
+            if (!valid) {
+                if (profiling) profIsValidRejects++;
+                continue;
+            }
 
-            long t2 = System.nanoTime();
+            long t2 = profiling ? System.nanoTime() : 0L;
             double gCost = calculateGCost(session.reusableContext);
-            profCostCalcNanos += System.nanoTime() - t2;
+            if (profiling) profCostCalcNanos += System.nanoTime() - t2;
 
             // Reject if not an improvement (POSITIVE_INFINITY for new nodes always passes)
             if (Double.isFinite(candidate.gCost)
                     && gCost + gTolerance(gCost, candidate.gCost) >= candidate.gCost) {
-                profGCostRejects++;
+                if (profiling) profGCostRejects++;
                 continue;
             }
 
@@ -119,10 +126,10 @@ public final class AStarPathfinder extends AbstractPathfinder {
             candidate.cachedFCost = fCost;
             double heapKey = calculateHeapKey(candidate, fCost);
 
-            long t3 = System.nanoTime();
+            long t3 = profiling ? System.nanoTime() : 0L;
             openSet.insertOrUpdate(packedPos, heapKey);
             candidate.inOpen = true;
-            profHeapNanos += System.nanoTime() - t3;
+            if (profiling) profHeapNanos += System.nanoTime() - t3;
         }
     }
 
@@ -163,7 +170,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         node.inOpen   = false;
         node.inClosed = true;
         session.expandedCount++;
-        if (PathVisualizer.isEnabled()) {
+        if (captureClosedSet) {
             session.closedSet.add(RegionKey.pack(node.position));
         }
     }
@@ -173,7 +180,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         PathfindingSession session = currentSession.get();
         if (session != null) {
             exploredCount = session.expandedCount;
-            if (PathVisualizer.isEnabled()) {
+            if (captureClosedSet) {
                 lastClosedSet = new LongOpenHashSet(session.closedSet);
             } else {
                 lastClosedSet = new LongOpenHashSet();
@@ -188,6 +195,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
     /** Profiling data from the last search run. */
     public String getProfilingReport() {
+        if (!profiling) return "profiling disabled";
         return String.format(
                 "neighbors=%d | isValid=%.0fms (rejects=%d) | costCalc=%.0fms | nodeCreate=%.0fms | heap=%.0fms | gRejects=%d",
                 profNeighborCount,

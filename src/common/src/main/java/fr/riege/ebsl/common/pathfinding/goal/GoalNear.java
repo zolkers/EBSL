@@ -10,7 +10,7 @@ public record GoalNear(int x, int y, int z, double radius) implements Goal {
         double dx = (double) this.x - x;
         double dy = (double) this.y - y;
         double dz = (double) this.z - z;
-        return Math.sqrt(dx * dx + dy * dy + dz * dz) <= radius;
+        return dx * dx + dy * dy + dz * dz <= radius * radius;
     }
 
     @Override

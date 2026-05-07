@@ -17,6 +17,7 @@ public final class PathfinderConfiguration {
     public final int                  maxLength;
     public final boolean              async;
     public final boolean              fallback;
+    public final boolean              profiling;
     public final NavigationPointProvider provider;
     public final HeuristicWeights     heuristicWeights;
     public final List<NodeProcessor>  processors;
@@ -28,6 +29,7 @@ public final class PathfinderConfiguration {
         this.maxLength        = b.maxLength;
         this.async            = b.async;
         this.fallback         = b.fallback;
+        this.profiling        = b.profiling;
         this.provider         = b.provider;
         this.heuristicWeights = b.heuristicWeights;
         this.processors       = Collections.unmodifiableList(b.processors);
@@ -44,6 +46,7 @@ public final class PathfinderConfiguration {
         private int                  maxLength        = 5000;
         private boolean              async            = false;
         private boolean              fallback         = true;
+        private boolean              profiling        = false;
         private NavigationPointProvider provider      = DefaultNavigationPointProvider.INSTANCE;
         private HeuristicWeights     heuristicWeights = HeuristicWeights.DEFAULT_WEIGHTS;
         private List<NodeProcessor>  processors       = List.of();
@@ -54,6 +57,7 @@ public final class PathfinderConfiguration {
         public Builder maxLength(int v)                { this.maxLength        = v; return this; }
         public Builder async(boolean v)                { this.async            = v; return this; }
         public Builder fallback(boolean v)             { this.fallback         = v; return this; }
+        public Builder profiling(boolean v)            { this.profiling        = v; return this; }
         public Builder provider(NavigationPointProvider v) { this.provider     = v; return this; }
         public Builder heuristicWeights(HeuristicWeights v){ this.heuristicWeights = v; return this; }
         public Builder processors(List<NodeProcessor> v)   { this.processors   = v; return this; }

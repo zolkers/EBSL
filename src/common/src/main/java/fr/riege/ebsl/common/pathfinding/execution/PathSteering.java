@@ -24,27 +24,29 @@ final class PathSteering {
 
         desiredX /= desiredLen;
         desiredZ /= desiredLen;
-        if (!PathfinderSettings.instance().cornerSteeringEnabled.value()) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        if (!settings.cornerSteeringEnabled.value()) {
             return new SteeringVector(desiredX, desiredZ, false);
         }
 
-        Vec3d obstacleNudge = obstacleNudge(checker, playerPos);
+        double scanRadius = settings.cornerSteeringScanRadius.value();
+        Vec3d obstacleNudge = obstacleNudge(checker, playerPos, scanRadius);
         double nudgeLen = horizontalLength(obstacleNudge.x(), obstacleNudge.z());
         boolean nearCorner = nudgeLen > 1.0e-6;
 
         Vec3d centerlineCorrection = centerlineCorrection(path, playerPos, pursuitSegment);
         double correctionLen = horizontalLength(centerlineCorrection.x(), centerlineCorrection.z());
-        double centerlineStart = PathfinderSettings.instance().cornerSteeringCenterlineStart.value();
+        double centerlineStart = settings.cornerSteeringCenterlineStart.value();
         if (correctionLen > centerlineStart && nearCorner) {
-            double centerlineMax = Math.max(centerlineStart + 1.0e-6, PathfinderSettings.instance().cornerSteeringCenterlineMax.value());
+            double centerlineMax = Math.max(centerlineStart + 1.0e-6, settings.cornerSteeringCenterlineMax.value());
             double correctionScale = Math.min(1.0, correctionLen / centerlineMax);
-            double centerlineWeight = PathfinderSettings.instance().cornerSteeringCenterlineWeight.value();
+            double centerlineWeight = settings.cornerSteeringCenterlineWeight.value();
             desiredX += (centerlineCorrection.x() / correctionLen) * centerlineWeight * correctionScale;
             desiredZ += (centerlineCorrection.z() / correctionLen) * centerlineWeight * correctionScale;
         }
 
         if (nearCorner) {
-            double nudgeWeight = PathfinderSettings.instance().cornerSteeringNudgeWeight.value();
+            double nudgeWeight = settings.cornerSteeringNudgeWeight.value();
             desiredX += (obstacleNudge.x() / nudgeLen) * nudgeWeight;
             desiredZ += (obstacleNudge.z() / nudgeLen) * nudgeWeight;
         }
@@ -77,7 +79,7 @@ final class PathSteering {
         return new Vec3d((ax + dx * t) - playerPos.x(), 0.0, (az + dz * t) - playerPos.z());
     }
 
-    private static Vec3d obstacleNudge(WalkabilityChecker checker, Vec3d playerPos) {
+    private static Vec3d obstacleNudge(WalkabilityChecker checker, Vec3d playerPos, double scanRadius) {
         if (checker == null) return new Vec3d(0.0, 0.0, 0.0);
         double nudgeX = 0.0;
         double nudgeZ = 0.0;
@@ -95,7 +97,6 @@ final class PathSteering {
                 double awayX = playerPos.x() - closestX;
                 double awayZ = playerPos.z() - closestZ;
                 double dist = horizontalLength(awayX, awayZ);
-                double scanRadius = PathfinderSettings.instance().cornerSteeringScanRadius.value();
                 if (dist <= 1.0e-6 || dist > scanRadius) continue;
                 double weight = (scanRadius - dist) / scanRadius;
                 nudgeX += (awayX / dist) * weight;

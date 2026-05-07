@@ -26,9 +26,30 @@ public final class LayerPathProcessor implements NodeProcessor {
     private final ThreadLocal<ParkourJumpPlanner> parkourPlanner = new ThreadLocal<>();
     private PathPosition lastCheckedPrev;
     private boolean lastPrevInsideSolid;
+    private double maxJumpHeight = DEFAULT_MOB_JUMP_HEIGHT;
+    private double walkCost;
+    private double diagonalCost;
+    private double swimCost;
+    private double climbCost;
+    private double partialAscentCost;
+    private double jumpCost;
+    private double fullStepAscentDyCost;
+    private double fullStepAscentBaseCost;
+    private double fallDyCost;
+    private double parkourCost;
+    private double cardinalWallCost;
+    private double diagonalWallCost;
+    private double partialAscentEdgeCost;
+    private double partialAscentEntrySideCost;
+    private double openingEntryImbalanceCost;
+
+    public LayerPathProcessor() {
+        captureSettings();
+    }
 
     @Override
     public void initializeSearch(SearchContext context) {
+        captureSettings();
         if (context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
             parkourPlanner.set(new ParkourJumpPlanner(layerProvider.checker(), context.getNavigationPointProvider(), context.getEnvironmentContext()));
         }
@@ -68,7 +89,6 @@ public final class LayerPathProcessor implements NodeProcessor {
         int dx = current.flooredX() - previous.flooredX();
         int dz = current.flooredZ() - previous.flooredZ();
 
-        double maxJumpHeight = Math.max(DEFAULT_MOB_JUMP_HEIGHT, PathfinderSettings.instance().maxJumpHeight.value());
         if (dy > maxJumpHeight) {
             return false;
         }
@@ -131,17 +151,16 @@ public final class LayerPathProcessor implements NodeProcessor {
 
         if (dy > ASCENT_DY_THRESHOLD) {
             if (fullStepSupport) {
-                additionalCost += PathfinderSettings.instance().fullStepAscentDyCost.value() * dy
-                    + PathfinderSettings.instance().fullStepAscentBaseCost.value();
+                additionalCost += fullStepAscentDyCost * dy + fullStepAscentBaseCost;
             }
         } else if (dy < DESCENT_DY_THRESHOLD) {
-            additionalCost += PathfinderSettings.instance().fallDyCost.value() * Math.abs(dy);
+            additionalCost += fallDyCost * Math.abs(dy);
         }
 
         int moveDx = cx - px;
         int moveDz = cz - pz;
         if (isParkourOffset(moveDx, moveDz)) {
-            additionalCost += PathfinderSettings.instance().parkourCost.value();
+            additionalCost += parkourCost;
         }
 
         for (int i = 2; i <= 3; i++) {
@@ -162,10 +181,10 @@ public final class LayerPathProcessor implements NodeProcessor {
         int cardinalWalls = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallW ? 1 : 0) + (wallE ? 1 : 0);
         int diagonalWalls = (wallNW ? 1 : 0) + (wallNE ? 1 : 0) + (wallSW ? 1 : 0) + (wallSE ? 1 : 0);
 
-        double cardinalWallWeight = PathfinderSettings.instance().cardinalWallCost.value();
-        double diagonalWallWeight = PathfinderSettings.instance().diagonalWallCost.value();
+        double cardinalWallWeight = cardinalWallCost;
+        double diagonalWallWeight = diagonalWallCost;
         if (partialAscent) {
-            cardinalWallWeight += PathfinderSettings.instance().partialAscentEdgeCost.value();
+            cardinalWallWeight += partialAscentEdgeCost;
             diagonalWallWeight += PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY;
         }
         additionalCost += cardinalWalls * cardinalWallWeight + diagonalWalls * diagonalWallWeight;
@@ -183,8 +202,8 @@ public final class LayerPathProcessor implements NodeProcessor {
                     case 2 -> APPROACH_MULTIPLIER_DIST_2;
                     default -> APPROACH_MULTIPLIER_DIST_3;
                 };
-                additionalCost += cardinalWalls * (PathfinderSettings.instance().cardinalWallCost.value() * multiplier);
-                additionalCost += diagonalWalls * (PathfinderSettings.instance().diagonalWallCost.value() * multiplier);
+                additionalCost += cardinalWalls * (cardinalWallCost * multiplier);
+                additionalCost += diagonalWalls * (diagonalWallCost * multiplier);
             }
 
             if (openingDist > 0 && isCardinalMove(moveDx, moveDz)) {
@@ -200,13 +219,13 @@ public final class LayerPathProcessor implements NodeProcessor {
             if (partialAscent) {
                 int entrySideWalls = countEntrySideWalls(context, px, py, pz, moveDx, moveDz);
                 entrySideWalls += countEntrySideWalls(context, cx, cy, cz, moveDx, moveDz);
-                additionalCost += entrySideWalls * PathfinderSettings.instance().partialAscentEntrySideCost.value();
+                additionalCost += entrySideWalls * partialAscentEntrySideCost;
             }
 
             if (isRoomOpeningTransition(context, px, py, pz, cx, cy, cz, moveDx, moveDz)) {
                 int imbalance = countLateralImbalanceAt(context, px, py, pz, moveDx, moveDz)
                     + countLateralImbalanceAt(context, cx, cy, cz, moveDx, moveDz);
-                additionalCost += imbalance * PathfinderSettings.instance().openingEntryImbalanceCost.value();
+                additionalCost += imbalance * openingEntryImbalanceCost;
             }
         }
 
@@ -289,23 +308,41 @@ public final class LayerPathProcessor implements NodeProcessor {
         return !checker.isPassable(x, y, z) && checker.getTopY(x, y, z) > 0.0;
     }
 
-    private static double movementTypeCost(NavigationPoint currentPoint, NavigationPoint previousPoint,
-                                           double dy, boolean diagonalMove, boolean partialAscent) {
-        double cost = diagonalMove
-            ? PathfinderSettings.instance().diagonalCost.value()
-            : PathfinderSettings.instance().walkCost.value();
+    private double movementTypeCost(NavigationPoint currentPoint, NavigationPoint previousPoint,
+                                    double dy, boolean diagonalMove, boolean partialAscent) {
+        double cost = diagonalMove ? diagonalCost : walkCost;
         if (currentPoint.isLiquid() || previousPoint.isLiquid()) {
-            cost += PathfinderSettings.instance().swimCost.value();
+            cost += swimCost;
         }
         if (currentPoint.isClimbable() || previousPoint.isClimbable()) {
-            cost += PathfinderSettings.instance().climbCost.value();
+            cost += climbCost;
         }
         if (partialAscent) {
-            cost += PathfinderSettings.instance().partialAscentCost.value();
+            cost += partialAscentCost;
         } else if (dy > ASCENT_DY_THRESHOLD) {
-            cost += PathfinderSettings.instance().jumpCost.value();
+            cost += jumpCost;
         }
         return cost;
+    }
+
+    private void captureSettings() {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        maxJumpHeight = Math.max(DEFAULT_MOB_JUMP_HEIGHT, settings.maxJumpHeight.value());
+        walkCost = settings.walkCost.value();
+        diagonalCost = settings.diagonalCost.value();
+        swimCost = settings.swimCost.value();
+        climbCost = settings.climbCost.value();
+        partialAscentCost = settings.partialAscentCost.value();
+        jumpCost = settings.jumpCost.value();
+        fullStepAscentDyCost = settings.fullStepAscentDyCost.value();
+        fullStepAscentBaseCost = settings.fullStepAscentBaseCost.value();
+        fallDyCost = settings.fallDyCost.value();
+        parkourCost = settings.parkourCost.value();
+        cardinalWallCost = settings.cardinalWallCost.value();
+        diagonalWallCost = settings.diagonalWallCost.value();
+        partialAscentEdgeCost = settings.partialAscentEdgeCost.value();
+        partialAscentEntrySideCost = settings.partialAscentEntrySideCost.value();
+        openingEntryImbalanceCost = settings.openingEntryImbalanceCost.value();
     }
 
     private static boolean isFullStepSupport(EvaluationContext context, int x, int y, int z) {

@@ -15,15 +15,19 @@ public record GoalCompositeAny(List<Goal> goals) implements Goal {
 
     @Override
     public boolean isInGoal(int x, int y, int z) {
-        return goals.stream().anyMatch(goal -> goal.isInGoal(x, y, z));
+        for (Goal goal : goals) {
+            if (goal.isInGoal(x, y, z)) return true;
+        }
+        return false;
     }
 
     @Override
     public double heuristic(int x, int y, int z) {
-        return goals.stream()
-            .mapToDouble(goal -> goal.heuristic(x, y, z))
-            .min()
-            .orElse(Double.POSITIVE_INFINITY);
+        double best = Double.POSITIVE_INFINITY;
+        for (Goal goal : goals) {
+            best = Math.min(best, goal.heuristic(x, y, z));
+        }
+        return best;
     }
 
     @Override

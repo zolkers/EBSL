@@ -609,12 +609,14 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private static boolean hasUsablePath(PathfinderResult result) {
-        return result != null
-            && result.getPath() != null
-            && (result.successful() || result.hasFallenBack())
-            && result.getPath().collect() != null
-            && !result.getPath().collect().isEmpty()
-            && result.getPathState() != PathState.ABORTED;
+        if (result == null || result.getPath() == null || result.getPathState() == PathState.ABORTED) {
+            return false;
+        }
+        if (!result.successful() && !result.hasFallenBack()) {
+            return false;
+        }
+        Collection<PathPosition> positions = result.getPath().collect();
+        return positions != null && !positions.isEmpty();
     }
 
     private PathfinderConfiguration instantConfiguration() {

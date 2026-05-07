@@ -9,7 +9,7 @@ public record GoalColumn(int x, int z, double radius) implements Goal {
     public boolean isInGoal(int x, int y, int z) {
         double dx = (double) this.x - x;
         double dz = (double) this.z - z;
-        return Math.sqrt(dx * dx + dz * dz) <= radius;
+        return dx * dx + dz * dz <= radius * radius;
     }
 
     @Override

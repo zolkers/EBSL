@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 final class PathTracker {
-    private static final double OFF_PATH_VERTICAL_CURSOR_OFFSET = 0.15;
+    static final double OFF_PATH_VERTICAL_CURSOR_OFFSET = 0.15;
     private static final double CONTINUATION_ALIGN_MAX_DISTANCE = 12.0;
     private static final int REPAIR_MIN_FORWARD_SEGMENTS = 2;
 
     private List<Node> path = Collections.emptyList();
+    private ExecutionPathCache pathCache = ExecutionPathCache.of(path);
     private int pursuitSegment;
     private Vec3d lastPos = new Vec3d(0.0, 0.0, 0.0);
     private long lastProgressTime;
@@ -24,6 +25,7 @@ final class PathTracker {
 
     void start(List<Node> path) {
         this.path = snapshot(path);
+        this.pathCache = ExecutionPathCache.of(this.path);
         this.pursuitSegment = 0;
         this.lastPos = new Vec3d(0.0, 0.0, 0.0);
         this.lastProgressTime = System.currentTimeMillis();
@@ -96,16 +98,13 @@ final class PathTracker {
         while (pursuitSegment + 1 < path.size()) {
             Node from = path.get(pursuitSegment);
             Node to = path.get(pursuitSegment + 1);
-            double ax = from.position.centeredX();
-            double ay = from.position.flooredY();
-            double az = from.position.centeredZ();
-            double bx = to.position.centeredX();
-            double by = to.position.flooredY();
-            double bz = to.position.centeredZ();
-            double dx = bx - ax;
-            double dy = by - ay;
-            double dz = bz - az;
-            double lenSq = dx * dx + dy * dy + dz * dz;
+            double ax = pathCache.x(pursuitSegment);
+            double ay = pathCache.y(pursuitSegment);
+            double az = pathCache.z(pursuitSegment);
+            double dx = pathCache.segmentDx(pursuitSegment);
+            double dy = pathCache.segmentDy(pursuitSegment);
+            double dz = pathCache.segmentDz(pursuitSegment);
+            double lenSq = pathCache.segmentLenSq(pursuitSegment);
             if (lenSq < 1.0e-6) {
                 pursuitSegment++;
                 lastProgressTime = now;
@@ -135,10 +134,9 @@ final class PathTracker {
             return new PathProximitySnapshot(0, 0, 0.0, 0.0, 0.0, 0.0, 0.0);
         }
         if (path.size() == 1) {
-            Node node = path.getFirst();
-            double dx = node.position.centeredX() - pos.x();
-            double dy = (node.position.flooredY() - OFF_PATH_VERTICAL_CURSOR_OFFSET) - pos.y();
-            double dz = node.position.centeredZ() - pos.z();
+            double dx = pathCache.x(0) - pos.x();
+            double dy = pathCache.offPathY(0) - pos.y();
+            double dz = pathCache.z(0) - pos.z();
             double hDist = Math.sqrt(dx * dx + dz * dz);
             return new PathProximitySnapshot(0, 0, 0.0, hDist, Math.abs(dy), Math.sqrt(hDist * hDist + dy * dy), 0.0);
         }
@@ -154,37 +152,32 @@ final class PathTracker {
         int bestNode = Math.min(path.size() - 1, pursuitSegment + 1);
 
         for (int i = start; i <= end; i++) {
-            Node from = path.get(i);
-            Node to = path.get(i + 1);
-            double ax = from.position.centeredX();
-            double ay = from.position.flooredY() - OFF_PATH_VERTICAL_CURSOR_OFFSET;
-            double az = from.position.centeredZ();
-            double bx = to.position.centeredX();
-            double by = to.position.flooredY() - OFF_PATH_VERTICAL_CURSOR_OFFSET;
-            double bz = to.position.centeredZ();
-            double dx = bx - ax;
-            double dy = by - ay;
-            double dz = bz - az;
-            double lenSq = dx * dx + dy * dy + dz * dz;
+            double ax = pathCache.x(i);
+            double ay = pathCache.offPathY(i);
+            double az = pathCache.z(i);
+            double dx = pathCache.segmentDx(i);
+            double dy = pathCache.segmentDy(i);
+            double dz = pathCache.segmentDz(i);
+            double lenSq = pathCache.segmentLenSq(i);
             double t = lenSq < 1.0e-6 ? 0.0
                 : Math.max(0.0, Math.min(1.0, ((pos.x() - ax) * dx + (pos.y() - ay) * dy + (pos.z() - az) * dz) / lenSq));
             double projX = ax + dx * t;
-            double projY = ay + (by - ay) * t;
+            double projY = ay + dy * t;
             double projZ = az + dz * t;
             double offX = pos.x() - projX;
             double offY = pos.y() - projY;
             double offZ = pos.z() - projZ;
-            double horizontal = Math.sqrt(offX * offX + offZ * offZ);
+            double horizontalSq = offX * offX + offZ * offZ;
             double vertical = Math.abs(offY);
-            double dist3d = Math.sqrt(horizontal * horizontal + vertical * vertical);
+            double dist3dSq = horizontalSq + offY * offY;
             double progress = i + t;
 
-            boolean better = dist3d < bestDist3d - 1.0e-4
-                || (Math.abs(dist3d - bestDist3d) <= 1.0e-4 && progress > bestProgress);
+            boolean better = dist3dSq < bestDist3d * bestDist3d - 1.0e-4
+                || (Math.abs(dist3dSq - bestDist3d * bestDist3d) <= 1.0e-4 && progress > bestProgress);
             if (!better) continue;
 
-            bestDist3d = dist3d;
-            bestHorizontal = horizontal;
+            bestDist3d = Math.sqrt(dist3dSq);
+            bestHorizontal = Math.sqrt(horizontalSq);
             bestVertical = vertical;
             bestProgress = progress;
             bestT = t;
@@ -200,12 +193,10 @@ final class PathTracker {
         int segment = Math.max(0, Math.min(proximity.nearestSegmentIndex(), path.size() - 2));
         Node from = path.get(segment);
         Node to = path.get(segment + 1);
-        double ax = from.position.centeredX();
-        double az = from.position.centeredZ();
-        double bx = to.position.centeredX();
-        double bz = to.position.centeredZ();
-        double dx = bx - ax;
-        double dz = bz - az;
+        double ax = pathCache.x(segment);
+        double az = pathCache.z(segment);
+        double dx = pathCache.segmentDx(segment);
+        double dz = pathCache.segmentDz(segment);
         double lenSq = dx * dx + dz * dz;
         double t = lenSq < 1.0e-6 ? 0.0
             : Math.max(0.0, Math.min(1.0, ((pos.x() - ax) * dx + (pos.z() - az) * dz) / lenSq));
@@ -239,10 +230,7 @@ final class PathTracker {
         if (path.isEmpty()) return 0.0;
         int nextIndex = Math.min(path.size() - 1, pursuitSegment + 1);
         double distance = distanceToNode(playerPos, path.get(nextIndex));
-        for (int i = nextIndex; i + 1 < path.size(); i++) {
-            distance += distanceBetween(path.get(i), path.get(i + 1));
-        }
-        return distance;
+        return distance + pathCache.remainingFromNode(nextIndex);
     }
 
     Node getMovementWaypoint() {
@@ -265,6 +253,7 @@ final class PathTracker {
 
     private void resetPath(List<Node> newPath) {
         this.path = snapshot(newPath);
+        this.pathCache = ExecutionPathCache.of(this.path);
         this.pursuitSegment = 0;
         this.bestPathProgress = Double.NEGATIVE_INFINITY;
         this.lastPathProgressTime = System.currentTimeMillis();
@@ -274,16 +263,14 @@ final class PathTracker {
     private double computePathProgress(Vec3d playerPos) {
         if (path.isEmpty()) return 0.0;
         if (pursuitSegment + 1 >= path.size()) return path.size() - 1;
-        Node from = path.get(pursuitSegment);
-        Node to = path.get(pursuitSegment + 1);
-        double dx = to.position.centeredX() - from.position.centeredX();
-        double dy = to.position.flooredY() - from.position.flooredY();
-        double dz = to.position.centeredZ() - from.position.centeredZ();
-        double lenSq = dx * dx + dy * dy + dz * dz;
+        double dx = pathCache.segmentDx(pursuitSegment);
+        double dy = pathCache.segmentDy(pursuitSegment);
+        double dz = pathCache.segmentDz(pursuitSegment);
+        double lenSq = pathCache.segmentLenSq(pursuitSegment);
         if (lenSq < 1.0e-6) return pursuitSegment;
-        double px = playerPos.x() - from.position.centeredX();
-        double py = playerPos.y() - from.position.flooredY();
-        double pz = playerPos.z() - from.position.centeredZ();
+        double px = playerPos.x() - pathCache.x(pursuitSegment);
+        double py = playerPos.y() - pathCache.y(pursuitSegment);
+        double pz = playerPos.z() - pathCache.z(pursuitSegment);
         double t = (px * dx + py * dy + pz * dz) / lenSq;
         return pursuitSegment + Math.max(0.0, Math.min(0.999, t));
     }
