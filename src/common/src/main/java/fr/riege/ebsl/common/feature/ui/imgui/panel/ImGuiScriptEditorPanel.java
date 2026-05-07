@@ -30,6 +30,7 @@ public final class ImGuiScriptEditorPanel {
     private final ImString selectedCommand = new ImString("", 96);
     private final ImString selectedArgs = new ImString("", 512);
     private String loadedFile = "";
+    private int loadedRevision = -1;
     private String status = "idle";
     private int selectedGraphNode = -1;
     private String selectedGraphKey = "";
@@ -89,8 +90,7 @@ public final class ImGuiScriptEditorPanel {
         UiRect completion = new UiRect(editor.x(), editor.y(), editor.width(), 84);
         renderCompletion(completion);
         UiRect code = new UiRect(editor.x(), editor.y() + 92, editor.width(), editor.height() - 92);
-        ImGui.setCursorScreenPos(code.x(), code.y());
-        ImGui.inputTextMultiline("##ebsl-code-editor", source, code.width(), code.height());
+        renderCodeEditor(code);
     }
 
     private void renderCompletion(UiRect rect) {
@@ -125,27 +125,60 @@ public final class ImGuiScriptEditorPanel {
         panAndZoomCanvas(canvas);
         drawGrid(dl, canvas);
         List<ScriptGraphNode> nodes = graphNodes();
-        float previousCenterX = 0.0f;
-        float previousCenterY = 0.0f;
+        float previousOutX = 0.0f;
+        float previousOutY = 0.0f;
         for (int i = 0; i < nodes.size(); i++) {
             ScriptGraphNode node = nodes.get(i);
             NodePosition position = nodePosition(node, i);
             float nodeX = canvas.x() + graphPanX + position.x() * graphZoom;
             float nodeY = canvas.y() + graphPanY + position.y() * graphZoom;
             float width = drawNode(dl, i, node.key(), nodeX, nodeY, node);
-            float centerX = nodeX + width * 0.5f;
-            float centerY = nodeY + NODE_H * graphZoom * 0.5f;
+            float inX = nodeX + 10.0f * graphZoom;
+            float inY = nodeY + NODE_H * graphZoom * 0.5f;
+            float outX = nodeX + width - 10.0f * graphZoom;
+            float outY = inY;
             if (i > 0) {
-                dl.addLine(previousCenterX, previousCenterY, centerX, centerY, 0xAA67B7FF, 2.0f);
+                drawEdge(dl, previousOutX, previousOutY, inX, inY);
             }
-            previousCenterX = centerX;
-            previousCenterY = centerY;
+            previousOutX = outX;
+            previousOutY = outY;
         }
         if (nodes.isEmpty()) {
             dl.addText(canvas.x() + 20.0f, canvas.y() + 20.0f, UiTheme.TEXT_MUTED, "Empty script");
         }
         drawMiniMap(editor, nodes);
         renderSelectedNodeDetails(editor, nodes);
+    }
+
+    private void renderCodeEditor(UiRect code) {
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRectFilled(code.x(), code.y(), code.right(), code.bottom(), 0xFF0D1117, 4.0f);
+        dl.addRect(code.x(), code.y(), code.right(), code.bottom(), 0xFF26313D, 4.0f, 0, 1.0f);
+        UiRect gutter = new UiRect(code.x(), code.y(), 52, code.height());
+        dl.addRectFilled(gutter.x(), gutter.y(), gutter.right(), gutter.bottom(), 0xFF111923, 4.0f);
+        drawLineNumbers(dl, gutter);
+        ImGui.setCursorScreenPos(code.x() + 58.0f, code.y() + 6.0f);
+        ImGui.inputTextMultiline("##ebsl-code-editor", source, code.width() - 64.0f, code.height() - 12.0f);
+        dl.addText(code.right() - 128.0f, code.y() + 8.0f, UiTheme.TEXT_DIM, lineCount() + " lines");
+    }
+
+    private void drawLineNumbers(ImDrawList dl, UiRect gutter) {
+        int count = lineCount();
+        int visible = Math.min(count, Math.max(1, (gutter.height() - 12) / 16));
+        for (int i = 0; i < visible; i++) {
+            dl.addText(gutter.x() + 12.0f, gutter.y() + 8.0f + i * 16.0f, UiTheme.TEXT_DIM, Integer.toString(i + 1));
+        }
+    }
+
+    private int lineCount() {
+        return source.get().isEmpty() ? 1 : source.get().split("\\R", -1).length;
+    }
+
+    private void drawEdge(ImDrawList dl, float fromX, float fromY, float toX, float toY) {
+        float mid = Math.max(36.0f, Math.abs(toX - fromX) * 0.5f);
+        dl.addBezierCubic(fromX, fromY, fromX + mid, fromY, toX - mid, toY, toX, toY, 0xCC67B7FF, 2.0f);
+        dl.addCircleFilled(fromX, fromY, 3.5f, 0xFF67B7FF);
+        dl.addCircleFilled(toX, toY, 3.5f, 0xFF67B7FF);
     }
 
     private void renderGraphToolbar(UiRect editor) {
@@ -409,7 +442,7 @@ public final class ImGuiScriptEditorPanel {
     }
 
     private void ensureLoaded(EbslUiState state, EbslPlatform platform) {
-        if (!loadedFile.equals(state.selectedScriptFile())) {
+        if (!loadedFile.equals(state.selectedScriptFile()) || loadedRevision != state.scriptRevision()) {
             load(state, platform);
         }
     }
@@ -417,6 +450,7 @@ public final class ImGuiScriptEditorPanel {
     private void load(EbslUiState state, EbslPlatform platform) {
         EbslScriptDocument document = new EbslScriptManager(platform.storage()).load(state.selectedScriptFile());
         loadedFile = document.fileName();
+        loadedRevision = state.scriptRevision();
         source.set(document.source());
         status = "loaded";
     }

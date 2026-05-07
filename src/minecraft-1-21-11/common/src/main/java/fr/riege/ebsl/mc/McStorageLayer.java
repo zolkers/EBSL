@@ -46,6 +46,13 @@ public class McStorageLayer implements IStorageLayer {
     }
 
     @Override
+    public void deleteText(String path) {
+        try {
+            Files.deleteIfExists(resolveTextPath(path));
+        } catch (IOException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
     public List<String> listTextFiles(String directory, String extension) {
         try {
             Path folder = resolveTextPath(directory);

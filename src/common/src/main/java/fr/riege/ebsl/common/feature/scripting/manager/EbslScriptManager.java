@@ -44,6 +44,10 @@ public final class EbslScriptManager {
         storage.saveText(path(normalizeFileName(fileName)), source == null ? "" : source);
     }
 
+    public void delete(String fileName) {
+        storage.deleteText(path(normalizeFileName(fileName)));
+    }
+
     public static String normalizeFileName(String fileName) {
         String normalized = fileName == null ? "" : fileName.trim().replace('\\', '/');
         int slash = normalized.lastIndexOf('/');

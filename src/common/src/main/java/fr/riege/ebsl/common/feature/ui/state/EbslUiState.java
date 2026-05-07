@@ -16,17 +16,22 @@ public final class EbslUiState {
     private EbslScriptView scriptView = EbslScriptView.CODE;
     private String selectedScriptFile = EbslScriptManager.DEFAULT_FILE;
     private String pendingScriptInsert = "";
+    private int scriptRevision;
 
     public MainViewTab mainViewTab()  { return mainViewTab; }
     public CenterTab centerTab()      { return centerTab; }
     public RightPanelMode rightPanelMode() { return rightPanelMode; }
     public EbslScriptView scriptView() { return scriptView; }
     public String selectedScriptFile() { return selectedScriptFile; }
+    public int scriptRevision() { return scriptRevision; }
 
     public void setMainViewTab(MainViewTab t) { mainViewTab = t; }
     public void setCenterTab(CenterTab t)     { centerTab = t; }
     public void setScriptView(EbslScriptView view) { scriptView = view; }
-    public void selectScriptFile(String file) { selectedScriptFile = EbslScriptManager.normalizeFileName(file); }
+    public void selectScriptFile(String file) {
+        selectedScriptFile = EbslScriptManager.normalizeFileName(file);
+        scriptRevision++;
+    }
     public void requestScriptInsert(String line) { pendingScriptInsert = line == null ? "" : line; }
 
     public String consumeScriptInsert() {

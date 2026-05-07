@@ -15,6 +15,9 @@ public interface IStorageLayer {
         return load(path);
     }
 
+    default void deleteText(String path) {
+    }
+
     default List<String> listTextFiles(String directory, String extension) {
         return List.of();
     }
