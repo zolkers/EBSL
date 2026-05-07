@@ -1,11 +1,21 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
+import fr.riege.ebsl.common.layer.IPlayerLayer;
+import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.rotation.AngleUtils;
+import fr.riege.ebsl.common.pathfinding.rotation.Rotation;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+
+import java.util.function.Consumer;
 
 final class PathPitchStabilizer {
     private float stablePitch;
     private float velocity;
+
+    void reset() {
+        stablePitch = 0f;
+        velocity = 0f;
+    }
 
     void reset(float initialPitch) {
         float max = maxAbsPitch(false);
@@ -20,14 +30,18 @@ final class PathPitchStabilizer {
         float stiffness = (float) (double) PathfinderSettings.instance().pitchSpringStiffness.value();
         float damping = (float) (double) PathfinderSettings.instance().pitchSpringDamping.value();
         velocity = velocity * damping + error * stiffness;
-        // Prevent overshoot: velocity must not push stablePitch past clampedCandidate
-        velocity = Math.clamp(velocity, Math.min(error, 0f), Math.max(error, 0f));
         stablePitch = Math.clamp(stablePitch + velocity, -maxAbs, maxAbs);
         return stablePitch;
     }
 
     float getStablePitch() {
         return stablePitch;
+    }
+
+    // TODO Task 4: replace this stub with full spring-damper wiring
+    Rotation stabilize(IPlayerLayer player, Vec3d target, Rotation rawRot, Consumer<String> debug) {
+        float stabilizedPitch = tick(rawRot.pitch, player.isInWater());
+        return new Rotation(rawRot.yaw, stabilizedPitch);
     }
 
     private static float maxAbsPitch(boolean inWater) {
