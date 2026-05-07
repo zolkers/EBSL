@@ -1,14 +1,14 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.layer.IPlayerLayer;
-import fr.riege.ebsl.common.layer.IWorldLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
+import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.CommonNavigationBackend;
 import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
-import fr.riege.ebsl.common.service.NavigationService;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 import net.minecraft.client.Minecraft;
 
 public final class ModloaderNavigationService implements NavigationService {

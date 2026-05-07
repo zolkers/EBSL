@@ -1,7 +1,7 @@
 package fr.riege.ebsl.mc;
 
-import fr.riege.ebsl.common.entity.EntitySnapshot;
-import fr.riege.ebsl.common.layer.IEntityLayer;
+import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
+import fr.riege.ebsl.common.platform.layer.IEntityLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;

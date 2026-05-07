@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.layer.IPlayerLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 
 final class InputApplier {
     private static final double STRAFE_SUPPRESSION_FORWARD_DOT = 0.45;

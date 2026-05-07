@@ -1,7 +1,7 @@
 package fr.riege.ebsl.loader.mixin;
 
-import fr.riege.ebsl.common.packet.PacketCaptureLog;
-import fr.riege.ebsl.common.packet.PacketDirection;
+import fr.riege.ebsl.common.domain.packet.PacketCaptureLog;
+import fr.riege.ebsl.common.domain.packet.PacketDirection;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.network.Connection;

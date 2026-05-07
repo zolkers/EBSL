@@ -39,7 +39,9 @@ final class PathTracker {
             int startIdx = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
             for (int i = startIdx; i < path.size(); i++) appendDistinct(merged, path.get(i));
         }
-        for (Node node : continuationPath) appendDistinct(merged, node);
+        List<Node> aligned = alignContinuationStart(merged, continuationPath);
+        if (aligned.isEmpty()) return;
+        for (Node node : aligned) appendDistinct(merged, node);
         if (!merged.isEmpty()) resetPath(merged);
     }
 
@@ -50,7 +52,9 @@ final class PathTracker {
 
         List<Node> merged = new ArrayList<>();
         for (int i = pursuitSegment; i < trimIndex; i++) appendDistinct(merged, path.get(i));
-        for (Node node : alignContinuationStart(merged, newPath)) appendDistinct(merged, node);
+        List<Node> aligned = alignContinuationStart(merged, newPath);
+        if (aligned.isEmpty()) return;
+        for (Node node : aligned) appendDistinct(merged, node);
         if (!merged.isEmpty()) resetPath(merged);
     }
 
@@ -310,7 +314,8 @@ final class PathTracker {
                 bestIndex = i;
             }
         }
-        if (bestIndex <= 0 || bestDistance > CONTINUATION_ALIGN_MAX_DISTANCE) return continuationPath;
+        if (bestDistance > CONTINUATION_ALIGN_MAX_DISTANCE) return List.of();
+        if (bestIndex <= 0) return continuationPath;
         return continuationPath.subList(bestIndex, continuationPath.size());
     }
 

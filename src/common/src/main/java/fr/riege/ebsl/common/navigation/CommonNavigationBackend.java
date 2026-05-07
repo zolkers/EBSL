@@ -1,8 +1,8 @@
 package fr.riege.ebsl.common.navigation;
 
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.layer.IPlayerLayer;
-import fr.riege.ebsl.common.layer.IWorldLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
+import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.*;
 import fr.riege.ebsl.common.pathfinding.execution.ExecutionOptions;
@@ -21,7 +21,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
-import fr.riege.ebsl.common.service.NavigationService;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.Collection;
 import java.util.List;
@@ -351,6 +351,7 @@ public final class CommonNavigationBackend implements NavigationService {
                     segmentEnd.position.flooredZ());
             longRangeSession.onSegmentStarted(
                 segmentEnd.position.flooredX(),
+                segmentEnd.position.flooredY(),
                 segmentEnd.position.flooredZ(),
                 continuationNeeded,
                 partial);
@@ -402,8 +403,7 @@ public final class CommonNavigationBackend implements NavigationService {
             navigating = false;
             return;
         }
-        Runnable segmentFinished = finishAtPathEnd ? onFinished : null;
-        executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, preciseExecution, segmentFinished,
+        executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, preciseExecution, null,
             executionOptions, finishAtPathEnd));
     }
 
@@ -458,7 +458,7 @@ public final class CommonNavigationBackend implements NavigationService {
         } else if (horizonStart != null) {
             int hx = horizonStart.flooredX();
             int hz = horizonStart.flooredZ();
-            int hy = resolveGoalYForXZ(hx, playerY, hz);
+            int hy = resolveContinuationY(hx, horizonStart.flooredY(), hz);
             start = new PathPosition(hx, hy, hz);
             fromX = hx + 0.5;
             fromZ = hz + 0.5;
@@ -466,7 +466,7 @@ public final class CommonNavigationBackend implements NavigationService {
         } else {
             int sx = longRangeSession.currentSegmentGoalX();
             int sz = longRangeSession.currentSegmentGoalZ();
-            int sy = resolveGoalYForXZ(sx, playerY, sz);
+            int sy = resolveContinuationY(sx, longRangeSession.currentSegmentGoalY(), sz);
             start = new PathPosition(sx, sy, sz);
             fromX = sx + 0.5;
             fromZ = sz + 0.5;
@@ -474,7 +474,7 @@ public final class CommonNavigationBackend implements NavigationService {
         LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(fromX, fromZ);
         int gy = longRangeSession.requiresExactY() && !segmentGoal.segmented()
             ? longRangeSession.finalGoalY()
-            : resolveGoalYForXZ(segmentGoal.x(), playerY, segmentGoal.z());
+            : resolveGoalYForXZ(segmentGoal.x(), start.flooredY(), segmentGoal.z());
         PathPosition target = new PathPosition(segmentGoal.x(), gy, segmentGoal.z());
         PathfinderConfiguration config = queuedConfiguration();
         AStarPathfinder queuedPathfinder = new AStarPathfinder(config);
@@ -505,6 +505,10 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
         if (processed.navigationPath().isEmpty()) {
+            longRangeSession.markSegmentCalculationFailed(System.currentTimeMillis());
+            return;
+        }
+        if (!isAttachableSegment(processed.navigationPath(), attachment, rollingHorizon)) {
             longRangeSession.markSegmentCalculationFailed(System.currentTimeMillis());
             return;
         }
@@ -543,7 +547,28 @@ public final class CommonNavigationBackend implements NavigationService {
             startExecutor(pending.path(), goalX, goalY, goalZ, !pending.needsContinuation());
         }
         activeNodes = executor.getPathSnapshot();
-        longRangeSession.onSegmentStarted(pending.goalX(), pending.goalZ(), pending.needsContinuation(), pending.partial());
+        longRangeSession.onSegmentStarted(pending.goalX(), pending.goalY(), pending.goalZ(), pending.needsContinuation(), pending.partial());
+        if (!pending.needsContinuation()) {
+            longRangeSession.markCompleted();
+        }
+    }
+
+    private boolean isAttachableSegment(List<Node> path,
+                                        LongRangePathSession.SegmentAttachment attachment,
+                                        boolean rollingHorizon) {
+        if (attachment == LongRangePathSession.SegmentAttachment.REPLACE_FROM_PLAYER || !rollingHorizon) {
+            return true;
+        }
+        List<Node> current = executor.getPathSnapshot();
+        if (current.isEmpty() || path.isEmpty()) {
+            return true;
+        }
+        Node start = path.getFirst();
+        double bestDistance = Double.MAX_VALUE;
+        for (Node node : current) {
+            bestDistance = Math.min(bestDistance, node.position.distance(start.position));
+        }
+        return bestDistance <= 12.0;
     }
 
     private PathPosition resolveTarget(PathPosition target) {
@@ -573,6 +598,14 @@ public final class CommonNavigationBackend implements NavigationService {
         if (checker.isPassable(x, preferredY, z) && checker.isPassable(x, preferredY + 1, z)) return preferredY;
         if (checker.isSolid(x, preferredY, z)) return preferredY + 1;
         return preferredY;
+    }
+
+    private int resolveContinuationY(int x, int preferredY, int z) {
+        if (checker.isWalkable(x, preferredY, z)
+            || (checker.isPassable(x, preferredY, z) && checker.isPassable(x, preferredY + 1, z))) {
+            return preferredY;
+        }
+        return resolveGoalYForXZ(x, preferredY, z);
     }
 
     private static boolean hasUsablePath(PathfinderResult result) {

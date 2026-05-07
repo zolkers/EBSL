@@ -3,7 +3,7 @@ package fr.riege.ebsl.common.pathfinding.debug;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
-import fr.riege.ebsl.common.render.RenderHandle;
+import fr.riege.ebsl.common.platform.render.RenderHandle;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;

@@ -1,6 +1,6 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.layer.IImGuiLayer;
+import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
 import net.minecraft.client.Minecraft;
 
 public class MinecraftImGuiLayer implements IImGuiLayer {

@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.movement.types.evaluation;
 
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.EnumRegistry;
 
 public final class MovementEvaluatorRegistry {
     private static final EnumRegistry<Node.MoveType, MovementEvaluator> EVALUATORS =

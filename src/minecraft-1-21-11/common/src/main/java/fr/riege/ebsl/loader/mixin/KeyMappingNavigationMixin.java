@@ -1,6 +1,6 @@
 package fr.riege.ebsl.loader.mixin;
 
-import fr.riege.ebsl.common.service.EbslServices;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 import net.minecraft.client.KeyMapping;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.layer.IPlayerLayer;
+import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.rotation.AngleUtils;
 import fr.riege.ebsl.common.pathfinding.rotation.Rotation;

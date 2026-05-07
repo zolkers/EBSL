@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.platform;
 
-import fr.riege.ebsl.common.layer.*;
+import fr.riege.ebsl.common.platform.layer.*;
 
 public record EbslPlatform(
     IWorldLayer world,

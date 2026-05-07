@@ -2,12 +2,12 @@ package fr.riege.ebsl.loader.ui;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
-import fr.riege.ebsl.common.event.CharTypedEvent;
-import fr.riege.ebsl.common.event.KeyPressEvent;
-import fr.riege.ebsl.common.event.MouseButtonEvent;
-import fr.riege.ebsl.common.event.ScaledMousePosEvent;
-import fr.riege.ebsl.common.event.events.input.GrabMouseEvent;
-import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
+import fr.riege.ebsl.common.core.event.CharTypedEvent;
+import fr.riege.ebsl.common.core.event.KeyPressEvent;
+import fr.riege.ebsl.common.core.event.MouseButtonEvent;
+import fr.riege.ebsl.common.core.event.ScaledMousePosEvent;
+import fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent;
+import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.layer.ModloaderEventBus;
 import fr.riege.ebsl.loader.layer.ModloaderUiService;

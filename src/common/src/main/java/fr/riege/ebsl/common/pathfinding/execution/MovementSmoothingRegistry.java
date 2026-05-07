@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.EnumRegistry;
 
 import java.util.List;
 import java.util.Optional;

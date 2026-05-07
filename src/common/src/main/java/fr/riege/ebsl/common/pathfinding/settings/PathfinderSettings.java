@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.settings;
 
-import fr.riege.ebsl.common.settings.*;
+import fr.riege.ebsl.common.core.settings.*;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.rotation;
 
-import fr.riege.ebsl.common.layer.IPlayerLayer;
+import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 
 public final class TimedEaseStrategy implements IRotationStrategy {
     private final EasingType yawEasing;

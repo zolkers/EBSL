@@ -13,6 +13,7 @@ public final class LongRangePathSession {
     private int finalGoalZ;
     private GoalContract goalContract = GoalContract.XZ;
     private int currentSegmentGoalX;
+    private int currentSegmentGoalY;
     private int currentSegmentGoalZ;
     private boolean currentSegmentNeedsContinuation;
     private int currentSegmentId;
@@ -46,6 +47,7 @@ public final class LongRangePathSession {
         finalGoalY = 0;
         goalContract = GoalContract.XZ;
         currentSegmentGoalX = 0;
+        currentSegmentGoalY = 0;
         currentSegmentGoalZ = 0;
         currentSegmentNeedsContinuation = false;
         currentSegmentId = 0;
@@ -74,6 +76,7 @@ public final class LongRangePathSession {
     public int finalGoalZ() { return finalGoalZ; }
     public boolean requiresExactY() { return goalContract == GoalContract.XYZ; }
     public int currentSegmentGoalX() { return currentSegmentGoalX; }
+    public int currentSegmentGoalY() { return currentSegmentGoalY; }
     public int currentSegmentGoalZ() { return currentSegmentGoalZ; }
 
     public SegmentGoal planSegmentGoal(double fromX, double fromZ) {
@@ -95,11 +98,16 @@ public final class LongRangePathSession {
     }
 
     public void onSegmentStarted(int goalX, int goalZ, boolean needsContinuation) {
-        onSegmentStarted(goalX, goalZ, needsContinuation, false);
+        onSegmentStarted(goalX, 0, goalZ, needsContinuation, false);
     }
 
     public void onSegmentStarted(int goalX, int goalZ, boolean needsContinuation, boolean partial) {
+        onSegmentStarted(goalX, 0, goalZ, needsContinuation, partial);
+    }
+
+    public void onSegmentStarted(int goalX, int goalY, int goalZ, boolean needsContinuation, boolean partial) {
         currentSegmentGoalX = goalX;
+        currentSegmentGoalY = goalY;
         currentSegmentGoalZ = goalZ;
         currentSegmentNeedsContinuation = needsContinuation;
         currentSegmentId++;
@@ -108,6 +116,19 @@ public final class LongRangePathSession {
         nextRetryAfterMs = 0;
         failedSegmentCalculations = 0;
         immediateSegmentQueueRequested = partial;
+    }
+
+    public void markCompleted() {
+        active = false;
+        currentSegmentNeedsContinuation = false;
+        calculationSegmentId = -1;
+        segmentCalculationInFlight = false;
+        preparedSegment = null;
+        immediateSegmentQueueRequested = false;
+        if (backgroundPathfinder != null) {
+            backgroundPathfinder.abort();
+            backgroundPathfinder = null;
+        }
     }
 
     public SegmentQueueDecision queueDecision(double progressRatio, double remainingDistance, boolean walkExecutionDone, long now) {

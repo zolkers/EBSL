@@ -3,12 +3,12 @@ package fr.riege.ebsl.loader;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import fr.riege.ebsl.common.EbslCore;
-import fr.riege.ebsl.common.event.*;
-import fr.riege.ebsl.common.layer.ICommandLayer;
-import fr.riege.ebsl.common.layer.IImGuiLayer;
-import fr.riege.ebsl.common.layer.IInputLayer;
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.log.AppLog;
+import fr.riege.ebsl.common.core.event.*;
+import fr.riege.ebsl.common.platform.layer.ICommandLayer;
+import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.core.log.AppLog;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.layer.ModloaderEventBus;
@@ -93,7 +93,7 @@ public final class ModloaderCommonBootstrap {
     }
 
     public static boolean onGrabMouse() {
-        return events != null && events.post(new fr.riege.ebsl.common.event.events.input.GrabMouseEvent()).isCancelled();
+        return events != null && events.post(new fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent()).isCancelled();
     }
 
     public static boolean onMouseButton(long windowHandle, int button, int action) {
@@ -102,15 +102,15 @@ public final class ModloaderCommonBootstrap {
 
     public static double remapScaledX(Window window, double rawX, double scaledX) {
         if (events == null) return scaledX;
-        fr.riege.ebsl.common.event.ScaledMousePosEvent event =
-            events.post(new fr.riege.ebsl.common.event.ScaledMousePosEvent(rawX, scaledX, fr.riege.ebsl.common.event.ScaledMousePosEvent.Axis.X));
+        fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
+            events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawX, scaledX, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.X));
         return event.scaledPos();
     }
 
     public static double remapScaledY(Window window, double rawY, double scaledY) {
         if (events == null) return scaledY;
-        fr.riege.ebsl.common.event.ScaledMousePosEvent event =
-            events.post(new fr.riege.ebsl.common.event.ScaledMousePosEvent(rawY, scaledY, fr.riege.ebsl.common.event.ScaledMousePosEvent.Axis.Y));
+        fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
+            events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawY, scaledY, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.Y));
         return event.scaledPos();
     }
 

@@ -1,8 +1,8 @@
 package fr.riege.ebsl.mc;
 
-import fr.riege.ebsl.common.layer.IWorldLayer;
+import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.world.BlockId;
+import fr.riege.ebsl.common.domain.world.BlockId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

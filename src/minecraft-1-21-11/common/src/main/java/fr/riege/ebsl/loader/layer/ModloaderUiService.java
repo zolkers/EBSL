@@ -1,6 +1,6 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.service.UiService;
+import fr.riege.ebsl.common.platform.service.UiService;
 
 public final class ModloaderUiService implements UiService {
     private boolean visible;

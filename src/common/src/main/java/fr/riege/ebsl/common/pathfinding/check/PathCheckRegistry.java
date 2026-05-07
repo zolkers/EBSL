@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.check;
 
 import fr.riege.ebsl.common.pathfinding.annotation.PathingStage;
-import fr.riege.ebsl.common.registry.MapRegistry;
+import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 @PathingStage(PathingStage.Stage.RECOVERY)
 public final class PathCheckRegistry {

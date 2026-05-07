@@ -1,6 +1,6 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 

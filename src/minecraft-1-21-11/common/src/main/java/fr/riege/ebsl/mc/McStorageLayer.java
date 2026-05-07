@@ -1,6 +1,6 @@
 package fr.riege.ebsl.mc;
 
-import fr.riege.ebsl.common.layer.IStorageLayer;
+import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

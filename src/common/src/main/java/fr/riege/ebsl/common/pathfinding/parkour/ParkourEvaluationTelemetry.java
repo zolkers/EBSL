@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.parkour;
 
-import fr.riege.ebsl.common.analytics.AnalyticsEventLog;
+import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.Locale;

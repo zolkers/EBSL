@@ -1,7 +1,7 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.event.*;
-import fr.riege.ebsl.common.layer.IEventBus;
+import fr.riege.ebsl.common.core.event.*;
+import fr.riege.ebsl.common.platform.layer.IEventBus;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

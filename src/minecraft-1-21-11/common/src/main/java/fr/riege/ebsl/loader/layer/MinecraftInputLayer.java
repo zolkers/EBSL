@@ -1,6 +1,6 @@
 package fr.riege.ebsl.loader.layer;
 
-import fr.riege.ebsl.common.layer.IInputLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import net.minecraft.client.Minecraft;
 
 public class MinecraftInputLayer implements IInputLayer {
