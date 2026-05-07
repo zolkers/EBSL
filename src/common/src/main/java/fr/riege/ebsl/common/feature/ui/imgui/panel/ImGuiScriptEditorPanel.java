@@ -26,9 +26,12 @@ public final class ImGuiScriptEditorPanel {
 
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
     private final ImString completionFilter = new ImString("", 64);
+    private final ImString selectedCommand = new ImString("", 96);
+    private final ImString selectedArgs = new ImString("", 512);
     private String loadedFile = "";
     private String status = "idle";
     private int selectedGraphNode = -1;
+    private String selectedGraphKey = "";
     private float graphPanX = 0.0f;
     private float graphPanY = 0.0f;
     private float graphZoom = 1.0f;
@@ -173,16 +176,35 @@ public final class ImGuiScriptEditorPanel {
             return;
         }
         ScriptGraphNode node = nodes.get(selectedGraphNode);
-        float panelW = 230.0f;
+        syncSelectedEditor(node);
+        float panelW = 286.0f;
         float x = editor.right() - panelW - 12.0f;
         float y = editor.y() + 48.0f;
         ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(x, y, x + panelW, y + 104.0f, 0xEE121A22, 5.0f);
-        dl.addRect(x, y, x + panelW, y + 104.0f, 0xFF67B7FF, 5.0f, 0, 1.0f);
-        dl.addText(x + 10.0f, y + 10.0f, UiTheme.TEXT, node.command());
-        dl.addText(x + 10.0f, y + 32.0f, UiTheme.TEXT_MUTED, node.category().id());
-        dl.addText(x + 10.0f, y + 56.0f, UiTheme.TEXT_DIM, "line " + node.lineNumber());
-        dl.addText(x + 10.0f, y + 76.0f, UiTheme.TEXT_DIM, node.line());
+        dl.addRectFilled(x, y, x + panelW, y + 190.0f, 0xEE121A22, 5.0f);
+        dl.addRect(x, y, x + panelW, y + 190.0f, 0xFF67B7FF, 5.0f, 0, 1.0f);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 8.0f);
+        ImGui.text("Node properties");
+        ImGui.setCursorScreenPos(x + 10.0f, y + 34.0f);
+        ImGui.setNextItemWidth(panelW - 20.0f);
+        ImGui.inputText("##ebsl-node-command", selectedCommand);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 66.0f);
+        ImGui.setNextItemWidth(panelW - 20.0f);
+        ImGui.inputText("##ebsl-node-args", selectedArgs);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 100.0f);
+        if (ImGui.button("Apply", 64.0f, 24.0f)) {
+            replaceNodeLine(node, selectedCommand.get(), selectedArgs.get());
+        }
+        ImGui.sameLine();
+        if (ImGui.button("Duplicate", 82.0f, 24.0f)) {
+            duplicateNodeLine(node);
+        }
+        ImGui.sameLine();
+        if (ImGui.button("Delete", 64.0f, 24.0f)) {
+            deleteNodeLine(node);
+        }
+        dl.addText(x + 10.0f, y + 136.0f, UiTheme.TEXT_MUTED, node.category().id());
+        dl.addText(x + 10.0f, y + 158.0f, UiTheme.TEXT_DIM, "line " + node.lineNumber());
     }
 
     private void drawGrid(ImDrawList dl, UiRect canvas) {
@@ -214,6 +236,7 @@ public final class ImGuiScriptEditorPanel {
         ImGui.setCursorScreenPos(x, y);
         if (ImGui.invisibleButton("##ebsl-graph-node-" + index, width, height)) {
             selectedGraphNode = index;
+            selectedGraphKey = "";
         }
         dragNode(key);
         return width;
@@ -284,6 +307,56 @@ public final class ImGuiScriptEditorPanel {
         status = "inserted " + command;
     }
 
+    private void syncSelectedEditor(ScriptGraphNode node) {
+        if (selectedGraphKey.equals(node.key())) {
+            return;
+        }
+        selectedGraphKey = node.key();
+        selectedCommand.set(node.command());
+        selectedArgs.set(node.args());
+    }
+
+    private void replaceNodeLine(ScriptGraphNode node, String command, String args) {
+        String normalizedCommand = command == null ? "" : command.trim().toLowerCase(Locale.ROOT).replace('-', '_');
+        if (normalizedCommand.isBlank()) {
+            status = "empty command";
+            return;
+        }
+        String normalizedArgs = args == null ? "" : args.trim();
+        String replacement = normalizedArgs.isBlank() ? normalizedCommand : normalizedCommand + " " + normalizedArgs;
+        mutateSourceLine(node.lineNumber(), replacement, LineMutation.REPLACE);
+        selectedGraphKey = "";
+        status = "updated node";
+    }
+
+    private void duplicateNodeLine(ScriptGraphNode node) {
+        mutateSourceLine(node.lineNumber(), node.line(), LineMutation.DUPLICATE);
+        status = "duplicated node";
+    }
+
+    private void deleteNodeLine(ScriptGraphNode node) {
+        mutateSourceLine(node.lineNumber(), "", LineMutation.DELETE);
+        selectedGraphNode = -1;
+        selectedGraphKey = "";
+        status = "deleted node";
+    }
+
+    private void mutateSourceLine(int lineNumber, String value, LineMutation mutation) {
+        String[] lines = source.get().split("\\R", -1);
+        int index = Math.max(0, Math.min(lines.length - 1, lineNumber - 1));
+        List<String> rewritten = new ArrayList<>();
+        for (int i = 0; i < lines.length; i++) {
+            if (i == index && mutation == LineMutation.DELETE) {
+                continue;
+            }
+            rewritten.add(i == index && mutation == LineMutation.REPLACE ? value : lines[i]);
+            if (i == index && mutation == LineMutation.DUPLICATE) {
+                rewritten.add(value);
+            }
+        }
+        source.set(String.join("\n", rewritten));
+    }
+
     private void validate() {
         try {
             EbslScriptEngine.compile(source.get());
@@ -335,5 +408,11 @@ public final class ImGuiScriptEditorPanel {
         private NodePosition move(float dx, float dy) {
             return new NodePosition(x + dx, y + dy);
         }
+    }
+
+    private enum LineMutation {
+        REPLACE,
+        DUPLICATE,
+        DELETE
     }
 }
