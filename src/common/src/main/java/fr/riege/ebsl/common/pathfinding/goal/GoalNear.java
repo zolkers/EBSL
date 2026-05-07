@@ -7,17 +7,17 @@ public record GoalNear(int x, int y, int z, double radius) implements Goal {
 
     @Override
     public boolean isInGoal(int x, int y, int z) {
-        double dx = this.x - x;
-        double dy = this.y - y;
-        double dz = this.z - z;
+        double dx = (double) this.x - x;
+        double dy = (double) this.y - y;
+        double dz = (double) this.z - z;
         return Math.sqrt(dx * dx + dy * dy + dz * dz) <= radius;
     }
 
     @Override
     public double heuristic(int x, int y, int z) {
-        double dx = this.x - x;
-        double dy = this.y - y;
-        double dz = this.z - z;
+        double dx = (double) this.x - x;
+        double dy = (double) this.y - y;
+        double dz = (double) this.z - z;
         return Math.max(0.0, Math.sqrt(dx * dx + dy * dy + dz * dz) - radius);
     }
 

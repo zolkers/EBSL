@@ -31,10 +31,10 @@ public record GoalRectangleXZ(int minX, int minZ, int maxX, int maxZ) implements
 
     private static double axisDistance(int value, int min, int max) {
         if (value < min) {
-            return min - value;
+            return (double) min - value;
         }
         if (value > max) {
-            return value - max;
+            return (double) value - max;
         }
         return 0.0;
     }

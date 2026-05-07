@@ -225,7 +225,7 @@ public final class PathExecutor {
             recoveryMoveType(path, pathTracker.getPursuitSegment()));
         if (recovery.noteProgress()) pathTracker.noteMovementProgress(playerPos, 0.0);
         if (recovery.action() == PathRecoveryController.Action.REPLAN_FROM_PLAYER) {
-            triggerReplan(false, true, recovery.reason());
+            triggerReplan(true);
             return;
         }
         if (recovery.action() == PathRecoveryController.Action.REPAIR_TO_SEGMENT) {
@@ -313,7 +313,7 @@ public final class PathExecutor {
             proximity));
 
         if (pathCheckResult.isForceReplan()) {
-            triggerReplan(true, true, pathCheckResult.reason());
+            triggerReplan(true);
             return true;
         }
         if (pathCheckResult.isRepairToSegment()) {
@@ -334,7 +334,7 @@ public final class PathExecutor {
 
     private void tickGoalCoasting(Vec3d playerPos) {
         if (!finishAtPathEnd && !isAtGoal(playerPos)) {
-            triggerReplan(false, true, "path ended before final goal");
+            triggerReplan(true);
             return;
         }
         if (!precise) {
@@ -372,7 +372,7 @@ public final class PathExecutor {
         if (path == null || path.isEmpty()) {
             return Node.MoveType.WALK;
         }
-        int idx = Math.max(0, Math.min(path.size() - 1, pursuitSegment));
+        int idx = Math.clamp(pursuitSegment, 0, path.size() - 1);
         Node.MoveType type = path.get(idx).moveType;
         return type == null ? Node.MoveType.WALK : type;
     }
@@ -391,7 +391,7 @@ public final class PathExecutor {
         return false;
     }
 
-    private void triggerReplan(boolean force, boolean fromPlayer, String reason) {
+    private void triggerReplan(boolean fromPlayer) {
         releaseAll();
         lastReplanTime = System.currentTimeMillis();
         pathTracker.markReplanTriggered(lastReplanTime);
@@ -402,12 +402,12 @@ public final class PathExecutor {
     private void triggerRepair(int segmentIndex, String reason) {
         long now = System.currentTimeMillis();
         if (reason.equals(lastRepairReason) && now - lastRepairReasonTime < 1500) {
-            triggerReplan(false, true, "repair loop suppressed: " + reason);
+            triggerReplan(true);
             return;
         }
         repairRequest = pathTracker.createRepairRequest(segmentIndex, reason, goalX, goalY, goalZ).orElse(null);
         if (repairRequest == null) {
-            triggerReplan(false, true, reason);
+            triggerReplan(true);
             return;
         }
         releaseAll();
@@ -429,7 +429,7 @@ public final class PathExecutor {
             : PathfinderSettings.instance().localRepairLookahead.value();
         int target = base + lookahead;
         int maxJoinSegment = Math.max(0, path.size() - 2);
-        return Math.max(0, Math.min(target, maxJoinSegment));
+        return Math.clamp(target, 0, maxJoinSegment);
     }
 
     private void finish() {

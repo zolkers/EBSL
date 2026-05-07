@@ -184,7 +184,7 @@ final class WalkMovementController {
         double lateral = fromStartX * -dirZ + fromStartZ * dirX;
         Vec3d velocity = player.velocity();
         double velocityAlong = velocity.x() * dirX + velocity.z() * dirZ;
-        double verticalDelta = waypoint.position.flooredY() - takeoff.position.flooredY();
+        double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
         boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
         ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
@@ -247,7 +247,7 @@ final class WalkMovementController {
         Vec3d velocity = player.velocity();
         double speedAlong = velocity.x() * dirX + velocity.z() * dirZ;
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
-        double verticalDelta = waypoint.position.flooredY() - takeoff.position.flooredY();
+        double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
         boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
         ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
 
@@ -500,10 +500,14 @@ final class WalkMovementController {
             if (MovementEvaluatorRegistry.get(wp.moveType).countsAsStairSequence() && isPartialSupportWaypoint(wp)) {
                 stairCount++;
             }
-            if (i > 0 && wp.position.flooredY() < path.get(i - 1).position.flooredY()) {
-                if (world.isPartialSupport(wp.position.flooredX(), wp.position.flooredY(), wp.position.flooredZ())) {
-                    stairCount++;
-                }
+            if (i > 0
+                    && wp.position.flooredY() < path.get(i - 1).position.flooredY()
+                    && world.isPartialSupport(
+                    wp.position.flooredX(),
+                    wp.position.flooredY(),
+                    wp.position.flooredZ()
+            )) {
+                stairCount++;
             }
         }
         return stairCount >= 2;

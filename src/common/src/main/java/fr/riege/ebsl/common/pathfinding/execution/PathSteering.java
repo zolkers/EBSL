@@ -58,7 +58,7 @@ final class PathSteering {
 
     private static Vec3d centerlineCorrection(List<Node> path, Vec3d playerPos, int pursuitSegment) {
         if (path == null || path.size() < 2) return new Vec3d(0.0, 0.0, 0.0);
-        int segment = Math.max(0, Math.min(pursuitSegment, path.size() - 2));
+        int segment = Math.clamp(pursuitSegment, 0, path.size() - 2);
         Node from = path.get(segment);
         Node to = path.get(segment + 1);
         double ax = from.position.centeredX();
@@ -69,7 +69,11 @@ final class PathSteering {
         double dz = bz - az;
         double lenSq = dx * dx + dz * dz;
         double t = lenSq < 1.0e-6 ? 0.0
-            : Math.max(0.0, Math.min(1.0, ((playerPos.x() - ax) * dx + (playerPos.z() - az) * dz) / lenSq));
+            : Math.clamp(
+                ((playerPos.x() - ax) * dx + (playerPos.z() - az) * dz) / lenSq,
+                0.0,
+                1.0
+        );
         return new Vec3d((ax + dx * t) - playerPos.x(), 0.0, (az + dz * t) - playerPos.z());
     }
 
@@ -86,8 +90,8 @@ final class PathSteering {
                 int blockX = baseX + ox;
                 int blockZ = baseZ + oz;
                 if (!isBodyBlocking(checker, blockX, feetY, blockZ)) continue;
-                double closestX = clamp(playerPos.x(), blockX, blockX + 1.0);
-                double closestZ = clamp(playerPos.z(), blockZ, blockZ + 1.0);
+                double closestX = Math.clamp(playerPos.x(), blockX, blockX + 1.0);
+                double closestZ = Math.clamp(playerPos.z(), blockZ, blockZ + 1.0);
                 double awayX = playerPos.x() - closestX;
                 double awayZ = playerPos.z() - closestZ;
                 double dist = horizontalLength(awayX, awayZ);
@@ -103,10 +107,6 @@ final class PathSteering {
 
     private static boolean isBodyBlocking(WalkabilityChecker checker, int x, int y, int z) {
         return checker.isFullWallBlock(x, y, z) || checker.isFullWallBlock(x, y + 1, z);
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private static double horizontalLength(double x, double z) {

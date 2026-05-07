@@ -28,7 +28,7 @@ final class PathPitchStabilizer {
             ? PathfinderSettings.instance().pitchWaterMaxAbsDeg.value()
             : PathfinderSettings.instance().pitchLandMaxAbsDeg.value());
         if (!initialized) {
-            stablePitch = clamp(player.pitch(), -maxAbsPitch, maxAbsPitch);
+            stablePitch = Math.clamp(player.pitch(), -maxAbsPitch, maxAbsPitch);
             initialized = true;
         }
 
@@ -38,7 +38,7 @@ final class PathPitchStabilizer {
         float maxStep = (float) (double) (inWater
             ? PathfinderSettings.instance().pitchWaterMaxStepDeg.value()
             : PathfinderSettings.instance().pitchLandMaxStepDeg.value());
-        float candidate = clamp(rawRotation.pitch, -maxAbsPitch, maxAbsPitch);
+        float candidate = Math.clamp(rawRotation.pitch, -maxAbsPitch, maxAbsPitch);
         float deltaFromStable = AngleUtils.getRotationDelta(stablePitch, candidate);
 
         if (horizontalDistance < PathfinderSettings.instance().pitchMinHorizontalDistance.value()
@@ -49,23 +49,19 @@ final class PathPitchStabilizer {
             return new Rotation(rawRotation.yaw, held);
         }
 
-        float accepted = stablePitch + clamp(deltaFromStable, -maxStep, maxStep);
-        stablePitch = clamp(accepted, -maxAbsPitch, maxAbsPitch);
+        float accepted = stablePitch + Math.clamp(deltaFromStable, -maxStep, maxStep);
+        stablePitch = Math.clamp(accepted, -maxAbsPitch, maxAbsPitch);
         debug(debug, "pitch stable accept raw=%.2f candidate=%.2f stable=%.2f delta=%.2f horiz=%.2f water=%s",
             rawRotation.pitch, candidate, stablePitch, deltaFromStable, horizontalDistance, inWater);
         return new Rotation(rawRotation.yaw, stablePitch);
     }
 
     private float holdPitch(boolean inWater, float maxAbsPitch) {
-        stablePitch = clamp(stablePitch, -maxAbsPitch, maxAbsPitch);
+        stablePitch = Math.clamp(stablePitch, -maxAbsPitch, maxAbsPitch);
         if (!inWater && Math.abs(stablePitch) <= PathfinderSettings.instance().pitchSnapToNeutralDeg.value()) {
             stablePitch = 0.0f;
         }
         return stablePitch;
-    }
-
-    private static float clamp(float value, float min, float max) {
-        return Math.clamp(value, min, max);
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {

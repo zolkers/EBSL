@@ -84,7 +84,7 @@ final class PathRotationController {
 
         Rotation rawRot = AngleUtils.getRotation(player.eyePosition(), rotationTarget.position());
         Rotation desiredRot = pitchStabilizer.stabilize(player, rotationTarget.position(), rawRot, debug);
-        dispatchRotationIfNeeded(path, pursuitSegment, debug, desiredRot, rotationTarget);
+        dispatchRotationIfNeeded(pursuitSegment, debug, desiredRot, rotationTarget);
     }
 
     void tickExecutor() {
@@ -253,7 +253,7 @@ final class PathRotationController {
         return -1;
     }
 
-    private void dispatchRotationIfNeeded(List<Node> path, int pursuitSegment, Consumer<String> debug,
+    private void dispatchRotationIfNeeded(int pursuitSegment, Consumer<String> debug,
                                           Rotation desiredRot, RotationTarget rotationTarget) {
         boolean alreadyRotating = rotationExecutor.isRotating();
         float referenceYaw = alreadyRotating ? rotationExecutor.getTargetYaw() : player.yaw();
@@ -281,11 +281,17 @@ final class PathRotationController {
     private RotationTarget defaultRotationTarget(List<Node> path, int pursuitSegment, boolean alreadyRotating,
                                                  String mode, int targetIndex, int visualizerIndex, Vec3d position) {
         boolean cameraRail = "camera_rail".equals(mode);
-        EasingType easing = cameraRail
-            ? EasingType.EASE_OUT_CUBIC
-            : computePathDifficulty(path, pursuitSegment) < 0.4f
-                ? EasingType.EASE_OUT_BACK
-                : EasingType.EASE_OUT_CUBIC;
+        EasingType easing;
+
+        if (cameraRail) {
+            easing = EasingType.EASE_OUT_CUBIC;
+        } else {
+            float difficulty = computePathDifficulty(path, pursuitSegment);
+            easing = difficulty < 0.4f
+                    ? EasingType.EASE_OUT_BACK
+                    : EasingType.EASE_OUT_CUBIC;
+        }
+
         return new RotationTarget(
             mode,
             targetIndex,
@@ -339,7 +345,7 @@ final class PathRotationController {
     }
 
     private int nearestCameraRailIndex(Vec3d playerPos) {
-        int bestIndex = Math.max(0, Math.min(cameraIndex, cameraPath.size() - 1));
+        int bestIndex = Math.clamp(cameraIndex, 0, cameraPath.size() - 1);
         double bestDistSq = Double.MAX_VALUE;
         for (int i = 0; i < cameraPath.size(); i++) {
             Vec3d point = cameraPath.get(i);
@@ -354,7 +360,7 @@ final class PathRotationController {
     }
 
     private Vec3d getCameraRailGuideTarget(Vec3d playerPos, int idx) {
-        int start = Math.max(0, Math.min(idx, cameraPath.size() - 1));
+        int start = Math.clamp(idx, 0, cameraPath.size() - 1);
         if (start + 1 >= cameraPath.size()) {
             return cameraPath.getLast();
         }
@@ -368,7 +374,7 @@ final class PathRotationController {
         double t = lenSq < 1.0e-6
             ? 0.0
             : ((playerPos.x() - a.x()) * abx + (playerPos.y() - a.y()) * aby + (playerPos.z() - a.z()) * abz) / lenSq;
-        t = Math.max(0.0, Math.min(1.0, t));
+        t = Math.clamp(t, 0.0, 1.0);
 
         Vec3d cursor = lerp(a, b, t);
         double remaining = PathfinderSettings.instance().cameraRailGuideLookaheadDist.value();

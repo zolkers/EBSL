@@ -8,8 +8,8 @@ public record GoalXZ(int x, int z) implements Goal {
 
     @Override
     public double heuristic(int x, int y, int z) {
-        double dx = this.x - x;
-        double dz = this.z - z;
+        double dx = (double) this.x - x;
+        double dz = (double) this.z - z;
         return Math.sqrt(dx * dx + dz * dz);
     }
 
