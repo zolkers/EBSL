@@ -18,10 +18,6 @@ public class EbslCore {
     private final EbslPlatform platform;
     private long settingsSaveTick;
 
-    public EbslCore(EbslPlatform platform) {
-        this(platform, NoopNavigationService.INSTANCE, NoopUiService.INSTANCE);
-    }
-
     public EbslCore(EbslPlatform platform, NavigationService navigationService, UiService uiService) {
         this.platform = platform;
         EbslServices.installPlatform(platform);
@@ -101,28 +97,5 @@ public class EbslCore {
         }
         settingsSaveTick = tick;
         CommonSettingsStore.save(platform.storage());
-    }
-
-    private enum NoopNavigationService implements NavigationService {
-        INSTANCE;
-
-        @Override public void startBlockGoal(int x, int y, int z) {}
-        @Override public void startColumnGoal(int x, int z) {}
-        @Override public void startPathTest(int x, int y, int z) {}
-        @Override public void startPathTestXZ(int x, int z) {}
-        @Override public void stop(boolean announce) {}
-        @Override public boolean isNavigating() { return false; }
-        @Override public fr.riege.ebsl.common.pathfinding.Node.MoveType currentMoveType() {
-            return fr.riege.ebsl.common.pathfinding.Node.MoveType.WALK;
-        }
-        @Override public boolean isWalkSneakLatched() { return false; }
-        @Override public void setWalkSneakLatched(boolean value) {}
-    }
-
-    private enum NoopUiService implements UiService {
-        INSTANCE;
-
-        @Override public boolean toggle() { return false; }
-        @Override public boolean isVisible() { return false; }
     }
 }
