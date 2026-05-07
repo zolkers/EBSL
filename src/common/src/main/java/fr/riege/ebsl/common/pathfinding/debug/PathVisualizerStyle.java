@@ -70,7 +70,7 @@ record PathVisualizerStyle(
     RenderPaint nodePaint(int index, int limit) {
         return switch (pathColorMode) {
             case GRADIENT -> RenderPaint.solid(gradientColor(index, limit));
-            case RAINBOW -> RenderPaint.solid(rainbowColor(index, limit, nodeColor.a()));
+            case RAINBOW -> RenderPaint.solid(nodeColor);
             case SOLID, MOVE_TYPE -> RenderPaint.solid(nodeColor);
         };
     }

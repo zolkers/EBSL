@@ -17,9 +17,16 @@ public class McRenderLayer implements IRenderLayer {
 
     private Frame frame = Frame.EMPTY;
     private Matrix4f projection = new Matrix4f();
+    private Matrix4f modelViewProjection = new Matrix4f();
+    private Matrix4f inverseModelViewProjection = new Matrix4f();
+    private final Vector4f clipA = new Vector4f();
+    private final Vector4f clipB = new Vector4f();
+    private final Vector4f worldOffset = new Vector4f();
     private BufferBuilder bufferBuilder;
     private RenderPipeline depthPipeline;
     private RenderPipeline noDepthPipeline;
+    private float screenWidth = 1.0f;
+    private float screenHeight = 1.0f;
 
     @Override public void beginFrame(double camX, double camY, double camZ, float[] viewMatrix, float[] projMatrix) {
         frame = new Frame(camX, camY, camZ, copy(viewMatrix), copy(projMatrix));
@@ -41,6 +48,11 @@ public class McRenderLayer implements IRenderLayer {
         color[3] = a;
         depthPipeline = EbslRenderPipelines.LINES_WITH_DEPTH;
         noDepthPipeline = EbslRenderPipelines.LINES_NO_DEPTH;
+        modelViewProjection = new Matrix4f(projection).mul(RenderSystem.getModelViewMatrix());
+        inverseModelViewProjection = new Matrix4f(modelViewProjection).invert();
+        var window = Minecraft.getInstance().getWindow();
+        screenWidth = Math.max(1.0f, window.getWidth());
+        screenHeight = Math.max(1.0f, window.getHeight());
         bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
     }
 
@@ -54,18 +66,12 @@ public class McRenderLayer implements IRenderLayer {
             return;
         }
 
-        Matrix4f modelView = RenderSystem.getModelViewMatrix();
-        Matrix4f modelViewProjection = new Matrix4f(projection).mul(modelView);
-
-        Vector4f clipA = modelViewProjection.transform(new Vector4f((float) x1, (float) y1, (float) z1, 1.0f));
-        Vector4f clipB = modelViewProjection.transform(new Vector4f((float) x2, (float) y2, (float) z2, 1.0f));
+        modelViewProjection.transform(clipA.set((float) x1, (float) y1, (float) z1, 1.0f));
+        modelViewProjection.transform(clipB.set((float) x2, (float) y2, (float) z2, 1.0f));
         if (Math.abs(clipA.w) < 1.0e-5f || Math.abs(clipB.w) < 1.0e-5f) {
             return;
         }
 
-        var window = Minecraft.getInstance().getWindow();
-        float screenWidth = window.getWidth();
-        float screenHeight = window.getHeight();
         float dx = (clipB.x / clipB.w - clipA.x / clipA.w) * screenWidth;
         float dy = (clipB.y / clipB.w - clipA.y / clipA.w) * screenHeight;
         float length = (float) Math.sqrt(dx * dx + dy * dy);
@@ -75,7 +81,7 @@ public class McRenderLayer implements IRenderLayer {
 
         float px = (-dy / length) * lineWidth / screenWidth;
         float py = (dx / length) * lineWidth / screenHeight;
-        Vector4f worldOffset = new Matrix4f(modelViewProjection).invert().transform(new Vector4f(px, py, 0.0f, 0.0f));
+        inverseModelViewProjection.transform(worldOffset.set(px, py, 0.0f, 0.0f));
 
         float ax = (float) x1 + worldOffset.x * clipA.w;
         float ay = (float) y1 + worldOffset.y * clipA.w;

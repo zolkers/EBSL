@@ -7,4 +7,8 @@ public final class WorldRender {
     public static WorldRenderBuilder builder(RenderHandle handle) {
         return new WorldRenderBuilder(handle);
     }
+
+    public static WorldRenderSession session(RenderHandle handle) {
+        return new WorldRenderSession(handle);
+    }
 }

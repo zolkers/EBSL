@@ -4,6 +4,7 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.platform.render.WorldRender;
 import fr.riege.ebsl.common.platform.render.RenderHandle;
+import fr.riege.ebsl.common.platform.render.WorldRenderSession;
 
 import java.util.List;
 
@@ -34,39 +35,38 @@ final class PathVisualizerRenderer {
     }
 
     private static void renderNodeBlocks(RenderHandle handle, List<Node> path, int limit, PathVisualizerStyle style) {
-        for (int i = 0; i < limit; i++) {
-            Node node = path.get(i);
-            WorldRender.builder(handle)
-                .paint(style.nodePaint(i, limit))
-                .depthTested()
-                .filledBlock(node.position.flooredX(), node.position.flooredY(), node.position.flooredZ());
+        try (WorldRenderSession session = WorldRender.session(handle).depthTested()) {
+            for (int i = 0; i < limit; i++) {
+                Node node = path.get(i);
+                session.paint(style.nodePaint(i, limit))
+                    .filledBlock(node.position.flooredX(), node.position.flooredY(), node.position.flooredZ());
+            }
         }
     }
 
     private static void renderStartEnd(RenderHandle handle, List<Node> path, int limit, PathVisualizerStyle style) {
         Node start = path.getFirst();
         Node end = path.get(limit - 1);
-        WorldRender.builder(handle)
-            .color(style.startColor())
-            .depthTested()
-            .filledBlock(start.position.flooredX(), start.position.flooredY(), start.position.flooredZ());
-        WorldRender.builder(handle)
-            .color(style.endColor())
-            .depthTested()
-            .filledBlock(end.position.flooredX(), end.position.flooredY(), end.position.flooredZ());
+        try (WorldRenderSession session = WorldRender.session(handle).depthTested()) {
+            session.color(style.startColor())
+                .filledBlock(start.position.flooredX(), start.position.flooredY(), start.position.flooredZ());
+            session.color(style.endColor())
+                .filledBlock(end.position.flooredX(), end.position.flooredY(), end.position.flooredZ());
+        }
     }
 
     private static void renderPathSegments(RenderHandle handle, List<Node> path, int limit, PathVisualizerStyle style) {
-        for (int i = 0; i + 1 < limit; i++) {
-            Node a = path.get(i);
-            Node b = path.get(i + 1);
-            WorldRender.builder(handle)
-                .paint(style.pathPaint(b.moveType, i, limit))
-                .lineWidth(style.pathLineWidth())
-                .depthTested()
-                .line(
-                    a.position.centeredX(), a.position.flooredY() + PATH_LINE_Y_OFFSET, a.position.centeredZ(),
-                    b.position.centeredX(), b.position.flooredY() + PATH_LINE_Y_OFFSET, b.position.centeredZ());
+        try (WorldRenderSession session = WorldRender.session(handle)
+            .lineWidth(style.pathLineWidth())
+            .depthTested()) {
+            for (int i = 0; i + 1 < limit; i++) {
+                Node a = path.get(i);
+                Node b = path.get(i + 1);
+                session.paint(style.pathPaint(b.moveType, i, limit))
+                    .line(
+                        a.position.centeredX(), a.position.flooredY() + PATH_LINE_Y_OFFSET, a.position.centeredZ(),
+                        b.position.centeredX(), b.position.flooredY() + PATH_LINE_Y_OFFSET, b.position.centeredZ());
+            }
         }
     }
 
@@ -76,35 +76,40 @@ final class PathVisualizerRenderer {
         }
 
         int limit = Math.min(railPath.size(), style.maxCameraNodes());
-        for (int i = 0; i < limit - 1; i++) {
-            Vec3d a = railPath.get(i);
-            Vec3d b = railPath.get(i + 1);
-            WorldRender.builder(handle)
-                .color(style.cameraLineColor(i < railIndex))
-                .lineWidth(style.cameraLineWidth())
-                .throughWalls()
-                .line(a.x(), a.y(), a.z(), b.x(), b.y(), b.z());
+        try (WorldRenderSession session = WorldRender.session(handle)
+            .lineWidth(style.cameraLineWidth())
+            .throughWalls()) {
+            for (int i = 0; i < limit - 1; i++) {
+                Vec3d a = railPath.get(i);
+                Vec3d b = railPath.get(i + 1);
+                session.color(style.cameraLineColor(i < railIndex))
+                    .line(a.x(), a.y(), a.z(), b.x(), b.y(), b.z());
+            }
         }
 
-        for (int i = 0; i < limit; i++) {
-            Vec3d point = railPath.get(i);
-            boolean active = i == railIndex;
-            if (active) {
-                WorldRender.builder(handle)
-                    .color(style.cameraNodeColor(true))
-                    .throughWalls()
-                    .filledBox(
-                        point.x() - CAMERA_NODE_ACTIVE_SIZE, point.y() - CAMERA_NODE_ACTIVE_SIZE, point.z() - CAMERA_NODE_ACTIVE_SIZE,
-                        point.x() + CAMERA_NODE_ACTIVE_SIZE, point.y() + CAMERA_NODE_ACTIVE_SIZE, point.z() + CAMERA_NODE_ACTIVE_SIZE);
-                continue;
-            }
-            WorldRender.builder(handle)
-                .color(style.cameraNodeColor(false))
-                .lineWidth(style.cameraNodeLineWidth())
-                .throughWalls()
-                .wireBox(
+        try (WorldRenderSession session = WorldRender.session(handle)
+            .color(style.cameraNodeColor(false))
+            .lineWidth(style.cameraNodeLineWidth())
+            .throughWalls()) {
+            for (int i = 0; i < limit; i++) {
+                if (i == railIndex) {
+                    continue;
+                }
+                Vec3d point = railPath.get(i);
+                session.wireBox(
                     point.x() - CAMERA_NODE_SIZE, point.y() - CAMERA_NODE_SIZE, point.z() - CAMERA_NODE_SIZE,
                     point.x() + CAMERA_NODE_SIZE, point.y() + CAMERA_NODE_SIZE, point.z() + CAMERA_NODE_SIZE);
+            }
+        }
+
+        if (railIndex >= 0 && railIndex < limit) {
+            Vec3d point = railPath.get(railIndex);
+            WorldRender.builder(handle)
+                .color(style.cameraNodeColor(true))
+                .throughWalls()
+                .filledBox(
+                    point.x() - CAMERA_NODE_ACTIVE_SIZE, point.y() - CAMERA_NODE_ACTIVE_SIZE, point.z() - CAMERA_NODE_ACTIVE_SIZE,
+                    point.x() + CAMERA_NODE_ACTIVE_SIZE, point.y() + CAMERA_NODE_ACTIVE_SIZE, point.z() + CAMERA_NODE_ACTIVE_SIZE);
         }
     }
 }

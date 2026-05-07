@@ -75,9 +75,27 @@ public final class RenderingSystem {
     }
 
     private static void renderBatch(RenderHandle handle, RenderBatch batch) {
+        if (canRenderAsSingleSession(batch)) {
+            try (WorldRenderSession session = WorldRender.session(handle).ignoreDepth(batch.style().ignoreDepth())) {
+                for (RenderPrimitive primitive : batch.primitives()) {
+                    primitive.render(session, batch.style());
+                }
+            }
+            return;
+        }
         for (RenderPrimitive primitive : batch.primitives()) {
             primitive.render(handle, batch.style());
         }
+    }
+
+    private static boolean canRenderAsSingleSession(RenderBatch batch) {
+        boolean ignoreDepth = batch.style().ignoreDepth();
+        for (RenderPrimitive primitive : batch.primitives()) {
+            if (primitive.effectiveStyle(batch.style()).ignoreDepth() != ignoreDepth) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static final class ActiveBatch {
