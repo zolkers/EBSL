@@ -3,6 +3,7 @@ package fr.riege.ebsl.mc;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import fr.riege.ebsl.common.platform.render.RenderColor;
 import fr.riege.ebsl.common.platform.layer.IRenderLayer;
 import fr.riege.ebsl.loader.render.EbslMeshRenderer;
 import fr.riege.ebsl.loader.render.EbslRenderPipelines;
@@ -44,6 +45,11 @@ public class McRenderLayer implements IRenderLayer {
     }
 
     @Override public void emitLine(double x1, double y1, double z1, double x2, double y2, double z2, float lineWidth) {
+        RenderColor c = RenderColor.rgba(color[0], color[1], color[2], color[3]);
+        emitLine(x1, y1, z1, x2, y2, z2, lineWidth, c, c);
+    }
+
+    @Override public void emitLine(double x1, double y1, double z1, double x2, double y2, double z2, float lineWidth, RenderColor from, RenderColor to) {
         if (bufferBuilder == null) {
             return;
         }
@@ -84,31 +90,38 @@ public class McRenderLayer implements IRenderLayer {
         float dyw = (float) y2 - worldOffset.y * clipB.w;
         float dzw = (float) z2 - worldOffset.z * clipB.w;
 
-        float r = color[0];
-        float g = color[1];
-        float b = color[2];
-        float a = color[3];
-        bufferBuilder.addVertex(ax, ay, az).setColor(r, g, b, a);
-        bufferBuilder.addVertex(bx, by, bz).setColor(r, g, b, a);
-        bufferBuilder.addVertex(cx, cy, cz).setColor(r, g, b, a);
-        bufferBuilder.addVertex(bx, by, bz).setColor(r, g, b, a);
-        bufferBuilder.addVertex(dxw, dyw, dzw).setColor(r, g, b, a);
-        bufferBuilder.addVertex(cx, cy, cz).setColor(r, g, b, a);
+        RenderColor a = from != null ? from : RenderColor.rgba(color[0], color[1], color[2], color[3]);
+        RenderColor b = to != null ? to : a;
+        bufferBuilder.addVertex(ax, ay, az).setColor(a.r(), a.g(), a.b(), a.a());
+        bufferBuilder.addVertex(bx, by, bz).setColor(a.r(), a.g(), a.b(), a.a());
+        bufferBuilder.addVertex(cx, cy, cz).setColor(b.r(), b.g(), b.b(), b.a());
+        bufferBuilder.addVertex(bx, by, bz).setColor(a.r(), a.g(), a.b(), a.a());
+        bufferBuilder.addVertex(dxw, dyw, dzw).setColor(b.r(), b.g(), b.b(), b.a());
+        bufferBuilder.addVertex(cx, cy, cz).setColor(b.r(), b.g(), b.b(), b.a());
     }
 
     @Override public void emitTriangle(double x1, double y1, double z1,
                                        double x2, double y2, double z2,
                                        double x3, double y3, double z3) {
+        RenderColor c = RenderColor.rgba(color[0], color[1], color[2], color[3]);
+        emitTriangle(x1, y1, z1, x2, y2, z2, x3, y3, z3, c, c, c);
+    }
+
+    @Override public void emitTriangle(double x1, double y1, double z1,
+                                       double x2, double y2, double z2,
+                                       double x3, double y3, double z3,
+                                       RenderColor a,
+                                       RenderColor b,
+                                       RenderColor c) {
         if (bufferBuilder == null) {
             return;
         }
-        float r = color[0];
-        float g = color[1];
-        float b = color[2];
-        float a = color[3];
-        bufferBuilder.addVertex((float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
-        bufferBuilder.addVertex((float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
-        bufferBuilder.addVertex((float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
+        RenderColor ca = a != null ? a : RenderColor.rgba(color[0], color[1], color[2], color[3]);
+        RenderColor cb = b != null ? b : ca;
+        RenderColor cc = c != null ? c : ca;
+        bufferBuilder.addVertex((float) x1, (float) y1, (float) z1).setColor(ca.r(), ca.g(), ca.b(), ca.a());
+        bufferBuilder.addVertex((float) x2, (float) y2, (float) z2).setColor(cb.r(), cb.g(), cb.b(), cb.a());
+        bufferBuilder.addVertex((float) x3, (float) y3, (float) z3).setColor(cc.r(), cc.g(), cc.b(), cc.a());
     }
 
     @Override public void end(boolean ignoreDepth) {

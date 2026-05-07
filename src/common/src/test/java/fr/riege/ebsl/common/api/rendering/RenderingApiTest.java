@@ -2,6 +2,8 @@ package fr.riege.ebsl.common.api.rendering;
 
 import fr.riege.ebsl.common.api.EbslApi;
 import fr.riege.ebsl.common.platform.render.RenderBatch;
+import fr.riege.ebsl.common.platform.render.RenderColor;
+import fr.riege.ebsl.common.platform.render.RenderPaint;
 import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -41,5 +43,26 @@ final class RenderingApiTest {
         assertEquals(1, EbslApi.rendering().batchCount());
         RenderingSystem.tick();
         assertEquals(0, EbslApi.rendering().batchCount());
+    }
+
+    @Test
+    void apiCreatesGradientAndRainbowStyles() {
+        RenderBatch gradient = EbslApi.rendering()
+            .batch("test:gradient")
+            .gradientArgb(0xFFFF0000, 0xFF0000FF)
+            .line(0, 0, 0, 1, 1, 1)
+            .build();
+
+        RenderBatch rainbow = EbslApi.rendering()
+            .batch("test:rainbow")
+            .rainbow(0.7f)
+            .filledBlock(0, 0, 0)
+            .build();
+
+        RenderColor middle = gradient.style().paint().colorAt(0.5f);
+        assertTrue(gradient.style().paint() instanceof RenderPaint.Gradient);
+        assertTrue(rainbow.style().paint() instanceof RenderPaint.Rainbow);
+        assertEquals(0.5f, middle.r(), 0.01f);
+        assertEquals(0.5f, middle.b(), 0.01f);
     }
 }

@@ -2,9 +2,11 @@ package fr.riege.ebsl.common.platform.render;
 
 public final class WorldRenderBuilder {
     private final RenderHandle handle;
-    private RenderColor color = RenderColor.WHITE;
+    private RenderPaint paint = RenderPaint.SOLID_WHITE;
     private boolean ignoreDepth;
     private float lineWidth = 1.0f;
+    private double gradientMinY;
+    private double gradientRangeY = 1.0;
 
     WorldRenderBuilder(RenderHandle handle) {
         if (handle == null) {
@@ -13,13 +15,29 @@ public final class WorldRenderBuilder {
         this.handle = handle;
     }
 
-    public WorldRenderBuilder color(RenderColor color) {
-        this.color = color != null ? color : RenderColor.WHITE;
+    public WorldRenderBuilder paint(RenderPaint paint) {
+        this.paint = paint != null ? paint : RenderPaint.SOLID_WHITE;
         return this;
+    }
+
+    public WorldRenderBuilder color(RenderColor color) {
+        return paint(RenderPaint.solid(color));
     }
 
     public WorldRenderBuilder argb(int argb) {
         return color(RenderColor.argb(argb));
+    }
+
+    public WorldRenderBuilder gradient(RenderColor from, RenderColor to) {
+        return paint(RenderPaint.gradient(from, to));
+    }
+
+    public WorldRenderBuilder rainbow() {
+        return paint(RenderPaint.rainbow());
+    }
+
+    public WorldRenderBuilder rainbow(float alpha) {
+        return paint(RenderPaint.rainbow(alpha));
     }
 
     public WorldRenderBuilder lineWidth(float lineWidth) {
@@ -42,8 +60,10 @@ public final class WorldRenderBuilder {
 
     public WorldRenderBuilder line(double x1, double y1, double z1,
                                    double x2, double y2, double z2) {
-        handle.beginLines(color.r(), color.g(), color.b(), color.a());
-        handle.emitLine(localX(x1), localY(y1), localZ(z1), localX(x2), localY(y2), localZ(z2), lineWidth);
+        RenderColor from = paint.colorAt(0.0f);
+        RenderColor to = paint.colorAt(1.0f);
+        handle.beginLines(from.r(), from.g(), from.b(), from.a());
+        handle.emitLine(localX(x1), localY(y1), localZ(z1), localX(x2), localY(y2), localZ(z2), lineWidth, from, to);
         handle.end(ignoreDepth);
         return this;
     }
@@ -65,7 +85,10 @@ public final class WorldRenderBuilder {
         double y2 = localY(Math.max(minY, maxY));
         double z2 = localZ(Math.max(minZ, maxZ));
 
-        handle.beginTriangles(color.r(), color.g(), color.b(), color.a());
+        RenderColor baseColor = paint.colorAt(0.0f);
+        handle.beginTriangles(baseColor.r(), baseColor.g(), baseColor.b(), baseColor.a());
+        gradientMinY = y1;
+        gradientRangeY = Math.max(1.0e-5, y2 - y1);
         quad(x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2);
         quad(x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1);
         quad(x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1);
@@ -85,7 +108,10 @@ public final class WorldRenderBuilder {
         double y2 = Math.max(minY, maxY);
         double z2 = Math.max(minZ, maxZ);
 
-        handle.beginLines(color.r(), color.g(), color.b(), color.a());
+        RenderColor baseColor = paint.colorAt(0.0f);
+        handle.beginLines(baseColor.r(), baseColor.g(), baseColor.b(), baseColor.a());
+        gradientMinY = y1;
+        gradientRangeY = Math.max(1.0e-5, y2 - y1);
         emitRawLine(x1, y1, z1, x2, y1, z1);
         emitRawLine(x2, y1, z1, x2, y1, z2);
         emitRawLine(x2, y1, z2, x1, y1, z2);
@@ -106,13 +132,23 @@ public final class WorldRenderBuilder {
                       double bx, double by, double bz,
                       double cx, double cy, double cz,
                       double dx, double dy, double dz) {
-        handle.emitTriangle(ax, ay, az, bx, by, bz, cx, cy, cz);
-        handle.emitTriangle(ax, ay, az, cx, cy, cz, dx, dy, dz);
+        RenderColor ca = paint.colorAt(vertexProgress(ay));
+        RenderColor cb = paint.colorAt(vertexProgress(by));
+        RenderColor cc = paint.colorAt(vertexProgress(cy));
+        RenderColor cd = paint.colorAt(vertexProgress(dy));
+        handle.emitTriangle(ax, ay, az, bx, by, bz, cx, cy, cz, ca, cb, cc);
+        handle.emitTriangle(ax, ay, az, cx, cy, cz, dx, dy, dz, ca, cc, cd);
     }
 
     private void emitRawLine(double x1, double y1, double z1,
                              double x2, double y2, double z2) {
-        handle.emitLine(localX(x1), localY(y1), localZ(z1), localX(x2), localY(y2), localZ(z2), lineWidth);
+        RenderColor from = paint.colorAt(vertexProgress(y1));
+        RenderColor to = paint.colorAt(vertexProgress(y2));
+        handle.emitLine(localX(x1), localY(y1), localZ(z1), localX(x2), localY(y2), localZ(z2), lineWidth, from, to);
+    }
+
+    private float vertexProgress(double y) {
+        return Math.clamp((float) ((y - gradientMinY) / gradientRangeY), 0.0f, 1.0f);
     }
 
     private double localX(double x) {

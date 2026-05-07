@@ -55,8 +55,29 @@ public record RenderBatch(String id, RenderStage stage, RenderStyle style, int t
             return this;
         }
 
+        public Builder paint(RenderPaint paint) {
+            this.style = style.toBuilder().paint(paint).build();
+            return this;
+        }
+
         public Builder argb(int argb) {
             return color(RenderColor.argb(argb));
+        }
+
+        public Builder gradient(RenderColor from, RenderColor to) {
+            return paint(RenderPaint.gradient(from, to));
+        }
+
+        public Builder gradientArgb(int from, int to) {
+            return gradient(RenderColor.argb(from), RenderColor.argb(to));
+        }
+
+        public Builder rainbow() {
+            return paint(RenderPaint.rainbow());
+        }
+
+        public Builder rainbow(float alpha) {
+            return paint(RenderPaint.rainbow(alpha));
         }
 
         public Builder lineWidth(float lineWidth) {

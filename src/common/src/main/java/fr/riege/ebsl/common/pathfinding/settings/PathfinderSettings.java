@@ -22,8 +22,14 @@ public final class PathfinderSettings extends Settingable {
         "render_path_line_width", "Path line width", 2.0, 0.25, 8.0));
     public final DoubleSetting renderCameraLineWidth = registerSetting(new DoubleSetting(
         "render_camera_line_width", "Camera rail line width", 1.25, 0.25, 8.0));
+    public final EnumSetting<PathRenderColorMode> renderPathColorMode = registerSetting(new EnumSetting<>(
+        "render_path_color_mode", "Path color mode", PathRenderColorMode.RAINBOW, PathRenderColorMode.class));
     public final ColorSetting renderNodeColor = registerSetting(new ColorSetting(
-        "render_node_color", "Node fill", 0x705A8CFF));
+        "render_node_color", "Node fill", 0x405A8CFF));
+    public final ColorSetting renderGradientStartColor = registerSetting(new ColorSetting(
+        "render_gradient_start_color", "Gradient start", 0xE65CC8FF));
+    public final ColorSetting renderGradientEndColor = registerSetting(new ColorSetting(
+        "render_gradient_end_color", "Gradient end", 0xE6FF4FD8));
     public final ColorSetting renderStartColor = registerSetting(new ColorSetting(
         "render_start_color", "Start node", 0xE600FFFF));
     public final ColorSetting renderEndColor = registerSetting(new ColorSetting(
@@ -199,6 +205,20 @@ public final class PathfinderSettings extends Settingable {
         "camera_natural_lateral_offset", "Camera natural lateral", 0.26, 0.0, 1.5));
     public final DoubleSetting cameraNaturalVerticalOffset = registerSetting(new DoubleSetting(
         "camera_natural_vertical_offset", "Camera natural vertical", -0.12, -1.0, 1.0));
+    public final DoubleSetting cameraMinForwardDot = registerSetting(new DoubleSetting(
+        "camera_min_forward_dot", "Camera min forward dot", 0.05, -0.25, 0.75));
+    public final DoubleSetting cameraHeightDeadband = registerSetting(new DoubleSetting(
+        "camera_height_deadband", "Camera height deadband", 0.18, 0.0, 1.5));
+    public final DoubleSetting cameraHeightStiffness = registerSetting(new DoubleSetting(
+        "camera_height_stiffness", "Camera height stiffness", 0.16, 0.01, 1.0));
+    public final DoubleSetting cameraHeightDamping = registerSetting(new DoubleSetting(
+        "camera_height_damping", "Camera height damping", 0.72, 0.01, 0.99));
+    public final DoubleSetting cameraHeightMaxStep = registerSetting(new DoubleSetting(
+        "camera_height_max_step", "Camera height max step", 0.18, 0.01, 1.5));
+    public final DoubleSetting cameraHeightUpLimit = registerSetting(new DoubleSetting(
+        "camera_height_up_limit", "Camera height up limit", 5.0, 0.25, 24.0));
+    public final DoubleSetting cameraHeightDownLimit = registerSetting(new DoubleSetting(
+        "camera_height_down_limit", "Camera height down limit", 4.0, 0.25, 24.0));
     public final IntSetting rotationRedispatchCooldownMs = registerSetting(new IntSetting(
         "rotation_redispatch_cooldown_ms", "Rotation redispatch ms", 220, 0, 2000));
     public final DoubleSetting idleYawDeadbandDeg = registerSetting(new DoubleSetting(
@@ -316,7 +336,10 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.renderMaxCameraNodes,
             INSTANCE.renderPathLineWidth,
             INSTANCE.renderCameraLineWidth,
+            INSTANCE.renderPathColorMode,
             INSTANCE.renderNodeColor,
+            INSTANCE.renderGradientStartColor,
+            INSTANCE.renderGradientEndColor,
             INSTANCE.renderStartColor,
             INSTANCE.renderEndColor,
             INSTANCE.renderWalkColor,
@@ -426,6 +449,13 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.cameraNaturalFocusBlend,
             INSTANCE.cameraNaturalLateralOffset,
             INSTANCE.cameraNaturalVerticalOffset,
+            INSTANCE.cameraMinForwardDot,
+            INSTANCE.cameraHeightDeadband,
+            INSTANCE.cameraHeightStiffness,
+            INSTANCE.cameraHeightDamping,
+            INSTANCE.cameraHeightMaxStep,
+            INSTANCE.cameraHeightUpLimit,
+            INSTANCE.cameraHeightDownLimit,
             INSTANCE.rotationRedispatchCooldownMs,
             INSTANCE.idleYawDeadbandDeg,
             INSTANCE.idlePitchDeadbandDeg,

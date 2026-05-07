@@ -10,7 +10,7 @@ public sealed interface RenderPrimitive permits RenderPrimitive.Line, RenderPrim
         public void render(RenderHandle handle, RenderStyle fallbackStyle) {
             RenderStyle s = styleOrDefault(style, fallbackStyle);
             WorldRender.builder(handle)
-                .color(s.color())
+                .paint(s.paint())
                 .lineWidth(s.lineWidth())
                 .ignoreDepth(s.ignoreDepth())
                 .line(x1, y1, z1, x2, y2, z2);
@@ -24,7 +24,7 @@ public sealed interface RenderPrimitive permits RenderPrimitive.Line, RenderPrim
         public void render(RenderHandle handle, RenderStyle fallbackStyle) {
             RenderStyle s = styleOrDefault(style, fallbackStyle);
             WorldRender.builder(handle)
-                .color(s.color())
+                .paint(s.paint())
                 .ignoreDepth(s.ignoreDepth())
                 .filledBox(minX, minY, minZ, maxX, maxY, maxZ);
         }
@@ -37,7 +37,7 @@ public sealed interface RenderPrimitive permits RenderPrimitive.Line, RenderPrim
         public void render(RenderHandle handle, RenderStyle fallbackStyle) {
             RenderStyle s = styleOrDefault(style, fallbackStyle);
             WorldRender.builder(handle)
-                .color(s.color())
+                .paint(s.paint())
                 .lineWidth(s.lineWidth())
                 .ignoreDepth(s.ignoreDepth())
                 .wireBox(minX, minY, minZ, maxX, maxY, maxZ);

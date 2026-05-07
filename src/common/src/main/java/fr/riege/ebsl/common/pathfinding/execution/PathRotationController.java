@@ -29,6 +29,7 @@ final class PathRotationController {
     private final RotationExecutor rotationExecutor;
     private final PathTargetSelector targetSelector = new PathTargetSelector();
     private final PathPitchStabilizer pitchStabilizer = new PathPitchStabilizer();
+    private final CameraTargetSmoother targetSmoother = new CameraTargetSmoother();
 
     private List<Vec3d> cameraPath = Collections.emptyList();
     private int cameraIndex;
@@ -53,6 +54,7 @@ final class PathRotationController {
         this.lastRotationDispatchMs = 0;
         this.active = false;
         this.pitchStabilizer.reset(player.pitch());
+        this.targetSmoother.reset(player.eyePosition().y());
     }
 
     void reset() {
@@ -64,6 +66,7 @@ final class PathRotationController {
         this.lastRotationDispatchMs = 0;
         this.active = false;
         this.pitchStabilizer.reset(player.pitch());
+        this.targetSmoother.clear();
     }
 
     void updateRotation(Vec3d playerPos, List<Node> path, int pursuitSegment, Consumer<String> debug) {
@@ -74,6 +77,8 @@ final class PathRotationController {
 
         boolean alreadyRotating = rotationExecutor.isRotating();
         RotationTarget rotationTarget = selectRotationTarget(playerPos, path, pursuitSegment, alreadyRotating);
+        rotationTarget = keepRotationTargetAhead(playerPos, path, pursuitSegment, rotationTarget);
+        rotationTarget = stabilizeTargetHeight(rotationTarget);
         camTargetIdx = rotationTarget.visualizerIndex();
 
         if (lastRotationDebugCamTarget != camTargetIdx) {
@@ -410,11 +415,12 @@ final class PathRotationController {
         }
 
         double distMoved = lastCameraCheckPos.distanceTo(playerPos);
+        while (cameraIndex + 1 < cameraPath.size() && hasPassedCameraNode(playerPos, cameraIndex)) {
+            cameraIndex++;
+        }
         if (distMoved >= PathfinderSettings.instance().cameraRailReachedDist.value() * 0.5) {
             lastCameraCheckPos = playerPos;
-            while (cameraIndex + 1 < cameraPath.size() && hasPassedCameraNode(playerPos, cameraIndex)) {
-                cameraIndex++;
-            }
+            cameraIndex = Math.max(cameraIndex, nearestCameraRailIndex(playerPos));
         }
         return cameraIndex;
     }
@@ -422,7 +428,7 @@ final class PathRotationController {
     private int nearestCameraRailIndex(Vec3d playerPos) {
         int bestIndex = Math.clamp(cameraIndex, 0, cameraPath.size() - 1);
         double bestDistSq = Double.MAX_VALUE;
-        for (int i = 0; i < cameraPath.size(); i++) {
+        for (int i = bestIndex; i < cameraPath.size(); i++) {
             Vec3d point = cameraPath.get(i);
             double distSq = point.distanceToSq(playerPos);
             if (distSq < bestDistSq - 1.0e-4
@@ -432,6 +438,85 @@ final class PathRotationController {
             }
         }
         return bestIndex;
+    }
+
+    private RotationTarget keepRotationTargetAhead(Vec3d playerPos, List<Node> path, int pursuitSegment, RotationTarget target) {
+        Vec3d forward = pathForward(path, pursuitSegment);
+        if (forward == null) {
+            return target;
+        }
+
+        Vec3d eye = player.eyePosition();
+        double tx = target.position().x() - eye.x();
+        double tz = target.position().z() - eye.z();
+        double targetLen = Math.sqrt(tx * tx + tz * tz);
+        if (targetLen < 1.0e-6) {
+            return target;
+        }
+
+        double dot = (tx / targetLen) * forward.x() + (tz / targetLen) * forward.z();
+        if (dot >= PathfinderSettings.instance().cameraMinForwardDot.value()) {
+            return target;
+        }
+
+        int fallbackIndex = Math.clamp(
+            pursuitSegment + Math.max(1, PathfinderSettings.instance().cameraLookahead.value() / 4),
+            0,
+            path.size() - 1);
+        Node fallback = path.get(fallbackIndex);
+        Vec3d position = new Vec3d(
+            fallback.position.centeredX(),
+            fallback.position.flooredY() + PathfinderSettings.instance().legacyCameraEyeY.value(),
+            fallback.position.centeredZ());
+        position = naturalizeCameraTarget(playerPos, path, pursuitSegment, position);
+        return new RotationTarget(
+            target.mode() + "_forward_guard",
+            fallbackIndex,
+            fallbackIndex,
+            position,
+            target.yawThreshold(),
+            target.pitchThreshold(),
+            target.durationMs(),
+            target.yawEasing(),
+            target.pitchEasing(),
+            target.registry());
+    }
+
+    private RotationTarget stabilizeTargetHeight(RotationTarget target) {
+        Vec3d smoothed = targetSmoother.smooth(target.position(), player.eyePosition());
+        if (smoothed == target.position()) {
+            return target;
+        }
+        return new RotationTarget(
+            target.mode(),
+            target.targetIndex(),
+            target.visualizerIndex(),
+            smoothed,
+            target.yawThreshold(),
+            target.pitchThreshold(),
+            target.durationMs(),
+            target.yawEasing(),
+            target.pitchEasing(),
+            target.registry());
+    }
+
+    private static Vec3d pathForward(List<Node> path, int pursuitSegment) {
+        if (path == null || path.size() < 2) {
+            return null;
+        }
+
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        Node from = path.get(start);
+        for (int i = start + 1; i < path.size(); i++) {
+            Node to = path.get(i);
+            double dx = to.position.centeredX() - from.position.centeredX();
+            double dz = to.position.centeredZ() - from.position.centeredZ();
+            double len = Math.sqrt(dx * dx + dz * dz);
+            if (len > 1.0e-6) {
+                return new Vec3d(dx / len, 0.0, dz / len);
+            }
+        }
+        return null;
     }
 
     private Vec3d getCameraRailGuideTarget(Vec3d playerPos, int idx) {

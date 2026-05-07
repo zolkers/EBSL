@@ -4,6 +4,7 @@ import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.platform.render.RenderBatch;
 import fr.riege.ebsl.common.platform.render.RenderColor;
+import fr.riege.ebsl.common.platform.render.RenderPaint;
 import fr.riege.ebsl.common.platform.render.RenderStage;
 import fr.riege.ebsl.common.platform.render.RenderStyle;
 import fr.riege.ebsl.common.platform.render.RenderingSystem;
@@ -28,6 +29,26 @@ public final class RenderingApi {
     @EbslApiOperation("Create a normalized render color from packed ARGB.")
     public RenderColor color(int argb) {
         return RenderColor.argb(argb);
+    }
+
+    @EbslApiOperation("Create a solid render paint from packed ARGB.")
+    public RenderPaint solid(int argb) {
+        return RenderPaint.solid(RenderColor.argb(argb));
+    }
+
+    @EbslApiOperation("Create a gradient render paint between two packed ARGB colors.")
+    public RenderPaint gradient(int fromArgb, int toArgb) {
+        return RenderPaint.gradient(RenderColor.argb(fromArgb), RenderColor.argb(toArgb));
+    }
+
+    @EbslApiOperation("Create an animated rainbow render paint.")
+    public RenderPaint rainbow() {
+        return RenderPaint.rainbow();
+    }
+
+    @EbslApiOperation("Create an animated rainbow render paint with alpha.")
+    public RenderPaint rainbow(float alpha) {
+        return RenderPaint.rainbow(alpha);
     }
 
     @EbslApiOperation("Submit a render batch for persistent or time-limited drawing.")

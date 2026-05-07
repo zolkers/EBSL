@@ -10,6 +10,7 @@ import java.util.List;
 final class PathVisualizerRenderer {
     private static final double PATH_LINE_Y_OFFSET = 0.5;
     private static final float CAMERA_NODE_SIZE = 0.10f;
+    private static final float CAMERA_NODE_ACTIVE_SIZE = 0.18f;
 
     private PathVisualizerRenderer() {
     }
@@ -36,7 +37,7 @@ final class PathVisualizerRenderer {
         for (int i = 0; i < limit; i++) {
             Node node = path.get(i);
             WorldRender.builder(handle)
-                .color(style.nodeColor())
+                .paint(style.nodePaint(i, limit))
                 .depthTested()
                 .filledBlock(node.position.flooredX(), node.position.flooredY(), node.position.flooredZ());
         }
@@ -60,7 +61,7 @@ final class PathVisualizerRenderer {
             Node a = path.get(i);
             Node b = path.get(i + 1);
             WorldRender.builder(handle)
-                .color(style.pathColor(b.moveType))
+                .paint(style.pathPaint(b.moveType, i, limit))
                 .lineWidth(style.pathLineWidth())
                 .depthTested()
                 .line(
@@ -88,13 +89,22 @@ final class PathVisualizerRenderer {
         for (int i = 0; i < limit; i++) {
             Vec3d point = railPath.get(i);
             boolean active = i == railIndex;
-            float size = active ? CAMERA_NODE_SIZE * 1.8f : CAMERA_NODE_SIZE;
+            if (active) {
+                WorldRender.builder(handle)
+                    .color(style.cameraNodeColor(true))
+                    .throughWalls()
+                    .filledBox(
+                        point.x() - CAMERA_NODE_ACTIVE_SIZE, point.y() - CAMERA_NODE_ACTIVE_SIZE, point.z() - CAMERA_NODE_ACTIVE_SIZE,
+                        point.x() + CAMERA_NODE_ACTIVE_SIZE, point.y() + CAMERA_NODE_ACTIVE_SIZE, point.z() + CAMERA_NODE_ACTIVE_SIZE);
+                continue;
+            }
             WorldRender.builder(handle)
-                .color(style.cameraNodeColor(active))
+                .color(style.cameraNodeColor(false))
+                .lineWidth(style.cameraNodeLineWidth())
                 .throughWalls()
-                .filledBox(
-                    point.x() - size, point.y() - size, point.z() - size,
-                    point.x() + size, point.y() + size, point.z() + size);
+                .wireBox(
+                    point.x() - CAMERA_NODE_SIZE, point.y() - CAMERA_NODE_SIZE, point.z() - CAMERA_NODE_SIZE,
+                    point.x() + CAMERA_NODE_SIZE, point.y() + CAMERA_NODE_SIZE, point.z() + CAMERA_NODE_SIZE);
         }
     }
 }
