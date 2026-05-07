@@ -20,4 +20,15 @@ public interface IInputLayer {
     default boolean rightDown() { return false; }
     default boolean jumpDown() { return false; }
     default boolean sneakDown() { return false; }
+
+    default void setForwardDown(boolean down) {}
+    default void setBackwardDown(boolean down) {}
+    default void setLeftDown(boolean down) {}
+    default void setRightDown(boolean down) {}
+    default void setJumpDown(boolean down) {}
+    default void setSneakDown(boolean down) {}
+    default void setSprintDown(boolean down) {}
+    default void setAttackDown(boolean down) {}
+    default void setUseDown(boolean down) {}
+    default void lookAt(float yaw, float pitch) {}
 }

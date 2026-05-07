@@ -36,7 +36,7 @@ final class PathPitchStabilizer {
         float damping = (float) (double) PathfinderSettings.instance().pitchSpringDamping.value();
         float tickScale = (float) Math.clamp(dtSeconds * 20.0, 0.05, 2.0);
         velocity = (float) (velocity * Math.pow(damping, tickScale) + error * stiffness * tickScale);
-        stablePitch = Math.clamp(stablePitch + velocity * tickScale, -maxAbs, maxAbs);
+        stablePitch = clampPitchStep(stablePitch, stablePitch + velocity * tickScale, maxAbs);
         return stablePitch;
     }
 
@@ -54,5 +54,15 @@ final class PathPitchStabilizer {
         return (float) (double) (inWater
             ? PathfinderSettings.instance().pitchWaterMaxAbsDeg.value()
             : PathfinderSettings.instance().pitchLandMaxAbsDeg.value());
+    }
+
+    private static float clampPitchStep(float current, float next, float maxAbs) {
+        if (Math.abs(current) <= maxAbs) {
+            return Math.clamp(next, -maxAbs, maxAbs);
+        }
+        if (Math.signum(next) == Math.signum(current) && Math.abs(next) > Math.abs(current)) {
+            return current;
+        }
+        return Math.clamp(next, -90.0f, 90.0f);
     }
 }

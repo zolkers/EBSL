@@ -25,4 +25,29 @@ public class McStorageLayer implements IStorageLayer {
             return Files.exists(file) ? Optional.of(Files.readString(file)) : Optional.empty();
         } catch (IOException e) { return Optional.empty(); }
     }
+
+    @Override
+    public void saveText(String path, String text) {
+        try {
+            Path file = resolveTextPath(path);
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, text);
+        } catch (IOException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public Optional<String> loadText(String path) {
+        try {
+            Path file = resolveTextPath(path);
+            return Files.exists(file) ? Optional.of(Files.readString(file)) : Optional.empty();
+        } catch (IOException e) { return Optional.empty(); }
+    }
+
+    private Path resolveTextPath(String path) {
+        Path resolved = dir.resolve(path.replace('\\', '/')).normalize();
+        if (!resolved.startsWith(dir.normalize())) {
+            throw new IllegalArgumentException("Storage path escapes EBSL directory: " + path);
+        }
+        return resolved;
+    }
 }

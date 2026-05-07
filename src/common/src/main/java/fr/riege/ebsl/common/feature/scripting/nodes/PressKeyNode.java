@@ -1,0 +1,24 @@
+package fr.riege.ebsl.common.feature.scripting.nodes;
+
+import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.feature.scripting.EbslDuration;
+import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
+
+@EbslNodeDefinition(EbslNodeType.PRESS_KEY)
+public final class PressKeyNode extends AbstractEbslNode {
+
+    @Override
+    public boolean releasesGameplayKeys() {
+        return true;
+    }
+
+    @Override
+    public int start(EbslNodeInvocation invocation) {
+        if (invocation.args().isEmpty()) {
+            return 0;
+        }
+        TimedInputNode.press(invocation.runtime(), invocation.arg(0));
+        return EbslDuration.ticks(invocation.args().size() >= 2 ? invocation.arg(1) : "4t");
+    }
+}

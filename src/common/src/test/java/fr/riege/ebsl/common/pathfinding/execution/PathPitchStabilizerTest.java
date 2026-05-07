@@ -66,4 +66,15 @@ class PathPitchStabilizerTest {
         
         assertTrue(result <= 8.0f, "Should not exceed pitchWaterMaxAbsDeg=8, got " + result);
     }
+
+    @Test
+    void enteringWaterDoesNotSnapPitchToWaterLimit() {
+        var s = new PathPitchStabilizer();
+        s.reset(20f);
+
+        float firstWaterTick = s.tick(0f, true);
+
+        assertTrue(firstWaterTick > 8.0f, "Should ease toward water pitch limit instead of snapping, got " + firstWaterTick);
+        assertTrue(firstWaterTick < 20.0f, "Should still move toward the water-safe pitch range, got " + firstWaterTick);
+    }
 }

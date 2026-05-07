@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.core.threading.EbslThreading;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public final class BotTaskRegistry {
     }
 
     public static void bootstrap() {
+        registerIfAbsent(EbslScriptTask.INSTANCE);
         registerIfAbsent(SpaceMobTask.INSTANCE);
     }
 

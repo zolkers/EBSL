@@ -1,11 +1,13 @@
 package fr.riege.ebsl.common.feature.terminal;
 
+import fr.riege.ebsl.common.core.registry.MapRegistry;
+
 import java.util.*;
 
 public final class CommandRegistry {
     private record Entry(CommandMeta meta, CommandHandler handler) {}
 
-    private static final Map<String, Entry> COMMANDS = new LinkedHashMap<>();
+    private static final MapRegistry<String, Entry> COMMANDS = new MapRegistry<>(null);
 
     private CommandRegistry() {
     }
@@ -29,7 +31,7 @@ public final class CommandRegistry {
 
     public static void register(String name, String description, String usage,
                                 CommandScope scope, CommandHandler handler) {
-        COMMANDS.put(name.toLowerCase(),
+        COMMANDS.register(name.toLowerCase(),
             new Entry(new CommandMeta(name.toLowerCase(), description, usage, scope), handler));
     }
 
@@ -71,16 +73,16 @@ public final class CommandRegistry {
 
     public static List<CommandSuggestion> suggest(String input) {
         if (input.isBlank()) {
-            return COMMANDS.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> CommandSuggestion.of(e.getKey(), argsHint(e.getValue())))
+            return COMMANDS.keys().stream()
+                .sorted()
+                .map(key -> CommandSuggestion.of(key, argsHint(COMMANDS.get(key))))
                 .toList();
         }
         int spaceIdx = input.indexOf(' ');
         if (spaceIdx < 0) {
             String query = input.toLowerCase();
-            return COMMANDS.entrySet().stream()
-                .map(e -> Map.entry(e.getKey(), fuzzyScore(e.getKey(), query)))
+            return COMMANDS.keys().stream()
+                .map(key -> Map.entry(key, fuzzyScore(key, query)))
                 .filter(e -> e.getValue() >= 0)
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
                 .map(e -> CommandSuggestion.of(e.getKey(), argsHint(COMMANDS.get(e.getKey()))))

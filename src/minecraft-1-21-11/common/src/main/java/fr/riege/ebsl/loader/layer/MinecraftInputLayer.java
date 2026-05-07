@@ -40,4 +40,23 @@ public class MinecraftInputLayer implements IInputLayer {
     @Override public boolean rightDown() { return client.options.keyRight.isDown(); }
     @Override public boolean jumpDown() { return client.options.keyJump.isDown(); }
     @Override public boolean sneakDown() { return client.options.keyShift.isDown(); }
+
+    @Override public void setForwardDown(boolean down) { client.options.keyUp.setDown(down); }
+    @Override public void setBackwardDown(boolean down) { client.options.keyDown.setDown(down); }
+    @Override public void setLeftDown(boolean down) { client.options.keyLeft.setDown(down); }
+    @Override public void setRightDown(boolean down) { client.options.keyRight.setDown(down); }
+    @Override public void setJumpDown(boolean down) { client.options.keyJump.setDown(down); }
+    @Override public void setSneakDown(boolean down) { client.options.keyShift.setDown(down); }
+    @Override public void setSprintDown(boolean down) { client.options.keySprint.setDown(down); }
+    @Override public void setAttackDown(boolean down) { client.options.keyAttack.setDown(down); }
+    @Override public void setUseDown(boolean down) { client.options.keyUse.setDown(down); }
+
+    @Override
+    public void lookAt(float yaw, float pitch) {
+        if (client.player == null) {
+            return;
+        }
+        client.player.setYRot(yaw);
+        client.player.setXRot(pitch);
+    }
 }

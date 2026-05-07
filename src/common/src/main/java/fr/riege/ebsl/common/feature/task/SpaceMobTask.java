@@ -43,6 +43,16 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     @Override public boolean isEnabled() { return enabledSetting.value(); }
     @Override public void setEnabled(boolean enabled) { enabledSetting.setValue(enabled); }
 
+    public void configure(MobTargetMode mode, String name, double wantedDistance, double wantedTolerance,
+                          int wantedSearchRadius, boolean shouldTrackUntilDeath) {
+        targetMode.setValue(mode != null ? mode : MobTargetMode.CLOSEST_MOB);
+        targetName.setValue(name != null ? name : "");
+        distance.setValue(clamp(wantedDistance, distance.min(), distance.max()));
+        tolerance.setValue(clamp(wantedTolerance, tolerance.min(), tolerance.max()));
+        searchRadius.setValue((int) clamp(wantedSearchRadius, searchRadius.min(), searchRadius.max()));
+        trackUntilDeath.setValue(shouldTrackUntilDeath);
+    }
+
     @Override
     public void tick(EbslPlatform platform) {
         if (!isEnabled() || !platform.player().isAlive()) {
@@ -214,6 +224,10 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private record GoalKey(int x, int y, int z) {

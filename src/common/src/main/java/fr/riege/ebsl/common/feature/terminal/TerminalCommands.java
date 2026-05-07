@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal;
 
 import fr.riege.ebsl.common.feature.terminal.commands.*;
+import fr.riege.ebsl.common.feature.scripting.command.EbslCommand;
 
 public final class TerminalCommands {
     private TerminalCommands() {
@@ -14,6 +15,7 @@ public final class TerminalCommands {
         CommandRegistry.register(new DebugCommand());
         CommandRegistry.register(new JumpHeightCommand());
         CommandRegistry.register(new UiCommand());
+        CommandRegistry.register(EbslCommand.spec());
         CommandRegistry.register(new TestCommand());
         CommandRegistry.register(new TestXzCommand());
         CommandRegistry.register(GoalCommand.spec());
