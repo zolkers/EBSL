@@ -6,8 +6,8 @@ import fr.riege.ebsl.common.module.overlay.BlockTargetModule;
 import fr.riege.ebsl.common.module.overlay.KeyDisplayModule;
 import fr.riege.ebsl.common.module.overlay.MoveTypeOverlayModule;
 import fr.riege.ebsl.common.platform.EbslPlatform;
-import fr.riege.ebsl.common.service.NavigationService;
 import fr.riege.ebsl.common.registry.MapRegistry;
+import fr.riege.ebsl.common.service.NavigationService;
 import fr.riege.ebsl.common.settings.Setting;
 import fr.riege.ebsl.common.ui.layout.UiRect;
 

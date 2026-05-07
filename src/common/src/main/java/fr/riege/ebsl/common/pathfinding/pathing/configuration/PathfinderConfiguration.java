@@ -2,14 +2,12 @@ package fr.riege.ebsl.common.pathfinding.pathing.configuration;
 
 import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
-import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicWeights;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.IHeuristicStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.LinearHeuristicStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
-import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+
 import java.util.Collections;
 import java.util.List;
 

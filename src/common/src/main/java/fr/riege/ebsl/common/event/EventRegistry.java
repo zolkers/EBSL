@@ -2,8 +2,8 @@ package fr.riege.ebsl.common.event;
 
 import fr.riege.ebsl.common.registry.MapRegistry;
 
-import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

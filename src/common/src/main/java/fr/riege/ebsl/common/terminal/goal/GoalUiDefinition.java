@@ -2,11 +2,7 @@ package fr.riege.ebsl.common.terminal.goal;
 
 import fr.riege.ebsl.common.service.NavigationService;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class GoalUiDefinition {
     private final String id;

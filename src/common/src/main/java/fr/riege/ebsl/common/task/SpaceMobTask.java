@@ -5,12 +5,7 @@ import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.service.EbslServices;
-import fr.riege.ebsl.common.settings.BooleanSetting;
-import fr.riege.ebsl.common.settings.DoubleSetting;
-import fr.riege.ebsl.common.settings.EnumSetting;
-import fr.riege.ebsl.common.settings.IntSetting;
-import fr.riege.ebsl.common.settings.Settingable;
-import fr.riege.ebsl.common.settings.StringSetting;
+import fr.riege.ebsl.common.settings.*;
 import fr.riege.ebsl.common.task.processor.EntityAimProcessor;
 
 import java.util.Comparator;

@@ -2,11 +2,7 @@ package fr.riege.ebsl.common.terminal.commands;
 
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.service.EbslServices;
-import fr.riege.ebsl.common.terminal.Command;
-import fr.riege.ebsl.common.terminal.CommandContext;
-import fr.riege.ebsl.common.terminal.CommandHandler;
-import fr.riege.ebsl.common.terminal.CommandResult;
-import fr.riege.ebsl.common.terminal.CommandScope;
+import fr.riege.ebsl.common.terminal.*;
 
 @Command(name = "status", description = "Show navigation status", usage = "status", scope = CommandScope.MC)
 public final class StatusCommand implements CommandHandler {

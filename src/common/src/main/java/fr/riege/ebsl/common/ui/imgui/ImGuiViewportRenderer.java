@@ -1,12 +1,7 @@
 package fr.riege.ebsl.common.ui.imgui;
 
 import fr.riege.ebsl.common.service.NavigationService;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiAnalyticsPanel;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiCenterViewportPanel;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiGoalsPanel;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiHeaderPanel;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiModulesPanel;
-import fr.riege.ebsl.common.ui.imgui.panel.ImGuiUiPanel;
+import fr.riege.ebsl.common.ui.imgui.panel.*;
 import fr.riege.ebsl.common.ui.layout.UiRect;
 import fr.riege.ebsl.common.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.ui.state.EbslUiState;

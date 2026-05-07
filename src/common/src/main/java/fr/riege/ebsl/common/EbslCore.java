@@ -1,20 +1,15 @@
 package fr.riege.ebsl.common;
 
-import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.event.CommonEventTypes;
-import fr.riege.ebsl.common.settings.CommonSettingsStore;
+import fr.riege.ebsl.common.module.BotModuleRegistry;
+import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.service.EbslServices;
 import fr.riege.ebsl.common.service.NavigationService;
 import fr.riege.ebsl.common.service.UiService;
-import fr.riege.ebsl.common.terminal.CommandMeta;
-import fr.riege.ebsl.common.terminal.CommandRegistry;
-import fr.riege.ebsl.common.terminal.CommandResult;
-import fr.riege.ebsl.common.terminal.CommandScope;
-import fr.riege.ebsl.common.terminal.TerminalCommands;
-import fr.riege.ebsl.common.log.AppLog;
-import fr.riege.ebsl.common.module.BotModuleRegistry;
-import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
+import fr.riege.ebsl.common.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.task.BotTaskRegistry;
+import fr.riege.ebsl.common.terminal.*;
 import fr.riege.ebsl.common.ui.CommonImGuiOverlay;
 
 import java.util.StringJoiner;

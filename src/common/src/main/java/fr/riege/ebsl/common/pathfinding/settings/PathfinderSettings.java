@@ -1,10 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.settings;
 
-import fr.riege.ebsl.common.settings.BooleanSetting;
-import fr.riege.ebsl.common.settings.DoubleSetting;
-import fr.riege.ebsl.common.settings.IntSetting;
-import fr.riege.ebsl.common.settings.Setting;
-import fr.riege.ebsl.common.settings.Settingable;
+import fr.riege.ebsl.common.settings.*;
 
 import java.util.List;
 

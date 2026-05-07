@@ -1,11 +1,7 @@
 package fr.riege.ebsl.common.terminal.commands;
 
 import fr.riege.ebsl.common.service.EbslServices;
-import fr.riege.ebsl.common.terminal.Command;
-import fr.riege.ebsl.common.terminal.CommandContext;
-import fr.riege.ebsl.common.terminal.CommandHandler;
-import fr.riege.ebsl.common.terminal.CommandResult;
-import fr.riege.ebsl.common.terminal.CommandScope;
+import fr.riege.ebsl.common.terminal.*;
 
 @Command(name = "ui", description = "Toggle the EBSL ImGui overlay", usage = "ui", scope = CommandScope.BOTH)
 public final class UiCommand implements CommandHandler {

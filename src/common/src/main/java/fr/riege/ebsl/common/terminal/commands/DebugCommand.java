@@ -1,11 +1,7 @@
 package fr.riege.ebsl.common.terminal.commands;
 
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
-import fr.riege.ebsl.common.terminal.Command;
-import fr.riege.ebsl.common.terminal.CommandContext;
-import fr.riege.ebsl.common.terminal.CommandHandler;
-import fr.riege.ebsl.common.terminal.CommandResult;
-import fr.riege.ebsl.common.terminal.CommandScope;
+import fr.riege.ebsl.common.terminal.*;
 
 @Command(name = "debug", description = "Toggle pathfinder debug overlay", usage = "debug", scope = CommandScope.BOTH)
 public final class DebugCommand implements CommandHandler {

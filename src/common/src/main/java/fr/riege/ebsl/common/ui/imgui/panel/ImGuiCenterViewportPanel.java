@@ -3,7 +3,6 @@ package fr.riege.ebsl.common.ui.imgui.panel;
 import fr.riege.ebsl.common.log.AppLog;
 import fr.riege.ebsl.common.packet.PacketCaptureEvent;
 import fr.riege.ebsl.common.packet.PacketCaptureLog;
-import fr.riege.ebsl.common.packet.PacketDirection;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.service.NavigationService;
 import fr.riege.ebsl.common.settings.BooleanSetting;

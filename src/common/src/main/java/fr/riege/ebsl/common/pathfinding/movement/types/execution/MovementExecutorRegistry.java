@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.movement.types.execution;
 
-import fr.riege.ebsl.common.registry.EnumRegistry;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.registry.EnumRegistry;
 
 public final class MovementExecutorRegistry {
     private static final EnumRegistry<Node.MoveType, MovementExecutor> EXECUTORS =

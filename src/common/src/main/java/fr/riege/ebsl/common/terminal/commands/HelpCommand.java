@@ -1,12 +1,6 @@
 package fr.riege.ebsl.common.terminal.commands;
 
-import fr.riege.ebsl.common.terminal.Command;
-import fr.riege.ebsl.common.terminal.CommandContext;
-import fr.riege.ebsl.common.terminal.CommandHandler;
-import fr.riege.ebsl.common.terminal.CommandMeta;
-import fr.riege.ebsl.common.terminal.CommandRegistry;
-import fr.riege.ebsl.common.terminal.CommandResult;
-import fr.riege.ebsl.common.terminal.CommandScope;
+import fr.riege.ebsl.common.terminal.*;
 
 import java.util.ArrayList;
 import java.util.List;

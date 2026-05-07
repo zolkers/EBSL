@@ -1,18 +1,7 @@
 package fr.riege.ebsl.common.terminal.goal;
 
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.pathfinding.goal.GoalAxisX;
-import fr.riege.ebsl.common.pathfinding.goal.GoalAxisZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
-import fr.riege.ebsl.common.pathfinding.goal.GoalChunk;
-import fr.riege.ebsl.common.pathfinding.goal.GoalColumn;
-import fr.riege.ebsl.common.pathfinding.goal.GoalGetToBlock;
-import fr.riege.ebsl.common.pathfinding.goal.GoalNear;
-import fr.riege.ebsl.common.pathfinding.goal.GoalRectangleXZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalXZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalYLevel;
-import fr.riege.ebsl.common.pathfinding.goal.NavigationModeType;
-import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
+import fr.riege.ebsl.common.pathfinding.goal.*;
 import fr.riege.ebsl.common.service.EbslServices;
 import fr.riege.ebsl.common.service.NavigationService;
 

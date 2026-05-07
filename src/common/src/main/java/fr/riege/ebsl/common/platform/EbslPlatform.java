@@ -1,15 +1,6 @@
 package fr.riege.ebsl.common.platform;
 
-import fr.riege.ebsl.common.layer.IWorldLayer;
-import fr.riege.ebsl.common.layer.IPlayerLayer;
-import fr.riege.ebsl.common.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.layer.IEventBus;
-import fr.riege.ebsl.common.layer.IRenderLayer;
-import fr.riege.ebsl.common.layer.ICommandLayer;
-import fr.riege.ebsl.common.layer.IStorageLayer;
-import fr.riege.ebsl.common.layer.IImGuiLayer;
-import fr.riege.ebsl.common.layer.IInputLayer;
-import fr.riege.ebsl.common.layer.IEntityLayer;
+import fr.riege.ebsl.common.layer.*;
 
 public record EbslPlatform(
     IWorldLayer world,

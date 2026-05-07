@@ -1,6 +1,5 @@
 package fr.riege.ebsl.loader.mixin;
 
-import fr.riege.ebsl.loader.ModloaderCommonBootstrap;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;

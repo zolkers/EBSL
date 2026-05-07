@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.layer;
 
-import fr.riege.ebsl.common.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.world.BlockId;
 
 public interface IWorldLayer {
     BlockId getBlock(int x, int y, int z);

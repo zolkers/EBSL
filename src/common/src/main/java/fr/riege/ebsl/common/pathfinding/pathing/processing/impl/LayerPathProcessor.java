@@ -1,15 +1,15 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing.impl;
 
-import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.parkour.ParkourEvaluationTelemetry;
 import fr.riege.ebsl.common.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.common.pathfinding.parkour.ParkourJumpPlanner;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
-import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 public final class LayerPathProcessor implements NodeProcessor {
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125;
