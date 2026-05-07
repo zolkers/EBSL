@@ -26,7 +26,6 @@ public final class ImGuiScriptEditorPanel {
     private static final float NODE_H = 56.0f;
 
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
-    private final ImString completionFilter = new ImString("", 64);
     private final ImString selectedCommand = new ImString("", 96);
     private final ImString selectedArgs = new ImString("", 512);
     private String loadedFile = "";
@@ -87,34 +86,7 @@ public final class ImGuiScriptEditorPanel {
     }
 
     private void renderCode(UiRect editor) {
-        UiRect completion = new UiRect(editor.x(), editor.y(), editor.width(), 84);
-        renderCompletion(completion);
-        UiRect code = new UiRect(editor.x(), editor.y() + 92, editor.width(), editor.height() - 92);
-        renderCodeEditor(code);
-    }
-
-    private void renderCompletion(UiRect rect) {
-        ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(rect.x(), rect.y(), rect.right(), rect.bottom(), 0xFF101820, 4.0f);
-        ImGui.setCursorScreenPos(rect.x() + 10.0f, rect.y() + 8.0f);
-        ImGui.text("Autocomplete");
-        ImGui.sameLine(128.0f);
-        ImGui.setNextItemWidth(Math.max(180.0f, rect.width() - 150.0f));
-        ImGui.inputText("##ebsl-completion-filter", completionFilter);
-
-        ImGui.setCursorScreenPos(rect.x() + 10.0f, rect.y() + 38.0f);
-        int shown = 0;
-        for (EbslNodeType type : completions()) {
-            if (ImGui.button(type.id(), Math.min(142.0f, Math.max(92.0f, type.id().length() * 7.0f + 16.0f)), 24.0f)) {
-                insertNode(type.id());
-                completionFilter.set("");
-            }
-            ImGui.sameLine();
-            shown++;
-            if (shown >= 5) {
-                break;
-            }
-        }
+        renderCodeEditor(editor);
     }
 
     private void renderGraph(UiRect editor) {
@@ -352,20 +324,6 @@ public final class ImGuiScriptEditorPanel {
             float py = y + 8.0f + Math.min(h - 16.0f, Math.max(0.0f, position.y() / 8.0f));
             dl.addRectFilled(px, py, px + 6.0f, py + 4.0f, color(nodes.get(i).category()));
         }
-    }
-
-    private List<EbslNodeType> completions() {
-        String filter = completionFilter.get().trim().toLowerCase(Locale.ROOT).replace('-', '_');
-        List<EbslNodeType> matches = new ArrayList<>();
-        for (EbslNodeType type : EbslNodeType.values()) {
-            if (!type.executable()) {
-                continue;
-            }
-            if (filter.isBlank() || type.id().contains(filter)) {
-                matches.add(type);
-            }
-        }
-        return matches;
     }
 
     private void consumeRequestedInsert(EbslUiState state) {
