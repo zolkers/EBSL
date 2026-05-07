@@ -199,6 +199,10 @@ public final class PathfinderSettings extends Settingable {
         "pitch_water_max_step_deg", "Pitch water max step", 3.0, 0.0, 45.0));
     public final DoubleSetting pitchSnapToNeutralDeg = registerSetting(new DoubleSetting(
         "pitch_snap_to_neutral_deg", "Pitch snap neutral", 1.0, 0.0, 15.0));
+    public final DoubleSetting pitchSpringStiffness = registerSetting(new DoubleSetting(
+        "pitch_spring_stiffness", "Pitch spring stiffness", 0.10, 0.01, 1.0));
+    public final DoubleSetting pitchSpringDamping = registerSetting(new DoubleSetting(
+        "pitch_spring_damping", "Pitch spring damping", 0.75, 0.01, 0.99));
     public final IntSetting cameraLookahead = registerSetting(new IntSetting(
         "camera_lookahead", "Camera lookahead nodes", 32, 1, 128));
     public final DoubleSetting cameraMaxLateralDev = registerSetting(new DoubleSetting(
@@ -390,6 +394,8 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.pitchLandMaxStepDeg,
             INSTANCE.pitchWaterMaxStepDeg,
             INSTANCE.pitchSnapToNeutralDeg,
+            INSTANCE.pitchSpringStiffness,
+            INSTANCE.pitchSpringDamping,
             INSTANCE.cameraLookahead,
             INSTANCE.cameraMaxLateralDev);
     }
