@@ -32,7 +32,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     @Override
     public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
         if (state.mainViewTab() == MainViewTab.SCRIPT) {
-            scriptNodePalettePanel.render(layout.right());
+            scriptNodePalettePanel.render(state, layout.right());
             return;
         }
         ImGuiPanelUtil.nextFixedWindow(layout.right());

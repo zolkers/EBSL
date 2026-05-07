@@ -15,6 +15,7 @@ public final class EbslUiState {
     private BotTask selectedTask;
     private EbslScriptView scriptView = EbslScriptView.CODE;
     private String selectedScriptFile = EbslScriptManager.DEFAULT_FILE;
+    private String pendingScriptInsert = "";
 
     public MainViewTab mainViewTab()  { return mainViewTab; }
     public CenterTab centerTab()      { return centerTab; }
@@ -26,6 +27,13 @@ public final class EbslUiState {
     public void setCenterTab(CenterTab t)     { centerTab = t; }
     public void setScriptView(EbslScriptView view) { scriptView = view; }
     public void selectScriptFile(String file) { selectedScriptFile = EbslScriptManager.normalizeFileName(file); }
+    public void requestScriptInsert(String line) { pendingScriptInsert = line == null ? "" : line; }
+
+    public String consumeScriptInsert() {
+        String insert = pendingScriptInsert;
+        pendingScriptInsert = "";
+        return insert;
+    }
 
     public void showModuleList()                  { rightPanelMode = RightPanelMode.MODULE_LIST; }
     public void showTaskList()                    { rightPanelMode = RightPanelMode.TASK_LIST; }

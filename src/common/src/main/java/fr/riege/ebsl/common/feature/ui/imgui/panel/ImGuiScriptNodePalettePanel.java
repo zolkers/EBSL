@@ -4,10 +4,11 @@ import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
+import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import imgui.ImGui;
 
 public final class ImGuiScriptNodePalettePanel {
-    public void render(UiRect rect) {
+    public void render(EbslUiState state, UiRect rect) {
         ImGuiPanelUtil.nextFixedWindow(rect);
         if (ImGui.begin("EBSL nodes##ebsl-right-script-nodes", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
             ImGui.text("Node palette");
@@ -16,7 +17,9 @@ public final class ImGuiScriptNodePalettePanel {
                 if (ImGui.collapsingHeader(category.id())) {
                     for (EbslNodeType type : EbslNodeType.values()) {
                         if (type.category() == category && type.executable()) {
-                            ImGui.selectable(type.id(), false);
+                            if (ImGui.selectable(type.id(), false)) {
+                                state.requestScriptInsert(type.id());
+                            }
                         }
                     }
                 }
