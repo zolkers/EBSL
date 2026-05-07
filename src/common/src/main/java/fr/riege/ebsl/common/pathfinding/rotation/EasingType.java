@@ -1,57 +1,198 @@
 package fr.riege.ebsl.common.pathfinding.rotation;
 
-import java.util.function.Function;
-
-/**
- * 28 standard easing functions
- */
 public enum EasingType {
+    LINEAR(EasingType::linear),
 
-    LINEAR           (t -> t),
-    EASE_IN_SINE     (t -> (float)(1 - Math.cos(t * Math.PI / 2))),
-    EASE_OUT_SINE    (t -> (float) Math.sin(t * Math.PI / 2)),
-    EASE_IN_OUT_SINE (t -> (float)(-0.5f * (Math.cos(Math.PI * t) - 1))),
-    EASE_IN_QUAD     (t -> t * t),
-    EASE_OUT_QUAD    (t -> t * (2 - t)),
-    EASE_IN_OUT_QUAD (t -> t < 0.5f ? 2 * t * t : -1 + (4 - 2 * t) * t),
-    EASE_IN_CUBIC    (t -> t * t * t),
-    EASE_OUT_CUBIC   (t -> { float x = t - 1; return x * x * x + 1; }),
-    EASE_IN_OUT_CUBIC(t -> t < 0.5f ? 4 * t * t * t : (t - 1) * (2*t-2) * (2*t-2) + 1),
-    EASE_IN_QUART    (t -> t * t * t * t),
-    EASE_OUT_QUART   (t -> { float x = t - 1; return 1 - x * x * x * x; }),
-    EASE_IN_OUT_QUART(t -> t < 0.5f ? 8 * t * t * t * t : 1 - 8 * (t-1)*(t-1)*(t-1)*(t-1)),
-    EASE_IN_QUINT    (t -> t * t * t * t * t),
-    EASE_OUT_QUINT   (t -> { float x = t - 1; return 1 + x * x * x * x * x; }),
-    EASE_IN_OUT_QUINT(t -> t < 0.5f ? 16*t*t*t*t*t : 1 + 16*(t-1)*(t-1)*(t-1)*(t-1)*(t-1)),
-    EASE_IN_EXPO     (t -> t == 0f ? 0f : (float)Math.pow(2, 10 * (t - 1))),
-    EASE_OUT_EXPO    (t -> t == 1f ? 1f : 1 - (float)Math.pow(2, -10 * t)),
-    EASE_IN_OUT_EXPO (t -> {
-        if (t == 0f) return 0f;
-        if (t == 1f) return 1f;
-        return t < 0.5f
-            ? (float)(Math.pow(2,  20*t - 10) / 2)
-            : (float)(2 - Math.pow(2, -20*t + 10) / 2);
-    }),
-    EASE_IN_CIRC     (t -> (float)(1 - Math.sqrt(1 - t * t))),
-    EASE_OUT_CIRC    (t -> (float) Math.sqrt(1 - (t-1)*(t-1))),
-    EASE_IN_OUT_CIRC (t -> t < 0.5f
-        ? (float)((1 - Math.sqrt(1 - (2*t)*(2*t))) / 2)
-        : (float)((Math.sqrt(1 - (-2*t+2)*(-2*t+2)) + 1) / 2)),
-    EASE_IN_BACK     (t -> { float c1 = 1.70158f, c3 = c1 + 1; return c3*t*t*t - c1*t*t; }),
-    EASE_OUT_BACK    (t -> { float c1 = 1.70158f, c3 = c1 + 1, x = t - 1; return 1 + c3*x*x*x + c1*x*x; }),
-    EASE_IN_OUT_BACK (t -> {
-        float c1 = 1.70158f, c2 = c1 * 1.525f;
-        if (t < 0.5f) { float k = 2*t; return (k*k*((c2+1)*k - c2)) / 2; }
-        else           { float k = 2*t-2; return (k*k*((c2+1)*k + c2) + 2) / 2; }
-    });
+    EASE_IN_SINE(EasingType::easeInSine),
+    EASE_OUT_SINE(EasingType::easeOutSine),
+    EASE_IN_OUT_SINE(EasingType::easeInOutSine),
 
-    private final Function<Float, Float> ease;
+    EASE_IN_QUAD(EasingType::easeInQuad),
+    EASE_OUT_QUAD(EasingType::easeOutQuad),
+    EASE_IN_OUT_QUAD(EasingType::easeInOutQuad),
 
-    EasingType(Function<Float, Float> ease) { this.ease = ease; }
+    EASE_IN_CUBIC(EasingType::easeInCubic),
+    EASE_OUT_CUBIC(EasingType::easeOutCubic),
+    EASE_IN_OUT_CUBIC(EasingType::easeInOutCubic),
 
-    public float ease(float t) { return ease.apply(Math.max(0f, Math.min(1f, t))); }
+    EASE_IN_QUART(EasingType::easeInQuart),
+    EASE_OUT_QUART(EasingType::easeOutQuart),
+    EASE_IN_OUT_QUART(EasingType::easeInOutQuart),
+
+    EASE_IN_QUINT(EasingType::easeInQuint),
+    EASE_OUT_QUINT(EasingType::easeOutQuint),
+    EASE_IN_OUT_QUINT(EasingType::easeInOutQuint),
+
+    EASE_IN_EXPO(EasingType::easeInExpo),
+    EASE_OUT_EXPO(EasingType::easeOutExpo),
+    EASE_IN_OUT_EXPO(EasingType::easeInOutExpo),
+
+    EASE_IN_CIRC(EasingType::easeInCirc),
+    EASE_OUT_CIRC(EasingType::easeOutCirc),
+    EASE_IN_OUT_CIRC(EasingType::easeInOutCirc),
+
+    EASE_IN_BACK(EasingType::easeInBack),
+    EASE_OUT_BACK(EasingType::easeOutBack),
+    EASE_IN_OUT_BACK(EasingType::easeInOutBack);
+
+    private static final float HALF = 0.5f;
+    private static final float BACK_C1 = 1.70158f;
+    private static final float BACK_C2 = BACK_C1 * 1.525f;
+    private static final float BACK_C3 = BACK_C1 + 1.0f;
+
+    private final Curve curve;
+
+    EasingType(Curve curve) {
+        this.curve = curve;
+    }
+
+    public float ease(float t) {
+        return curve.apply(Math.clamp(t, 0f, 1f));
+    }
 
     public float apply(float from, float to, float progress) {
         return from + (to - from) * ease(progress);
+    }
+
+    private static float linear(float t) {
+        return t;
+    }
+
+    private static float easeInSine(float t) {
+        return (float) (1.0 - Math.cos(t * Math.PI / 2.0));
+    }
+
+    private static float easeOutSine(float t) {
+        return (float) Math.sin(t * Math.PI / 2.0);
+    }
+
+    private static float easeInOutSine(float t) {
+        return (float) (-(Math.cos(Math.PI * t) - 1.0) / 2.0);
+    }
+
+    private static float easeInQuad(float t) {
+        return t * t;
+    }
+
+    private static float easeOutQuad(float t) {
+        return 1.0f - (1.0f - t) * (1.0f - t);
+    }
+
+    private static float easeInOutQuad(float t) {
+        if (t < HALF) {
+            return 2.0f * t * t;
+        }
+        float x = -2.0f * t + 2.0f;
+        return 1.0f - x * x / 2.0f;
+    }
+
+    private static float easeInCubic(float t) {
+        return t * t * t;
+    }
+
+    private static float easeOutCubic(float t) {
+        float x = 1.0f - t;
+        return 1.0f - x * x * x;
+    }
+
+    private static float easeInOutCubic(float t) {
+        if (t < HALF) {
+            return 4.0f * t * t * t;
+        }
+        float x = -2.0f * t + 2.0f;
+        return 1.0f - x * x * x / 2.0f;
+    }
+
+    private static float easeInQuart(float t) {
+        return t * t * t * t;
+    }
+
+    private static float easeOutQuart(float t) {
+        float x = 1.0f - t;
+        return 1.0f - x * x * x * x;
+    }
+
+    private static float easeInOutQuart(float t) {
+        if (t < HALF) {
+            return 8.0f * t * t * t * t;
+        }
+        float x = -2.0f * t + 2.0f;
+        return 1.0f - x * x * x * x / 2.0f;
+    }
+
+    private static float easeInQuint(float t) {
+        return t * t * t * t * t;
+    }
+
+    private static float easeOutQuint(float t) {
+        float x = 1.0f - t;
+        return 1.0f - x * x * x * x * x;
+    }
+
+    private static float easeInOutQuint(float t) {
+        if (t < HALF) {
+            return 16.0f * t * t * t * t * t;
+        }
+        float x = -2.0f * t + 2.0f;
+        return 1.0f - x * x * x * x * x / 2.0f;
+    }
+
+    private static float easeInExpo(float t) {
+        return t == 0.0f ? 0.0f : (float) Math.pow(2.0, 10.0 * t - 10.0);
+    }
+
+    private static float easeOutExpo(float t) {
+        return t == 1.0f ? 1.0f : (float) (1.0 - Math.pow(2.0, -10.0 * t));
+    }
+
+    private static float easeInOutExpo(float t) {
+        if (t == 0.0f || t == 1.0f) {
+            return t;
+        }
+        if (t < HALF) {
+            return (float) (Math.pow(2.0, 20.0 * t - 10.0) / 2.0);
+        }
+        return (float) ((2.0 - Math.pow(2.0, -20.0 * t + 10.0)) / 2.0);
+    }
+
+    private static float easeInCirc(float t) {
+        return (float) (1.0 - Math.sqrt(1.0 - t * t));
+    }
+
+    private static float easeOutCirc(float t) {
+        float x = t - 1.0f;
+        return (float) Math.sqrt(1.0 - x * x);
+    }
+
+    private static float easeInOutCirc(float t) {
+        if (t < HALF) {
+            float x = 2.0f * t;
+            return (float) ((1.0 - Math.sqrt(1.0 - x * x)) / 2.0);
+        }
+        float x = -2.0f * t + 2.0f;
+        return (float) ((Math.sqrt(1.0 - x * x) + 1.0) / 2.0);
+    }
+
+    private static float easeInBack(float t) {
+        return BACK_C3 * t * t * t - BACK_C1 * t * t;
+    }
+
+    private static float easeOutBack(float t) {
+        float x = t - 1.0f;
+        return 1.0f + BACK_C3 * x * x * x + BACK_C1 * x * x;
+    }
+
+    private static float easeInOutBack(float t) {
+        if (t < HALF) {
+            float x = 2.0f * t;
+            return x * x * ((BACK_C2 + 1.0f) * x - BACK_C2) / 2.0f;
+        }
+        float x = 2.0f * t - 2.0f;
+        return (x * x * ((BACK_C2 + 1.0f) * x + BACK_C2) + 2.0f) / 2.0f;
+    }
+
+    @FunctionalInterface
+    private interface Curve {
+        float apply(float t);
     }
 }

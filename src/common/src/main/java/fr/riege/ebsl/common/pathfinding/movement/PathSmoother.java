@@ -26,7 +26,7 @@ public final class PathSmoother {
             int  furthest = anchorIdx + 1;
 
             int budget = computeAdaptiveSkipBudget(anchor, checker);
-            int maxCand = Math.min(raw.size() - 1, anchorIdx + budget);
+            int maxCand = Math.clamp(anchorIdx + budget, 0, raw.size() - 1);
 
             for (int cand = anchorIdx + 2; cand <= maxCand; cand++) {
                 Node prevNode  = raw.get(cand - 1);
@@ -211,7 +211,7 @@ public final class PathSmoother {
         if (inLen < 1.0e-3 || outLen < 1.0e-3) return false;
 
         double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
-        double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
+        double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
         return angleDeg >= PathfinderSettings.instance().smoothConstrainedCornerAngleDeg.value()
             && computeWallScore(cur, checker) > 0;
     }

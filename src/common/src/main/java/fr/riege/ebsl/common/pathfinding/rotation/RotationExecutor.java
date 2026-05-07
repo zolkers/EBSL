@@ -60,12 +60,12 @@ public final class RotationExecutor {
         }
 
         float newYaw = applyGcd(result.yaw, player.yaw());
-        float newPitch = Math.max(-90f, Math.min(90f, applyGcd(result.pitch, player.pitch(), -90f, 90f)));
+        float newPitch = Math.clamp(applyGcd(result.pitch, player.pitch(), -90f, 90f), -90f, 90f);
         physics.setRotation(newYaw, newPitch);
     }
 
     public void update(float pitchOverride) {
-        float clampedPitch = Math.max(-90f, Math.min(90f, applyGcd(pitchOverride, player.pitch(), -90f, 90f)));
+        float clampedPitch = Math.clamp(applyGcd(pitchOverride, player.pitch(), -90f, 90f), -90f, 90f);
         if (!rotating || currentStrategy == null) {
             physics.setRotation(player.yaw(), clampedPitch);
             return;

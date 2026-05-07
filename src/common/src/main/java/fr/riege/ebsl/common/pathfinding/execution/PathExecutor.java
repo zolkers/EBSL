@@ -272,6 +272,9 @@ public final class PathExecutor {
     }
 
     public void tickRotation() {
+        if (state != State.WALKING || !allowRotation) {
+            return;
+        }
         rotationController.tickExecutor();
     }
 
@@ -381,8 +384,8 @@ public final class PathExecutor {
         if (path == null || path.isEmpty()) {
             return false;
         }
-        int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + 2);
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int end = Math.clamp(start + 2, 0, path.size() - 1);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return true;

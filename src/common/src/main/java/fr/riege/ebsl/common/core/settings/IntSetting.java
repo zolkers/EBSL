@@ -23,7 +23,7 @@ public final class IntSetting extends AbstractSetting<Integer> {
 
     @Override
     public void setValue(Integer value) {
-        super.setValue(Math.max(min, Math.min(max, value)));
+        super.setValue(Math.clamp(value, min, max));
     }
 
     @Override

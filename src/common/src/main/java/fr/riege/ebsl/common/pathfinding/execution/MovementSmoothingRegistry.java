@@ -18,8 +18,8 @@ final class MovementSmoothingRegistry {
             return Optional.empty();
         }
 
-        int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + 2);
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int end = Math.clamp(start + 2, 0, path.size() - 1);
         for (int i = start; i <= end; i++) {
             MovementSmoothing strategy = STRATEGIES.get(path.get(i).moveType);
             if (strategy != null && strategy.applies(path, pursuitSegment)) {

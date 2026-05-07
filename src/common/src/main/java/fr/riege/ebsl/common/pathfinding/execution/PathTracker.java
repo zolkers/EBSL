@@ -38,7 +38,7 @@ final class PathTracker {
         if (continuationPath == null || continuationPath.isEmpty()) return;
         List<Node> merged = new ArrayList<>();
         if (!path.isEmpty()) {
-            int startIdx = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+            int startIdx = Math.clamp(pursuitSegment, 0, path.size() - 1);
             for (int i = startIdx; i < path.size(); i++) appendDistinct(merged, path.get(i));
         }
         List<Node> aligned = alignContinuationStart(merged, continuationPath);
@@ -49,8 +49,12 @@ final class PathTracker {
 
     void trimAndContinueWith(double trimRatio, List<Node> newPath) {
         if (newPath == null || newPath.isEmpty()) return;
+        if (path.isEmpty()) {
+            resetPath(newPath);
+            return;
+        }
         int trimIndex = (int) (path.size() * trimRatio);
-        trimIndex = Math.max(pursuitSegment + 1, Math.min(path.size(), trimIndex));
+        trimIndex = Math.clamp(trimIndex, pursuitSegment + 1, path.size());
 
         List<Node> merged = new ArrayList<>();
         for (int i = pursuitSegment; i < trimIndex; i++) appendDistinct(merged, path.get(i));
@@ -62,7 +66,7 @@ final class PathTracker {
 
     boolean applySmartCutoff(int segmentIndex) {
         if (path.size() < 2) return false;
-        int targetSegment = Math.max(0, Math.min(segmentIndex, path.size() - 2));
+        int targetSegment = Math.clamp(segmentIndex, 0, path.size() - 2);
         if (targetSegment <= 0) return false;
         List<Node> trimmed = new ArrayList<>(path.subList(targetSegment, path.size()));
         if (trimmed.size() < 2) return false;
@@ -76,7 +80,7 @@ final class PathTracker {
             pursuitSegment + REPAIR_MIN_FORWARD_SEGMENTS,
             (int) Math.ceil(bestPathProgress) + 1);
         int targetSegment = Math.max(earliestForwardSegment, segmentIndex);
-        targetSegment = Math.max(0, Math.min(targetSegment, path.size() - 2));
+        targetSegment = Math.clamp(targetSegment, 0, path.size() - 2);
         if (targetSegment < earliestForwardSegment) return Optional.empty();
         Node joinNode = path.get(targetSegment);
         List<Node> remaining = new ArrayList<>(path.subList(targetSegment, path.size()));
@@ -141,15 +145,15 @@ final class PathTracker {
             return new PathProximitySnapshot(0, 0, 0.0, hDist, Math.abs(dy), Math.sqrt(hDist * hDist + dy * dy), 0.0);
         }
 
-        int start = Math.max(0, pursuitSegment - 3);
-        int end = Math.min(path.size() - 2, pursuitSegment + 24);
+        int start = Math.clamp(pursuitSegment - 3, 0, path.size() - 2);
+        int end = Math.clamp(pursuitSegment + 24, 0, path.size() - 2);
         double bestDist3d = Double.MAX_VALUE;
         double bestHorizontal = Double.MAX_VALUE;
         double bestVertical = Double.MAX_VALUE;
         double bestProgress = pursuitSegment;
         double bestT = 0.0;
         int bestSegment = pursuitSegment;
-        int bestNode = Math.min(path.size() - 1, pursuitSegment + 1);
+        int bestNode = Math.clamp(pursuitSegment + 1, 0, path.size() - 1);
 
         for (int i = start; i <= end; i++) {
             double ax = pathCache.x(i);
@@ -160,7 +164,7 @@ final class PathTracker {
             double dz = pathCache.segmentDz(i);
             double lenSq = pathCache.segmentLenSq(i);
             double t = lenSq < 1.0e-6 ? 0.0
-                : Math.max(0.0, Math.min(1.0, ((pos.x() - ax) * dx + (pos.y() - ay) * dy + (pos.z() - az) * dz) / lenSq));
+                : Math.clamp(((pos.x() - ax) * dx + (pos.y() - ay) * dy + (pos.z() - az) * dz) / lenSq, 0.0, 1.0);
             double projX = ax + dx * t;
             double projY = ay + dy * t;
             double projZ = az + dz * t;
@@ -190,7 +194,7 @@ final class PathTracker {
 
     Vec3d computeCorrectionToPath(Vec3d pos, PathProximitySnapshot proximity) {
         if (path.size() < 2) return new Vec3d(0.0, 0.0, 0.0);
-        int segment = Math.max(0, Math.min(proximity.nearestSegmentIndex(), path.size() - 2));
+        int segment = Math.clamp(proximity.nearestSegmentIndex(), 0, path.size() - 2);
         Node from = path.get(segment);
         Node to = path.get(segment + 1);
         double ax = pathCache.x(segment);
@@ -199,7 +203,7 @@ final class PathTracker {
         double dz = pathCache.segmentDz(segment);
         double lenSq = dx * dx + dz * dz;
         double t = lenSq < 1.0e-6 ? 0.0
-            : Math.max(0.0, Math.min(1.0, ((pos.x() - ax) * dx + (pos.z() - az) * dz) / lenSq));
+            : Math.clamp(((pos.x() - ax) * dx + (pos.z() - az) * dz) / lenSq, 0.0, 1.0);
         return new Vec3d((ax + dx * t) - pos.x(), 0.0, (az + dz * t) - pos.z());
     }
 
@@ -223,25 +227,25 @@ final class PathTracker {
 
     double getProgressRatio(Vec3d playerPos) {
         if (path.size() <= 1) return 1.0;
-        return Math.max(0.0, Math.min(1.0, computePathProgress(playerPos) / (path.size() - 1)));
+        return Math.clamp(computePathProgress(playerPos) / (path.size() - 1), 0.0, 1.0);
     }
 
     double getRemainingDistance(Vec3d playerPos) {
         if (path.isEmpty()) return 0.0;
-        int nextIndex = Math.min(path.size() - 1, pursuitSegment + 1);
+        int nextIndex = Math.clamp(pursuitSegment + 1, 0, path.size() - 1);
         double distance = distanceToNode(playerPos, path.get(nextIndex));
         return distance + pathCache.remainingFromNode(nextIndex);
     }
 
     Node getMovementWaypoint() {
         if (path.isEmpty()) return null;
-        int targetIdx = Math.min(path.size() - 1, pursuitSegment + 1);
+        int targetIdx = Math.clamp(pursuitSegment + 1, 0, path.size() - 1);
         return path.get(targetIdx);
     }
 
     Node getNodeAtRatio(double ratio) {
         if (path.isEmpty()) return null;
-        int index = Math.max(0, Math.min(path.size() - 1, (int) (path.size() * ratio)));
+        int index = Math.clamp((int) (path.size() * ratio), 0, path.size() - 1);
         return path.get(index);
     }
 
@@ -272,7 +276,7 @@ final class PathTracker {
         double py = playerPos.y() - pathCache.y(pursuitSegment);
         double pz = playerPos.z() - pathCache.z(pursuitSegment);
         double t = (px * dx + py * dy + pz * dz) / lenSq;
-        return pursuitSegment + Math.max(0.0, Math.min(0.999, t));
+        return pursuitSegment + Math.clamp(t, 0.0, 0.999);
     }
 
     private static double distanceToNode(Vec3d position, Node node) {

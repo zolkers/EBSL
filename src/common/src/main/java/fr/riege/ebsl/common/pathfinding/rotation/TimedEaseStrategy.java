@@ -36,7 +36,7 @@ public final class TimedEaseStrategy implements IRotationStrategy {
         }
 
         float progress = 1f - ((float) (endTime - now) / (float) duration);
-        float t = Math.max(0f, Math.min(1f, progress));
+        float t = Math.clamp(progress, 0f, 1f);
         float yawDelta = AngleUtils.normalizeAngle(targetYaw - startYaw);
         float yaw = yawEasing.apply(startYaw, startYaw + yawDelta, t);
         float pitch = clampPitch(pitchEasing.apply(startPitch, clampPitch(targetPitch), t));
@@ -44,6 +44,6 @@ public final class TimedEaseStrategy implements IRotationStrategy {
     }
 
     private static float clampPitch(float pitch) {
-        return Math.max(-90f, Math.min(90f, pitch));
+        return Math.clamp(pitch, -90f, 90f);
     }
 }

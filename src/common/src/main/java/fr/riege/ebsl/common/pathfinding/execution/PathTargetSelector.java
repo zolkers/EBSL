@@ -9,22 +9,23 @@ import java.util.List;
 
 final class PathTargetSelector {
     int pickLegacyCamTarget(IWorldLayer world, Vec3d eyePos, Vec3d playerPos, List<Node> path, int pursuitSegment) {
-        int camTarget = pursuitSegment;
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int camTarget = start;
         int lookahead = isParkourWindow(path, pursuitSegment)
             ? 1
             : PathfinderSettings.instance().cameraLookahead.value();
-        int camScanEnd = Math.min(path.size() - 1, pursuitSegment + lookahead);
-        for (int i = camScanEnd; i >= pursuitSegment; i--) {
+        int camScanEnd = Math.clamp(start + lookahead, 0, path.size() - 1);
+        for (int i = camScanEnd; i >= start; i--) {
             if (!isWaypointVisible(world, eyePos, path.get(i))) {
                 continue;
             }
-            if (i > pursuitSegment && !isStraightLineSafe(path, pursuitSegment, i, playerPos.x(), playerPos.z())) {
+            if (i > start && !isStraightLineSafe(path, start, i, playerPos.x(), playerPos.z())) {
                 continue;
             }
-            if (i > pursuitSegment && hasYChangeBetween(path, pursuitSegment, i)) {
+            if (i > start && hasYChangeBetween(path, start, i)) {
                 continue;
             }
-            if (i > pursuitSegment && cumulativeTurning(path, pursuitSegment, i) > 45.0) {
+            if (i > start && cumulativeTurning(path, start, i) > 45.0) {
                 continue;
             }
             camTarget = i;
@@ -34,8 +35,8 @@ final class PathTargetSelector {
     }
 
     private static boolean isParkourWindow(List<Node> path, int pursuitSegment) {
-        int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + 1);
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int end = Math.clamp(start + 1, 0, path.size() - 1);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return true;
@@ -98,7 +99,7 @@ final class PathTargetSelector {
             double len2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
             if (len1 > 0.001 && len2 > 0.001) {
                 double dot = (dx1 / len1) * (dx2 / len2) + (dz1 / len1) * (dz2 / len2);
-                totalAngle += Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, dot))));
+                totalAngle += Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
             }
         }
         return totalAngle;

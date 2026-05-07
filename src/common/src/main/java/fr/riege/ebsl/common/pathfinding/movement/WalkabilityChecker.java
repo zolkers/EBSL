@@ -119,7 +119,7 @@ public final class WalkabilityChecker {
         long key = BlockPosUtil.pack(x, y, z);
         double cached = topYCache.get(key);
         if (!Double.isNaN(cached)) return cached;
-        double topY = Math.max(0.0, Math.min(1.0, world.getBlockHeight(x, y, z)));
+        double topY = Math.clamp(world.getBlockHeight(x, y, z), 0.0, 1.0);
         topYCache.put(key, topY);
         return topY;
     }

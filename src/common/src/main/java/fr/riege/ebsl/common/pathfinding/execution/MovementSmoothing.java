@@ -12,6 +12,7 @@ interface MovementSmoothing {
     Plan plan(List<Node> path, int pursuitSegment, boolean alreadyRotating);
 
     record Plan(String mode, int targetIndex, int visualizerIndex, Vec3d position,
-                float yawThreshold, float pitchThreshold, long durationMs, EasingType easing) {
+                float yawThreshold, float pitchThreshold, long durationMs,
+                EasingType yawEasing, EasingType pitchEasing) {
     }
 }

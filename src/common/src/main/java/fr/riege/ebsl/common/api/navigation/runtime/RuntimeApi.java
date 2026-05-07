@@ -13,6 +13,10 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessActor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessWorldLayer;
+import fr.riege.ebsl.common.navigation.runtime.server.ServerNavigationRuntime;
+
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 @EbslApiSurface(EbslApiSurface.Domain.RUNTIME)
 public final class RuntimeApi {
@@ -55,5 +59,20 @@ public final class RuntimeApi {
                                                     NavigationMotor motor,
                                                     EntityFollowerOptions options) {
         return new EntityNavigationService(new PathPlanningService(world), actor, motor, options, Runnable::run);
+    }
+
+    @EbslApiOperation("Create a server-only navigation runtime without terminal, rendering or client input.")
+    public ServerNavigationRuntime serverRuntime(IWorldLayer world) {
+        return ServerNavigationRuntime.direct(world);
+    }
+
+    @EbslApiOperation("Create a server-only navigation runtime whose callbacks are scheduled on a server thread.")
+    public ServerNavigationRuntime serverRuntime(IWorldLayer world, Consumer<Runnable> scheduler) {
+        return ServerNavigationRuntime.scheduled(world, scheduler);
+    }
+
+    @EbslApiOperation("Create a server-only navigation runtime backed by an executor.")
+    public ServerNavigationRuntime serverRuntime(IWorldLayer world, Executor executor) {
+        return ServerNavigationRuntime.scheduled(world, executor);
     }
 }

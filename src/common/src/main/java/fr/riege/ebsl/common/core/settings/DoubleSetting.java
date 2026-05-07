@@ -23,7 +23,7 @@ public final class DoubleSetting extends AbstractSetting<Double> {
 
     @Override
     public void setValue(Double value) {
-        super.setValue(Math.max(min, Math.min(max, value)));
+        super.setValue(Math.clamp(value, min, max));
     }
 
     @Override

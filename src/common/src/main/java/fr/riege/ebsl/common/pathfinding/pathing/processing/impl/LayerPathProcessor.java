@@ -512,7 +512,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         double curLen = Math.sqrt(cdx * cdx + cdz * cdz);
         if (curLen <= 0.1) return 0.0;
         double dot = (cdx / curLen) * avgX + (cdz / curLen) * avgZ;
-        double angleDeg = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
+        double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
         return angleDeg < 5.0 ? -0.3 : (angleDeg / 90.0) * 0.8;
     }
 }

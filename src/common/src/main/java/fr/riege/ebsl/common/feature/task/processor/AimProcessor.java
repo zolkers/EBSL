@@ -27,7 +27,7 @@ public final class AimProcessor {
     public AimProcessor(float yawSpeed, float pitchSpeed, float filterSeconds) {
         this.yawSpeed = Math.max(1.0f, yawSpeed);
         this.pitchSpeed = Math.max(1.0f, pitchSpeed);
-        this.filterSeconds = clamp(filterSeconds, 0.03f, 1.0f);
+        this.filterSeconds = Math.clamp(filterSeconds, 0.03f, 1.0f);
     }
 
     public void aimAt(EbslPlatform platform, Vec3d target) {
@@ -42,16 +42,16 @@ public final class AimProcessor {
         updateFilteredTarget(previousYaw, previousPitch, targetRotation, dt);
 
         float yawDelta = AngleUtils.getRotationDelta(previousYaw, filteredYaw);
-        float pitchDelta = clamp(filteredPitch - previousPitch, -180.0f, 180.0f);
+        float pitchDelta = Math.clamp(filteredPitch - previousPitch, -180.0f, 180.0f);
         if (Math.abs(yawDelta) < DEADZONE_DEGREES && Math.abs(pitchDelta) < DEADZONE_DEGREES) {
             return;
         }
 
-        float yawStep = clamp(yawDelta, -yawSpeed * dt, yawSpeed * dt);
-        float pitchStep = clamp(pitchDelta, -pitchSpeed * dt, pitchSpeed * dt);
+        float yawStep = Math.clamp(yawDelta, -yawSpeed * dt, yawSpeed * dt);
+        float pitchStep = Math.clamp(pitchDelta, -pitchSpeed * dt, pitchSpeed * dt);
         float yaw = applyGcdStep(platform, previousYaw, yawStep);
         float pitch = applyGcdStep(platform, previousPitch, pitchStep);
-        platform.physics().setRotation(yaw, clamp(pitch, -90.0f, 90.0f));
+        platform.physics().setRotation(yaw, Math.clamp(pitch, -90.0f, 90.0f));
     }
 
     public void reset() {
@@ -68,7 +68,7 @@ public final class AimProcessor {
         }
         float dt = (now - lastUpdateNanos) / 1_000_000_000.0f;
         lastUpdateNanos = now;
-        return clamp(dt, 0.001f, MAX_FRAME_SECONDS);
+        return Math.clamp(dt, 0.001f, MAX_FRAME_SECONDS);
     }
 
     private void updateFilteredTarget(float currentYaw, float currentPitch, Rotation targetRotation, float dt) {
@@ -80,8 +80,8 @@ public final class AimProcessor {
         float smoothing = 1.0f - (float) Math.exp(-dt / filterSeconds);
         float targetYawDelta = AngleUtils.getRotationDelta(filteredYaw, targetRotation.yaw);
         filteredYaw += targetYawDelta * smoothing;
-        filteredPitch += (clamp(targetRotation.pitch, -90.0f, 90.0f) - filteredPitch) * smoothing;
-        filteredPitch = clamp(filteredPitch, -90.0f, 90.0f);
+        filteredPitch += (Math.clamp(targetRotation.pitch, -90.0f, 90.0f) - filteredPitch) * smoothing;
+        filteredPitch = Math.clamp(filteredPitch, -90.0f, 90.0f);
     }
 
     private static float applyGcdStep(EbslPlatform platform, float previous, float step) {
@@ -93,7 +93,4 @@ public final class AimProcessor {
         return (float) (previous + roundedStep);
     }
 
-    private static float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
-    }
 }

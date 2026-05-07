@@ -27,8 +27,8 @@ public record PathCheckContext(
         if (path == null || path.isEmpty()) {
             return false;
         }
-        int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + Math.max(0, lookahead));
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int end = Math.clamp(start + Math.max(0, lookahead), 0, path.size() - 1);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == moveType) {
                 return true;

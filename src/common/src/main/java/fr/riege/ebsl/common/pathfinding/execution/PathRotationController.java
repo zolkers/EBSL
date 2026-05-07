@@ -36,6 +36,7 @@ final class PathRotationController {
     private int camTargetIdx = -1;
     private int lastRotationDebugCamTarget = -2;
     private long lastRotationDispatchMs;
+    private boolean active;
 
     PathRotationController(IWorldLayer world, IPlayerLayer player, RotationExecutor rotationExecutor) {
         this.world = world;
@@ -50,6 +51,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.active = false;
         this.pitchStabilizer.reset(player.pitch());
     }
 
@@ -60,6 +62,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.active = false;
         this.pitchStabilizer.reset(player.pitch());
     }
 
@@ -67,6 +70,7 @@ final class PathRotationController {
         if (path == null || path.isEmpty()) {
             return;
         }
+        active = true;
 
         boolean alreadyRotating = rotationExecutor.isRotating();
         RotationTarget rotationTarget = selectRotationTarget(playerPos, path, pursuitSegment, alreadyRotating);
@@ -98,10 +102,14 @@ final class PathRotationController {
     }
 
     void tickExecutor() {
+        if (!active) {
+            return;
+        }
         rotationExecutor.update(pitchStabilizer.getStablePitch());
     }
 
     void stop() {
+        active = false;
         rotationExecutor.stopRotating();
     }
 
@@ -127,13 +135,14 @@ final class PathRotationController {
         if (smoothing.isPresent()) {
             MovementSmoothing.Plan plan = smoothing.get();
             return new RotationTarget(plan.mode(), plan.targetIndex(), plan.visualizerIndex(), plan.position(),
-                plan.yawThreshold(), plan.pitchThreshold(), plan.durationMs(), plan.easing(), true);
+                plan.yawThreshold(), plan.pitchThreshold(), plan.durationMs(), plan.yawEasing(), plan.pitchEasing(), true);
         }
 
         if (PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()) {
             int camTarget = pickCameraRailTarget(playerPos);
             Vec3d rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
-            int visualizerIndex = Math.min(cameraPath.size() - 1, camTarget + 1);
+            rotTargetPos = naturalizeCameraTarget(playerPos, path, pursuitSegment, rotTargetPos);
+            int visualizerIndex = Math.clamp(camTarget + 1, 0, cameraPath.size() - 1);
             return defaultRotationTarget(path, pursuitSegment, alreadyRotating, "camera_rail", camTarget, visualizerIndex, rotTargetPos);
         }
 
@@ -143,6 +152,7 @@ final class PathRotationController {
             rotTarget.position.centeredX(),
             rotTarget.position.flooredY() + PathfinderSettings.instance().legacyCameraEyeY.value(),
             rotTarget.position.centeredZ());
+        rotTargetPos = naturalizeCameraTarget(playerPos, path, pursuitSegment, rotTargetPos);
         return defaultRotationTarget(path, pursuitSegment, alreadyRotating, "legacy", camTarget, camTarget, rotTargetPos);
     }
 
@@ -154,11 +164,11 @@ final class PathRotationController {
         }
 
         boolean hardToPrepare = requiresParkourAnticipation(playerPos, path, landingIndex);
-        if (landingIndex > Math.max(0, pursuitSegment) + PARKOUR_NORMAL_LOOKAHEAD_NODES && !hardToPrepare) {
+        if (landingIndex > Math.clamp(pursuitSegment, 0, path.size() - 1) + PARKOUR_NORMAL_LOOKAHEAD_NODES && !hardToPrepare) {
             return Optional.empty();
         }
 
-        Node takeoff = path.get(Math.max(0, landingIndex - 1));
+        Node takeoff = path.get(Math.clamp(landingIndex - 1, 0, path.size() - 1));
         Node landing = path.get(landingIndex);
         if (shouldReleaseParkourLandingTarget(playerPos, takeoff, landing, hardToPrepare)) {
             return Optional.empty();
@@ -178,6 +188,7 @@ final class PathRotationController {
                 : PathfinderSettings.instance().parkourIdlePitchDeadbandDeg.value()),
             PathfinderSettings.instance().parkourRotationDurationMs.value(),
             EasingType.EASE_OUT_CUBIC,
+            EasingType.EASE_OUT_SINE,
             true));
     }
 
@@ -253,8 +264,8 @@ final class PathRotationController {
         if (path == null || path.isEmpty()) {
             return -1;
         }
-        int start = Math.max(0, pursuitSegment);
-        int end = Math.min(path.size() - 1, start + lookaheadNodes);
+        int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int end = Math.clamp(start + lookaheadNodes, 0, path.size() - 1);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return i;
@@ -275,11 +286,11 @@ final class PathRotationController {
         if (yawDrift > rotationTarget.yawThreshold()
             && (!alreadyRotating || now - lastRotationDispatchMs
                 >= PathfinderSettings.instance().rotationRedispatchCooldownMs.value())) {
-            debug(debug, "rotateTo dispatch easing=%s durationMs=%d wp=%d camTargetIdx=%d mode=%s registry=%s",
-                rotationTarget.easing(), rotationTarget.durationMs(), pursuitSegment, camTargetIdx,
+            debug(debug, "rotateTo dispatch easing=%s/%s durationMs=%d wp=%d camTargetIdx=%d mode=%s registry=%s",
+                rotationTarget.yawEasing(), rotationTarget.pitchEasing(), rotationTarget.durationMs(), pursuitSegment, camTargetIdx,
                 rotationTarget.mode(), rotationTarget.registry());
             rotationExecutor.rotateTo(new Rotation(desiredYaw, 0f),
-                new TimedEaseStrategy(rotationTarget.easing(), rotationTarget.durationMs()));
+                new TimedEaseStrategy(rotationTarget.yawEasing(), rotationTarget.pitchEasing(), rotationTarget.durationMs()));
             lastRotationDispatchMs = now;
             return;
         }
@@ -290,15 +301,18 @@ final class PathRotationController {
     private RotationTarget defaultRotationTarget(List<Node> path, int pursuitSegment, boolean alreadyRotating,
                                                  String mode, int targetIndex, int visualizerIndex, Vec3d position) {
         boolean cameraRail = "camera_rail".equals(mode);
-        EasingType easing;
+        EasingType yawEasing;
+        EasingType pitchEasing;
 
         if (cameraRail) {
-            easing = EasingType.EASE_OUT_CUBIC;
+            yawEasing = EasingType.EASE_IN_OUT_SINE;
+            pitchEasing = EasingType.EASE_OUT_SINE;
         } else {
             float difficulty = computePathDifficulty(path, pursuitSegment);
-            easing = difficulty < 0.4f
-                    ? EasingType.EASE_OUT_BACK
-                    : EasingType.EASE_OUT_CUBIC;
+            yawEasing = difficulty < 0.4f
+                ? EasingType.EASE_IN_OUT_SINE
+                : EasingType.EASE_OUT_CUBIC;
+            pitchEasing = EasingType.EASE_OUT_SINE;
         }
 
         return new RotationTarget(
@@ -313,7 +327,8 @@ final class PathRotationController {
                 ? PathfinderSettings.instance().activePitchRetargetDeg.value()
                 : PathfinderSettings.instance().idlePitchDeadbandDeg.value()),
             PathfinderSettings.instance().rotationDurationMs.value(),
-            easing,
+            yawEasing,
+            pitchEasing,
             false);
     }
 
@@ -331,7 +346,58 @@ final class PathRotationController {
         float tightness = walls / 8.0f;
         boolean ascending = pursuitSegment < path.size()
             && MovementEvaluatorRegistry.get(path.get(pursuitSegment).moveType).countsAsAscendingDifficulty();
-        return Math.min(1.0f, tightness + (ascending ? 0.4f : 0.0f));
+        return Math.clamp(tightness + (ascending ? 0.4f : 0.0f), Float.NEGATIVE_INFINITY, 1.0f);
+    }
+
+    private Vec3d naturalizeCameraTarget(Vec3d playerPos, List<Node> path, int pursuitSegment, Vec3d target) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        double blend = settings.cameraNaturalFocusBlend.value();
+        double lateral = settings.cameraNaturalLateralOffset.value();
+        double vertical = settings.cameraNaturalVerticalOffset.value();
+        if (target == null || blend >= 0.999 && lateral <= 1.0e-6 && Math.abs(vertical) <= 1.0e-6) {
+            return target;
+        }
+
+        Vec3d eye = player.eyePosition();
+        double tx = eye.x() + (target.x() - eye.x()) * blend;
+        double ty = target.y() + vertical;
+        double tz = eye.z() + (target.z() - eye.z()) * blend;
+
+        double dirX = target.x() - playerPos.x();
+        double dirZ = target.z() - playerPos.z();
+        double dirLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        if (dirLen > 1.0e-6 && lateral > 1.0e-6) {
+            double turn = pathTurnSign(path, pursuitSegment);
+            double side = turn == 0.0 ? 0.35 : turn;
+            tx += (-dirZ / dirLen) * lateral * side;
+            tz += (dirX / dirLen) * lateral * side;
+        }
+
+        return new Vec3d(tx, ty, tz);
+    }
+
+    private static double pathTurnSign(List<Node> path, int pursuitSegment) {
+        if (path == null || path.size() < 3) {
+            return 0.0;
+        }
+        int aIdx = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        int bIdx = Math.clamp(aIdx + 1, 0, path.size() - 1);
+        int cIdx = Math.clamp(aIdx + 2, 0, path.size() - 1);
+        if (aIdx == bIdx || bIdx == cIdx) {
+            return 0.0;
+        }
+        Node a = path.get(aIdx);
+        Node b = path.get(bIdx);
+        Node c = path.get(cIdx);
+        double abx = b.position.centeredX() - a.position.centeredX();
+        double abz = b.position.centeredZ() - a.position.centeredZ();
+        double bcx = c.position.centeredX() - b.position.centeredX();
+        double bcz = c.position.centeredZ() - b.position.centeredZ();
+        double cross = abx * bcz - abz * bcx;
+        if (Math.abs(cross) < 1.0e-6) {
+            return 0.0;
+        }
+        return Math.signum(cross);
     }
 
     private int pickCameraRailTarget(Vec3d playerPos) {
@@ -446,6 +512,6 @@ final class PathRotationController {
 
     private record RotationTarget(String mode, int targetIndex, int visualizerIndex, Vec3d position,
                                   float yawThreshold, float pitchThreshold, long durationMs,
-                                  EasingType easing, boolean registry) {
+                                  EasingType yawEasing, EasingType pitchEasing, boolean registry) {
     }
 }

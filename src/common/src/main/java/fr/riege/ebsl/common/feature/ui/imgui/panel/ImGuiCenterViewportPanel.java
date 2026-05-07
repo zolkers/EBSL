@@ -290,18 +290,18 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
                         String buf = data.getBuf().substring(0, data.getBufTextLen());
                         if (!buf.equals(lastSuggestInput)) refreshSuggestions(buf);
                     } else if (flag == ImGuiInputTextFlags.CallbackCompletion && !suggestions.isEmpty()) {
-                        CommandSuggestion top = suggestions.get(Math.min(suggestionIdx, suggestions.size() - 1));
+                        CommandSuggestion top = suggestions.get(Math.clamp(suggestionIdx, 0, suggestions.size() - 1));
                         String cur = data.getBuf().substring(0, data.getBufTextLen());
                         int sp = cur.lastIndexOf(' ');
                         String next = sp < 0 ? top.fill() + " " : cur.substring(0, sp + 1) + top.fill() + " ";
                         data.deleteChars(0, data.getBufTextLen());
                         data.insertChars(0, next);
                         refreshSuggestions(next);
-                    } else if (flag == ImGuiInputTextFlags.CallbackHistory) {
+                    } else if (flag == ImGuiInputTextFlags.CallbackHistory && !suggestions.isEmpty()) {
                         if (data.getEventKey() == ImGuiKey.UpArrow) {
-                            suggestionIdx = Math.max(0, suggestionIdx - 1); scrollSuggestToSelected = true;
+                            suggestionIdx = Math.clamp(suggestionIdx - 1, 0, suggestions.size() - 1); scrollSuggestToSelected = true;
                         } else if (data.getEventKey() == ImGuiKey.DownArrow) {
-                            suggestionIdx = Math.min(suggestions.size() - 1, suggestionIdx + 1); scrollSuggestToSelected = true;
+                            suggestionIdx = Math.clamp(suggestionIdx + 1, 0, suggestions.size() - 1); scrollSuggestToSelected = true;
                         }
                     }
                 }

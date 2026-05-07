@@ -160,7 +160,13 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting legacyCameraEyeY = registerSetting(new DoubleSetting(
         "legacy_camera_eye_y", "Legacy camera eye Y", 1.6, 0.0, 3.0));
     public final DoubleSetting cameraRailGuideLookaheadDist = registerSetting(new DoubleSetting(
-        "camera_rail_guide_lookahead_dist", "Camera rail lookahead", 3.5, 0.1, 16.0));
+        "camera_rail_guide_lookahead_dist", "Camera rail lookahead", 2.65, 0.1, 16.0));
+    public final DoubleSetting cameraNaturalFocusBlend = registerSetting(new DoubleSetting(
+        "camera_natural_focus_blend", "Camera natural focus", 0.78, 0.25, 1.0));
+    public final DoubleSetting cameraNaturalLateralOffset = registerSetting(new DoubleSetting(
+        "camera_natural_lateral_offset", "Camera natural lateral", 0.26, 0.0, 1.5));
+    public final DoubleSetting cameraNaturalVerticalOffset = registerSetting(new DoubleSetting(
+        "camera_natural_vertical_offset", "Camera natural vertical", -0.12, -1.0, 1.0));
     public final IntSetting rotationRedispatchCooldownMs = registerSetting(new IntSetting(
         "rotation_redispatch_cooldown_ms", "Rotation redispatch ms", 220, 0, 2000));
     public final DoubleSetting idleYawDeadbandDeg = registerSetting(new DoubleSetting(
@@ -365,6 +371,9 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.cameraRailReachedDist,
             INSTANCE.legacyCameraEyeY,
             INSTANCE.cameraRailGuideLookaheadDist,
+            INSTANCE.cameraNaturalFocusBlend,
+            INSTANCE.cameraNaturalLateralOffset,
+            INSTANCE.cameraNaturalVerticalOffset,
             INSTANCE.rotationRedispatchCooldownMs,
             INSTANCE.idleYawDeadbandDeg,
             INSTANCE.idlePitchDeadbandDeg,
