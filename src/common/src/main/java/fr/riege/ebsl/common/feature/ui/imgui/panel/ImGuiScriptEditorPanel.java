@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
@@ -121,6 +122,7 @@ public final class ImGuiScriptEditorPanel {
         dl.addRectFilled(editor.x(), editor.y(), editor.right(), editor.bottom(), 0xFF0D1117);
         renderGraphToolbar(editor);
         UiRect canvas = new UiRect(editor.x(), editor.y() + 34, editor.width(), editor.height() - 34);
+        panAndZoomCanvas(canvas);
         drawGrid(dl, canvas);
         List<ScriptGraphNode> nodes = graphNodes();
         float previousCenterX = 0.0f;
@@ -142,6 +144,7 @@ public final class ImGuiScriptEditorPanel {
         if (nodes.isEmpty()) {
             dl.addText(canvas.x() + 20.0f, canvas.y() + 20.0f, UiTheme.TEXT_MUTED, "Empty script");
         }
+        drawMiniMap(editor, nodes);
         renderSelectedNodeDetails(editor, nodes);
     }
 
@@ -162,13 +165,7 @@ public final class ImGuiScriptEditorPanel {
             graphNodePositions.clear();
         }
         ImGui.sameLine();
-        if (ImGui.button("Left", 48.0f, 22.0f)) graphPanX -= 36.0f;
-        ImGui.sameLine();
-        if (ImGui.button("Right", 52.0f, 22.0f)) graphPanX += 36.0f;
-        ImGui.sameLine();
-        if (ImGui.button("Up", 40.0f, 22.0f)) graphPanY -= 36.0f;
-        ImGui.sameLine();
-        if (ImGui.button("Down", 54.0f, 22.0f)) graphPanY += 36.0f;
+        ImGui.textDisabled("drag nodes | right-drag canvas | wheel zoom");
     }
 
     private void renderSelectedNodeDetails(UiRect editor, List<ScriptGraphNode> nodes) {
@@ -176,22 +173,28 @@ public final class ImGuiScriptEditorPanel {
             return;
         }
         ScriptGraphNode node = nodes.get(selectedGraphNode);
+        EbslNodeTemplate template = EbslNodeTemplate.of(type(node.command()));
         syncSelectedEditor(node);
-        float panelW = 286.0f;
+        float panelW = 306.0f;
         float x = editor.right() - panelW - 12.0f;
         float y = editor.y() + 48.0f;
         ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(x, y, x + panelW, y + 190.0f, 0xEE121A22, 5.0f);
-        dl.addRect(x, y, x + panelW, y + 190.0f, 0xFF67B7FF, 5.0f, 0, 1.0f);
+        dl.addRectFilled(x, y, x + panelW, y + 236.0f, 0xEE121A22, 5.0f);
+        dl.addRect(x, y, x + panelW, y + 236.0f, 0xFF67B7FF, 5.0f, 0, 1.0f);
         ImGui.setCursorScreenPos(x + 10.0f, y + 8.0f);
-        ImGui.text("Node properties");
+        ImGui.text(template.title());
+        ImGui.setCursorScreenPos(x + 10.0f, y + 28.0f);
+        ImGui.textDisabled(template.description());
         ImGui.setCursorScreenPos(x + 10.0f, y + 34.0f);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 62.0f);
         ImGui.setNextItemWidth(panelW - 20.0f);
         ImGui.inputText("##ebsl-node-command", selectedCommand);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 66.0f);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 94.0f);
         ImGui.setNextItemWidth(panelW - 20.0f);
         ImGui.inputText("##ebsl-node-args", selectedArgs);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 100.0f);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 122.0f);
+        ImGui.textDisabled("args: " + template.argsHint());
+        ImGui.setCursorScreenPos(x + 10.0f, y + 150.0f);
         if (ImGui.button("Apply", 64.0f, 24.0f)) {
             replaceNodeLine(node, selectedCommand.get(), selectedArgs.get());
         }
@@ -203,8 +206,25 @@ public final class ImGuiScriptEditorPanel {
         if (ImGui.button("Delete", 64.0f, 24.0f)) {
             deleteNodeLine(node);
         }
-        dl.addText(x + 10.0f, y + 136.0f, UiTheme.TEXT_MUTED, node.category().id());
-        dl.addText(x + 10.0f, y + 158.0f, UiTheme.TEXT_DIM, "line " + node.lineNumber());
+        ImGui.setCursorScreenPos(x + 10.0f, y + 182.0f);
+        if (ImGui.button("Use template args", 132.0f, 24.0f)) {
+            selectedArgs.set(template.sampleArgs());
+        }
+        dl.addText(x + 10.0f, y + 214.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
+    }
+
+    private void panAndZoomCanvas(UiRect canvas) {
+        if (!ImGui.isMouseHoveringRect(canvas.x(), canvas.y(), canvas.right(), canvas.bottom(), true)) {
+            return;
+        }
+        float wheel = ImGui.getIO().getMouseWheel();
+        if (wheel != 0.0f) {
+            graphZoom = Math.max(0.65f, Math.min(1.7f, graphZoom + wheel * 0.08f));
+        }
+        if (ImGui.isMouseDragging(1)) {
+            graphPanX += ImGui.getIO().getMouseDeltaX();
+            graphPanY += ImGui.getIO().getMouseDeltaY();
+        }
     }
 
     private void drawGrid(ImDrawList dl, UiRect canvas) {
@@ -225,13 +245,16 @@ public final class ImGuiScriptEditorPanel {
     private float drawNode(ImDrawList dl, int index, String key, float x, float y, ScriptGraphNode node) {
         float width = Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
         float height = NODE_H * graphZoom;
+        EbslNodeTemplate template = EbslNodeTemplate.of(type(node.command()));
         int fill = selectedGraphNode == index ? 0xFF22364A : color(node.category());
         dl.addRectFilled(x, y, x + width, y + height, fill, 6.0f);
         dl.addRect(x, y, x + width, y + height, 0xFF67B7FF, 6.0f, 0, 1.5f);
+        dl.addRectFilled(x, y, x + width, y + 18.0f * graphZoom, headerColor(node.category()), 6.0f);
         dl.addCircleFilled(x + 10.0f * graphZoom, y + height * 0.5f, 4.0f * graphZoom, 0xFF67B7FF);
         dl.addCircleFilled(x + width - 10.0f * graphZoom, y + height * 0.5f, 4.0f * graphZoom, 0xFF67B7FF);
-        dl.addText(x + 20.0f * graphZoom, y + 12.0f * graphZoom, UiTheme.TEXT, node.command());
-        dl.addText(x + 20.0f * graphZoom, y + 32.0f * graphZoom, UiTheme.TEXT_MUTED, node.args());
+        dl.addText(x + 18.0f * graphZoom, y + 3.0f * graphZoom, UiTheme.TEXT, template.title());
+        dl.addText(x + 20.0f * graphZoom, y + 24.0f * graphZoom, UiTheme.TEXT_MUTED, node.command());
+        dl.addText(x + 20.0f * graphZoom, y + 40.0f * graphZoom, UiTheme.TEXT_DIM, node.args().isBlank() ? template.argsHint() : node.args());
 
         ImGui.setCursorScreenPos(x, y);
         if (ImGui.invisibleButton("##ebsl-graph-node-" + index, width, height)) {
@@ -277,6 +300,25 @@ public final class ImGuiScriptEditorPanel {
             nodes.add(new ScriptGraphNode(i + 1, trimmed, command, args, category, loadedFile + ":" + (i + 1) + ":" + trimmed));
         }
         return nodes;
+    }
+
+    private void drawMiniMap(UiRect editor, List<ScriptGraphNode> nodes) {
+        if (nodes.isEmpty()) {
+            return;
+        }
+        float w = 118.0f;
+        float h = 76.0f;
+        float x = editor.x() + 12.0f;
+        float y = editor.bottom() - h - 12.0f;
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRectFilled(x, y, x + w, y + h, 0xCC101820, 4.0f);
+        dl.addRect(x, y, x + w, y + h, 0x664A90E2, 4.0f);
+        for (int i = 0; i < nodes.size(); i++) {
+            NodePosition position = nodePosition(nodes.get(i), i);
+            float px = x + 8.0f + Math.min(w - 16.0f, Math.max(0.0f, position.x() / 8.0f));
+            float py = y + 8.0f + Math.min(h - 16.0f, Math.max(0.0f, position.y() / 8.0f));
+            dl.addRectFilled(px, py, px + 6.0f, py + 4.0f, color(nodes.get(i).category()));
+        }
     }
 
     private List<EbslNodeType> completions() {
@@ -387,6 +429,14 @@ public final class ImGuiScriptEditorPanel {
         }
     }
 
+    private static EbslNodeType type(String command) {
+        try {
+            return EbslNodeType.byId(command);
+        } catch (RuntimeException exception) {
+            return EbslNodeType.CUSTOM_NODE;
+        }
+    }
+
     private static int color(EbslNodeCategory category) {
         return switch (category) {
             case FLOW -> 0xFF203049;
@@ -398,6 +448,20 @@ public final class ImGuiScriptEditorPanel {
             case SENSOR -> 0xFF29433E;
             case UTILITY -> 0xFF303742;
             case PARAMETER -> 0xFF3E3333;
+        };
+    }
+
+    private static int headerColor(EbslNodeCategory category) {
+        return switch (category) {
+            case FLOW -> 0xFF2E5E9E;
+            case CONTROL -> 0xFF7249A8;
+            case DATA -> 0xFF3D7E61;
+            case WORLD -> 0xFF9A7434;
+            case PLAYER -> 0xFF3D82A8;
+            case INTERFACE -> 0xFF725F91;
+            case SENSOR -> 0xFF438C81;
+            case UTILITY -> 0xFF566272;
+            case PARAMETER -> 0xFF865F5F;
         };
     }
 
