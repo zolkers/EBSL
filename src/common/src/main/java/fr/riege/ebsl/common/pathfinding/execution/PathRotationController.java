@@ -50,7 +50,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
-        this.pitchStabilizer.reset();
+        this.pitchStabilizer.reset(player.pitch());
     }
 
     void reset() {
@@ -60,7 +60,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
-        this.pitchStabilizer.reset();
+        this.pitchStabilizer.reset(player.pitch());
     }
 
     void updateRotation(Vec3d playerPos, List<Node> path, int pursuitSegment, Consumer<String> debug) {
@@ -83,7 +83,8 @@ final class PathRotationController {
             rotationTarget.position().x(), rotationTarget.position().y(), rotationTarget.position().z());
 
         Rotation rawRot = AngleUtils.getRotation(player.eyePosition(), rotationTarget.position());
-        Rotation desiredRot = pitchStabilizer.stabilize(player, rotationTarget.position(), rawRot, debug);
+        float stabilizedPitch = pitchStabilizer.tick(rawRot.pitch, player.isInWater());
+        Rotation desiredRot = new Rotation(rawRot.yaw, stabilizedPitch);
         dispatchRotationIfNeeded(pursuitSegment, debug, desiredRot, rotationTarget);
     }
 
