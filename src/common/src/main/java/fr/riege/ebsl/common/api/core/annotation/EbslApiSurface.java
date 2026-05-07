@@ -20,6 +20,7 @@ public @interface EbslApiSurface {
         EVENTS,
         ANALYTICS,
         RENDERING,
+        THREADING,
         UI
     }
 }

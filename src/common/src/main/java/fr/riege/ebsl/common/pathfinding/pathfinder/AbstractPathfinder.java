@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
+import fr.riege.ebsl.common.core.threading.EbslThreading;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
@@ -21,7 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractPathfinder implements Pathfinder {
@@ -29,23 +31,6 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
     private static final Set<PathPosition> EMPTY_PATH_POSITIONS = new LinkedHashSet<>(0);
     private static final double TIE_BREAKER_WEIGHT = 1e-6;
-
-    private static final ExecutorService PATHING_EXECUTOR_SERVICE =
-            Executors.newWorkStealingPool(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            PATHING_EXECUTOR_SERVICE.shutdown();
-            try {
-                if (!PATHING_EXECUTOR_SERVICE.awaitTermination(5, TimeUnit.SECONDS)) {
-                    PATHING_EXECUTOR_SERVICE.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                PATHING_EXECUTOR_SERVICE.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }));
-    }
 
     protected final PathfinderConfiguration pathfinderConfiguration;
     protected final NavigationPointProvider  navigationPointProvider;
@@ -79,9 +64,9 @@ public abstract class AbstractPathfinder implements Pathfinder {
         PathPosition effectiveTarget = target.floor();
 
         if (pathfinderConfiguration.async) {
-            return CompletableFuture
-                    .supplyAsync(() -> executePathingAlgorithm(effectiveStart, effectiveTarget, environmentContext),
-                            PATHING_EXECUTOR_SERVICE)
+            return EbslThreading.pathfinding()
+                    .supply("path:" + effectiveStart + "->" + effectiveTarget,
+                            () -> executePathingAlgorithm(effectiveStart, effectiveTarget, environmentContext))
                     .exceptionally(t -> handlePathingException(start, target, t));
         } else {
             try {
@@ -161,7 +146,11 @@ public abstract class AbstractPathfinder implements Pathfinder {
                     new PathImpl(start, target, EMPTY_PATH_POSITIONS));
         } finally {
             for (NodeProcessor p : processors) {
-                try { p.finalizeSearch(searchContext); } catch (Exception ignored) {}
+                try {
+                    p.finalizeSearch(searchContext);
+                } catch (Exception exception) {
+                    LOGGER.debug("Node processor cleanup failed for {}", p.getClass().getSimpleName(), exception);
+                }
             }
             performAlgorithmCleanup();
         }
@@ -231,7 +220,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
         return positions;
     }
 
-    // -- Abstract methods -----------------------------------------------------
+    
 
     protected abstract void insertStartNode(Node node, double fCost, PrimitiveMinHeap openSet);
     protected abstract Node extractBestNode(PrimitiveMinHeap openSet);

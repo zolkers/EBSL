@@ -10,11 +10,11 @@ repositories {
 }
 
 dependencies {
-    // Use files() to bypass Loom's project dependency substitution which causes circular deps
+    
     compileOnly files(project(':common').sourceSets.main.output.classesDirs)
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.officialMojangMappings()
-    // Loom needs fabric-loader to set up MC jars — not used in our code
+    
     modCompileOnly "net.fabricmc:fabric-loader:${loader_version}"
 }
 

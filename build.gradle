@@ -2,18 +2,18 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
 
-// Centralize all subproject build dirs under <root>/build/<module-path>/
+
 subprojects {
     def subPath = project.path.replace(':', '/').replaceFirst('^/', '')
     layout.buildDirectory = rootProject.layout.buildDirectory.dir(subPath)
 
-    // zip64 headers avoid LOC-header corruption on WSL 9p (Windows-mounted) filesystems
+    
     plugins.withId('java') {
         tasks.withType(Jar).configureEach { zip64 = true }
     }
 }
 
-// Root project - coordination and convenience tasks only
+
 
 tasks.register('runClient121Fabric') {
     group = 'ebsl'
@@ -26,4 +26,4 @@ tasks.register('buildMod121Fabric') {
     description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
     dependsOn ':minecraft-1-21-11:fabric:build'
 }
-// future: runClient121Forge, etc.
+

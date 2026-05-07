@@ -33,7 +33,7 @@ sourceSets {
 
 dependencies {
     implementation project(':common')
-    // Bypass Loom's project dependency substitution while keeping MC-common code on the dev runtime classpath.
+    
     compileOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
     runtimeOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
 

@@ -16,6 +16,7 @@ public interface BotTask {
 
     default void tick(EbslPlatform platform) {}
     default void render(EbslPlatform platform) {}
+    default boolean tickAsync() { return false; }
     default void onDisable() {}
     default void onSettingChanged(Setting<?> setting) {}
 }

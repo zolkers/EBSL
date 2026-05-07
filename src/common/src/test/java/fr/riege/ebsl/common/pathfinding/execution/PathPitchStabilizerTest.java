@@ -9,7 +9,7 @@ class PathPitchStabilizerTest {
     void convergesFromZeroTowardPositiveCandidate() {
         var s = new PathPitchStabilizer();
         s.reset(0f);
-        // Run 80 ticks: spring should converge near 20° despite slight underdamped overshoot
+        
         for (int i = 0; i < 80; i++) s.tick(20f, false);
         float settled = s.getStablePitch();
         assertTrue(settled > 15f, "Should settle near 20° after 80 ticks, got " + settled);
@@ -28,7 +28,7 @@ class PathPitchStabilizerTest {
         for (int i = 0; i < 60; i++) {
             result = s.tick(0f, false);
         }
-        // Underdamped spring may oscillate through zero; overall it must decay significantly toward 0
+        
         assertTrue(Math.abs(result) < 5f, "Should decay significantly toward 0, got " + result);
     }
 
@@ -38,7 +38,7 @@ class PathPitchStabilizerTest {
         s.reset(0f);
         float result = 0f;
         for (int i = 0; i < 200; i++) result = s.tick(90f, false);
-        // default pitchLandMaxAbsDeg = 22.0
+        
         assertTrue(result <= 22.0f, "Should not exceed pitchLandMaxAbsDeg=22, got " + result);
     }
 
@@ -51,9 +51,9 @@ class PathPitchStabilizerTest {
         s.reset(5f);
         assertEquals(5f, s.getStablePitch(), 0.001f, "reset should set stablePitch to initialPitch");
 
-        // After reset velocity=0, first tick moves only stiffness*error (default stiffness=0.10)
+        
         float after = s.tick(15f, false);
-        // error = 10, stiffness = 0.10 → velocity = 1.0, stablePitch = 6.0 max
+        
         assertTrue(after < 7f, "Should move slowly right after reset (velocity reset to 0), got " + after);
     }
 
@@ -63,7 +63,7 @@ class PathPitchStabilizerTest {
         s.reset(0f);
         float result = 0f;
         for (int i = 0; i < 200; i++) result = s.tick(90f, true);
-        // default pitchWaterMaxAbsDeg = 8.0
+        
         assertTrue(result <= 8.0f, "Should not exceed pitchWaterMaxAbsDeg=8, got " + result);
     }
 }

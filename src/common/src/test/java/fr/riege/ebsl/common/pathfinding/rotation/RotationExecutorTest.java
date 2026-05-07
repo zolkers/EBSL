@@ -8,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RotationExecutorTest {
 
-    // IPlayerLayer: only position(), isInWater(), isInLava(), isSprinting(), isAlive(), getHealth() are non-default.
-    // yaw() and pitch() have defaults (0f) — override them with the desired values.
+    
+    
     private static IPlayerLayer fakePlayer(float yaw, float pitch) {
         return new IPlayerLayer() {
             @Override public Vec3d position() { return new Vec3d(0, 0, 0); }
@@ -23,8 +23,8 @@ class RotationExecutorTest {
         };
     }
 
-    // IPhysicsLayer: only setSneak() and clearInputs() are non-default.
-    // setRotation() and rotationGcd() have defaults — override what the test needs.
+    
+    
     private static IPhysicsLayer fakePhysics(float[] capturedYaw, float[] capturedPitch) {
         return new IPhysicsLayer() {
             @Override public void setRotation(float yaw, float pitch) {

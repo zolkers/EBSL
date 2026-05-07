@@ -22,4 +22,5 @@ public interface PathfinderModule {
     default void onDisable() {}
     default void onSettingChanged(Setting<?> setting) {}
     default void renderGameViewport(EbslPlatform platform, NavigationService navigation, UiRect viewport) {}
+    default boolean renderGameViewportAsync() { return false; }
 }

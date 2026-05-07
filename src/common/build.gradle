@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    // imgui-java binding is pure Java; platform natives are provided by the Fabric ImGui runtime.
+    
     compileOnly 'io.github.spair:imgui-java-binding:1.90.0'
     api 'com.google.code.gson:gson:2.11.0'
     api 'org.slf4j:slf4j-api:2.0.16'
@@ -37,7 +37,7 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 21
 }
 
-// Fail build if any MC import leaks into common
+
 tasks.named('compileJava') {
     doLast {
         def sources = fileTree('src/main/java').filter { it.name.endsWith('.java') }

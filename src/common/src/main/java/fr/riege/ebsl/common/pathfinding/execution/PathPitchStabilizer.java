@@ -18,7 +18,7 @@ final class PathPitchStabilizer {
     }
 
     void reset(float initialPitch) {
-        // use land limit conservatively — spring enforces water limit on next tick
+        
         float max = maxAbsPitch(false);
         stablePitch = Math.clamp(initialPitch, -max, max);
         velocity = 0f;
@@ -39,7 +39,7 @@ final class PathPitchStabilizer {
         return stablePitch;
     }
 
-    // TODO: remove when PathRotationController no longer calls stabilize()
+    
     Rotation stabilize(IPlayerLayer player, Vec3d target, Rotation rawRot, Consumer<String> debug) {
         float stabilizedPitch = tick(rawRot.pitch, player.isInWater());
         return new Rotation(rawRot.yaw, stabilizedPitch);

@@ -8,13 +8,13 @@ import java.util.Map;
 
 public interface EvaluationContext {
     PathPosition getCurrentPathPosition();
-    PathPosition getPreviousPathPosition();       // nullable
+    PathPosition getPreviousPathPosition();       
     int getCurrentNodeDepth();
     double getCurrentNodeHeuristicValue();
     double getPathCostToPreviousPosition();
     double getBaseTransitionCost();
     SearchContext getSearchContext();
-    PathPosition getGrandparentPathPosition();    // nullable
+    PathPosition getGrandparentPathPosition();    
     default PathPosition getGreatGrandparentPathPosition() { return null; }
 
     default PathfinderConfiguration getPathfinderConfiguration() {

@@ -8,8 +8,11 @@ import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.feature.task.BotTask;
 import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CommonSettingsStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-settings");
     private static final String PATHFINDER_KEY = "pathfinder-settings";
     private static final String MODULES_KEY = "module-settings";
     private static final String TASKS_KEY = "task-settings";
@@ -20,8 +23,8 @@ public final class CommonSettingsStore {
     public static void load(IStorageLayer storage) {
         try {
             storage.load(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
-        } catch (RuntimeException ignored) {
-            // Keep defaults when the persisted config is unreadable or from an incompatible version.
+        } catch (RuntimeException exception) {
+            LOGGER.warn("Could not load pathfinder settings; keeping defaults.", exception);
         }
     }
 
@@ -29,8 +32,8 @@ public final class CommonSettingsStore {
         try {
             storage.load(MODULES_KEY).ifPresent(CommonSettingsStore::loadModuleSettings);
             storage.load(TASKS_KEY).ifPresent(CommonSettingsStore::loadTaskSettings);
-        } catch (RuntimeException ignored) {
-            // Keep defaults when persisted module/task config is incompatible.
+        } catch (RuntimeException exception) {
+            LOGGER.warn("Could not load module/task settings; keeping defaults.", exception);
         }
     }
 
@@ -39,8 +42,8 @@ public final class CommonSettingsStore {
             storage.save(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
             storage.save(MODULES_KEY, saveModuleSettings().toString());
             storage.save(TASKS_KEY, saveTaskSettings().toString());
-        } catch (RuntimeException ignored) {
-            // Settings persistence should not be able to crash the client tick.
+        } catch (RuntimeException exception) {
+            LOGGER.warn("Could not save settings.", exception);
         }
     }
 
@@ -50,8 +53,8 @@ public final class CommonSettingsStore {
             if (root.has(setting.id())) {
                 try {
                     setting.load(root.get(setting.id()));
-                } catch (RuntimeException ignored) {
-                    // Ignore invalid values one by one so the rest of the file still loads.
+                } catch (RuntimeException exception) {
+                    LOGGER.debug("Ignoring invalid setting value for '{}'.", setting.id(), exception);
                 }
             }
         }

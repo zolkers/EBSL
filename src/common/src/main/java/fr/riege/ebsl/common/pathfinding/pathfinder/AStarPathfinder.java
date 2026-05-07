@@ -20,11 +20,11 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
     private final ThreadLocal<PathfindingSession> currentSession = new ThreadLocal<>();
 
-    // Captured after each run for external inspection (pathtest)
+    
     private LongSet lastClosedSet = new LongOpenHashSet();
     private long    exploredCount = 0;
 
-    // --- Profiling counters (reset each search) -----------------------------
+    
     private long profNeighborCount     = 0;
     private long profIsValidNanos      = 0;
     private long profCostCalcNanos     = 0;
@@ -87,16 +87,16 @@ public final class AStarPathfinder extends AbstractPathfinder {
                 long t0 = profiling ? System.nanoTime() : 0L;
                 candidate = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
                 candidate.moveType = inferMoveType(offset);
-                // Sentinel: gCost = POSITIVE_INFINITY means "not yet settled"
+                
                 candidate.gCost = Double.POSITIVE_INFINITY;
                 session.nodes.put(packedPos, candidate);
                 if (profiling) profNodeCreateNanos += System.nanoTime() - t0;
             }
 
-            // Skip already-expanded nodes (consistent heuristic guarantees optimality on first expansion)
+            
             if (candidate.inClosed) continue;
 
-            // Reuse mutable context instead of allocating a new one per neighbor
+            
             session.reusableContext.update(searchContext, candidate, currentNode,
                     pathfinderConfiguration.heuristicStrategy);
 
@@ -112,7 +112,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
             double gCost = calculateGCost(session.reusableContext);
             if (profiling) profCostCalcNanos += System.nanoTime() - t2;
 
-            // Reject if not an improvement (POSITIVE_INFINITY for new nodes always passes)
+            
             if (Double.isFinite(candidate.gCost)
                     && gCost + gTolerance(gCost, candidate.gCost) >= candidate.gCost) {
                 if (profiling) profGCostRejects++;
@@ -155,7 +155,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
     private double calculateGCost(EvaluationContext context) {
         double baseCost       = context.getBaseTransitionCost();
-        // Direct for-loop instead of stream pipeline - eliminates iterator + pipeline objects
+        
         double additionalCost = 0.0;
         for (var p : processors) {
             additionalCost += p.calculateCostContribution(context).value;
@@ -189,11 +189,11 @@ public final class AStarPathfinder extends AbstractPathfinder {
         currentSession.remove();
     }
 
-    /** Used by PathfindingManager for pathtest visualization. */
+    
     public LongSet getClosedSet()    { return lastClosedSet; }
     public long    getExploredCount(){ return exploredCount; }
 
-    /** Profiling data from the last search run. */
+    
     public String getProfilingReport() {
         if (!profiling) return "profiling disabled";
         return String.format(
@@ -213,7 +213,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         return s;
     }
 
-    /** Infer MoveType from the offset vector for PathVisualizer coloring. */
+    
     private static MoveType inferMoveType(PathVector offset) {
         int dy = (int) offset.y;
         int dx = Math.abs((int) offset.x);
@@ -227,12 +227,12 @@ public final class AStarPathfinder extends AbstractPathfinder {
         return MoveType.WALK;
     }
 
-    /**
-     * Single map replaces the former openSetNodes + allNodes + bestGByPos triple.
-     * Node flags (inOpen, inClosed) replace set membership lookups;
-     * Node.gCost IS the best-known g-cost (POSITIVE_INFINITY = not yet settled).
-     * The closedSet is only populated when PathVisualizer is enabled to avoid GC overhead.
-     */
+    
+
+
+
+
+
     private static final class PathfindingSession {
         final Long2ObjectOpenHashMap<Node> nodes      = new Long2ObjectOpenHashMap<>();
         final LongSet                      closedSet  = new LongOpenHashSet();
@@ -240,7 +240,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         int                                expandedCount = 0;
 
         PathfindingSession() {
-            // Initialize with dummy values; will be updated before each use
+            
             reusableContext = new EvaluationContextImpl(null, null, null, null);
         }
     }

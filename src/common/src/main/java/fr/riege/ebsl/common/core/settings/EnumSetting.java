@@ -2,8 +2,12 @@ package fr.riege.ebsl.common.core.settings;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class EnumSetting<E extends Enum<E>> extends AbstractSetting<E> {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-settings");
+
     private final Class<E> type;
 
     public EnumSetting(String id, String displayName, E defaultValue, Class<E> type) {
@@ -25,7 +29,8 @@ public final class EnumSetting<E extends Enum<E>> extends AbstractSetting<E> {
         if (json == null || !json.isJsonPrimitive()) return;
         try {
             setValue(Enum.valueOf(type, json.getAsString()));
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException exception) {
+            LOGGER.debug("Ignoring invalid enum setting '{}': {}", id(), json, exception);
         }
     }
 }

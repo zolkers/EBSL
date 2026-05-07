@@ -7,7 +7,7 @@ import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import java.util.ArrayList;
 import java.util.List;
 
-//Bresenham 3-D
+
 @PathingStage(PathingStage.Stage.PATH_SMOOTHING)
 public final class PathSmoother {
 
@@ -151,9 +151,9 @@ public final class PathSmoother {
     }
 
     private static boolean clearForSmoothing(WalkabilityChecker checker, int x, int y, int z) {
-        // isWalkable = passable(feet) + passable(head) + solid floor + not dangerous.
-        // The floor check is required - without it the Bresenham line accepts floating
-        // positions over air gaps, letting the smoother cut through walls incorrectly.
+        
+        
+        
         return checker.isWalkable(x, y, z);
     }
 

@@ -8,6 +8,7 @@ import fr.riege.ebsl.common.api.feature.modules.ModulesApi;
 import fr.riege.ebsl.common.api.navigation.NavigationApi;
 import fr.riege.ebsl.common.api.pathfinding.PathfindingApi;
 import fr.riege.ebsl.common.api.rendering.RenderingApi;
+import fr.riege.ebsl.common.api.threading.ThreadingApi;
 import fr.riege.ebsl.common.api.navigation.runtime.RuntimeApi;
 import fr.riege.ebsl.common.api.core.settings.ModSettingsApi;
 
@@ -21,6 +22,7 @@ public final class EbslApi {
     private static final EventsApi EVENTS = new EventsApi();
     private static final AnalyticsApi ANALYTICS = new AnalyticsApi();
     private static final RenderingApi RENDERING = new RenderingApi();
+    private static final ThreadingApi THREADING = new ThreadingApi();
 
     private EbslApi() {
     }
@@ -63,5 +65,10 @@ public final class EbslApi {
     @EbslApiOperation("Access world rendering commands and styles.")
     public static RenderingApi rendering() {
         return RENDERING;
+    }
+
+    @EbslApiOperation("Access EBSL managed executors and thread errors.")
+    public static ThreadingApi threading() {
+        return THREADING;
     }
 }

@@ -13,9 +13,9 @@ rootProject.name = 'ebsl'
 include('common')
 include('minecraft-1-21-11:common')
 include('minecraft-1-21-11:fabric')
-// future: include('minecraft-1-21-11:forge')
-// future: include('minecraft-1-22:common')
-// future: include('minecraft-1-22:fabric')
+
+
+
 
 project(':common').projectDir = file('src/common')
 project(':minecraft-1-21-11').projectDir = file('src/minecraft-1-21-11')

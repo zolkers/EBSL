@@ -10,7 +10,7 @@ public final class EvaluationContextImpl implements EvaluationContext {
 
     private SearchContext      searchContext;
     private Node               engineNode;
-    private Node               parentEngineNode;   // nullable
+    private Node               parentEngineNode;   
     private IHeuristicStrategy heuristicStrategy;
 
     public EvaluationContextImpl(SearchContext searchContext, Node engineNode,
@@ -21,7 +21,7 @@ public final class EvaluationContextImpl implements EvaluationContext {
         this.heuristicStrategy  = heuristicStrategy;
     }
 
-    /** Update fields for reuse without allocating a new instance. */
+    
     public void update(SearchContext searchContext, Node engineNode,
                        Node parentEngineNode, IHeuristicStrategy heuristicStrategy) {
         this.searchContext     = searchContext;

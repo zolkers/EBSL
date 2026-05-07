@@ -1,5 +1,7 @@
 package fr.riege.ebsl.common.feature.task;
 
+import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
+import fr.riege.ebsl.common.core.threading.EbslThreading;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
@@ -7,10 +9,13 @@ import fr.riege.ebsl.common.core.settings.Setting;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class BotTaskRegistry {
     private static final MapRegistry<String, BotTask> TASKS = new MapRegistry<>(null);
     private static final Map<String, Boolean> lastEnabled = new HashMap<>();
+    private static final Set<String> runningAsyncTicks = ConcurrentHashMap.newKeySet();
 
     private BotTaskRegistry() {}
 
@@ -33,15 +38,36 @@ public final class BotTaskRegistry {
         for (BotTask task : TASKS.values()) {
             syncLifecycle(task);
             if (task.isEnabled()) {
-                task.tick(platform);
+                tickTask(platform, task);
             }
         }
+    }
+
+    private static void tickTask(EbslPlatform platform, BotTask task) {
+        if (!task.tickAsync()) {
+            try {
+                task.tick(platform);
+            } catch (RuntimeException exception) {
+                EbslThreading.report(EbslThreadDomain.TASKS, task.id() + ".tick", exception);
+            }
+            return;
+        }
+        if (!runningAsyncTicks.add(task.id())) {
+            return;
+        }
+        EbslThreading.tasks()
+            .run(task.id() + ".tick", () -> task.tick(platform))
+            .whenComplete((unused, throwable) -> runningAsyncTicks.remove(task.id()));
     }
 
     public static void render(EbslPlatform platform) {
         for (BotTask task : TASKS.values()) {
             if (task.isEnabled()) {
-                task.render(platform);
+                try {
+                    task.render(platform);
+                } catch (RuntimeException exception) {
+                    EbslThreading.report(EbslThreadDomain.TASKS, task.id() + ".render", exception);
+                }
             }
         }
     }
@@ -64,7 +90,11 @@ public final class BotTaskRegistry {
         boolean isEnabled = task.isEnabled();
         Boolean was = lastEnabled.put(task.id(), isEnabled);
         if (was != null && was != isEnabled && !isEnabled) {
-            task.onDisable();
+            try {
+                task.onDisable();
+            } catch (RuntimeException exception) {
+                EbslThreading.report(EbslThreadDomain.TASKS, task.id() + ".onDisable", exception);
+            }
         }
     }
 

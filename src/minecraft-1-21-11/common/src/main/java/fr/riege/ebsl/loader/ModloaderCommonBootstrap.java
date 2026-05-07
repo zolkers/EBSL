@@ -18,10 +18,14 @@ import fr.riege.ebsl.loader.ui.DockingInputHandler;
 import fr.riege.ebsl.mc.*;
 import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
 public final class ModloaderCommonBootstrap {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-bootstrap");
+
     private static ModloaderEventBus events;
     private static ModloaderNavigationService navigation;
     private static MinecraftImGuiLayer imgui;
@@ -150,7 +154,9 @@ public final class ModloaderCommonBootstrap {
                 appender.start();
                 config.getRootLogger().addAppender(appender, org.apache.logging.log4j.Level.INFO, null);
                 ctx.updateLoggers();
-            } catch (Exception ignored) {}
+            } catch (Exception exception) {
+                LOGGER.debug("Could not attach EBSL UI log appender.", exception);
+            }
         });
         AppLog.bootstrap();
     }
