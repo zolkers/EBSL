@@ -185,20 +185,10 @@ public final class PathfinderSettings extends Settingable {
         "parkour_rotation_duration_ms", "Parkour rotation duration ms", 220, 50, 3000));
     public final DoubleSetting pitchMinHorizontalDistance = registerSetting(new DoubleSetting(
         "pitch_min_horizontal_distance", "Pitch min horizontal distance", 2.25, 0.0, 12.0));
-    public final DoubleSetting pitchLandDeadbandDeg = registerSetting(new DoubleSetting(
-        "pitch_land_deadband_deg", "Pitch land deadband", 3.0, 0.0, 45.0));
-    public final DoubleSetting pitchWaterDeadbandDeg = registerSetting(new DoubleSetting(
-        "pitch_water_deadband_deg", "Pitch water deadband", 10.0, 0.0, 60.0));
     public final DoubleSetting pitchLandMaxAbsDeg = registerSetting(new DoubleSetting(
         "pitch_land_max_abs_deg", "Pitch land max abs", 22.0, 0.0, 89.0));
     public final DoubleSetting pitchWaterMaxAbsDeg = registerSetting(new DoubleSetting(
         "pitch_water_max_abs_deg", "Pitch water max abs", 8.0, 0.0, 89.0));
-    public final DoubleSetting pitchLandMaxStepDeg = registerSetting(new DoubleSetting(
-        "pitch_land_max_step_deg", "Pitch land max step", 7.0, 0.0, 45.0));
-    public final DoubleSetting pitchWaterMaxStepDeg = registerSetting(new DoubleSetting(
-        "pitch_water_max_step_deg", "Pitch water max step", 3.0, 0.0, 45.0));
-    public final DoubleSetting pitchSnapToNeutralDeg = registerSetting(new DoubleSetting(
-        "pitch_snap_to_neutral_deg", "Pitch snap neutral", 1.0, 0.0, 15.0));
     public final DoubleSetting pitchSpringStiffness = registerSetting(new DoubleSetting(
         "pitch_spring_stiffness", "Pitch spring stiffness", 0.10, 0.01, 1.0));
     public final DoubleSetting pitchSpringDamping = registerSetting(new DoubleSetting(
@@ -387,13 +377,8 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.parkourActivePitchRetargetDeg,
             INSTANCE.parkourRotationDurationMs,
             INSTANCE.pitchMinHorizontalDistance,
-            INSTANCE.pitchLandDeadbandDeg,
-            INSTANCE.pitchWaterDeadbandDeg,
             INSTANCE.pitchLandMaxAbsDeg,
             INSTANCE.pitchWaterMaxAbsDeg,
-            INSTANCE.pitchLandMaxStepDeg,
-            INSTANCE.pitchWaterMaxStepDeg,
-            INSTANCE.pitchSnapToNeutralDeg,
             INSTANCE.pitchSpringStiffness,
             INSTANCE.pitchSpringDamping,
             INSTANCE.cameraLookahead,

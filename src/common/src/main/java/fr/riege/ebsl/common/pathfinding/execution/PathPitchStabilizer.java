@@ -39,7 +39,7 @@ final class PathPitchStabilizer {
         return stablePitch;
     }
 
-    // TODO Task 4: replace this stub with full spring-damper wiring
+    // TODO: remove when PathRotationController no longer calls stabilize()
     Rotation stabilize(IPlayerLayer player, Vec3d target, Rotation rawRot, Consumer<String> debug) {
         float stabilizedPitch = tick(rawRot.pitch, player.isInWater());
         return new Rotation(rawRot.yaw, stabilizedPitch);
