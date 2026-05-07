@@ -64,6 +64,22 @@ public final class RotationExecutor {
         physics.setRotation(newYaw, newPitch);
     }
 
+    public void update(float pitchOverride) {
+        float clampedPitch = Math.max(-90f, Math.min(90f, applyGcd(pitchOverride, player.pitch(), -90f, 90f)));
+        if (!rotating || currentStrategy == null) {
+            physics.setRotation(player.yaw(), clampedPitch);
+            return;
+        }
+        Rotation result = currentStrategy.onRotate(player, targetYaw, targetPitch);
+        if (result == null) {
+            stopRotating();
+            physics.setRotation(player.yaw(), clampedPitch);
+            return;
+        }
+        float newYaw = applyGcd(result.yaw, player.yaw());
+        physics.setRotation(newYaw, clampedPitch);
+    }
+
     private float applyGcd(float rotation, float prevRotation) {
         return applyGcd(rotation, prevRotation, null, null);
     }
