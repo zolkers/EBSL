@@ -25,13 +25,18 @@ final class PathPitchStabilizer {
     }
 
     float tick(float candidate, boolean inWater) {
+        return tick(candidate, inWater, 0.05);
+    }
+
+    float tick(float candidate, boolean inWater, double dtSeconds) {
         float maxAbs = maxAbsPitch(inWater);
         float clampedCandidate = Math.clamp(candidate, -maxAbs, maxAbs);
         float error = AngleUtils.getRotationDelta(stablePitch, clampedCandidate);
         float stiffness = (float) (double) PathfinderSettings.instance().pitchSpringStiffness.value();
         float damping = (float) (double) PathfinderSettings.instance().pitchSpringDamping.value();
-        velocity = velocity * damping + error * stiffness;
-        stablePitch = Math.clamp(stablePitch + velocity, -maxAbs, maxAbs);
+        float tickScale = (float) Math.clamp(dtSeconds * 20.0, 0.05, 2.0);
+        velocity = (float) (velocity * Math.pow(damping, tickScale) + error * stiffness * tickScale);
+        stablePitch = Math.clamp(stablePitch + velocity * tickScale, -maxAbs, maxAbs);
         return stablePitch;
     }
 

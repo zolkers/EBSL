@@ -32,7 +32,7 @@ public class EbslCore {
         registerCommands(platform);
         platform.input().registerUnfocusKeybind(() -> {
             platform.input().releaseMouse();
-            if (uiService.isVisible()) {
+            if (uiService.isVisible() && !navigationService.isNavigating()) {
                 platform.input().releaseGameplayKeys();
             }
         });
@@ -41,7 +41,7 @@ public class EbslCore {
         platform.events().onTick(event -> RenderingSystem.tick());
         platform.events().onRenderWorld(event -> BotTaskRegistry.render(platform));
         platform.events().onTick(event -> {
-            if (uiService.isVisible() && !platform.input().isMouseGrabbed()) {
+            if (uiService.isVisible() && !platform.input().isMouseGrabbed() && !navigationService.isNavigating()) {
                 platform.input().releaseGameplayKeys();
             }
         });
@@ -54,7 +54,6 @@ public class EbslCore {
                 event.viewMatrix(),
                 event.projMatrix());
             RenderingSystem.renderWorld(platform.render());
-            navigationService.renderWorld();
             PathVisualizer.renderWorld(platform.render());
             platform.render().endFrame();
         });

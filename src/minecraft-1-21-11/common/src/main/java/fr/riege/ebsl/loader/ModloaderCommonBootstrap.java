@@ -81,6 +81,12 @@ public final class ModloaderCommonBootstrap {
         events.fireRenderWorld(new RenderWorldEvent(new float[0], toArray(projection), 0.0f, camX, camY, camZ));
     }
 
+    public static void beforeRenderWorld() {
+        if (navigation != null) {
+            navigation.renderCameraFrame();
+        }
+    }
+
     public static void onRenderHud(int screenWidth, int screenHeight, float tickDelta) {
         if (events == null) return;
         events.fireRenderHud(new RenderHudEvent(screenWidth, screenHeight, tickDelta));

@@ -37,6 +37,7 @@ final class PathRotationController {
     private int camTargetIdx = -1;
     private int lastRotationDebugCamTarget = -2;
     private long lastRotationDispatchMs;
+    private long lastPitchUpdateNanos;
     private boolean active;
 
     PathRotationController(IWorldLayer world, IPlayerLayer player, RotationExecutor rotationExecutor) {
@@ -52,6 +53,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.lastPitchUpdateNanos = 0;
         this.active = false;
         this.pitchStabilizer.reset(player.pitch());
         this.targetSmoother.reset(player.eyePosition().y());
@@ -64,6 +66,7 @@ final class PathRotationController {
         this.camTargetIdx = -1;
         this.lastRotationDebugCamTarget = -2;
         this.lastRotationDispatchMs = 0;
+        this.lastPitchUpdateNanos = 0;
         this.active = false;
         this.pitchStabilizer.reset(player.pitch());
         this.targetSmoother.clear();
@@ -99,14 +102,14 @@ final class PathRotationController {
         double horizDist = Math.sqrt(dx * dx + dz * dz);
         float candidatePitch = horizDist >= PathfinderSettings.instance().pitchMinHorizontalDistance.value()
             ? rawRot.pitch : 0f;
-        pitchStabilizer.tick(candidatePitch, player.isInWater());
+        pitchStabilizer.tick(candidatePitch, player.isInWater(), consumePitchDtSeconds());
         debug(debug, "pitch spring stable=%.2f candidate=%.2f horizDist=%.2f",
             pitchStabilizer.getStablePitch(), candidatePitch, horizDist);
 
         dispatchYawIfNeeded(pursuitSegment, debug, rawRot.yaw, rotationTarget);
     }
 
-    void tickExecutor() {
+    void renderFrame() {
         if (!active) {
             return;
         }
@@ -587,6 +590,17 @@ final class PathRotationController {
             a.x() + (b.x() - a.x()) * t,
             a.y() + (b.y() - a.y()) * t,
             a.z() + (b.z() - a.z()) * t);
+    }
+
+    private double consumePitchDtSeconds() {
+        long now = System.nanoTime();
+        if (lastPitchUpdateNanos == 0) {
+            lastPitchUpdateNanos = now;
+            return 0.05;
+        }
+        double dt = (now - lastPitchUpdateNanos) / 1_000_000_000.0;
+        lastPitchUpdateNanos = now;
+        return Math.clamp(dt, 0.002, 0.10);
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {

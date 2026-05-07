@@ -86,6 +86,16 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private void startBlockGoalConfigured(int x, int y, int z) {
         longRangeSession.clear();
+        Vec3d pos = player.position();
+        if (isLongRangeGoal(pos.x(), pos.z(), x, z)) {
+            longRangeSession.startBlockGoal(x, y, z);
+            LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(pos.x(), pos.z());
+            int segmentY = segmentGoal.segmented()
+                ? resolveGoalYForXZ(segmentGoal.x(), (int) Math.floor(pos.y()), segmentGoal.z())
+                : y;
+            startPathTo(new PathPosition(segmentGoal.x(), segmentY, segmentGoal.z()), this.onFinished, true, false);
+            return;
+        }
         startPathTo(new PathPosition(x, y, z), this.onFinished, true, true);
     }
 
@@ -100,6 +110,12 @@ public final class CommonNavigationBackend implements NavigationService {
         LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(pos.x(), pos.z());
         int y = resolveGoalYForXZ(segmentGoal.x(), (int) Math.floor(pos.y()), segmentGoal.z());
         startPathTo(new PathPosition(segmentGoal.x(), y, segmentGoal.z()), null, true, false);
+    }
+
+    private static boolean isLongRangeGoal(double fromX, double fromZ, int goalX, int goalZ) {
+        double dx = goalX + 0.5 - fromX;
+        double dz = goalZ + 0.5 - fromZ;
+        return Math.sqrt(dx * dx + dz * dz) > PathfinderSettings.instance().maxSegmentDistance.value();
     }
 
     @Override public void startPathTest(int x, int y, int z) {
@@ -174,8 +190,11 @@ public final class CommonNavigationBackend implements NavigationService {
         return lastPathPositions().size();
     }
 
+    @Override public void renderCameraFrame() {
+        executor.renderCameraFrame();
+    }
+
     @Override public void renderWorld() {
-        executor.tickRotation();
     }
 
     @Override public void tick() {

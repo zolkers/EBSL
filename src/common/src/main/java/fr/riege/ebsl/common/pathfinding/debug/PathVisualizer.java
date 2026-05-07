@@ -17,6 +17,9 @@ public final class PathVisualizer {
     private static volatile List<Node> currentPath = Collections.emptyList();
     private static volatile List<Vec3d> cameraPath = Collections.emptyList();
     private static volatile int currentCameraRailIndex = -1;
+    private static double visualCameraRailProgress = -1.0;
+    private static Vec3d visualCameraRailPosition;
+    private static long lastVisualUpdateNanos;
     private static final Set<Long> exploredNodes = Collections.synchronizedSet(new LinkedHashSet<>());
 
     private static boolean enabled = true;
@@ -34,6 +37,11 @@ public final class PathVisualizer {
         if (currentCameraRailIndex >= snapshot.size()) {
             currentCameraRailIndex = -1;
         }
+        visualCameraRailProgress = currentCameraRailIndex;
+        visualCameraRailPosition = currentCameraRailIndex >= 0 && currentCameraRailIndex < snapshot.size()
+            ? snapshot.get(currentCameraRailIndex)
+            : null;
+        lastVisualUpdateNanos = 0L;
     }
 
     public static boolean isEnabled() {
@@ -60,6 +68,9 @@ public final class PathVisualizer {
         currentPath = Collections.emptyList();
         cameraPath = Collections.emptyList();
         currentCameraRailIndex = -1;
+        visualCameraRailProgress = -1.0;
+        visualCameraRailPosition = null;
+        lastVisualUpdateNanos = 0L;
         exploredNodes.clear();
     }
 
@@ -76,7 +87,51 @@ public final class PathVisualizer {
     }
 
     private static PathVisualizerSnapshot snapshot() {
-        return new PathVisualizerSnapshot(currentPath, cameraPath, currentCameraRailIndex);
+        updateVisualCameraRail();
+        return new PathVisualizerSnapshot(
+            currentPath,
+            cameraPath,
+            currentCameraRailIndex,
+            visualCameraRailProgress,
+            visualCameraRailPosition);
+    }
+
+    private static void updateVisualCameraRail() {
+        List<Vec3d> path = cameraPath;
+        int targetIndex = clampIndex(currentCameraRailIndex, path.size());
+        if (targetIndex < 0) {
+            visualCameraRailProgress = -1.0;
+            visualCameraRailPosition = null;
+            lastVisualUpdateNanos = 0L;
+            return;
+        }
+
+        Vec3d target = path.get(targetIndex);
+        long now = System.nanoTime();
+        if (visualCameraRailPosition == null || visualCameraRailProgress < 0.0 || lastVisualUpdateNanos == 0L) {
+            visualCameraRailProgress = targetIndex;
+            visualCameraRailPosition = target;
+            lastVisualUpdateNanos = now;
+            return;
+        }
+
+        double dt = Math.clamp((now - lastVisualUpdateNanos) / 1_000_000_000.0, 0.0, 0.10);
+        lastVisualUpdateNanos = now;
+        double response = 1.0 - Math.exp(-dt * 12.0);
+        visualCameraRailProgress += (targetIndex - visualCameraRailProgress) * response;
+        visualCameraRailPosition = lerp(visualCameraRailPosition, target, response);
+        if (Math.abs(targetIndex - visualCameraRailProgress) < 0.01
+            && visualCameraRailPosition.distanceToSq(target) < 1.0e-4) {
+            visualCameraRailProgress = targetIndex;
+            visualCameraRailPosition = target;
+        }
+    }
+
+    private static Vec3d lerp(Vec3d from, Vec3d to, double t) {
+        return new Vec3d(
+            from.x() + (to.x() - from.x()) * t,
+            from.y() + (to.y() - from.y()) * t,
+            from.z() + (to.z() - from.z()) * t);
     }
 
     private static int clampIndex(int index, int size) {

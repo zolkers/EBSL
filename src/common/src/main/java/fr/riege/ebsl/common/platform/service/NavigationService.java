@@ -38,6 +38,10 @@ public interface NavigationService {
     default void tick() {
     }
 
+    default void renderCameraFrame() {
+        renderWorld();
+    }
+
     default void renderWorld() {
     }
 

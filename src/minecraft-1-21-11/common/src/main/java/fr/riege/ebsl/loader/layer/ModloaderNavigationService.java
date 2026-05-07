@@ -40,6 +40,11 @@ public final class ModloaderNavigationService implements NavigationService {
     }
 
     @Override
+    public void renderCameraFrame() {
+        backend.renderCameraFrame();
+    }
+
+    @Override
     public void renderWorld() {
         backend.renderWorld();
     }

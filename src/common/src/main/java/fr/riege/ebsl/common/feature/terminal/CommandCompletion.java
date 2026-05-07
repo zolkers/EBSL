@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.feature.terminal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class CommandCompletion {
 
@@ -14,8 +15,12 @@ public final class CommandCompletion {
     }
 
     public List<String> suggest(int argIndex, String partial) {
+        return suggest(List.of(), argIndex, partial);
+    }
+
+    public List<String> suggest(List<String> previousArgs, int argIndex, String partial) {
         if (argIndex < 0 || argIndex >= argChoices.size()) return List.of();
-        return argChoices.get(argIndex).suggest(partial);
+        return argChoices.get(argIndex).suggest(new Context(previousArgs, argIndex, partial));
     }
 
     public static Builder builder() {
@@ -45,19 +50,40 @@ public final class CommandCompletion {
             return this;
         }
 
+        public Builder dynamic(ContextualSuggestionSource source) {
+            args.add(new ContextualSuggestionSourceAdapter(source));
+            return this;
+        }
+
         public CommandCompletion build() {
             return new CommandCompletion(List.copyOf(args));
         }
     }
 
+    public record Context(List<String> previousArgs, int argIndex, String partial) {
+        public Context {
+            previousArgs = previousArgs == null ? List.of() : List.copyOf(previousArgs);
+            partial = partial == null ? "" : partial;
+        }
+
+        public String previousArg(int index) {
+            return index >= 0 && index < previousArgs.size() ? previousArgs.get(index) : "";
+        }
+    }
+
+    @FunctionalInterface
+    public interface ContextualSuggestionSource {
+        List<String> suggest(Context context);
+    }
+
     private interface SuggestionSource {
-        List<String> suggest(String partial);
+        List<String> suggest(Context context);
     }
 
     private record StaticSuggestionSource(List<String> choices) implements SuggestionSource {
         @Override
-        public List<String> suggest(String partial) {
-            String query = partial == null ? "" : partial.toLowerCase();
+        public List<String> suggest(Context context) {
+            String query = context.partial().toLowerCase();
             return choices.stream()
                 .filter(value -> value.toLowerCase().startsWith(query))
                 .toList();
@@ -72,8 +98,19 @@ public final class CommandCompletion {
         }
 
         @Override
-        public List<String> suggest(String partial) {
-            return argument.suggest(partial);
+        public List<String> suggest(Context context) {
+            return argument.suggest(context.partial());
+        }
+    }
+
+    private record ContextualSuggestionSourceAdapter(ContextualSuggestionSource source) implements SuggestionSource {
+        private ContextualSuggestionSourceAdapter {
+            Objects.requireNonNull(source, "source");
+        }
+
+        @Override
+        public List<String> suggest(Context context) {
+            return source.suggest(context);
         }
     }
 }

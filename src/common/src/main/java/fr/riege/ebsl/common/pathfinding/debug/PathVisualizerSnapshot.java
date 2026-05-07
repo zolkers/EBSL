@@ -5,7 +5,8 @@ import fr.riege.ebsl.common.pathfinding.Node;
 
 import java.util.List;
 
-record PathVisualizerSnapshot(List<Node> path, List<Vec3d> cameraPath, int cameraRailIndex) {
+record PathVisualizerSnapshot(List<Node> path, List<Vec3d> cameraPath, int cameraRailIndex,
+                              double cameraRailVisualProgress, Vec3d cameraRailVisualPosition) {
     PathVisualizerSnapshot {
         path = List.copyOf(path);
         cameraPath = List.copyOf(cameraPath);

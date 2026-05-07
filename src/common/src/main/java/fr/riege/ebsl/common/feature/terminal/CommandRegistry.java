@@ -95,7 +95,11 @@ public final class CommandRegistry {
         String[] tokens = input.split(" ", -1);
         int argIndex = tokens.length - 2;
         String partial = tokens[tokens.length - 1];
-        return entry.handler().completer().suggest(argIndex, partial).stream()
+        List<String> previousArgs = new ArrayList<>();
+        for (int i = 1; i < tokens.length - 1; i++) {
+            previousArgs.add(tokens[i]);
+        }
+        return entry.handler().completer().suggest(previousArgs, argIndex, partial).stream()
             .map(s -> CommandSuggestion.of(s, ""))
             .toList();
     }

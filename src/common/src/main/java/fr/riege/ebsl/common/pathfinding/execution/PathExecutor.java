@@ -34,6 +34,7 @@ public final class PathExecutor {
     private long lastReplanTime;
     private long coastStartTime;
     private long lastSmartCutoffTime;
+    private long lastCameraFrameMs;
     private int jumpCooldown;
     private int goalX;
     private int goalY;
@@ -244,10 +245,8 @@ public final class PathExecutor {
         }
 
         Node movementWp = pathTracker.getMovementWaypoint();
-        if (allowRotation) {
-            rotationController.updateRotation(playerPos, path, pathTracker.getPursuitSegment(), null);
-            PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
-        }
+        updateCameraIntent(playerPos, path);
+        applyCameraFallbackIfRenderStale();
         double finalDx = (goalX + goalCenterX) - playerPos.x();
         double finalDy = goalY - playerPos.y();
         double finalDz = (goalZ + goalCenterZ) - playerPos.z();
@@ -261,7 +260,7 @@ public final class PathExecutor {
                 allowJumps && !recoveryJump, allowSneak && sneakLatched,
                 pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
         }
-        physics.setSneak(allowSneak && sneakLatched);
+        physics.setSneak(allowSneak && sneakLatched && !player.isInWater());
     }
 
     public void stop() {
@@ -271,11 +270,21 @@ public final class PathExecutor {
         PathVisualizer.clear();
     }
 
-    public void tickRotation() {
+    public void renderCameraFrame() {
         if (state != State.WALKING || !allowRotation) {
             return;
         }
-        rotationController.tickExecutor();
+        List<Node> path = pathTracker.getPath();
+        if (path == null || path.isEmpty()) {
+            return;
+        }
+        updateCameraIntent(player.position(), path);
+        rotationController.renderFrame();
+        lastCameraFrameMs = System.currentTimeMillis();
+    }
+
+    public void tickRotation() {
+        renderCameraFrame();
     }
 
     public void releaseAll() {
@@ -290,6 +299,7 @@ public final class PathExecutor {
         repairRequest = null;
         lastRepairReason = "";
         lastRepairReasonTime = 0;
+        lastCameraFrameMs = 0;
         lastKnownMoveType = Node.MoveType.WALK;
         recoveryController.reset();
         rotationController.reset();
@@ -448,6 +458,24 @@ public final class PathExecutor {
         PathVisualizer.setPath(pathTracker.getPathSnapshot());
         PathVisualizer.setCameraPath(rotationController.getCameraPath());
         PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
+    }
+
+    private void updateCameraIntent(Vec3d playerPos, List<Node> path) {
+        if (!allowRotation) {
+            return;
+        }
+        rotationController.updateRotation(playerPos, path, pathTracker.getPursuitSegment(), null);
+        PathVisualizer.updateExecution(rotationController.getCamTargetIdx());
+    }
+
+    private void applyCameraFallbackIfRenderStale() {
+        if (!allowRotation) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (lastCameraFrameMs == 0 || now - lastCameraFrameMs > 75) {
+            rotationController.renderFrame();
+        }
     }
 
 }

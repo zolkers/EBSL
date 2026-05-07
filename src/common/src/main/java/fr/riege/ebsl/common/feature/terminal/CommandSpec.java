@@ -19,12 +19,13 @@ public final class CommandSpec implements CommandHandler {
     private CommandSpec(CommandMeta meta,
                         List<CommandArgument> arguments,
                         CommandExecutor executor,
+                        CommandCompletion completion,
                         List<GoalParameter> params,
                         Map<String, CommandHandler> subcommands) {
         this.meta = meta;
         this.arguments = List.copyOf(arguments);
         this.executor = Objects.requireNonNull(executor, "command executor required");
-        this.completion = CommandCompletion.fromArguments(arguments);
+        this.completion = completion != null ? completion : CommandCompletion.fromArguments(arguments);
         this.params = List.copyOf(params);
         this.subcommands = Map.copyOf(subcommands);
     }
@@ -68,6 +69,7 @@ public final class CommandSpec implements CommandHandler {
         private String usage;
         private CommandScope scope = CommandScope.MC;
         private CommandExecutor executor;
+        private CommandCompletion completion;
         private final List<CommandArgument> arguments = new ArrayList<>();
         private final List<GoalParameter> params = new ArrayList<>();
         private final Map<String, CommandHandler> subcommands = new LinkedHashMap<>();
@@ -128,6 +130,11 @@ public final class CommandSpec implements CommandHandler {
             return this;
         }
 
+        public Builder completion(CommandCompletion completion) {
+            this.completion = completion;
+            return this;
+        }
+
         public Builder subcommand(String name, CommandHandler handler) {
             if (name != null && handler != null) {
                 subcommands.put(name.toLowerCase(), handler);
@@ -146,6 +153,7 @@ public final class CommandSpec implements CommandHandler {
                 new CommandMeta(name, description, finalUsage, scope),
                 arguments,
                 executor,
+                completion,
                 params,
                 subcommands);
         }

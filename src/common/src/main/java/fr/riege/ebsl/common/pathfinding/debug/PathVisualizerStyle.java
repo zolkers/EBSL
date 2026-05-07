@@ -100,6 +100,11 @@ record PathVisualizerStyle(
         return done ? CAMERA_LINE_DONE : CAMERA_LINE;
     }
 
+    RenderColor cameraLineColor(double visualProgress, int segmentIndex) {
+        double fade = Math.clamp(visualProgress - segmentIndex, 0.0, 1.0);
+        return CAMERA_LINE.lerp(CAMERA_LINE_DONE, (float) fade);
+    }
+
     RenderColor cameraNodeColor(boolean active) {
         return active ? CAMERA_NODE_ACTIVE : CAMERA_NODE;
     }

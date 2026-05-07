@@ -21,7 +21,8 @@ final class PathVisualizerRenderer {
         if (pathLimit > 0) {
             renderPath(handle, snapshot.path(), pathLimit, style);
         }
-        renderCameraRail(handle, snapshot.cameraPath(), snapshot.cameraRailIndex(), style);
+        renderCameraRail(handle, snapshot.cameraPath(), snapshot.cameraRailIndex(),
+            snapshot.cameraRailVisualProgress(), snapshot.cameraRailVisualPosition(), style);
     }
 
     private static void renderPath(RenderHandle handle, List<Node> path, int limit, PathVisualizerStyle style) {
@@ -70,7 +71,8 @@ final class PathVisualizerRenderer {
         }
     }
 
-    private static void renderCameraRail(RenderHandle handle, List<Vec3d> railPath, int railIndex, PathVisualizerStyle style) {
+    private static void renderCameraRail(RenderHandle handle, List<Vec3d> railPath, int railIndex,
+                                         double visualProgress, Vec3d visualPosition, PathVisualizerStyle style) {
         if (railPath.isEmpty() || !style.renderCameraRail()) {
             return;
         }
@@ -82,7 +84,7 @@ final class PathVisualizerRenderer {
             for (int i = 0; i < limit - 1; i++) {
                 Vec3d a = railPath.get(i);
                 Vec3d b = railPath.get(i + 1);
-                session.color(style.cameraLineColor(i < railIndex))
+                session.color(style.cameraLineColor(visualProgress, i))
                     .line(a.x(), a.y(), a.z(), b.x(), b.y(), b.z());
             }
         }
@@ -103,7 +105,7 @@ final class PathVisualizerRenderer {
         }
 
         if (railIndex >= 0 && railIndex < limit) {
-            Vec3d point = railPath.get(railIndex);
+            Vec3d point = visualPosition != null ? visualPosition : railPath.get(railIndex);
             WorldRender.builder(handle)
                 .color(style.cameraNodeColor(true))
                 .throughWalls()
