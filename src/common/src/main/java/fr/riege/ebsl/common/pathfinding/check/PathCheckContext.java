@@ -19,7 +19,7 @@ public record PathCheckContext(
         if (path == null || path.isEmpty()) {
             return Node.MoveType.WALK;
         }
-        int index = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+        int index = Math.clamp(pursuitSegment, 0, path.size() - 1);
         return path.get(index).moveType;
     }
 

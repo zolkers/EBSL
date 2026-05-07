@@ -19,7 +19,7 @@ public final class ConnectionPacketCaptureMixin {
     private void ebsl$onInbound(ChannelHandlerContext ctx, Packet<?> packet, CallbackInfo ci) {
         if (packet == null) return;
         PacketType<?> type = packet.type();
-        PacketCaptureLog.record(PacketCaptureLog.buildEvent(
+        PacketCaptureLog.recordTrace(PacketCaptureLog.buildEvent(
             PacketDirection.INBOUND,
             type.id().toString(),
             packet.getClass().getSimpleName(),
@@ -32,7 +32,7 @@ public final class ConnectionPacketCaptureMixin {
     private void ebsl$onOutbound(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
         if (packet == null) return;
         PacketType<?> type = packet.type();
-        PacketCaptureLog.record(PacketCaptureLog.buildEvent(
+        PacketCaptureLog.recordTrace(PacketCaptureLog.buildEvent(
             PacketDirection.OUTBOUND,
             type.id().toString(),
             packet.getClass().getSimpleName(),

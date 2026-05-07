@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public final class EventBusImpl implements EventBus {
+public final class  EventBusImpl implements EventBus {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-eventbus");
 
     private final Map<Class<? extends Event>, List<Subscription>> byType = new ConcurrentHashMap<>();
@@ -36,19 +36,23 @@ public final class EventBusImpl implements EventBus {
         }
 
         for (Subscription subscription : subscriptions) {
-            if (!subscription.isActive()) {
-                continue;
-            }
-            if (subscription.getPhase() != null && subscription.getPhase() != phase) {
-                continue;
-            }
-            if (event.isCancelled()) {
-                break;
-            }
-            try {
-                ((EventHandler<T>) subscription.getHandler()).handle(event);
-            } catch (Exception exception) {
-                LOGGER.error("Exception in handler for {}", event.getClass().getSimpleName(), exception);
+            if (subscription.isActive()
+                    && (subscription.getPhase() == null
+                    || subscription.getPhase() == phase)) {
+
+                if (event.isCancelled()) {
+                    break;
+                }
+
+                try {
+                    ((EventHandler<T>) subscription.getHandler()).handle(event);
+                } catch (Exception exception) {
+                    LOGGER.error(
+                            "Exception in handler for {}",
+                            event.getClass().getSimpleName(),
+                            exception
+                    );
+                }
             }
         }
     }

@@ -55,7 +55,7 @@ final class CameraRailBuilder {
 
             int rawSteps = Math.max(byDistance, byTurn);
             int steps = (int) Math.ceil(rawSteps * CAMERA_RAIL_DENSITY_SCALE);
-            steps = Math.max(1, Math.min(CAMERA_RAIL_MAX_STEPS_PER_SEGMENT, steps));
+            steps = Math.clamp(steps, 1, CAMERA_RAIL_MAX_STEPS_PER_SEGMENT);
             for (int s = 1; s <= steps; s++) {
                 double t = (double) s / steps;
                 appendPoint(out, new Vec3d(
@@ -117,6 +117,6 @@ final class CameraRailBuilder {
         }
 
         double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
-        return Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, dot))));
+        return Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
     }
 }

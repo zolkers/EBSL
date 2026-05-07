@@ -19,7 +19,7 @@ public final class PacketCaptureLog {
 
     private PacketCaptureLog() {}
 
-    public static void record(PacketCaptureEvent event) {
+    public static void recordTrace(PacketCaptureEvent event) {
         if (!enabled) return;
         if (event.direction() == PacketDirection.INBOUND && !captureInbound) return;
         if (event.direction() == PacketDirection.OUTBOUND && !captureOutbound) return;

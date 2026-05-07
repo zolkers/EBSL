@@ -42,6 +42,6 @@ public final class ParkourEvaluationTelemetry {
             plan.estimatedReach(),
             plan.reason(),
             detail);
-        AnalyticsEventLog.record("parkour-eval", message);
+        AnalyticsEventLog.recordAnalytics("parkour-eval", message);
     }
 }

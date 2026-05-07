@@ -20,7 +20,6 @@ import java.util.List;
 public final class PathExecutor {
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
-    private final IWorldLayer world;
     private final IPlayerLayer player;
     private final IPhysicsLayer physics;
     private final WalkabilityChecker checker;
@@ -36,7 +35,9 @@ public final class PathExecutor {
     private long coastStartTime;
     private long lastSmartCutoffTime;
     private int jumpCooldown;
-    private int goalX, goalY, goalZ;
+    private int goalX;
+    private int goalY;
+    private int goalZ;
     private double goalCenterX = 0.5;
     private double goalCenterZ = 0.5;
     private boolean allowReplan = true;
@@ -56,7 +57,6 @@ public final class PathExecutor {
     private Node.MoveType lastKnownMoveType = Node.MoveType.WALK;
 
     public PathExecutor(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
-        this.world = world;
         this.player = player;
         this.physics = physics;
         this.checker = new WalkabilityChecker(world);
@@ -218,8 +218,7 @@ public final class PathExecutor {
         PathRecoveryController.RecoveryDecision recovery = recoveryController.update(
             player,
             physics,
-            playerPos,
-            progress,
+                progress,
             allowReplan,
             now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
             jumpCooldown,

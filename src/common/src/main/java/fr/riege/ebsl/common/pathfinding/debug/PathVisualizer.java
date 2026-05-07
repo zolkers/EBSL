@@ -35,6 +35,8 @@ public final class PathVisualizer {
     private static volatile int currentCameraRailIndex = -1;
     private static final Set<Long> exploredNodes = Collections.synchronizedSet(new LinkedHashSet<>());
 
+    private static boolean enabled = true;
+
     private PathVisualizer() {
     }
 
@@ -51,11 +53,11 @@ public final class PathVisualizer {
     }
 
     public static boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
-    public static void setEnabled(boolean value) {
-    }
+    public static void setEnabled(boolean e) { enabled = e;}
+
 
     public static void addExplored(int x, int y, int z) {
         if (exploredNodes.size() < MAX_EXPLORED) {
@@ -200,6 +202,6 @@ public final class PathVisualizer {
         if (size <= 0) {
             return -1;
         }
-        return Math.max(0, Math.min(index, size - 1));
+        return Math.clamp(index, 0, size - 1);
     }
 }

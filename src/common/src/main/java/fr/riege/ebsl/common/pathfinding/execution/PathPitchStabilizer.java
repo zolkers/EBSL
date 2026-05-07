@@ -65,7 +65,7 @@ final class PathPitchStabilizer {
     }
 
     private static float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
+        return Math.clamp(value, min, max);
     }
 
     private static void debug(Consumer<String> debug, String message, Object... args) {

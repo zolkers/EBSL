@@ -11,7 +11,7 @@ public final class AnalyticsEventLog {
 
     private AnalyticsEventLog() {}
 
-    public static void record(String source, String message) {
+    public static void recordAnalytics(String source, String message) {
         synchronized (EVENTS) {
             if (EVENTS.size() >= MAX) EVENTS.removeFirst();
             EVENTS.addLast(AnalyticsEvent.now(source, message));

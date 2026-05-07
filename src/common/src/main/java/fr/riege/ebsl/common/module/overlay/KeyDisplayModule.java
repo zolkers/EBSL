@@ -47,13 +47,12 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
         boolean jump = platform.input().jumpDown();
         boolean sneak = platform.input().sneakDown();
 
-        float cell = 28.0f;
+        float sneakW = 28.0f;
         float gap = 4.0f;
-        float spaceW = cell * 3 + gap * 2;
+        float spaceW = sneakW * 3 + gap * 2;
         float spaceH = 20.0f;
-        float sneakW = cell;
         float groupW = spaceW + gap + sneakW;
-        float groupH = cell + gap + cell + gap + spaceH;
+        float groupH = sneakW + gap + sneakW + gap + spaceH;
         float pad = 12.0f;
 
         float x0 = anchorSetting.value().x(viewport, groupW, pad);
@@ -62,12 +61,12 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
         int pressedColor = pressedColorSetting.value();
         int releasedColor = releasedColorSetting.value();
 
-        drawKey(dl, x0 + cell + gap, y0, cell, cell, up, 0, pressedColor, releasedColor);
-        float row2Y = y0 + cell + gap;
-        drawKey(dl, x0, row2Y, cell, cell, left, 2, pressedColor, releasedColor);
-        drawKey(dl, x0 + cell + gap, row2Y, cell, cell, down, 1, pressedColor, releasedColor);
-        drawKey(dl, x0 + cell * 2 + gap * 2, row2Y, cell, cell, right, 3, pressedColor, releasedColor);
-        float row3Y = row2Y + cell + gap;
+        drawKey(dl, x0 + sneakW + gap, y0, sneakW, sneakW, up, 0, pressedColor, releasedColor);
+        float row2Y = y0 + sneakW + gap;
+        drawKey(dl, x0, row2Y, sneakW, sneakW, left, 2, pressedColor, releasedColor);
+        drawKey(dl, x0 + sneakW + gap, row2Y, sneakW, sneakW, down, 1, pressedColor, releasedColor);
+        drawKey(dl, x0 + sneakW * 2 + gap * 2, row2Y, sneakW, sneakW, right, 3, pressedColor, releasedColor);
+        float row3Y = row2Y + sneakW + gap;
         drawKey(dl, x0, row3Y, spaceW, spaceH, jump, -1, pressedColor, releasedColor);
         drawKey(dl, x0 + spaceW + gap, row3Y, sneakW, spaceH, sneak, 1, pressedColor, releasedColor);
     }
@@ -90,7 +89,7 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
             case 1 -> dl.addTriangleFilled(cx, cy + a, cx - a, cy - a, cx + a, cy - a, arrow);
             case 2 -> dl.addTriangleFilled(cx - a, cy, cx + a, cy - a, cx + a, cy + a, arrow);
             case 3 -> dl.addTriangleFilled(cx + a, cy, cx - a, cy - a, cx - a, cy + a, arrow);
-            default -> {}
+            default -> {/* can't draw what's not handled */}
         }
     }
 }

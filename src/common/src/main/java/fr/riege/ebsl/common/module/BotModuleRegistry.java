@@ -53,8 +53,6 @@ public final class BotModuleRegistry {
         syncLifecycle(module);
     }
 
-    public static void saveSettings() {}
-
     public static void notifySettingChanged(PathfinderModule module, Setting<?> setting) {
         onSettingChanged(module, setting);
     }

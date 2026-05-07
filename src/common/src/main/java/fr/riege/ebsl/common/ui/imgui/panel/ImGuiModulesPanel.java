@@ -53,7 +53,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
-                AnalyticsEventLog.record("module", "Opened settings for " + module.displayName());
+                AnalyticsEventLog.recordAnalytics("module", "Opened settings for " + module.displayName());
             }
             ImGui.popStyleColor(3);
         }
@@ -75,7 +75,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
             pushTaskButtonColor(task);
             if (ImGui.button(task.displayName(), -1.0f, 24.0f)) {
                 state.showTaskSettings(task);
-                AnalyticsEventLog.record("task", "Opened settings for " + task.displayName());
+                AnalyticsEventLog.recordAnalytics("task", "Opened settings for " + task.displayName());
             }
             ImGui.popStyleColor(3);
         }
@@ -90,7 +90,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImGui.sameLine();
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
             BotModuleRegistry.resetToDefaultsAndSave(module);
-            AnalyticsEventLog.record("module", "Reset " + module.displayName());
+            AnalyticsEventLog.recordAnalytics("module", "Reset " + module.displayName());
         }
         ImGui.separator();
         ImGui.text(module.displayName());
@@ -107,7 +107,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         ImGui.sameLine();
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
             BotTaskRegistry.resetToDefaultsAndSave(task);
-            AnalyticsEventLog.record("task", "Reset " + task.displayName());
+            AnalyticsEventLog.recordAnalytics("task", "Reset " + task.displayName());
         }
         ImGui.separator();
         ImGui.text(task.displayName());
@@ -214,11 +214,11 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
 
     private void saveSetting(PathfinderModule module, Setting<?> setting) {
         BotModuleRegistry.notifySettingChanged(module, setting);
-        AnalyticsEventLog.record("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
+        AnalyticsEventLog.recordAnalytics("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
     }
 
     private void saveSetting(BotTask task, Setting<?> setting) {
         BotTaskRegistry.notifySettingChanged(task, setting);
-        AnalyticsEventLog.record("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
+        AnalyticsEventLog.recordAnalytics("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
     }
 }

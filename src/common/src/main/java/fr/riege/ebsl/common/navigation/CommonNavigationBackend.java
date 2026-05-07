@@ -73,23 +73,23 @@ public final class CommonNavigationBackend implements NavigationService {
         int px = (int) Math.floor(pos.x());
         int py = (int) Math.floor(pos.y());
         int pz = (int) Math.floor(pos.z());
-        if (request.goal() instanceof GoalBlock g) {
+        if (request.goal() instanceof GoalBlock(int x, int y, int z)) {
             longRangeSession.clear();
-            startPathTo(new PathPosition(g.x(), g.y(), g.z()), request.onFinished(), true, true);
-        } else if (request.goal() instanceof GoalXZ g) {
-            startColumnGoalConfigured(g.x(), g.z());
+            startPathTo(new PathPosition(x, y, z), request.onFinished(), true, true);
+        } else if (request.goal() instanceof GoalXZ(int x, int z)) {
+            startColumnGoalConfigured(x, z);
         } else if (request.goal() instanceof GoalColumn g) {
             startColumnGoalConfigured(g.x(), g.z());
         } else if (request.goal() instanceof GoalNear g) {
             startBlockGoalConfigured(g.x(), g.y(), g.z());
-        } else if (request.goal() instanceof GoalGetToBlock g) {
-            startBlockGoalConfigured(g.x(), g.y(), g.z());
-        } else if (request.goal() instanceof GoalAxisX g) {
-            startColumnGoalConfigured(g.x(), pz);
-        } else if (request.goal() instanceof GoalAxisZ g) {
-            startColumnGoalConfigured(px, g.z());
-        } else if (request.goal() instanceof GoalYLevel g) {
-            startBlockGoalConfigured(px, g.y(), pz);
+        } else if (request.goal() instanceof GoalGetToBlock(int x, int y, int z)) {
+            startBlockGoalConfigured(x, y, z);
+        } else if (request.goal() instanceof GoalAxisX(int x)) {
+            startColumnGoalConfigured(x, pz);
+        } else if (request.goal() instanceof GoalAxisZ(int z)) {
+            startColumnGoalConfigured(px, z);
+        } else if (request.goal() instanceof GoalYLevel(int y)) {
+            startBlockGoalConfigured(px, y, pz);
         } else if (request.goal() instanceof GoalRectangleXZ g) {
             startColumnGoalConfigured((g.minX() + g.maxX()) / 2, (g.minZ() + g.maxZ()) / 2);
         } else if (request.goal() instanceof GoalChunk g) {

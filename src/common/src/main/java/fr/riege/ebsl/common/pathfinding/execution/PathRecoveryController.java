@@ -15,7 +15,7 @@ final class PathRecoveryController {
         cornerAlignStartMs = 0;
     }
 
-    RecoveryDecision update(IPlayerLayer player, IPhysicsLayer physics, Vec3d playerPos,
+    RecoveryDecision update(IPlayerLayer player, IPhysicsLayer physics,
                             PathProgressSnapshot progress, boolean allowReplan,
                             boolean cooldownPassed, int jumpCooldown, Node.MoveType recoveryMoveType) {
         MovementRecoveryProfile recoveryProfile = MovementRecoveryRegistry.get(recoveryMoveType);

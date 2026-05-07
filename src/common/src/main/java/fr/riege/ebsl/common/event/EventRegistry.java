@@ -38,11 +38,12 @@ public final class EventRegistry {
         String name = eventClass.getSimpleName().replaceFirst("Event$", "");
         List<String> fields = new ArrayList<>();
 
+        Entry entry = new Entry(category, name, Collections.unmodifiableList(fields));
         if (eventClass.isRecord()) {
             for (RecordComponent component : eventClass.getRecordComponents()) {
                 fields.add(component.getName() + ": " + component.getType().getSimpleName());
             }
-            return new Entry(category, name, Collections.unmodifiableList(fields));
+            return entry;
         }
 
         for (Method method : eventClass.getDeclaredMethods()) {
@@ -53,7 +54,7 @@ public final class EventRegistry {
             fields.add(fieldName + ": " + method.getReturnType().getSimpleName());
         }
 
-        return new Entry(category, name, Collections.unmodifiableList(fields));
+        return entry;
     }
 
     private static String lastPackageSegment(Class<?> type) {
