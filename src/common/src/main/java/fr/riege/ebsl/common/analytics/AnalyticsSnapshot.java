@@ -1,10 +1,11 @@
 package fr.riege.ebsl.common.analytics;
 
 import fr.riege.ebsl.common.module.PathfinderModule;
+import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.service.NavigationService;
 
 public record AnalyticsSnapshot(
-    String navigationState,
+    NavigationStatus navigationState,
     String selectedModule,
     int jumpHeight,
     boolean visualizerEnabled

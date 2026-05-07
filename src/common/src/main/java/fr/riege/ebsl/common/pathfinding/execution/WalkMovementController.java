@@ -56,7 +56,7 @@ final class WalkMovementController {
         if (path == null || path.size() < 2 || pursuitSegment + 1 >= path.size()) {
             return MovementValidationResult.ok();
         }
-        int currentIndex = Math.max(0, Math.min(pursuitSegment, path.size() - 1));
+        int currentIndex = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int targetIndex = Math.min(path.size() - 1, currentIndex + 1);
         Node from = path.get(currentIndex);
         Node target = path.get(targetIndex);
@@ -77,11 +77,12 @@ final class WalkMovementController {
         double dxWp = movementWaypoint.position.centeredX() - playerPos.x();
         double dzWp = movementWaypoint.position.centeredZ() - playerPos.z();
         boolean partialSupportWaypoint = isPartialSupportWaypoint(movementWaypoint);
+        boolean nearWaypoint = Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
         boolean nearStepUp = MovementEvaluatorRegistry.get(movementWaypoint.moveType).reducesSprintNearWaypoint()
-            && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
+            && nearWaypoint;
         boolean nearPartialSupportJump = movementWaypoint.moveType == Node.MoveType.JUMP
             && partialSupportWaypoint
-            && Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
+            && nearWaypoint;
 
         boolean waterEntry = isWaterEntryWaypoint(movementWaypoint);
         Node pathMovementWaypoint = waterEntry
@@ -95,28 +96,16 @@ final class WalkMovementController {
             return;
         }
 
-        String parkourDecision = "path";
-        String speedDecision = applyParkourVelocityControl(playerPos, movementWaypoint, pursuitSegment);
-        if (!"path".equals(speedDecision)) {
-            parkourDecision = speedDecision;
-        }
-        String landingDecision = applyParkourLandingControl(playerPos, movementWaypoint, pursuitSegment);
-        if (!"path".equals(landingDecision)) {
-            parkourDecision = landingDecision;
-        }
-        String takeoffDecision = applyParkourTakeoffGuard(movementWaypoint, playerPos, pursuitSegment, jumpCooldown, allowJumps);
-        if (!"path".equals(takeoffDecision)) {
-            parkourDecision = takeoffDecision;
-        }
+        applyParkourVelocityControl(playerPos, movementWaypoint, pursuitSegment);
+        applyParkourLandingControl(playerPos, movementWaypoint, pursuitSegment);
+        applyParkourTakeoffGuard(movementWaypoint, playerPos, pursuitSegment, jumpCooldown, allowJumps);
 
         if (!allowJumps) {
             physics.setJump(player.isInWater());
             return;
         }
 
-        if (handleJump(executor, movementWaypoint, playerPos, jumpCooldown, lastProgressTime, pursuitSegment)) {
-            parkourDecision = "jump";
-        }
+        handleJump(executor, movementWaypoint, playerPos, jumpCooldown, lastProgressTime, pursuitSegment);
         applyWaterMovement(movementWaypoint, playerPos, distToFinal, pursuitSegment, sneakLatched);
         applyClimbMovement(movementWaypoint, sneakLatched);
     }
@@ -169,12 +158,12 @@ final class WalkMovementController {
         return false;
     }
 
-    private String applyParkourLandingControl(Vec3d playerPos, Node waypoint, int pursuitSegment) {
+    private void applyParkourLandingControl(Vec3d playerPos, Node waypoint, int pursuitSegment) {
         if (waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
-            return "path";
+            return;
         }
 
-        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
         double startX = takeoff.position.centeredX();
         double startZ = takeoff.position.centeredZ();
         double targetX = waypoint.position.centeredX();
@@ -183,7 +172,7 @@ final class WalkMovementController {
         double dirZ = targetZ - startZ;
         double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
         if (jumpLen < 1.0e-6) {
-            return "path";
+            return;
         }
 
         dirX /= jumpLen;
@@ -200,7 +189,7 @@ final class WalkMovementController {
         boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
         ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
         if (!profile.allowLandingBrake()) {
-            return "path";
+            return;
         }
         double brakeRemaining = landingBrakeRemaining(distance, verticalDelta, constrainedLanding);
         boolean inLandingColumn = blockX(playerPos) == waypoint.position.flooredX()
@@ -220,7 +209,7 @@ final class WalkMovementController {
             && (inLandingColumn || remaining <= PARKOUR_GROUNDED_BRAKE_OVERSHOOT);
 
         if (!shouldBrake && !shouldHoldLanding) {
-            return "path";
+            return;
         }
 
         physics.setForward(false);
@@ -230,15 +219,14 @@ final class WalkMovementController {
             physics.setLeft(false);
             physics.setRight(false);
         }
-        return shouldHoldLanding ? "landing-hold" : "landing-brake";
     }
 
-    private String applyParkourVelocityControl(Vec3d playerPos, Node waypoint, int pursuitSegment) {
+    private void applyParkourVelocityControl(Vec3d playerPos, Node waypoint, int pursuitSegment) {
         if (waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
-            return "path";
+            return;
         }
 
-        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
         double startX = takeoff.position.centeredX();
         double startZ = takeoff.position.centeredZ();
         double targetX = waypoint.position.centeredX();
@@ -247,7 +235,7 @@ final class WalkMovementController {
         double dirZ = targetZ - startZ;
         double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
         if (jumpLen < 1.0e-6) {
-            return "path";
+            return;
         }
 
         dirX /= jumpLen;
@@ -269,14 +257,13 @@ final class WalkMovementController {
             boolean shortAscentCarry = profile.shortAscentCarry();
             if (!shortAscentCarry && remaining <= trigger + 0.35 && speedAlong > targetSpeed + 0.025) {
                 pressParkourBrake();
-                return "takeoff-speed-brake";
+                return;
             }
             physics.setSprint(distance >= 3 && verticalDelta >= -1.0);
             if (shortAscentCarry && speedAlong < PARKOUR_SHORT_ASCENT_CARRY_SPEED) {
                 applyParkourAxisInput(dirX, dirZ, true);
-                return "takeoff-carry-forward";
             }
-            return shortAscentCarry ? "takeoff-carry" : "takeoff-speed";
+            return;
         }
 
         ParkourAirPrediction prediction = predictParkourLanding(
@@ -289,26 +276,25 @@ final class WalkMovementController {
         if (prediction.progress() > frontLimit) {
             if (profile.shortAscentCarry() && remaining <= 0.55) {
                 applyParkourAxisInput(dirX, dirZ, true);
-                return "air-chain-carry";
+                return;
             }
             if (profile.immediateChain() && prediction.progress() <= frontLimit + PARKOUR_CHAIN_OVERSHOOT_MARGIN) {
                 clearForwardBack();
-                return "air-chain-coast";
+                return;
             }
             applyParkourAxisInput(dirX, dirZ, false);
-            return "air-vector-back";
+            return;
         }
         if (!inLandingColumn || prediction.progress() < backLimit || speedAlong < targetAirSpeed(distance, verticalDelta)) {
             applyParkourAxisInput(dirX, dirZ, true);
             physics.setSprint(false);
-            return "air-vector-forward";
+            return;
         }
         if (profile.shortAscentCarry()) {
             applyParkourAxisInput(dirX, dirZ, true);
-            return "air-chain-carry";
+            return;
         }
         clearForwardBack();
-        return "air-vector-neutral";
     }
 
     private ParkourExecutionProfile parkourExecutionProfile(int pursuitSegment, int distance,
@@ -316,7 +302,7 @@ final class WalkMovementController {
         Node.MoveType nextMove = immediateMoveAfterLanding(pursuitSegment);
         boolean immediateChain = nextMove == Node.MoveType.PARKOUR;
         boolean shortAscentCarry = immediateChain && distance <= 2 && verticalDelta > 0.25;
-        return new ParkourExecutionProfile(immediateChain, shortAscentCarry, verticalDelta < -0.25, constrainedLanding, nextMove);
+        return new ParkourExecutionProfile(immediateChain, shortAscentCarry, verticalDelta < -0.25, constrainedLanding);
     }
 
     private Node.MoveType immediateMoveAfterLanding(int pursuitSegment) {
@@ -336,10 +322,10 @@ final class WalkMovementController {
         return !checker.isWalkable(aheadX, aheadY, aheadZ);
     }
 
-    private String applyParkourTakeoffGuard(Node waypoint, Vec3d playerPos, int pursuitSegment,
-                                            int jumpCooldown, boolean allowJumps) {
+    private void applyParkourTakeoffGuard(Node waypoint, Vec3d playerPos, int pursuitSegment,
+                                          int jumpCooldown, boolean allowJumps) {
         if (waypoint.moveType != Node.MoveType.PARKOUR || !player.onGround()) {
-            return "path";
+            return;
         }
 
         double dx = waypoint.position.centeredX() - playerPos.x();
@@ -348,20 +334,19 @@ final class WalkMovementController {
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
         double jumpZone = parkourJumpTriggerDistance(distance);
         if (hDist > jumpZone || (allowJumps && jumpCooldown == 0)) {
-            return "path";
+            return;
         }
 
         pressParkourBrake();
-        return "takeoff-guard";
     }
 
-    private boolean handleJump(PathExecutor executor, Node waypoint, Vec3d playerPos,
-                               int jumpCooldown, long lastProgressTime, int pursuitSegment) {
+    private void handleJump(PathExecutor executor, Node waypoint, Vec3d playerPos,
+                            int jumpCooldown, long lastProgressTime, int pursuitSegment) {
         if (waypoint.moveType == Node.MoveType.PARKOUR
             && player.onGround()
             && isGroundedOnParkourLanding(waypoint, playerPos, pursuitSegment)) {
             physics.setJump(false);
-            return false;
+            return;
         }
 
         boolean partialSupportAscent = isPartialSupportWaypoint(waypoint);
@@ -396,7 +381,7 @@ final class WalkMovementController {
         if (shouldAssistSlimeAscent(waypoint, hDist, jumpCooldown)) {
             physics.setJump(true);
             executor.setJumpCooldown(PathfinderSettings.instance().jumpCooldownTicks.value());
-            return true;
+            return;
         }
         if (context.jumpCooldownConsumed()) {
             executor.setJumpCooldown(waypoint.moveType == Node.MoveType.PARKOUR
@@ -408,7 +393,6 @@ final class WalkMovementController {
             physics.setForward(true);
             physics.setSprint(false);
         }
-        return context.jumpPressed();
     }
 
     private boolean isGroundedOnParkourLanding(Node waypoint, Vec3d playerPos, int pursuitSegment) {
@@ -416,7 +400,7 @@ final class WalkMovementController {
             return false;
         }
 
-        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
         double startX = takeoff.position.centeredX();
         double startZ = takeoff.position.centeredZ();
         double targetX = waypoint.position.centeredX();
@@ -529,17 +513,15 @@ final class WalkMovementController {
         if (waypoint.moveType != Node.MoveType.PARKOUR || path.isEmpty()) {
             return 0;
         }
-        Node takeoff = path.get(Math.max(0, Math.min(pursuitSegment, path.size() - 1)));
+        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
         int dx = Math.abs(waypoint.position.flooredX() - takeoff.position.flooredX());
         int dz = Math.abs(waypoint.position.flooredZ() - takeoff.position.flooredZ());
         return Math.max(dx, dz);
     }
 
     private boolean isPartialSupportWaypoint(Node wp) {
-        if (checker.isLowPartialSupport(wp.position.flooredX(), wp.position.flooredY(), wp.position.flooredZ())) {
-            return true;
-        }
-        return world.isPartialSupport(wp.position.flooredX(), wp.position.flooredY(), wp.position.flooredZ());
+        return checker.isLowPartialSupport(wp.position.flooredX(), wp.position.flooredY(), wp.position.flooredZ())
+            || world.isPartialSupport(wp.position.flooredX(), wp.position.flooredY(), wp.position.flooredZ());
     }
 
     private boolean shouldAssistSlimeAscent(Node waypoint, double horizontalDistance, int jumpCooldown) {
@@ -608,6 +590,10 @@ final class WalkMovementController {
         double remainingX = Math.abs(waypoint.position.centeredX() - playerPos.x());
         double remainingZ = Math.abs(waypoint.position.centeredZ() - playerPos.z());
         return Math.max(remainingX, remainingZ);
+    }
+
+    private int clampedSegmentIndex(int i) {
+        return Math.clamp(i, 0, path.size() - 1);
     }
 
     private static double parkourJumpTriggerDistance(int distance) {
@@ -697,7 +683,7 @@ final class WalkMovementController {
     }
 
     private record ParkourExecutionProfile(boolean immediateChain, boolean shortAscentCarry, boolean descending,
-                                           boolean constrainedLanding, Node.MoveType nextMove) {
+                                           boolean constrainedLanding) {
         boolean allowLandingBrake() {
             return !immediateChain || (descending && !constrainedLanding);
         }

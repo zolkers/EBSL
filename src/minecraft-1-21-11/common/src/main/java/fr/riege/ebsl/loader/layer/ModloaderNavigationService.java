@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.layer.IPlayerLayer;
 import fr.riege.ebsl.common.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.CommonNavigationBackend;
+import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.service.NavigationService;
@@ -27,7 +28,7 @@ public final class ModloaderNavigationService implements NavigationService {
     @Override public Node.MoveType currentMoveType() { return backend.currentMoveType(); }
     @Override public boolean isWalkSneakLatched() { return backend.isWalkSneakLatched(); }
     @Override public void setWalkSneakLatched(boolean value) { backend.setWalkSneakLatched(value); }
-    @Override public String pathStatus() { return backend.pathStatus(); }
+    @Override public NavigationStatus pathStatus() { return backend.pathStatus(); }
     @Override public int lastPathNodeCount() { return backend.lastPathNodeCount(); }
     @Override public void startGreenhouseWalk(Vec3d target, Runnable onFinished, boolean isFirst) {
         backend.startGreenhouseWalk(target, onFinished, isFirst);

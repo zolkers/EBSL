@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.service;
 
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 
@@ -26,8 +27,8 @@ public interface NavigationService {
 
     void setWalkSneakLatched(boolean value);
 
-    default String pathStatus() {
-        return isNavigating() ? "running" : "idle";
+    default NavigationStatus pathStatus() {
+        return isNavigating() ? NavigationStatus.EXECUTING : NavigationStatus.IDLE;
     }
 
     default int lastPathNodeCount() {

@@ -159,15 +159,15 @@ public final class CommonNavigationBackend implements NavigationService {
         return path == null ? List.of() : path.collect();
     }
 
-    @Override public String pathStatus() {
-        if (executor.getState() == PathExecutor.State.REPLANNING) return "replanning";
-        if (executor.getState() == PathExecutor.State.WALKING) return "executing";
+    @Override public NavigationStatus pathStatus() {
+        if (executor.getState() == PathExecutor.State.REPLANNING) return NavigationStatus.REPLANNING;
+        if (executor.getState() == PathExecutor.State.WALKING) return NavigationStatus.EXECUTING;
         PathfinderResult result = lastResult;
-        if (navigating && result == null) return "calculating";
-        if (result == null) return "idle";
-        if (result.hasFailed()) return "failed";
-        if (hasUsablePath(result)) return navigating ? "executing" : "found";
-        return result.getPathState().name().toLowerCase();
+        if (navigating && result == null) return NavigationStatus.CALCULATING;
+        if (result == null) return NavigationStatus.IDLE;
+        if (result.hasFailed()) return NavigationStatus.FAILED;
+        if (hasUsablePath(result)) return navigating ? NavigationStatus.EXECUTING : NavigationStatus.FOUND;
+        return NavigationStatus.FAILED;
     }
 
     @Override public int lastPathNodeCount() {
