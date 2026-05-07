@@ -25,4 +25,9 @@ public record GoalNear(int x, int y, int z, double radius) implements Goal {
     public String debugName() {
         return "GoalNear[" + x + "," + y + "," + z + ",r=" + radius + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Block(x, y, z);
+    }
 }

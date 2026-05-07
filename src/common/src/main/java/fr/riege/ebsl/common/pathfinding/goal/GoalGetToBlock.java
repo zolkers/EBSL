@@ -21,4 +21,9 @@ public record GoalGetToBlock(int x, int y, int z) implements Goal {
     public String debugName() {
         return "GoalGetToBlock[" + x + "," + y + "," + z + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Block(x, y, z);
+    }
 }

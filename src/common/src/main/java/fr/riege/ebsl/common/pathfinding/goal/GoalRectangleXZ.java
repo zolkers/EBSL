@@ -24,6 +24,11 @@ public record GoalRectangleXZ(int minX, int minZ, int maxX, int maxZ) implements
         return "GoalRectangleXZ[" + minX + "," + minZ + " -> " + maxX + "," + maxZ + "]";
     }
 
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Column((minX + maxX) / 2, (minZ + maxZ) / 2);
+    }
+
     private static double axisDistance(int value, int min, int max) {
         if (value < min) {
             return min - value;

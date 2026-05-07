@@ -15,4 +15,9 @@ public record GoalYLevel(int y) implements Goal {
     public String debugName() {
         return "GoalYLevel[" + y + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Block(px, y, pz);
+    }
 }

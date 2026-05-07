@@ -6,4 +6,6 @@ public interface Goal {
     double heuristic(int x, int y, int z);
 
     String debugName();
+
+    NavigationTarget resolve(int px, int py, int pz);
 }

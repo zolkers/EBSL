@@ -21,4 +21,9 @@ public record GoalChunk(int chunkX, int chunkZ) implements Goal {
         int minZ = chunkZ << 4;
         return new GoalRectangleXZ(minX, minZ, minX + 15, minZ + 15);
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Column(chunkX * 16 + 8, chunkZ * 16 + 8);
+    }
 }

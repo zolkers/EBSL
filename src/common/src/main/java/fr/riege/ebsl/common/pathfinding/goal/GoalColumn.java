@@ -23,4 +23,9 @@ public record GoalColumn(int x, int z, double radius) implements Goal {
     public String debugName() {
         return "GoalColumn[" + x + "," + z + ",r=" + radius + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Column(x, z);
+    }
 }

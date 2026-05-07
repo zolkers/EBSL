@@ -17,4 +17,9 @@ public record GoalXZ(int x, int z) implements Goal {
     public String debugName() {
         return "GoalXZ[" + x + "," + z + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Column(x, z);
+    }
 }

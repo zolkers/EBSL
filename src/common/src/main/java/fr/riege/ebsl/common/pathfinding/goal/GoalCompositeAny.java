@@ -30,4 +30,9 @@ public record GoalCompositeAny(List<Goal> goals) implements Goal {
     public String debugName() {
         return "GoalCompositeAny[" + goals.size() + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Block(px, py, pz);
+    }
 }

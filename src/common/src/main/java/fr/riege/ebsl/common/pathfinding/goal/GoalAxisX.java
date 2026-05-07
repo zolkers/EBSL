@@ -15,4 +15,9 @@ public record GoalAxisX(int x) implements Goal {
     public String debugName() {
         return "GoalAxisX[" + x + "]";
     }
+
+    @Override
+    public NavigationTarget resolve(int px, int py, int pz) {
+        return new NavigationTarget.Column(x, pz);
+    }
 }
