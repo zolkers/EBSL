@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.settings.Settingable;
 import fr.riege.ebsl.common.core.settings.StringSetting;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.task.BotTask;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
@@ -14,16 +15,10 @@ import java.util.List;
 public final class EbslScriptTask extends Settingable implements BotTask {
     public static final EbslScriptTask INSTANCE = new EbslScriptTask();
 
-    private static final String DEFAULT_SCRIPT = """
-        # EBSL example
-        start
-        message "EBSL ready"
-        """;
-
     private final BooleanSetting enabled = registerSetting(new BooleanSetting("enabled", "Enabled", false));
     private final BooleanSetting restartOnChange = registerSetting(new BooleanSetting("restart_on_change", "Restart on change", true));
-    private final StringSetting scriptFile = registerSetting(new StringSetting("script_file", "Script file", "main.ebsl"));
-    private final StringSetting inlineScript = registerSetting(new StringSetting("inline_script", "Inline script", DEFAULT_SCRIPT));
+    private final StringSetting scriptFile = registerSetting(new StringSetting("script_file", "Script file", EbslScriptManager.DEFAULT_FILE));
+    private final StringSetting inlineScript = registerSetting(new StringSetting("inline_script", "Inline script", EbslScriptManager.DEFAULT_SOURCE));
 
     private EbslProgram program;
     private EbslRunner runner;
@@ -76,10 +71,16 @@ public final class EbslScriptTask extends Settingable implements BotTask {
     }
 
     public void runFile(String file) {
-        scriptFile.setValue(file == null ? "" : file);
+        loadFile(file);
         setEnabled(true);
-        program = null;
         start(EbslServices.platform());
+    }
+
+    public void loadFile(String file) {
+        scriptFile.setValue(EbslScriptManager.normalizeFileName(file));
+        program = null;
+        runner = null;
+        status = "loaded " + scriptFile.value();
     }
 
     public String status() {
@@ -121,8 +122,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
     private String source(EbslPlatform platform) {
         String file = scriptFile.value().trim();
         if (!file.isEmpty()) {
-            String normalized = file.endsWith(".ebsl") ? file : file + ".ebsl";
-            return platform.storage().loadText("scripts/" + normalized).orElse(inlineScript.value());
+            return platform.storage().loadText(EbslScriptManager.path(file)).orElse(inlineScript.value());
         }
         return inlineScript.value();
     }

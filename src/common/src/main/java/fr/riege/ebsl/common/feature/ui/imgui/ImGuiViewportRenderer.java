@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.feature.ui.imgui.panel.*;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 import imgui.ImGuiStyle;
 
@@ -19,10 +20,10 @@ public final class ImGuiViewportRenderer {
         new ImGuiAnalyticsPanel());
     private boolean styleApplied;
 
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
         applyStyleOnce();
         for (ImGuiUiPanel panel : panels) {
-            panel.render(state, layout, navigation);
+            panel.render(state, layout, navigation, platform);
         }
         drawLayoutLines(layout);
     }

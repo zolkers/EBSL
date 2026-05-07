@@ -5,11 +5,12 @@ import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 
 public final class ImGuiHeaderPanel implements ImGuiUiPanel {
     @Override
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
         ImGuiPanelUtil.nextFixedWindow(layout.header());
         if (ImGui.begin("##ebsl-header", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
             ImGui.text("EBSL");

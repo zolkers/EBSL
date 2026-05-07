@@ -7,11 +7,16 @@ import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 
 public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
     @Override
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
+        if (state.mainViewTab() != MainViewTab.MAIN) {
+            return;
+        }
         ImGuiPanelUtil.nextFixedWindow(layout.bottom());
         if (ImGui.begin("Analytics##ebsl-bottom", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
             AnalyticsSnapshot snapshot = AnalyticsSnapshot.capture(navigation, state.selectedModule());

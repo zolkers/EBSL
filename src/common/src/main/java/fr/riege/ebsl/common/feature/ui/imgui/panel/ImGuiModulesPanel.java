@@ -11,7 +11,9 @@ import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
 import fr.riege.ebsl.common.feature.ui.state.RightPanelMode;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImBoolean;
@@ -24,19 +26,29 @@ import java.util.Map;
 
 public final class ImGuiModulesPanel implements ImGuiUiPanel {
     private final Map<String, ImString> stringValues = new HashMap<>();
+    private final ImGuiScriptNodePalettePanel scriptNodePalettePanel = new ImGuiScriptNodePalettePanel();
+    private final ImGuiScriptLoaderPanel scriptLoaderPanel = new ImGuiScriptLoaderPanel();
 
     @Override
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
+        if (state.mainViewTab() == MainViewTab.SCRIPT) {
+            scriptNodePalettePanel.render(layout.right());
+            return;
+        }
         ImGuiPanelUtil.nextFixedWindow(layout.right());
         if (ImGui.begin("Pathfinder botting##ebsl-right", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
             if (ImGui.button("Modules", 84.0f, 24.0f)) state.showModuleList();
             ImGui.sameLine();
             if (ImGui.button("Tasks", 84.0f, 24.0f)) state.showTaskList();
+            ImGui.sameLine();
+            if (ImGui.button("Scripts", 84.0f, 24.0f)) state.showScriptLoader();
             ImGui.separator();
             if (state.rightPanelMode() == RightPanelMode.MODULE_SETTINGS && state.selectedModule() != null) {
                 renderModuleSettings(state);
             } else if (state.rightPanelMode() == RightPanelMode.TASK_SETTINGS && state.selectedTask() != null) {
                 renderTaskSettings(state);
+            } else if (state.rightPanelMode() == RightPanelMode.SCRIPT_LOADER) {
+                scriptLoaderPanel.render(state, platform);
             } else if (state.rightPanelMode() == RightPanelMode.TASK_LIST) {
                 renderTaskList(state);
             } else {

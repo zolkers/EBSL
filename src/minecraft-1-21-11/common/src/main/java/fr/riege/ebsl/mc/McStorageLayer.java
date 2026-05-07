@@ -4,6 +4,8 @@ import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 public class McStorageLayer implements IStorageLayer {
@@ -41,6 +43,28 @@ public class McStorageLayer implements IStorageLayer {
             Path file = resolveTextPath(path);
             return Files.exists(file) ? Optional.of(Files.readString(file)) : Optional.empty();
         } catch (IOException e) { return Optional.empty(); }
+    }
+
+    @Override
+    public List<String> listTextFiles(String directory, String extension) {
+        try {
+            Path folder = resolveTextPath(directory);
+            if (!Files.isDirectory(folder)) {
+                return List.of();
+            }
+            String suffix = extension.startsWith(".") ? extension : "." + extension;
+            try (var stream = Files.list(folder)) {
+                return stream
+                    .filter(Files::isRegularFile)
+                    .map(folder::relativize)
+                    .map(Path::toString)
+                    .filter(name -> name.endsWith(suffix))
+                    .sorted(Comparator.naturalOrder())
+                    .toList();
+            }
+        } catch (IOException e) {
+            return List.of();
+        }
     }
 
     private Path resolveTextPath(String path) {

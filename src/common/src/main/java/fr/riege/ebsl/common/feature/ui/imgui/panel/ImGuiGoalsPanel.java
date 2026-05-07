@@ -9,6 +9,8 @@ import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImString;
@@ -19,10 +21,15 @@ import java.util.Map;
 
 public final class ImGuiGoalsPanel implements ImGuiUiPanel {
     private final Map<String, ImString> values = new HashMap<>();
+    private final ImGuiScriptManagerPanel scriptManagerPanel = new ImGuiScriptManagerPanel();
     private GoalUiDefinition selected;
 
     @Override
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
+        if (state.mainViewTab() == MainViewTab.SCRIPT) {
+            scriptManagerPanel.render(state, layout.left(), platform);
+            return;
+        }
         if (selected == null) {
             List<GoalUiDefinition> goals = GoalUiCatalog.all();
             if (goals.isEmpty()) return;

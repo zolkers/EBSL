@@ -1,7 +1,8 @@
 package fr.riege.ebsl.common.feature.ui.state;
 
 public enum MainViewTab {
-    MAIN("Main");
+    MAIN("Main"),
+    SCRIPT("Script");
 
     private final String label;
 

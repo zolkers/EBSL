@@ -4,5 +4,6 @@ public enum RightPanelMode {
     MODULE_LIST,
     MODULE_SETTINGS,
     TASK_LIST,
-    TASK_SETTINGS
+    TASK_SETTINGS,
+    SCRIPT_LOADER
 }

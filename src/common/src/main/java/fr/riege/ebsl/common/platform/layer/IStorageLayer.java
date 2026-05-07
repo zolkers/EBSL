@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.platform.layer;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface IStorageLayer {
     void save(String key, String json);
@@ -12,5 +13,9 @@ public interface IStorageLayer {
 
     default Optional<String> loadText(String path) {
         return load(path);
+    }
+
+    default List<String> listTextFiles(String directory, String extension) {
+        return List.of();
     }
 }

@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.CenterTab;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
 
 public final class CommonImGuiOverlay {
     private static final EbslUiState STATE = new EbslUiState();
@@ -32,15 +33,15 @@ public final class CommonImGuiOverlay {
     }
 
     public static boolean shouldConfineMinecraftMouse(UiService ui) {
-        return ui.isVisible() && STATE.centerTab() == CenterTab.GAME;
+        return ui.isVisible() && STATE.mainViewTab() == MainViewTab.MAIN && STATE.centerTab() == CenterTab.GAME;
     }
 
     public static void render(EbslPlatform platform, NavigationService navigation, UiService ui) {
         if (!ui.isVisible()) return;
         IImGuiLayer imgui = platform.imgui();
         ViewportLayout layout = ViewportLayout.create(imgui.getViewportWidth(), imgui.getViewportHeight());
-        RENDERER.render(STATE, layout, navigation);
-        if (STATE.centerTab() == CenterTab.GAME) {
+        RENDERER.render(STATE, layout, navigation, platform);
+        if (STATE.mainViewTab() == MainViewTab.MAIN && STATE.centerTab() == CenterTab.GAME) {
             BotModuleRegistry.renderGameViewport(platform, navigation, gameViewportRect(imgui.getViewportWidth(), imgui.getViewportHeight()));
         }
     }

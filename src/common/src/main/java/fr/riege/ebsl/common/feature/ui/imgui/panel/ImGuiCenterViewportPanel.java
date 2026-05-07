@@ -6,6 +6,8 @@ import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.CenterTab;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
+import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 import imgui.ImDrawList;
 import imgui.ImGui;
@@ -17,16 +19,21 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
     private final ImGuiPacketPanel packetPanel = new ImGuiPacketPanel();
     private final ImGuiTerminalPanel terminalPanel = new ImGuiTerminalPanel();
     private final ImGuiMcLogPanel mcLogPanel = new ImGuiMcLogPanel();
+    private final ImGuiScriptEditorPanel scriptEditorPanel = new ImGuiScriptEditorPanel();
 
     @Override
-    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation) {
+    public void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform) {
         ImGuiPanelUtil.nextFixedWindow(layout.center());
         int flags = ImGuiPanelUtil.FIXED_PANEL_FLAGS | ImGuiWindowFlags.NoBackground;
         if (ImGui.begin("##ebsl-center-viewport", flags)) {
             UiRect tabs = tabsRect(layout);
             UiRect viewport = viewportRect(layout);
             drawTabs(state, tabs);
-            renderSelectedTab(state.centerTab(), viewport);
+            if (state.mainViewTab() == MainViewTab.SCRIPT) {
+                scriptEditorPanel.render(state, viewport, platform);
+            } else {
+                renderSelectedTab(state.centerTab(), viewport);
+            }
             drawViewportFrame(viewport);
             ImGui.end();
         }
@@ -61,6 +68,10 @@ public final class ImGuiCenterViewportPanel implements ImGuiUiPanel {
         ImDrawList dl = ImGui.getWindowDrawList();
         dl.addRectFilled(tabs.x(), tabs.y(), tabs.right(), tabs.bottom(), 0xEE10141A);
         ImGui.setCursorScreenPos(tabs.x() + 8.0f, tabs.y() + 5.0f);
+        if (state.mainViewTab() == MainViewTab.SCRIPT) {
+            ImGui.text("EBSL script editor");
+            return;
+        }
         for (CenterTab tab : CenterTab.values()) {
             if (ImGui.button(tab.label(), tabWidth(tab), 22.0f)) state.setCenterTab(tab);
             ImGui.sameLine();
