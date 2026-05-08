@@ -80,6 +80,26 @@ goal_near 120 64 -40 3
 goal_walkxz 120 -40
 ```
 
+## Leaf Mining Loop
+
+This pattern keeps searching for oak leaves, aims smoothly at the nearest loaded leaf, waits until the crosshair actually targets a leaf, then breaks it and loops:
+
+```ebsl
+start
+
+forever {
+  goal_nearest_block minecraft:oak_leaves 32 4
+
+  repeat_until sensor_targeted_block minecraft:oak_leaves {
+    aim_at_block minecraft:oak_leaves 32 6t
+    wait 1t
+  }
+
+  break 2s
+  wait 3t
+}
+```
+
 ## Existing Tasks
 
 Existing bot tasks can also be script nodes. `space_mob` drives the existing Space Mob task instead of duplicating its behavior:

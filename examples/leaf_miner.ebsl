@@ -1,0 +1,15 @@
+# Loops forever: navigate near oak leaves, aim only when a leaf is targeted,
+# then hold attack long enough to break it before searching again.
+start
+
+forever {
+  goal_nearest_block minecraft:oak_leaves 32 4
+
+  repeat_until sensor_targeted_block minecraft:oak_leaves {
+    aim_at_block minecraft:oak_leaves 32 6t
+    wait 1t
+  }
+
+  break 2s
+  wait 3t
+}
