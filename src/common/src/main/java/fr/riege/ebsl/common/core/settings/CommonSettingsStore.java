@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.core.settings;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public final class CommonSettingsStore {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-settings");
     private static final String PATHFINDER_KEY = "pathfinder-settings";
+    private static final String SCRIPT_EDITOR_KEY = "script-editor-settings";
     private static final String MODULES_KEY = "module-settings";
     private static final String TASKS_KEY = "task-settings";
 
@@ -23,6 +25,7 @@ public final class CommonSettingsStore {
     public static void load(IStorageLayer storage) {
         try {
             storage.load(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
+            storage.load(SCRIPT_EDITOR_KEY).ifPresent(json -> loadSettings(EbslCodeEditorSettings.all(), json));
         } catch (RuntimeException exception) {
             LOGGER.warn("Could not load pathfinder settings; keeping defaults.", exception);
         }
@@ -40,6 +43,7 @@ public final class CommonSettingsStore {
     public static void save(IStorageLayer storage) {
         try {
             storage.save(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
+            storage.save(SCRIPT_EDITOR_KEY, saveSettings(EbslCodeEditorSettings.all()).toString());
             storage.save(MODULES_KEY, saveModuleSettings().toString());
             storage.save(TASKS_KEY, saveTaskSettings().toString());
         } catch (RuntimeException exception) {

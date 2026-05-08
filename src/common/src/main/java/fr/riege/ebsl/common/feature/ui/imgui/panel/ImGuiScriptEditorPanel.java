@@ -1,12 +1,14 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDoc;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocEntry;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocGenerator;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocParameter;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocSection;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphNodePosition;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
@@ -30,6 +32,7 @@ import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.ImGuiInputTextCallbackData;
@@ -53,11 +56,13 @@ public final class ImGuiScriptEditorPanel {
     private static final float GRAPH_INSPECTOR_MAX_WIDTH = 410.0f;
     private static final float GRAPH_INSPECTOR_GAP = 10.0f;
     private static final String DOC_POPUP_ID = "EBSL Language Doc##ebsl-language-doc";
+    private static final String IDE_SETTINGS_POPUP_ID = "IDE Settings##ebsl-ide-settings";
 
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
     private final ImString selectedCommand = new ImString("", 96);
     private final ImString selectedArgs = new ImString("", 512);
     private final Map<String, ImString> settingTextValues = new HashMap<>();
+    private final Map<String, ImString> editorSettingTextValues = new HashMap<>();
     private final CodeEditorInputCallback codeEditorInputCallback = new CodeEditorInputCallback();
     private String loadedFile = "";
     private int loadedRevision = -1;
@@ -72,6 +77,7 @@ public final class ImGuiScriptEditorPanel {
     private float lastMouseX;
     private float lastMouseY;
     private boolean docOpenRequested;
+    private boolean ideSettingsOpenRequested;
     private int codeCursorPos;
     private int codeSelectionStart;
     private int codeSelectionEnd;
@@ -94,6 +100,7 @@ public final class ImGuiScriptEditorPanel {
             renderCode(editor);
         }
         renderDocPopup(viewport);
+        renderIdeSettingsPopup(viewport);
     }
 
     private void renderToolbar(EbslUiState state, EbslPlatform platform) {
@@ -122,7 +129,48 @@ public final class ImGuiScriptEditorPanel {
             docOpenRequested = true;
         }
         ImGui.sameLine();
+        if (ImGui.button("Settings", 82.0f, 22.0f)) {
+            ideSettingsOpenRequested = true;
+        }
+        ImGui.sameLine();
         ImGui.textDisabled(status);
+    }
+
+    private void renderIdeSettingsPopup(UiRect viewport) {
+        if (ideSettingsOpenRequested) {
+            ImGui.openPopup(IDE_SETTINGS_POPUP_ID);
+            ideSettingsOpenRequested = false;
+        }
+        float width = Math.min(560.0f, viewport.width() - 80.0f);
+        float height = Math.min(520.0f, viewport.height() - 80.0f);
+        float x = viewport.x() + (viewport.width() - width) * 0.5f;
+        float y = viewport.y() + (viewport.height() - height) * 0.5f;
+        ImGui.setNextWindowPos(x, y, ImGuiCond.Always);
+        ImGui.setNextWindowSize(width, height, ImGuiCond.Always);
+        int flags = ImGuiWindowFlags.NoCollapse
+            | ImGuiWindowFlags.NoSavedSettings
+            | ImGuiWindowFlags.NoResize
+            | ImGuiWindowFlags.NoMove;
+        if (ImGui.beginPopupModal(IDE_SETTINGS_POPUP_ID, flags)) {
+            if (ImGui.button("Close", 72.0f, 22.0f)) {
+                ImGui.closeCurrentPopup();
+            }
+            ImGui.sameLine();
+            if (ImGui.button("Reset", 72.0f, 22.0f)) {
+                EbslCodeEditorSettings.resetToDefaults();
+                saveSettings();
+            }
+            ImGui.separator();
+            if (ImGui.beginChild("##ebsl-ide-settings-scroll", width - 24.0f, height - 72.0f, false)) {
+                ImGuiSettingRenderContext context = new ImGuiSettingRenderContext(
+                    "script-editor-setting", -1.0f, this::saveSettings, editorSettingTextValues);
+                for (Setting<?> setting : EbslCodeEditorSettings.all()) {
+                    ImGuiSettingRendererRegistry.render(setting, context);
+                }
+                ImGui.endChild();
+            }
+            ImGui.endPopup();
+        }
     }
 
     private void renderDocPopup(UiRect viewport) {
@@ -250,17 +298,18 @@ public final class ImGuiScriptEditorPanel {
 
     private void renderCodeEditor(UiRect code) {
         ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(code.x(), code.y(), code.right(), code.bottom(), 0xFF0D1117, 4.0f);
-        dl.addRect(code.x(), code.y(), code.right(), code.bottom(), 0xFF26313D, 4.0f, 0, 1.0f);
+        EbslCodeEditorStyle style = EbslCodeEditorStyle.DARK;
+        dl.addRectFilled(code.x(), code.y(), code.right(), code.bottom(), style.backgroundColor(), 4.0f);
+        dl.addRect(code.x(), code.y(), code.right(), code.bottom(), style.borderColor(), 4.0f, 0, 1.0f);
         UiRect gutter = new UiRect(code.x(), code.y(), 52, code.height());
-        dl.addRectFilled(gutter.x(), gutter.y(), gutter.right(), gutter.bottom(), 0xFF111923, 4.0f);
+        dl.addRectFilled(gutter.x(), gutter.y(), gutter.right(), gutter.bottom(), style.gutterColor(), 4.0f);
         drawLineNumbers(dl, gutter);
         UiRect textArea = new UiRect(code.x() + 58, code.y() + 6, Math.round(code.width() - 64.0f), Math.round(code.height() - 12.0f));
         drawSyntaxHighlight(dl, textArea);
         ImGui.setCursorScreenPos(textArea.x(), textArea.y());
-        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, EbslCodeEditorStyle.DARK.textPadding(), EbslCodeEditorStyle.DARK.textPadding());
-        ImGui.pushStyleColor(ImGuiCol.Text, EbslCodeEditorStyle.DARK.editableTextColor());
-        ImGui.pushStyleColor(ImGuiCol.FrameBg, EbslCodeEditorStyle.DARK.frameColor());
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, style.textPadding(), style.textPadding());
+        ImGui.pushStyleColor(ImGuiCol.Text, style.editableTextColor());
+        ImGui.pushStyleColor(ImGuiCol.FrameBg, style.frameColor());
         ImGui.inputTextMultiline("##ebsl-code-editor", source, textArea.width(), textArea.height(),
             ImGuiInputTextFlags.CallbackAlways, codeEditorInputCallback);
         boolean editorActive = ImGui.isItemActive() || ImGui.isItemFocused();
@@ -292,13 +341,17 @@ public final class ImGuiScriptEditorPanel {
             return;
         }
         dl.pushClipRect(textArea.x(), textArea.y(), textArea.right(), textArea.bottom(), true);
-        dl.addLine(x, y, x, y + ImGui.getTextLineHeight(), style.caretColor(), 1.4f);
+        dl.addLine(x, y, x, y + ImGui.getTextLineHeight(), style.caretColor(), style.caretThickness());
         dl.popClipRect();
     }
 
     private static boolean caretVisible() {
         double blink = EbslCodeEditorStyle.DARK.caretBlinkSeconds();
         return blink <= 0.0 || ((int) (ImGui.getTime() / blink)) % 2 == 0;
+    }
+
+    private void saveSettings() {
+        CommonSettingsStore.save(EbslServices.platform().storage());
     }
 
     private void drawSyntaxHighlight(ImDrawList dl, UiRect textArea) {

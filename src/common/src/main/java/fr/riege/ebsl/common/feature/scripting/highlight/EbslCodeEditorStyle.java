@@ -1,45 +1,45 @@
 package fr.riege.ebsl.common.feature.scripting.highlight;
 
 public enum EbslCodeEditorStyle {
-    DARK(
-        0x00FFFFFF,
-        0x00000000,
-        0xFFE6EDF3,
-        0.55,
-        8.0f
-    );
+    DARK;
 
-    private final int editableTextColor;
-    private final int frameColor;
-    private final int caretColor;
-    private final double caretBlinkSeconds;
-    private final float textPadding;
+    private EbslCodeEditorSettings settings() {
+        return EbslCodeEditorSettings.instance();
+    }
 
-    EbslCodeEditorStyle(int editableTextColor, int frameColor, int caretColor, double caretBlinkSeconds, float textPadding) {
-        this.editableTextColor = editableTextColor;
-        this.frameColor = frameColor;
-        this.caretColor = caretColor;
-        this.caretBlinkSeconds = caretBlinkSeconds;
-        this.textPadding = textPadding;
+    public int backgroundColor() {
+        return settings().backgroundColor.value();
+    }
+
+    public int borderColor() {
+        return settings().borderColor.value();
+    }
+
+    public int gutterColor() {
+        return settings().gutterColor.value();
     }
 
     public int editableTextColor() {
-        return editableTextColor;
+        return settings().nativeTextColor.value();
     }
 
     public int frameColor() {
-        return frameColor;
+        return settings().frameColor.value();
     }
 
     public int caretColor() {
-        return caretColor;
+        return settings().caretColor.value();
     }
 
     public double caretBlinkSeconds() {
-        return caretBlinkSeconds;
+        return settings().caretBlink.value() ? settings().caretBlinkSeconds.value() : 0.0;
+    }
+
+    public float caretThickness() {
+        return settings().caretThickness.value().floatValue();
     }
 
     public float textPadding() {
-        return textPadding;
+        return settings().textPadding.value().floatValue();
     }
 }
