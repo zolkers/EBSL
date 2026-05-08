@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 class AStarPathfinderTest {
     @Test
@@ -46,5 +48,13 @@ class AStarPathfinderTest {
         assertEquals(PathState.MAX_ITERATIONS_REACHED, result.getPathState());
         assertEquals(8, pathfinder.getExploredCount());
         assertEquals(9, result.getPath().length());
+    }
+
+    @Test
+    void processorRegistryCreatesFreshStandardProcessors() {
+        assertNotSame(
+            NodeProcessorRegistry.createStandardProcessors().getFirst(),
+            NodeProcessorRegistry.createStandardProcessors().getFirst()
+        );
     }
 }

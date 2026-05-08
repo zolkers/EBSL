@@ -14,7 +14,7 @@ import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
-import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcessor;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
@@ -659,7 +659,7 @@ public final class CommonNavigationBackend implements NavigationService {
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .provider(provider)
-            .processors(List.of(new LayerPathProcessor()))
+            .processors(NodeProcessorRegistry.createStandardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
                 PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
             .async(true)

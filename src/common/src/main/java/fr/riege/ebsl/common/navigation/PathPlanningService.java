@@ -7,7 +7,7 @@ import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
-import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcessor;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -95,7 +95,7 @@ public final class PathPlanningService {
             .maxIterations(effectiveOptions.maxIterations())
             .maxLength(effectiveOptions.maxLength())
             .provider(provider)
-            .processors(List.of(new LayerPathProcessor()))
+            .processors(NodeProcessorRegistry.createStandardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
                 effectiveOptions.maxJumpHeight(),
                 effectiveOptions.allowParkour(),
