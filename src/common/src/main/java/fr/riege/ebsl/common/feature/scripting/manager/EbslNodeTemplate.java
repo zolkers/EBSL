@@ -39,7 +39,7 @@ public record EbslNodeTemplate(
             case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition args", "");
             case MESSAGE -> template(type, "Message", "Send a chat/status message.", "text", "\"hello\"");
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
-            case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path next to it.", "block_id radius", "minecraft:oak_leaves 32");
+            case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 2");
             case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "target args", "");
             case GOAL -> template(type, "Goal", "Run a registered pathfinding goal.", "goal args", "");
             case PATH -> template(type, "Path", "Follow or calculate path behavior.", "path args", "");
