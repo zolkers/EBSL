@@ -69,6 +69,13 @@ public final class EbslScriptManager {
         return normalized.endsWith(EXTENSION) ? normalized : normalized + EXTENSION;
     }
 
+    public static String stripExtension(String fileName) {
+        String normalized = normalizeFileName(fileName);
+        return normalized.endsWith(EXTENSION)
+            ? normalized.substring(0, normalized.length() - EXTENSION.length())
+            : normalized;
+    }
+
     public static String path(String fileName) {
         return DIRECTORY + "/" + normalizeFileName(fileName);
     }

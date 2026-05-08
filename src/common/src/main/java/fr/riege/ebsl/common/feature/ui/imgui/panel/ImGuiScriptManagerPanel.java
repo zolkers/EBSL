@@ -10,7 +10,7 @@ import imgui.type.ImString;
 import java.util.List;
 
 public final class ImGuiScriptManagerPanel {
-    private final ImString newFileName = new ImString(EbslScriptManager.DEFAULT_FILE, 96);
+    private final ImString newFileName = new ImString(EbslScriptManager.stripExtension(EbslScriptManager.DEFAULT_FILE), 96);
 
     public void render(EbslUiState state, UiRect rect, EbslPlatform platform) {
         EbslScriptManager manager = new EbslScriptManager(platform.storage());
@@ -28,11 +28,12 @@ public final class ImGuiScriptManagerPanel {
                 ImGui.endChild();
             }
             ImGui.separator();
-            ImGui.inputText("File", newFileName);
+            ImGui.inputText("Name", newFileName);
             if (ImGui.button("Create", -1.0f, 24.0f)) {
                 String file = EbslScriptManager.normalizeFileName(newFileName.get());
                 manager.create(file);
                 state.selectScriptFile(file);
+                newFileName.set(EbslScriptManager.stripExtension(file));
             }
             if (ImGui.button("Delete selected", -1.0f, 24.0f)) {
                 manager.delete(state.selectedScriptFile());
