@@ -1,14 +1,16 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
+import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 import fr.riege.ebsl.common.platform.service.NavigationService;
-import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.feature.task.BotTask;
 import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
+import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
+import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
@@ -16,9 +18,6 @@ import fr.riege.ebsl.common.feature.ui.state.RightPanelMode;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
-import imgui.type.ImBoolean;
-import imgui.type.ImDouble;
-import imgui.type.ImInt;
 import imgui.type.ImString;
 
 import java.util.EnumMap;
@@ -132,79 +131,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderSetting(String ownerId, Setting<?> setting, Runnable save) {
-        if (setting instanceof BooleanSetting s) {
-            ImBoolean v = new ImBoolean(s.value());
-            if (ImGui.checkbox(setting.displayName(), v)) { s.setValue(v.get()); save.run(); }
-        } else if (setting instanceof IntSetting s) {
-            ImInt v = new ImInt(s.value());
-            if (ImGui.inputInt(setting.displayName(), v)) { s.setValue(clamp(v.get(), s.min(), s.max())); save.run(); }
-        } else if (setting instanceof DoubleSetting s) {
-            ImDouble v = new ImDouble(s.value());
-            if (ImGui.inputDouble(setting.displayName(), v, 0.1, 1.0, "%.3f")) {
-                s.setValue(clamp(v.get(), s.min(), s.max())); save.run();
-            }
-        } else if (setting instanceof StringSetting s) {
-            ImString v = stringValues.computeIfAbsent(ownerId + "." + setting.id(),
-                ignored -> new ImString(s.value(), 512));
-            if (!v.get().equals(s.value())) v.set(s.value());
-            if (ImGui.inputText(setting.displayName(), v)) { s.setValue(v.get()); save.run(); }
-        } else if (setting instanceof ColorSetting s) {
-            renderColorSetting(s, save);
-        } else if (setting instanceof EnumSetting<?> s) {
-            renderEnumSetting(s, save);
-        } else if (setting instanceof StringListSetting s) {
-            renderStringListSetting(ownerId, s, save);
-        }
-    }
-
-    private void renderColorSetting(ColorSetting setting, Runnable save) {
-        int argb = setting.value();
-        float a = ((argb >> 24) & 0xFF) / 255.0f;
-        float r = ((argb >> 16) & 0xFF) / 255.0f;
-        float g = ((argb >>  8) & 0xFF) / 255.0f;
-        float b = ( argb        & 0xFF) / 255.0f;
-        float[] col = {r, g, b, a};
-        if (ImGui.colorEdit4(setting.displayName(), col)) {
-            int packed = ((int)(col[3] * 255) << 24)
-                | ((int)(col[0] * 255) << 16)
-                | ((int)(col[1] * 255) <<  8)
-                |  (int)(col[2] * 255);
-            setting.setValue(packed);
-            save.run();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends Enum<E>> void renderEnumSetting(EnumSetting<?> raw, Runnable save) {
-        EnumSetting<E> setting = (EnumSetting<E>) raw;
-        E[] vals = setting.enumType().getEnumConstants();
-        String[] labels = new String[vals.length];
-        for (int i = 0; i < vals.length; i++) labels[i] = vals[i].toString();
-        ImInt idx = new ImInt(setting.value().ordinal());
-        if (ImGui.combo(setting.displayName(), idx, labels)) { setting.setValue(vals[idx.get()]); save.run(); }
-    }
-
-    private void renderStringListSetting(String ownerId, StringListSetting setting, Runnable save) {
-        ImGui.text(setting.displayName());
-        if (ImGui.beginChild("##" + ownerId + "." + setting.id(), 0.0f, 124.0f, true)) {
-            for (int i = 0; i < setting.value().size(); i++) {
-                String key = ownerId + "." + setting.id() + "." + i;
-                String entry = setting.value().get(i);
-                ImString v = stringValues.computeIfAbsent(key, ignored -> new ImString(entry, 128));
-                if (!v.get().equals(entry)) v.set(entry);
-                ImGui.pushItemWidth(-38.0f);
-                if (ImGui.inputText("##entry-" + key, v)) { setting.setEntry(i, v.get()); save.run(); }
-                ImGui.popItemWidth();
-                ImGui.sameLine();
-                if (ImGui.button("X##delete-" + key, 24.0f, 22.0f)) {
-                    setting.removeEntry(i); stringValues.remove(key); save.run(); break;
-                }
-            }
-            ImGui.endChild();
-        }
-        if (ImGui.button("Add row##" + ownerId + "." + setting.id(), 86.0f, 24.0f)) {
-            setting.addEntry("minecraft:stone"); save.run();
-        }
+        ImGuiSettingRendererRegistry.render(setting, new ImGuiSettingRenderContext(ownerId, -1.0f, save, stringValues));
     }
 
     private static void pushModuleButtonColor(PathfinderModule module) {
@@ -235,11 +162,4 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         AnalyticsEventLog.recordAnalytics("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
     }
 
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
-    }
 }

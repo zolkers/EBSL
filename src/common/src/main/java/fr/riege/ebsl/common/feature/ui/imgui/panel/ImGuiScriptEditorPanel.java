@@ -1,11 +1,6 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
-import fr.riege.ebsl.common.core.settings.BooleanSetting;
-import fr.riege.ebsl.common.core.settings.DoubleSetting;
-import fr.riege.ebsl.common.core.settings.EnumSetting;
-import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
@@ -16,15 +11,14 @@ import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
+import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
+import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImDrawList;
 import imgui.ImGui;
-import imgui.type.ImBoolean;
-import imgui.type.ImDouble;
-import imgui.type.ImInt;
 import imgui.type.ImString;
 
 import java.util.ArrayList;
@@ -429,50 +423,14 @@ public final class ImGuiScriptEditorPanel {
     }
 
     private void renderNodeSettings(EbslNode node, float width) {
+        ImGuiSettingRenderContext context = new ImGuiSettingRenderContext(
+            "ebsl-node-setting-" + node.id(),
+            width,
+            () -> { },
+            settingTextValues
+        );
         for (Setting<?> setting : node.settings()) {
-            ImGui.setNextItemWidth(width);
-            String label = setting.displayName() + "##ebsl-node-setting-" + node.id() + "-" + setting.id();
-            if (setting instanceof StringSetting s) {
-                String key = node.id() + "." + setting.id();
-                ImString value = settingTextValues.computeIfAbsent(key, ignored -> new ImString(s.value(), 512));
-                if (!value.get().equals(s.value())) {
-                    value.set(s.value());
-                }
-                if (ImGui.inputText(label, value)) {
-                    s.setValue(value.get());
-                }
-            } else if (setting instanceof IntSetting s) {
-                ImInt value = new ImInt(s.value());
-                if (ImGui.inputInt(label, value)) {
-                    s.setValue(clamp(value.get(), s.min(), s.max()));
-                }
-            } else if (setting instanceof DoubleSetting s) {
-                ImDouble value = new ImDouble(s.value());
-                if (ImGui.inputDouble(label, value, 0.1, 1.0, "%.3f")) {
-                    s.setValue(clamp(value.get(), s.min(), s.max()));
-                }
-            } else if (setting instanceof BooleanSetting s) {
-                ImBoolean value = new ImBoolean(s.value());
-                if (ImGui.checkbox(label, value)) {
-                    s.setValue(value.get());
-                }
-            } else if (setting instanceof EnumSetting<?> s) {
-                renderEnumSetting(s, label);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends Enum<E>> void renderEnumSetting(EnumSetting<?> raw, String label) {
-        EnumSetting<E> setting = (EnumSetting<E>) raw;
-        E[] values = setting.enumType().getEnumConstants();
-        String[] labels = new String[values.length];
-        for (int i = 0; i < values.length; i++) {
-            labels[i] = values[i].name().toLowerCase(Locale.ROOT);
-        }
-        ImInt selected = new ImInt(setting.value().ordinal());
-        if (ImGui.combo(label, selected, labels)) {
-            setting.setValue(values[selected.get()]);
+            ImGuiSettingRendererRegistry.render(setting, context);
         }
     }
 
@@ -499,14 +457,6 @@ public final class ImGuiScriptEditorPanel {
                 && !token.equals(EbslSyntax.BLOCK_OPEN)
                 && !token.equals(EbslSyntax.BLOCK_CLOSE))
             .toList();
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private void duplicateNodeLine(ScriptGraphNode node) {
