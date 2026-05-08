@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphNodePosition;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
@@ -65,7 +66,7 @@ public final class ImGuiScriptEditorPanel {
 
         UiRect editor = new UiRect(viewport.x() + 10, viewport.y() + 44, viewport.width() - 20, viewport.height() - 54);
         if (state.scriptView() == EbslScriptView.GRAPH) {
-            renderGraph(editor);
+            renderGraph(editor, platform);
         } else {
             renderCode(editor);
         }
@@ -100,8 +101,9 @@ public final class ImGuiScriptEditorPanel {
         renderCodeEditor(editor);
     }
 
-    private void renderGraph(UiRect editor) {
+    private void renderGraph(UiRect editor, EbslPlatform platform) {
         ImDrawList dl = ImGui.getWindowDrawList();
+        EbslScriptManager manager = new EbslScriptManager(platform.storage());
         float inspectorWidth = editor.width() >= 780.0f
             ? Math.min(GRAPH_INSPECTOR_MAX_WIDTH, Math.max(GRAPH_INSPECTOR_MIN_WIDTH, editor.width() * 0.30f))
             : 0.0f;
@@ -113,7 +115,7 @@ public final class ImGuiScriptEditorPanel {
             : null;
 
         dl.addRectFilled(graph.x(), graph.y(), graph.right(), graph.bottom(), 0xFF0D1117);
-        renderGraphToolbar(graph);
+        renderGraphToolbar(graph, manager);
         UiRect canvas = new UiRect(graph.x(), graph.y() + 34, graph.width(), graph.height() - 34);
         panAndZoomCanvas(canvas);
         drawGrid(dl, canvas);
@@ -125,7 +127,7 @@ public final class ImGuiScriptEditorPanel {
             NodePosition position = nodePosition(node, i);
             float nodeX = canvas.x() + graphPanX + position.x() * graphZoom;
             float nodeY = canvas.y() + graphPanY + position.y() * graphZoom;
-            float width = drawNode(dl, i, node.key(), nodeX, nodeY, node);
+            float width = drawNode(dl, manager, i, node.key(), nodeX, nodeY, node);
             float inX = nodeX + 10.0f * graphZoom;
             float inY = nodeY + NODE_H * graphZoom * 0.5f;
             float outX = nodeX + width - 10.0f * graphZoom;
@@ -141,9 +143,9 @@ public final class ImGuiScriptEditorPanel {
         }
         drawMiniMap(graph, nodes);
         if (inspector != null) {
-            renderNodeInspector(inspector, nodes);
+            renderNodeInspector(manager, inspector, nodes);
         } else {
-            renderFloatingNodeInspector(graph, nodes);
+            renderFloatingNodeInspector(manager, graph, nodes);
         }
     }
 
@@ -178,7 +180,7 @@ public final class ImGuiScriptEditorPanel {
         dl.addCircleFilled(toX, toY, 3.5f, 0xFF67B7FF);
     }
 
-    private void renderGraphToolbar(UiRect editor) {
+    private void renderGraphToolbar(UiRect editor, EbslScriptManager manager) {
         ImGui.setCursorScreenPos(editor.x() + 10.0f, editor.y() + 6.0f);
         if (ImGui.button("-", 24.0f, 22.0f)) {
             graphZoom = Math.max(0.65f, graphZoom - 0.1f);
@@ -193,20 +195,21 @@ public final class ImGuiScriptEditorPanel {
             graphPanY = 0.0f;
             graphZoom = 1.0f;
             graphNodePositions.clear();
+            saveGraphLayout(manager);
         }
         ImGui.sameLine();
         ImGui.textDisabled("drag nodes | right-drag canvas | wheel zoom");
     }
 
-    private void renderFloatingNodeInspector(UiRect editor, List<ScriptGraphNode> nodes) {
+    private void renderFloatingNodeInspector(EbslScriptManager manager, UiRect editor, List<ScriptGraphNode> nodes) {
         if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
             return;
         }
         UiRect panel = new UiRect(editor.right() - 318, editor.y() + 48, 306, Math.round(Math.min(360.0f, editor.height() - 60.0f)));
-        renderNodeInspector(panel, nodes);
+        renderNodeInspector(manager, panel, nodes);
     }
 
-    private void renderNodeInspector(UiRect panel, List<ScriptGraphNode> nodes) {
+    private void renderNodeInspector(EbslScriptManager manager, UiRect panel, List<ScriptGraphNode> nodes) {
         ImDrawList dl = ImGui.getWindowDrawList();
         dl.addRectFilled(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xEE121A22, 5.0f);
         dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF26313D, 5.0f, 0, 1.0f);
@@ -252,15 +255,15 @@ public final class ImGuiScriptEditorPanel {
         float actionY = panel.bottom() - 60.0f;
         ImGui.setCursorScreenPos(panel.x() + pad, actionY);
         if (ImGui.button("Apply", 64.0f, 24.0f)) {
-            applyNodeEdit(node, ebslNode);
+            applyNodeEdit(manager, node, ebslNode);
         }
         ImGui.sameLine();
         if (ImGui.button("Duplicate", 82.0f, 24.0f)) {
-            duplicateNodeLine(node);
+            duplicateNodeLine(manager, node);
         }
         ImGui.sameLine();
         if (ImGui.button("Delete", 64.0f, 24.0f)) {
-            deleteNodeLine(node);
+            deleteNodeLine(manager, node);
         }
         ImGui.setCursorScreenPos(panel.x() + pad, actionY + 32.0f);
         if (ImGui.button(settingBacked ? "Load sample" : "Use template args", 132.0f, 24.0f)) {
@@ -302,7 +305,7 @@ public final class ImGuiScriptEditorPanel {
             ignored -> new NodePosition(28.0f + (index % 3) * 190.0f, 28.0f + (index / 3) * 94.0f));
     }
 
-    private float drawNode(ImDrawList dl, int index, String key, float x, float y, ScriptGraphNode node) {
+    private float drawNode(ImDrawList dl, EbslScriptManager manager, int index, String key, float x, float y, ScriptGraphNode node) {
         float width = Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
         float height = NODE_H * graphZoom;
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
@@ -321,11 +324,11 @@ public final class ImGuiScriptEditorPanel {
             selectedGraphNode = index;
             selectedGraphKey = "";
         }
-        dragNode(key);
+        dragNode(manager, key);
         return width;
     }
 
-    private void dragNode(String key) {
+    private void dragNode(EbslScriptManager manager, String key) {
         if (ImGui.isItemClicked()) {
             draggedNodeKey = key;
             lastMouseX = ImGui.getMousePosX();
@@ -343,6 +346,7 @@ public final class ImGuiScriptEditorPanel {
         }
         if (draggedNodeKey.equals(key) && ImGui.isMouseReleased(0)) {
             draggedNodeKey = "";
+            saveGraphLayout(manager);
         }
     }
 
@@ -357,7 +361,7 @@ public final class ImGuiScriptEditorPanel {
             String command = trimmed.split("\\s+", 2)[0].toLowerCase(Locale.ROOT).replace('-', '_');
             String args = trimmed.length() > command.length() ? trimmed.substring(Math.min(trimmed.length(), command.length())).trim() : "";
             EbslNodeCategory category = EbslNodeTemplate.of(command).category();
-            nodes.add(new ScriptGraphNode(i + 1, trimmed, command, args, category, loadedFile + ":" + (i + 1) + ":" + trimmed));
+            nodes.add(new ScriptGraphNode(i + 1, trimmed, command, args, category, layoutKey(i + 1)));
         }
         return nodes;
     }
@@ -408,12 +412,14 @@ public final class ImGuiScriptEditorPanel {
         }
     }
 
-    private void applyNodeEdit(ScriptGraphNode node, EbslNode ebslNode) {
+    private void applyNodeEdit(EbslScriptManager manager, ScriptGraphNode node, EbslNode ebslNode) {
         if (hasSettings(ebslNode)) {
             replaceNodeLine(node, node.command(), ebslNode.argsFromSettings());
+            saveGraphLayout(manager);
             return;
         }
         replaceNodeLine(node, selectedCommand.get(), selectedArgs.get());
+        saveGraphLayout(manager);
     }
 
     private boolean hasSettings(EbslNode node) {
@@ -457,15 +463,19 @@ public final class ImGuiScriptEditorPanel {
             .toList();
     }
 
-    private void duplicateNodeLine(ScriptGraphNode node) {
+    private void duplicateNodeLine(EbslScriptManager manager, ScriptGraphNode node) {
         mutateSourceLine(node.lineNumber(), node.line(), LineMutation.DUPLICATE);
+        shiftGraphPositionsAfterInsert(node.lineNumber());
+        saveGraphLayout(manager);
         status = "duplicated node";
     }
 
-    private void deleteNodeLine(ScriptGraphNode node) {
+    private void deleteNodeLine(EbslScriptManager manager, ScriptGraphNode node) {
         mutateSourceLine(node.lineNumber(), "", LineMutation.DELETE);
+        shiftGraphPositionsAfterDelete(node.lineNumber());
         selectedGraphNode = -1;
         selectedGraphKey = "";
+        saveGraphLayout(manager);
         status = "deleted node";
     }
 
@@ -501,11 +511,69 @@ public final class ImGuiScriptEditorPanel {
     }
 
     private void load(EbslUiState state, EbslPlatform platform) {
-        EbslScriptDocument document = new EbslScriptManager(platform.storage()).load(state.selectedScriptFile());
+        EbslScriptManager manager = new EbslScriptManager(platform.storage());
+        EbslScriptDocument document = manager.load(state.selectedScriptFile());
         loadedFile = document.fileName();
         loadedRevision = state.scriptRevision();
         source.set(document.source());
+        loadGraphLayout(manager);
         status = "loaded";
+    }
+
+    private void loadGraphLayout(EbslScriptManager manager) {
+        graphNodePositions.clear();
+        for (Map.Entry<String, EbslGraphNodePosition> entry : manager.loadGraphLayout(loadedFile).entrySet()) {
+            graphNodePositions.put(entry.getKey(), new NodePosition(entry.getValue().x(), entry.getValue().y()));
+        }
+    }
+
+    private void saveGraphLayout(EbslScriptManager manager) {
+        Map<String, EbslGraphNodePosition> positions = new HashMap<>();
+        for (Map.Entry<String, NodePosition> entry : graphNodePositions.entrySet()) {
+            positions.put(entry.getKey(), new EbslGraphNodePosition(entry.getValue().x(), entry.getValue().y()));
+        }
+        manager.saveGraphLayout(loadedFile, positions);
+    }
+
+    private String layoutKey(int lineNumber) {
+        return loadedFile + ":" + lineNumber;
+    }
+
+    private void shiftGraphPositionsAfterInsert(int lineNumber) {
+        Map<String, NodePosition> shifted = new HashMap<>();
+        for (Map.Entry<String, NodePosition> entry : graphNodePositions.entrySet()) {
+            int existingLine = layoutLine(entry.getKey());
+            String key = existingLine > lineNumber ? layoutKey(existingLine + 1) : entry.getKey();
+            shifted.put(key, entry.getValue());
+        }
+        graphNodePositions.clear();
+        graphNodePositions.putAll(shifted);
+    }
+
+    private void shiftGraphPositionsAfterDelete(int lineNumber) {
+        Map<String, NodePosition> shifted = new HashMap<>();
+        for (Map.Entry<String, NodePosition> entry : graphNodePositions.entrySet()) {
+            int existingLine = layoutLine(entry.getKey());
+            if (existingLine == lineNumber) {
+                continue;
+            }
+            String key = existingLine > lineNumber ? layoutKey(existingLine - 1) : entry.getKey();
+            shifted.put(key, entry.getValue());
+        }
+        graphNodePositions.clear();
+        graphNodePositions.putAll(shifted);
+    }
+
+    private int layoutLine(String key) {
+        String prefix = loadedFile + ":";
+        if (!key.startsWith(prefix)) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(key.substring(prefix.length()));
+        } catch (NumberFormatException exception) {
+            return -1;
+        }
     }
 
     private record ScriptGraphNode(int lineNumber, String line, String command, String args, EbslNodeCategory category, String key) {
