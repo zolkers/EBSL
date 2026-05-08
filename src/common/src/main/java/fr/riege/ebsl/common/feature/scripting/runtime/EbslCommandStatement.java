@@ -28,10 +28,15 @@ public final class EbslCommandStatement implements EbslStatement {
         }
         if (ticksLeft > 0) {
             if (node != null) {
-                node.tick(new EbslNodeInvocation(args, runtime, runner));
+                EbslNodeInvocation invocation = new EbslNodeInvocation(args, runtime, runner);
+                node.tick(invocation);
+                if (node.isComplete(invocation)) {
+                    ticksLeft = 0;
+                } else {
+                    ticksLeft--;
+                    return EbslStep.RUNNING;
+                }
             }
-            ticksLeft--;
-            return EbslStep.RUNNING;
         }
         if (node != null && node.waitsForNavigation() && runtime.navigation().isNavigating()) {
             return EbslStep.RUNNING;

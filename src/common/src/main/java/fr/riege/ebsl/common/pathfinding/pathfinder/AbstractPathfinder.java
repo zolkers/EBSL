@@ -135,7 +135,11 @@ public abstract class AbstractPathfinder implements Pathfinder {
                             reconstructPath(start, target, currentNode));
                 }
 
-                processSuccessors(start, target, currentNode, openSet, searchContext);
+                Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
+                if (reachedTarget != null) {
+                    return new PathfinderResultImpl(PathState.FOUND,
+                            reconstructPath(start, target, reachedTarget));
+                }
             }
 
             return determinePostLoopResult(currentDepth, start, target, bestFallbackNode);
@@ -227,7 +231,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
     protected abstract void initializeSearch();
     protected abstract void markNodeAsExpanded(Node node);
     protected abstract void performAlgorithmCleanup();
-    protected abstract void processSuccessors(PathPosition requestStart, PathPosition requestTarget,
+    protected abstract Node processSuccessors(PathPosition requestStart, PathPosition requestTarget,
                                               Node currentNode, PrimitiveMinHeap openSet,
                                               SearchContext searchContext);
 }

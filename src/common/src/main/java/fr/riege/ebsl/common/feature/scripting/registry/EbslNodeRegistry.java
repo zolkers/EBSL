@@ -6,6 +6,7 @@ import fr.riege.ebsl.common.feature.scripting.nodes.AddToListNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.AimAtBlockNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.AimAtNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.BreakNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.BreakBlockNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CatalogGoalNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CatalogSensorNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.ChangeVariableNode;
@@ -87,6 +88,7 @@ public final class EbslNodeRegistry {
         register(new AimAtBlockNode());
         register(new SwingNode());
         register(new BreakNode());
+        register(new BreakBlockNode());
         register(new UseNode());
         register(new InteractNode());
         register(new PlaceHandNode());

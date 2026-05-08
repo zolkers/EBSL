@@ -38,6 +38,10 @@ public interface EbslNode {
     default void tick(EbslNodeInvocation invocation) {
     }
 
+    default boolean isComplete(EbslNodeInvocation invocation) {
+        return false;
+    }
+
     default void finish(EbslNodeInvocation invocation) {
     }
 }

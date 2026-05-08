@@ -95,7 +95,7 @@ forever {
     wait 1t
   }
 
-  break 2s
+  break_block minecraft:oak_leaves 5s
   wait 3t
 }
 ```

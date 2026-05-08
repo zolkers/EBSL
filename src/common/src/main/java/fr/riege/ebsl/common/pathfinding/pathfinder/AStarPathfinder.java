@@ -71,7 +71,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
     @Override
-    protected void processSuccessors(PathPosition requestStart, PathPosition requestTarget,
+    protected Node processSuccessors(PathPosition requestStart, PathPosition requestTarget,
                                      Node currentNode, PrimitiveMinHeap openSet,
                                      SearchContext searchContext) {
         PathfindingSession session = sessionOrThrow();
@@ -122,6 +122,9 @@ public final class AStarPathfinder extends AbstractPathfinder {
             candidate.parent = currentNode;
             candidate.gCost = gCost;
             candidate.moveType = inferMoveType(offset);
+            if (candidate.isTarget(requestTarget)) {
+                return candidate;
+            }
             double fCost   = candidate.fCost();
             candidate.cachedFCost = fCost;
             double heapKey = calculateHeapKey(candidate, fCost);
@@ -131,6 +134,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
             candidate.inOpen = true;
             if (profiling) profHeapNanos += System.nanoTime() - t3;
         }
+        return null;
     }
 
     private static double gTolerance(double a, double b) {

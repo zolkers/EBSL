@@ -20,7 +20,7 @@ class EbslScriptGraphParserTest {
                 aim_at_block minecraft:oak_leaves 32 6t
                 wait 1t
               }
-              break 2s
+              break_block minecraft:oak_leaves 5s
             }
             """, line -> "main.ebsl:" + line);
 

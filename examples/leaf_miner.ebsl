@@ -1,5 +1,5 @@
 # Loops forever: navigate near oak leaves, aim only when a leaf is targeted,
-# then hold attack long enough to break it before searching again.
+# then hold attack until that targeted leaf breaks before searching again.
 start
 
 forever {
@@ -10,6 +10,6 @@ forever {
     wait 1t
   }
 
-  break 2s
+  break_block minecraft:oak_leaves 5s
   wait 3t
 }

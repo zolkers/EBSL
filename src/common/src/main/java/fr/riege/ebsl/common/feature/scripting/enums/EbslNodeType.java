@@ -70,6 +70,7 @@ public enum EbslNodeType {
     USE(EbslNodeCategory.PLAYER, true),
     INTERACT(EbslNodeCategory.PLAYER, true),
     BREAK(EbslNodeCategory.PLAYER, true),
+    BREAK_BLOCK(EbslNodeCategory.PLAYER, true),
     PLACE_HAND(EbslNodeCategory.PLAYER, true),
     TRADE(EbslNodeCategory.PLAYER, false),
     HOTBAR(EbslNodeCategory.PLAYER, false),
