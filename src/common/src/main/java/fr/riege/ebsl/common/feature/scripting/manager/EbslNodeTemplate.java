@@ -75,12 +75,14 @@ public record EbslNodeTemplate(
             case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition", "true");
             case MESSAGE -> template(type, "Message", "Send a chat/status message.", "text", "\"hello\"");
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
-            case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 2");
+            case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 4");
             case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "x y z", "0 64 0");
             case GOAL -> template(type, "Goal", "Run a registered pathfinding goal.", "goal args", "");
             case PATH -> template(type, "Path", "Follow or calculate path behavior.", "path args", "");
             case COME -> template(type, "Come", "Ask the bot to come to the player.", "", "");
             case SPACE_MOB -> template(type, "Space Mob", "Use the SpaceMob task from a script node.", "on|off [name] [distance] [tolerance] [radius] [track]", "on closest 3 0.35 32 track");
+            case AIM_AT -> template(type, "Aim At", "Smoothly aim at world coordinates.", "x y z [duration]", "0 64 0 8t");
+            case AIM_AT_BLOCK -> template(type, "Aim At Block", "Find and aim at the nearest matching loaded block.", "block_id [search_radius] [duration]", "minecraft:oak_leaves 32 10t");
             case WALK -> template(type, "Walk", "Hold movement forward for a duration.", "duration", "1s");
             case JUMP -> template(type, "Jump", "Press jump for a duration.", "duration", "2t");
             case CRAWL -> template(type, "Crawl", "Hold crawl/sneak-style movement.", "duration", "1s");

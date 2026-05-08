@@ -1,4 +1,4 @@
-package fr.riege.ebsl.common.feature.task.processor;
+package fr.riege.ebsl.common.feature.aim;
 
 import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
 import fr.riege.ebsl.common.math.Vec3d;

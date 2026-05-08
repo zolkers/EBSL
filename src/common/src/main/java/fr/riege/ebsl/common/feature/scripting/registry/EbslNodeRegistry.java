@@ -3,6 +3,8 @@ package fr.riege.ebsl.common.feature.scripting.registry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.AddToListNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.AimAtBlockNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.AimAtNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.BreakNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CatalogGoalNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CatalogSensorNode;
@@ -81,6 +83,8 @@ public final class EbslNodeRegistry {
         register(new CrouchNode());
         register(new SprintNode());
         register(new PressKeyNode());
+        register(new AimAtNode());
+        register(new AimAtBlockNode());
         register(new SwingNode());
         register(new BreakNode());
         register(new UseNode());

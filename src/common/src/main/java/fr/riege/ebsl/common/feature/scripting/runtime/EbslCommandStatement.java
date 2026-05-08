@@ -27,6 +27,9 @@ public final class EbslCommandStatement implements EbslStatement {
             ticksLeft = node == null ? 0 : node.start(new EbslNodeInvocation(args, runtime, runner));
         }
         if (ticksLeft > 0) {
+            if (node != null) {
+                node.tick(new EbslNodeInvocation(args, runtime, runner));
+            }
             ticksLeft--;
             return EbslStep.RUNNING;
         }

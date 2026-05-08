@@ -55,6 +55,8 @@ public enum EbslNodeType {
     CONTROL_FORK(EbslNodeCategory.CONTROL, true),
     CONTROL_JOIN_ANY(EbslNodeCategory.CONTROL, true),
     CONTROL_JOIN_ALL(EbslNodeCategory.CONTROL, true),
+    AIM_AT(EbslNodeCategory.PLAYER, true),
+    AIM_AT_BLOCK(EbslNodeCategory.PLAYER, true),
     LOOK(EbslNodeCategory.PLAYER, true),
     WALK(EbslNodeCategory.PLAYER, true),
     JUMP(EbslNodeCategory.PLAYER, true),

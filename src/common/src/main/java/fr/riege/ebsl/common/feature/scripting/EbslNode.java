@@ -35,6 +35,9 @@ public interface EbslNode {
 
     int start(EbslNodeInvocation invocation);
 
+    default void tick(EbslNodeInvocation invocation) {
+    }
+
     default void finish(EbslNodeInvocation invocation) {
     }
 }

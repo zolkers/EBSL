@@ -6,7 +6,7 @@ import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.core.settings.*;
-import fr.riege.ebsl.common.feature.task.processor.EntityAimProcessor;
+import fr.riege.ebsl.common.feature.aim.EntityAimProcessor;
 
 import java.util.Comparator;
 import java.util.Locale;
@@ -47,9 +47,9 @@ public final class SpaceMobTask extends Settingable implements BotTask {
                           int wantedSearchRadius, boolean shouldTrackUntilDeath) {
         targetMode.setValue(mode != null ? mode : MobTargetMode.CLOSEST_MOB);
         targetName.setValue(name != null ? name : "");
-        distance.setValue(clamp(wantedDistance, distance.min(), distance.max()));
-        tolerance.setValue(clamp(wantedTolerance, tolerance.min(), tolerance.max()));
-        searchRadius.setValue((int) clamp(wantedSearchRadius, searchRadius.min(), searchRadius.max()));
+        distance.setValue(Math.clamp(wantedDistance, distance.min(), distance.max()));
+        tolerance.setValue(Math.clamp(wantedTolerance, tolerance.min(), tolerance.max()));
+        searchRadius.setValue(Math.clamp(wantedSearchRadius, searchRadius.min(), searchRadius.max()));
         trackUntilDeath.setValue(shouldTrackUntilDeath);
     }
 
@@ -224,10 +224,6 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private record GoalKey(int x, int y, int z) {
