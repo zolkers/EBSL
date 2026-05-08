@@ -49,6 +49,7 @@ public final class ImGuiScriptEditorPanel {
     private static final float GRAPH_INSPECTOR_MIN_WIDTH = 330.0f;
     private static final float GRAPH_INSPECTOR_MAX_WIDTH = 410.0f;
     private static final float GRAPH_INSPECTOR_GAP = 10.0f;
+    private static final String DOC_POPUP_ID = "EBSL Language Doc##ebsl-language-doc";
 
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
     private final ImString selectedCommand = new ImString("", 96);
@@ -66,7 +67,7 @@ public final class ImGuiScriptEditorPanel {
     private String draggedNodeKey = "";
     private float lastMouseX;
     private float lastMouseY;
-    private boolean docOpen;
+    private boolean docOpenRequested;
 
     public void render(EbslUiState state, UiRect viewport, EbslPlatform platform) {
         ensureLoaded(state, platform);
@@ -111,15 +112,16 @@ public final class ImGuiScriptEditorPanel {
         }
         ImGui.sameLine();
         if (ImGui.button("Doc", 54.0f, 22.0f)) {
-            docOpen = true;
+            docOpenRequested = true;
         }
         ImGui.sameLine();
         ImGui.textDisabled(status);
     }
 
     private void renderDocPopup(UiRect viewport) {
-        if (!docOpen) {
-            return;
+        if (docOpenRequested) {
+            ImGui.openPopup(DOC_POPUP_ID);
+            docOpenRequested = false;
         }
         float width = Math.min(760.0f, viewport.width() - 80.0f);
         float height = Math.min(620.0f, viewport.height() - 80.0f);
@@ -127,10 +129,13 @@ public final class ImGuiScriptEditorPanel {
         float y = viewport.y() + (viewport.height() - height) * 0.5f;
         ImGui.setNextWindowPos(x, y, ImGuiCond.Always);
         ImGui.setNextWindowSize(width, height, ImGuiCond.Always);
-        int flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoResize;
-        if (ImGui.begin("EBSL Language Doc##ebsl-language-doc", flags)) {
+        int flags = ImGuiWindowFlags.NoCollapse
+            | ImGuiWindowFlags.NoSavedSettings
+            | ImGuiWindowFlags.NoResize
+            | ImGuiWindowFlags.NoMove;
+        if (ImGui.beginPopupModal(DOC_POPUP_ID, flags)) {
             if (ImGui.button("Close", 72.0f, 22.0f)) {
-                docOpen = false;
+                ImGui.closeCurrentPopup();
             }
             ImGui.sameLine();
             ImGui.textDisabled("Generated from language registries");
@@ -139,7 +144,7 @@ public final class ImGuiScriptEditorPanel {
                 renderLanguageDoc(EbslLanguageDocGenerator.generate());
                 ImGui.endChild();
             }
-            ImGui.end();
+            ImGui.endPopup();
         }
     }
 
