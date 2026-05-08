@@ -34,6 +34,7 @@ import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiStyleVar;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 
@@ -245,35 +246,59 @@ public final class ImGuiScriptEditorPanel {
         UiRect textArea = new UiRect(code.x() + 58, code.y() + 6, Math.round(code.width() - 64.0f), Math.round(code.height() - 12.0f));
         drawSyntaxHighlight(dl, textArea);
         ImGui.setCursorScreenPos(textArea.x(), textArea.y());
+        ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, EbslCodeEditorStyle.DARK.textPadding(), EbslCodeEditorStyle.DARK.textPadding());
         ImGui.pushStyleColor(ImGuiCol.Text, EbslCodeEditorStyle.DARK.editableTextColor());
         ImGui.pushStyleColor(ImGuiCol.FrameBg, EbslCodeEditorStyle.DARK.frameColor());
-        ImGui.inputTextMultiline("##ebsl-code-editor", source, code.width() - 64.0f, code.height() - 12.0f);
+        ImGui.inputTextMultiline("##ebsl-code-editor", source, textArea.width(), textArea.height());
         ImGui.popStyleColor(2);
+        ImGui.popStyleVar();
         dl.addText(code.right() - 128.0f, code.y() + 8.0f, UiTheme.TEXT_DIM, lineCount() + " lines");
     }
 
     private void drawSyntaxHighlight(ImDrawList dl, UiRect textArea) {
         EbslCodeEditorStyle style = EbslCodeEditorStyle.DARK;
         List<List<EbslSyntaxToken>> lines = EbslSyntaxHighlighter.highlight(source.get());
-        int visible = Math.min(lines.size(), Math.max(1, (int) ((textArea.height() - style.textPadding()) / style.lineHeight())));
+        float lineHeight = ImGui.getTextLineHeight();
+        int visible = Math.min(lines.size(), Math.max(1, (int) ((textArea.height() - style.textPadding()) / lineHeight)));
+        dl.pushClipRect(textArea.x(), textArea.y(), textArea.right(), textArea.bottom(), true);
         for (int lineIndex = 0; lineIndex < visible; lineIndex++) {
             float x = textArea.x() + style.textPadding();
-            float y = textArea.y() + style.textPadding() + lineIndex * style.lineHeight();
+            float y = textArea.y() + style.textPadding() + lineIndex * lineHeight;
             for (EbslSyntaxToken token : lines.get(lineIndex)) {
                 int color = EbslSyntaxThemeRegistry.style(token.kind()).color();
                 if (color != 0) {
                     dl.addText(x, y, color, token.text());
                 }
-                x += token.text().length() * style.characterWidth();
+                x += textAdvance(token.text());
             }
         }
+        dl.popClipRect();
+    }
+
+    private static float textAdvance(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0.0f;
+        }
+        if (!text.isBlank()) {
+            return ImGui.calcTextSizeX(text);
+        }
+        float spaceWidth = ImGui.calcTextSizeX("x x") - ImGui.calcTextSizeX("xx");
+        if (spaceWidth <= 0.0f) {
+            spaceWidth = Math.max(1.0f, ImGui.calcTextSizeX("x") * 0.5f);
+        }
+        float width = 0.0f;
+        for (int i = 0; i < text.length(); i++) {
+            width += text.charAt(i) == '\t' ? spaceWidth * 4.0f : spaceWidth;
+        }
+        return width;
     }
 
     private void drawLineNumbers(ImDrawList dl, UiRect gutter) {
         int count = lineCount();
-        int visible = Math.min(count, Math.max(1, (gutter.height() - 12) / 16));
+        float lineHeight = ImGui.getTextLineHeight();
+        int visible = Math.min(count, Math.max(1, (int) ((gutter.height() - 12) / lineHeight)));
         for (int i = 0; i < visible; i++) {
-            dl.addText(gutter.x() + 12.0f, gutter.y() + 8.0f + i * 16.0f, UiTheme.TEXT_DIM, Integer.toString(i + 1));
+            dl.addText(gutter.x() + 12.0f, gutter.y() + 8.0f + i * lineHeight, UiTheme.TEXT_DIM, Integer.toString(i + 1));
         }
     }
 
