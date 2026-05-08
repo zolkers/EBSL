@@ -15,7 +15,7 @@ public final class RemoveFirstFromListNode extends AbstractEbslNode {
     @Override
     public int start(EbslNodeInvocation invocation) {
         if (!invocation.args().isEmpty() && !invocation.runtime().list(invocation.arg(0)).isEmpty()) {
-            invocation.runtime().list(invocation.arg(0)).remove(0);
+            invocation.runtime().list(invocation.arg(0)).removeFirst();
         }
         return 0;
     }

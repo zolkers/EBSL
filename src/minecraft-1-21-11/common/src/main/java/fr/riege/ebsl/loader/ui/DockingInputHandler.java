@@ -49,9 +49,7 @@ public final class DockingInputHandler {
     }
 
     public boolean shouldSuppressImGuiInput() {
-        return CommonImGuiOverlay.shouldConfineMinecraftMouse(ui)
-            && client.mouseHandler != null
-            && client.mouseHandler.isMouseGrabbed();
+        return CommonImGuiOverlay.shouldConfineMinecraftMouse(ui) && client.mouseHandler.isMouseGrabbed();
     }
 
     private void onGrabMouse(GrabMouseEvent event) {
@@ -110,9 +108,6 @@ public final class DockingInputHandler {
     }
 
     private boolean shouldRouteKeyboardToImGui() {
-        return ui.isVisible()
-            && client.screen == null
-            && client.mouseHandler != null
-            && !client.mouseHandler.isMouseGrabbed();
+        return ui.isVisible() && client.screen == null && !client.mouseHandler.isMouseGrabbed();
     }
 }

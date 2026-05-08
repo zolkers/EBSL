@@ -21,7 +21,7 @@ final class PathRotationController {
     private static final double PARKOUR_HARD_TURN_DOT = 0.82;
     private static final double PARKOUR_HARD_DRIFT_DISTANCE = 0.32;
     private static final double PARKOUR_HARD_DRIFT_TAKEOFF_DIST = 5.0;
-    private static final int PARKOUR_NORMAL_LOOKAHEAD_NODES = 2;
+    private static final int PARKOUR_NORMAL_LOOKAHEAD_NODES = 1;
     private static final int PARKOUR_HARD_LOOKAHEAD_NODES = 4;
 
     private final IWorldLayer world;
