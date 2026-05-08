@@ -81,6 +81,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
     private PathfinderResult executePathingAlgorithm(PathPosition start, PathPosition target,
                                                       EnvironmentContext environmentContext) {
         initializeSearch();
+        long startedAtNanos = System.nanoTime();
 
         SearchContext searchContext = new SearchContextImpl(
                 start, target, pathfinderConfiguration, navigationPointProvider, environmentContext);
@@ -110,6 +111,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
             int  currentDepth    = 0;
             Node bestFallbackNode = startNode;
+            int earlyFallbackCheckEvery = earlyFallbackCheckInterval();
 
             while (!openSet.isEmpty() && currentDepth < pathfinderConfiguration.maxIterations) {
                 currentDepth++;
@@ -139,6 +141,13 @@ public abstract class AbstractPathfinder implements Pathfinder {
                 if (reachedTarget != null) {
                     return new PathfinderResultImpl(PathState.FOUND,
                             reconstructPath(start, target, reachedTarget));
+                }
+
+                Node earlyFallbackNode = bestFallbackNode(bestFallbackNode);
+                if (shouldReturnEarlyFallback(currentDepth, earlyFallbackCheckEvery, startedAtNanos, startNode,
+                        earlyFallbackNode)) {
+                    return new PathfinderResultImpl(PathState.FALLBACK,
+                            reconstructPath(start, target, earlyFallbackNode));
                 }
             }
 
@@ -189,6 +198,48 @@ public abstract class AbstractPathfinder implements Pathfinder {
     private boolean hasReachedPathLengthLimit(Node node) {
         return pathfinderConfiguration.maxLength > 0
                 && node.depth >= pathfinderConfiguration.maxLength;
+    }
+
+    private int earlyFallbackCheckInterval() {
+        int configured = pathfinderConfiguration.earlyFallbackIterations;
+        if (configured <= 0) return 32;
+        return Math.max(8, configured / 4);
+    }
+
+    private boolean shouldReturnEarlyFallback(int currentDepth, int checkEvery, long startedAtNanos,
+                                              Node startNode, Node fallbackNode) {
+        if (!pathfinderConfiguration.fallback || !pathfinderConfiguration.earlyFallback || fallbackNode == null) {
+            return false;
+        }
+        if (currentDepth % checkEvery != 0 && !hasExceededCalculationTime(startedAtNanos)) {
+            return false;
+        }
+        if (currentDepth < pathfinderConfiguration.earlyFallbackIterations
+                && !hasExceededCalculationTime(startedAtNanos)) {
+            return false;
+        }
+        return isUsableEarlyFallback(startNode, fallbackNode);
+    }
+
+    private boolean hasExceededCalculationTime(long startedAtNanos) {
+        long budgetMs = pathfinderConfiguration.maxCalculationTimeMs;
+        return budgetMs > 0L && (System.nanoTime() - startedAtNanos) >= budgetMs * 1_000_000L;
+    }
+
+    private boolean isUsableEarlyFallback(Node startNode, Node fallbackNode) {
+        if (fallbackNode == null || fallbackNode == startNode || fallbackNode.depth <= 0) {
+            return false;
+        }
+        int minNodes = Math.max(2, pathfinderConfiguration.earlyFallbackMinPathNodes);
+        if (fallbackNode.depth + 1 < minNodes) {
+            return false;
+        }
+        double startHeuristic = Math.max(0.0, startNode.heuristic);
+        if (startHeuristic <= 0.0) {
+            return true;
+        }
+        double progressRatio = (startHeuristic - Math.max(0.0, fallbackNode.heuristic)) / startHeuristic;
+        return progressRatio >= pathfinderConfiguration.earlyFallbackMinProgressRatio;
     }
 
     private PathfinderResult determinePostLoopResult(int depthReached, PathPosition start,

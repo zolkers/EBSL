@@ -639,22 +639,34 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private PathfinderConfiguration instantConfiguration() {
-        return configuration(PathfinderSettings.instance().instantWalkMaxIterations.value(), PathfinderSettings.instance().instantWalkMaxLength.value());
+        return configuration(
+            PathfinderSettings.instance().instantWalkMaxIterations.value(),
+            PathfinderSettings.instance().instantWalkMaxLength.value(),
+            PathfinderSettings.instance().instantCalculationTimeMs.value());
     }
 
     private PathfinderConfiguration fullConfiguration() {
-        return configuration(PathfinderSettings.instance().defaultWalkMaxIterations.value(), PathfinderSettings.instance().defaultWalkMaxLength.value());
+        return configuration(
+            PathfinderSettings.instance().defaultWalkMaxIterations.value(),
+            PathfinderSettings.instance().defaultWalkMaxLength.value(),
+            PathfinderSettings.instance().defaultCalculationTimeMs.value());
     }
 
     private PathfinderConfiguration repairConfiguration() {
-        return configuration(PathfinderSettings.instance().repairWalkMaxIterations.value(), PathfinderSettings.instance().repairWalkMaxLength.value());
+        return configuration(
+            PathfinderSettings.instance().repairWalkMaxIterations.value(),
+            PathfinderSettings.instance().repairWalkMaxLength.value(),
+            PathfinderSettings.instance().repairCalculationTimeMs.value());
     }
 
     private PathfinderConfiguration queuedConfiguration() {
-        return configuration(PathfinderSettings.instance().queuedLongRangeMaxIterations.value(), PathfinderSettings.instance().queuedLongRangeMaxLength.value());
+        return configuration(
+            PathfinderSettings.instance().queuedLongRangeMaxIterations.value(),
+            PathfinderSettings.instance().queuedLongRangeMaxLength.value(),
+            PathfinderSettings.instance().queuedCalculationTimeMs.value());
     }
 
-    private PathfinderConfiguration configuration(int maxIterations, int maxLength) {
+    private PathfinderConfiguration configuration(int maxIterations, int maxLength, int maxCalculationTimeMs) {
         return PathfinderConfiguration.builder()
             .maxIterations(maxIterations)
             .maxLength(maxLength)
@@ -664,6 +676,11 @@ public final class CommonNavigationBackend implements NavigationService {
                 PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
             .async(true)
             .fallback(true)
+            .earlyFallback(PathfinderSettings.instance().earlyFallbackEnabled.value())
+            .earlyFallbackIterations(PathfinderSettings.instance().earlyFallbackIterations.value())
+            .earlyFallbackMinPathNodes(PathfinderSettings.instance().earlyFallbackMinPathNodes.value())
+            .earlyFallbackMinProgressRatio(PathfinderSettings.instance().earlyFallbackMinProgressRatio.value())
+            .maxCalculationTimeMs(maxCalculationTimeMs)
             .build();
     }
 

@@ -84,21 +84,37 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting cornerSteeringCenterlineMax = registerSetting(new DoubleSetting(
         "corner_steering_centerline_max", "Centerline max", 0.58, 0.05, 2.0));
     public final IntSetting defaultWalkMaxIterations = registerSetting(new IntSetting(
-        "default_walk_max_iterations", "Default max iterations", 24000, 1000, 300000));
+        "default_walk_max_iterations", "Default max iterations", 8000, 1000, 300000));
     public final IntSetting defaultWalkMaxLength = registerSetting(new IntSetting(
-        "default_walk_max_length", "Default max length", 12500, 100, 50000));
+        "default_walk_max_length", "Default max length", 6000, 100, 50000));
     public final IntSetting instantWalkMaxIterations = registerSetting(new IntSetting(
-        "instant_walk_max_iterations", "Instant max iterations", 12000, 1000, 100000));
+        "instant_walk_max_iterations", "Instant max iterations", 2500, 1000, 100000));
     public final IntSetting instantWalkMaxLength = registerSetting(new IntSetting(
-        "instant_walk_max_length", "Instant max length", 1800, 100, 20000));
+        "instant_walk_max_length", "Instant max length", 900, 100, 20000));
     public final IntSetting repairWalkMaxIterations = registerSetting(new IntSetting(
-        "repair_walk_max_iterations", "Repair max iterations", 8000, 1000, 100000));
+        "repair_walk_max_iterations", "Repair max iterations", 1500, 1000, 100000));
     public final IntSetting repairWalkMaxLength = registerSetting(new IntSetting(
-        "repair_walk_max_length", "Repair max length", 600, 50, 10000));
+        "repair_walk_max_length", "Repair max length", 400, 50, 10000));
     public final IntSetting queuedLongRangeMaxIterations = registerSetting(new IntSetting(
-        "queued_long_range_max_iterations", "Queued segment iterations", 24000, 1000, 120000));
+        "queued_long_range_max_iterations", "Queued segment iterations", 4500, 1000, 120000));
     public final IntSetting queuedLongRangeMaxLength = registerSetting(new IntSetting(
-        "queued_long_range_max_length", "Queued segment length", 2600, 100, 30000));
+        "queued_long_range_max_length", "Queued segment length", 1200, 100, 30000));
+    public final BooleanSetting earlyFallbackEnabled = registerSetting(new BooleanSetting(
+        "early_fallback_enabled", "Early fallback", true));
+    public final IntSetting earlyFallbackIterations = registerSetting(new IntSetting(
+        "early_fallback_iterations", "Early fallback iterations", 700, 50, 50000));
+    public final IntSetting earlyFallbackMinPathNodes = registerSetting(new IntSetting(
+        "early_fallback_min_path_nodes", "Early fallback min nodes", 9, 2, 200));
+    public final DoubleSetting earlyFallbackMinProgressRatio = registerSetting(new DoubleSetting(
+        "early_fallback_min_progress_ratio", "Early fallback progress", 0.06, 0.0, 1.0));
+    public final IntSetting instantCalculationTimeMs = registerSetting(new IntSetting(
+        "instant_calculation_time_ms", "Instant time budget ms", 35, 0, 1000));
+    public final IntSetting defaultCalculationTimeMs = registerSetting(new IntSetting(
+        "default_calculation_time_ms", "Default time budget ms", 90, 0, 5000));
+    public final IntSetting repairCalculationTimeMs = registerSetting(new IntSetting(
+        "repair_calculation_time_ms", "Repair time budget ms", 25, 0, 1000));
+    public final IntSetting queuedCalculationTimeMs = registerSetting(new IntSetting(
+        "queued_calculation_time_ms", "Queued time budget ms", 60, 0, 5000));
     public final DoubleSetting stuckDistThreshold = registerSetting(new DoubleSetting(
         "stuck_dist_threshold", "Stuck distance", 0.2, 0.01, 1.0));
     public final IntSetting stuckTimeMs = registerSetting(new IntSetting(
@@ -379,7 +395,15 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.repairWalkMaxIterations,
             INSTANCE.repairWalkMaxLength,
             INSTANCE.queuedLongRangeMaxIterations,
-            INSTANCE.queuedLongRangeMaxLength);
+            INSTANCE.queuedLongRangeMaxLength,
+            INSTANCE.earlyFallbackEnabled,
+            INSTANCE.earlyFallbackIterations,
+            INSTANCE.earlyFallbackMinPathNodes,
+            INSTANCE.earlyFallbackMinProgressRatio,
+            INSTANCE.instantCalculationTimeMs,
+            INSTANCE.defaultCalculationTimeMs,
+            INSTANCE.repairCalculationTimeMs,
+            INSTANCE.queuedCalculationTimeMs);
     }
 
     public static List<Setting<?>> executionSettings() {

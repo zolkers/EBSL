@@ -12,13 +12,15 @@ public record PathPlannerOptions(
     boolean allowJump,
     boolean allowFall,
     boolean allowWalkDiagonal,
-    boolean processPath
+    boolean processPath,
+    int maxCalculationTimeMs
 ) {
     public static PathPlannerOptions defaults() {
         PathfinderSettings settings = PathfinderSettings.instance();
         return builder()
             .maxIterations(settings.defaultWalkMaxIterations.value())
             .maxLength(settings.defaultWalkMaxLength.value())
+            .maxCalculationTimeMs(settings.defaultCalculationTimeMs.value())
             .maxJumpHeight(settings.maxJumpHeight.value())
             .build();
     }
@@ -28,6 +30,7 @@ public record PathPlannerOptions(
         return defaults().toBuilder()
             .maxIterations(settings.instantWalkMaxIterations.value())
             .maxLength(settings.instantWalkMaxLength.value())
+            .maxCalculationTimeMs(settings.instantCalculationTimeMs.value())
             .build();
     }
 
@@ -42,7 +45,8 @@ public record PathPlannerOptions(
             .allowJump(allowJump)
             .allowFall(allowFall)
             .allowWalkDiagonal(allowWalkDiagonal)
-            .processPath(processPath);
+            .processPath(processPath)
+            .maxCalculationTimeMs(maxCalculationTimeMs);
     }
 
     public static Builder builder() {
@@ -60,6 +64,7 @@ public record PathPlannerOptions(
         private boolean allowFall = true;
         private boolean allowWalkDiagonal = true;
         private boolean processPath = true;
+        private int maxCalculationTimeMs = 0;
 
         public Builder maxIterations(int value) {
             this.maxIterations = value;
@@ -111,6 +116,11 @@ public record PathPlannerOptions(
             return this;
         }
 
+        public Builder maxCalculationTimeMs(int value) {
+            this.maxCalculationTimeMs = value;
+            return this;
+        }
+
         public PathPlannerOptions build() {
             return new PathPlannerOptions(
                 Math.max(1, maxIterations),
@@ -122,7 +132,8 @@ public record PathPlannerOptions(
                 allowJump,
                 allowFall,
                 allowWalkDiagonal,
-                processPath);
+                processPath,
+                Math.max(0, maxCalculationTimeMs));
         }
     }
 }

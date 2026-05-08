@@ -10,6 +10,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfigur
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.Collection;
@@ -91,6 +92,7 @@ public final class PathPlanningService {
 
     public PathfinderConfiguration configuration(PathPlannerOptions options) {
         PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
+        PathfinderSettings settings = PathfinderSettings.instance();
         return PathfinderConfiguration.builder()
             .maxIterations(effectiveOptions.maxIterations())
             .maxLength(effectiveOptions.maxLength())
@@ -104,6 +106,11 @@ public final class PathPlanningService {
                 effectiveOptions.allowWalkDiagonal()))
             .async(effectiveOptions.async())
             .fallback(effectiveOptions.fallback())
+            .earlyFallback(settings.earlyFallbackEnabled.value())
+            .earlyFallbackIterations(settings.earlyFallbackIterations.value())
+            .earlyFallbackMinPathNodes(settings.earlyFallbackMinPathNodes.value())
+            .earlyFallbackMinProgressRatio(settings.earlyFallbackMinProgressRatio.value())
+            .maxCalculationTimeMs(effectiveOptions.maxCalculationTimeMs())
             .build();
     }
 

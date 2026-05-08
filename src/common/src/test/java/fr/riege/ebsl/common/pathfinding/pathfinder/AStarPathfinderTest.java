@@ -51,6 +51,29 @@ class AStarPathfinderTest {
     }
 
     @Test
+    void earlyFallbackReturnsUsableProgressBeforeIterationCap() throws Exception {
+        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(true)
+            .maxIterations(10000)
+            .earlyFallback(true)
+            .earlyFallbackIterations(16)
+            .earlyFallbackMinPathNodes(8)
+            .earlyFallbackMinProgressRatio(0.01)
+            .build());
+
+        PathfinderResult result = pathfinder.findPath(
+            new PathPosition(0, 64, 0),
+            new PathPosition(1000, 64, 0),
+            null
+        ).toCompletableFuture().get(1, TimeUnit.SECONDS);
+
+        assertEquals(PathState.FALLBACK, result.getPathState());
+        assertEquals(16, pathfinder.getExploredCount());
+        assertEquals(17, result.getPath().length());
+    }
+
+    @Test
     void processorRegistryCreatesFreshStandardProcessors() {
         assertNotSame(
             NodeProcessorRegistry.createStandardProcessors().getFirst(),

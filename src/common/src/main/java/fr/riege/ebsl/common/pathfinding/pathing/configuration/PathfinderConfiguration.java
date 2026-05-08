@@ -18,6 +18,11 @@ public final class PathfinderConfiguration {
     public final boolean              async;
     public final boolean              fallback;
     public final boolean              profiling;
+    public final boolean              earlyFallback;
+    public final int                  earlyFallbackIterations;
+    public final int                  earlyFallbackMinPathNodes;
+    public final double               earlyFallbackMinProgressRatio;
+    public final long                 maxCalculationTimeMs;
     public final NavigationPointProvider provider;
     public final HeuristicWeights     heuristicWeights;
     public final List<NodeProcessor>  processors;
@@ -30,6 +35,11 @@ public final class PathfinderConfiguration {
         this.async            = b.async;
         this.fallback         = b.fallback;
         this.profiling        = b.profiling;
+        this.earlyFallback    = b.earlyFallback;
+        this.earlyFallbackIterations = b.earlyFallbackIterations;
+        this.earlyFallbackMinPathNodes = b.earlyFallbackMinPathNodes;
+        this.earlyFallbackMinProgressRatio = b.earlyFallbackMinProgressRatio;
+        this.maxCalculationTimeMs = b.maxCalculationTimeMs;
         this.provider         = b.provider;
         this.heuristicWeights = b.heuristicWeights;
         this.processors       = Collections.unmodifiableList(b.processors);
@@ -47,6 +57,11 @@ public final class PathfinderConfiguration {
         private boolean              async            = false;
         private boolean              fallback         = true;
         private boolean              profiling        = false;
+        private boolean              earlyFallback    = false;
+        private int                  earlyFallbackIterations = 0;
+        private int                  earlyFallbackMinPathNodes = 8;
+        private double               earlyFallbackMinProgressRatio = 0.08;
+        private long                 maxCalculationTimeMs = 0L;
         private NavigationPointProvider provider      = DefaultNavigationPointProvider.INSTANCE;
         private HeuristicWeights     heuristicWeights = HeuristicWeights.DEFAULT_WEIGHTS;
         private List<NodeProcessor>  processors       = List.of();
@@ -58,6 +73,14 @@ public final class PathfinderConfiguration {
         public Builder async(boolean v)                { this.async            = v; return this; }
         public Builder fallback(boolean v)             { this.fallback         = v; return this; }
         public Builder profiling(boolean v)            { this.profiling        = v; return this; }
+        public Builder earlyFallback(boolean v)        { this.earlyFallback    = v; return this; }
+        public Builder earlyFallbackIterations(int v)  { this.earlyFallbackIterations = v; return this; }
+        public Builder earlyFallbackMinPathNodes(int v){ this.earlyFallbackMinPathNodes = v; return this; }
+        public Builder earlyFallbackMinProgressRatio(double v) {
+            this.earlyFallbackMinProgressRatio = v;
+            return this;
+        }
+        public Builder maxCalculationTimeMs(long v)    { this.maxCalculationTimeMs = v; return this; }
         public Builder provider(NavigationPointProvider v) { this.provider     = v; return this; }
         public Builder heuristicWeights(HeuristicWeights v){ this.heuristicWeights = v; return this; }
         public Builder processors(List<NodeProcessor> v)   { this.processors   = v; return this; }
