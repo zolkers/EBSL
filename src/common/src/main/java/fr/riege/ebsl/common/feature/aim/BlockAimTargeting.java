@@ -1,12 +1,10 @@
 package fr.riege.ebsl.common.feature.aim;
 
 import fr.riege.ebsl.common.domain.world.BlockId;
-import fr.riege.ebsl.common.domain.world.BlockGroupRegistry;
+import fr.riege.ebsl.common.domain.world.BlockSelector;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
-
-import java.util.Locale;
 
 public final class BlockAimTargeting {
     private static final double[][] AIM_OFFSETS = {
@@ -82,15 +80,6 @@ public final class BlockAimTargeting {
         if (id == null || target == null || target.isBlank()) {
             return false;
         }
-        String normalized = target.trim().toLowerCase(Locale.ROOT).replace('\\', '/');
-        String exact = id.toString().toLowerCase(Locale.ROOT);
-        if (exact.equals(normalized)) {
-            return true;
-        }
-        if (!normalized.contains(":") && BlockGroupRegistry.matches(id, normalized)) {
-            return true;
-        }
-        String path = id.path().toLowerCase(Locale.ROOT);
-        return !normalized.contains(":") && (path.equals(normalized) || path.endsWith("_" + normalized));
+        return BlockSelector.parse(target).matches(id);
     }
 }

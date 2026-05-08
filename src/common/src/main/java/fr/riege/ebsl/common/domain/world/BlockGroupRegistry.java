@@ -17,8 +17,7 @@ public final class BlockGroupRegistry {
     }
 
     public static boolean matches(BlockId id, String token) {
-        BlockMatcher matcher = GROUPS.get(normalize(token));
-        return matcher != null && matcher.matches(id);
+        return BlockSelectorPredicateRegistry.matches(id, token);
     }
 
     private static void register(BlockGroupType type, BlockMatcher matcher) {
@@ -27,12 +26,12 @@ public final class BlockGroupRegistry {
         }
     }
 
-    private static boolean isLeaf(BlockId id) {
+    public static boolean isLeaf(BlockId id) {
         String path = path(id);
         return path.endsWith("_leaves") || path.equals("azalea_leaves") || path.equals("flowering_azalea_leaves");
     }
 
-    private static boolean isWood(BlockId id) {
+    public static boolean isWood(BlockId id) {
         String path = path(id);
         return path.endsWith("_log")
             || path.endsWith("_wood")
@@ -45,7 +44,7 @@ public final class BlockGroupRegistry {
             || path.startsWith("stripped_");
     }
 
-    private static boolean isGrass(BlockId id) {
+    public static boolean isGrass(BlockId id) {
         String path = path(id);
         return path.equals("grass")
             || path.equals("short_grass")

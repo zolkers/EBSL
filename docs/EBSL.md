@@ -91,7 +91,7 @@ goal_walkxz 120 -40
 
 ## Leaf Mining Loop
 
-This pattern keeps searching for oak leaves, aims smoothly at the nearest loaded leaf, waits until the crosshair actually targets a leaf, then breaks it and loops:
+This pattern keeps searching for leaves, aims smoothly at the nearest loaded leaf, waits until the crosshair actually targets a leaf, then breaks it and loops:
 
 ```ebsl
 start
@@ -107,6 +107,13 @@ forever {
   break_block leaf
   wait 3t
 }
+```
+
+Block selectors can compose predicates with logical operators:
+
+```ebsl
+goal_nearest_block leaf|wood 32 4
+break_block wood&!crimson_stem
 ```
 
 ## Existing Tasks

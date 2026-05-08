@@ -13,6 +13,8 @@ class BlockAimTargetingTest {
         assertTrue(BlockAimTargeting.matches(BlockId.of("minecraft:birch_log"), "wood"));
         assertTrue(BlockAimTargeting.matches(BlockId.of("minecraft:crimson_stem"), "wood"));
         assertTrue(BlockAimTargeting.matches(BlockId.of("minecraft:tall_grass"), "grass"));
+        assertTrue(BlockAimTargeting.matches(BlockId.of("minecraft:birch_log"), "leaf|wood"));
+        assertFalse(BlockAimTargeting.matches(BlockId.of("minecraft:crimson_stem"), "wood&!crimson_stem"));
         assertFalse(BlockAimTargeting.matches(BlockId.of("minecraft:stone"), "wood"));
     }
 
