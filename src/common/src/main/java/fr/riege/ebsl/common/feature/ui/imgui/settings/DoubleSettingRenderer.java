@@ -17,12 +17,8 @@ final class DoubleSettingRenderer implements ImGuiSettingRenderer {
         ImDouble value = new ImDouble(setting.value());
         context.applyItemWidth();
         if (ImGui.inputDouble(context.label(setting), value, 0.1, 1.0, "%.3f")) {
-            setting.setValue(clamp(value.get(), setting.min(), setting.max()));
+            setting.setValue(Math.clamp(value.get(), setting.min(), setting.max()));
             context.changed();
         }
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
     }
 }

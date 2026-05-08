@@ -17,12 +17,8 @@ final class IntSettingRenderer implements ImGuiSettingRenderer {
         ImInt value = new ImInt(setting.value());
         context.applyItemWidth();
         if (ImGui.inputInt(context.label(setting), value)) {
-            setting.setValue(clamp(value.get(), setting.min(), setting.max()));
+            setting.setValue(Math.clamp(value.get(), setting.min(), setting.max()));
             context.changed();
         }
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 }
