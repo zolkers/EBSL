@@ -11,6 +11,8 @@ import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
+import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
+import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
@@ -21,6 +23,7 @@ import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
+import imgui.type.ImDouble;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 
@@ -33,6 +36,9 @@ import java.util.Map;
 public final class ImGuiScriptEditorPanel {
     private static final int BUFFER_SIZE = 65536;
     private static final float NODE_H = 56.0f;
+    private static final float GRAPH_INSPECTOR_MIN_WIDTH = 330.0f;
+    private static final float GRAPH_INSPECTOR_MAX_WIDTH = 410.0f;
+    private static final float GRAPH_INSPECTOR_GAP = 10.0f;
 
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
     private final ImString selectedCommand = new ImString("", 96);
@@ -101,9 +107,19 @@ public final class ImGuiScriptEditorPanel {
 
     private void renderGraph(UiRect editor) {
         ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(editor.x(), editor.y(), editor.right(), editor.bottom(), 0xFF0D1117);
-        renderGraphToolbar(editor);
-        UiRect canvas = new UiRect(editor.x(), editor.y() + 34, editor.width(), editor.height() - 34);
+        float inspectorWidth = editor.width() >= 780.0f
+            ? Math.min(GRAPH_INSPECTOR_MAX_WIDTH, Math.max(GRAPH_INSPECTOR_MIN_WIDTH, editor.width() * 0.30f))
+            : 0.0f;
+        UiRect graph = inspectorWidth > 0.0f
+            ? new UiRect(editor.x(), editor.y(), Math.round(editor.width() - inspectorWidth - GRAPH_INSPECTOR_GAP), editor.height())
+            : editor;
+        UiRect inspector = inspectorWidth > 0.0f
+            ? new UiRect(Math.round(graph.right() + GRAPH_INSPECTOR_GAP), editor.y(), Math.round(inspectorWidth), editor.height())
+            : null;
+
+        dl.addRectFilled(graph.x(), graph.y(), graph.right(), graph.bottom(), 0xFF0D1117);
+        renderGraphToolbar(graph);
+        UiRect canvas = new UiRect(graph.x(), graph.y() + 34, graph.width(), graph.height() - 34);
         panAndZoomCanvas(canvas);
         drawGrid(dl, canvas);
         List<ScriptGraphNode> nodes = graphNodes();
@@ -128,8 +144,12 @@ public final class ImGuiScriptEditorPanel {
         if (nodes.isEmpty()) {
             dl.addText(canvas.x() + 20.0f, canvas.y() + 20.0f, UiTheme.TEXT_MUTED, "Empty script");
         }
-        drawMiniMap(editor, nodes);
-        renderSelectedNodeDetails(editor, nodes);
+        drawMiniMap(graph, nodes);
+        if (inspector != null) {
+            renderNodeInspector(inspector, nodes);
+        } else {
+            renderFloatingNodeInspector(graph, nodes);
+        }
     }
 
     private void renderCodeEditor(UiRect code) {
@@ -183,44 +203,61 @@ public final class ImGuiScriptEditorPanel {
         ImGui.textDisabled("drag nodes | right-drag canvas | wheel zoom");
     }
 
-    private void renderSelectedNodeDetails(UiRect editor, List<ScriptGraphNode> nodes) {
+    private void renderFloatingNodeInspector(UiRect editor, List<ScriptGraphNode> nodes) {
         if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
             return;
         }
+        UiRect panel = new UiRect(editor.right() - 318, editor.y() + 48, 306, Math.round(Math.min(360.0f, editor.height() - 60.0f)));
+        renderNodeInspector(panel, nodes);
+    }
+
+    private void renderNodeInspector(UiRect panel, List<ScriptGraphNode> nodes) {
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRectFilled(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xEE121A22, 5.0f);
+        dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF26313D, 5.0f, 0, 1.0f);
+
+        float pad = 12.0f;
+        if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
+            ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + pad);
+            ImGui.text("Node inspector");
+            ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + 36.0f);
+            ImGui.textDisabled("Select a graph node to edit its settings.");
+            return;
+        }
+
         ScriptGraphNode node = nodes.get(selectedGraphNode);
         EbslNode ebslNode = EbslNodeRegistry.get(node.command());
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         syncSelectedEditor(node, ebslNode);
         boolean settingBacked = hasSettings(ebslNode);
-        float panelW = 306.0f;
-        float panelH = settingBacked ? 320.0f : 236.0f;
-        float x = editor.right() - panelW - 12.0f;
-        float y = editor.y() + 48.0f;
-        ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(x, y, x + panelW, y + panelH, 0xEE121A22, 5.0f);
-        dl.addRect(x, y, x + panelW, y + panelH, 0xFF67B7FF, 5.0f, 0, 1.0f);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 8.0f);
+        float contentWidth = panel.width() - pad * 2.0f;
+        dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF67B7FF, 5.0f, 0, 1.0f);
+
+        ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + 10.0f);
         ImGui.text(template.title());
-        ImGui.setCursorScreenPos(x + 10.0f, y + 28.0f);
+        ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + 32.0f);
         ImGui.textDisabled(template.description());
-        ImGui.setCursorScreenPos(x + 10.0f, y + 34.0f);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 58.0f);
+
+        float contentTop = panel.y() + 62.0f;
+        float footerHeight = 94.0f;
+        float contentHeight = Math.max(96.0f, panel.height() - (contentTop - panel.y()) - footerHeight);
+        ImGui.setCursorScreenPos(panel.x() + pad, contentTop);
         if (settingBacked) {
-            ImGui.beginChild("##ebsl-node-settings", panelW - 20.0f, 164.0f, true);
-            renderNodeSettings(ebslNode, panelW - 40.0f);
+            ImGui.beginChild("##ebsl-node-settings", contentWidth, contentHeight, true);
+            renderNodeSettings(ebslNode, Math.max(120.0f, contentWidth - 20.0f));
             ImGui.endChild();
         } else {
-            ImGui.setNextItemWidth(panelW - 20.0f);
+            ImGui.setNextItemWidth(contentWidth);
             ImGui.inputText("##ebsl-node-command", selectedCommand);
-            ImGui.setCursorScreenPos(x + 10.0f, y + 90.0f);
-            ImGui.setNextItemWidth(panelW - 20.0f);
+            ImGui.setCursorScreenPos(panel.x() + pad, contentTop + 34.0f);
+            ImGui.setNextItemWidth(contentWidth);
             ImGui.inputText("##ebsl-node-args", selectedArgs);
         }
-        float hintY = settingBacked ? y + 232.0f : y + 122.0f;
-        float actionY = settingBacked ? y + 260.0f : y + 150.0f;
-        ImGui.setCursorScreenPos(x + 10.0f, hintY);
+
+        float actionY = panel.bottom() - 72.0f;
+        ImGui.setCursorScreenPos(panel.x() + pad, actionY - 26.0f);
         ImGui.textDisabled(settingBacked ? "fields are node settings" : "args: " + template.argsHint());
-        ImGui.setCursorScreenPos(x + 10.0f, actionY);
+        ImGui.setCursorScreenPos(panel.x() + pad, actionY);
         if (ImGui.button("Apply", 64.0f, 24.0f)) {
             applyNodeEdit(node, ebslNode);
         }
@@ -232,7 +269,7 @@ public final class ImGuiScriptEditorPanel {
         if (ImGui.button("Delete", 64.0f, 24.0f)) {
             deleteNodeLine(node);
         }
-        ImGui.setCursorScreenPos(x + 10.0f, actionY + 32.0f);
+        ImGui.setCursorScreenPos(panel.x() + pad, actionY + 32.0f);
         if (ImGui.button(settingBacked ? "Load sample" : "Use template args", 132.0f, 24.0f)) {
             if (settingBacked) {
                 ebslNode.loadArgs(splitArgs(template.sampleArgs()));
@@ -241,7 +278,7 @@ public final class ImGuiScriptEditorPanel {
                 selectedArgs.set(template.sampleArgs());
             }
         }
-        dl.addText(x + 10.0f, y + panelH - 22.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
+        dl.addText(panel.x() + pad, panel.bottom() - 22.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
     }
 
     private void panAndZoomCanvas(UiRect canvas) {
@@ -405,14 +442,14 @@ public final class ImGuiScriptEditorPanel {
                     s.setValue(value.get());
                 }
             } else if (setting instanceof IntSetting s) {
-                int[] value = {s.value()};
-                if (ImGui.sliderInt(label, value, s.min(), s.max())) {
-                    s.setValue(value[0]);
+                ImInt value = new ImInt(s.value());
+                if (ImGui.inputInt(label, value)) {
+                    s.setValue(clamp(value.get(), s.min(), s.max()));
                 }
             } else if (setting instanceof DoubleSetting s) {
-                float[] value = {(float) s.value().doubleValue()};
-                if (ImGui.sliderFloat(label, value, (float) s.min(), (float) s.max(), "%.2f")) {
-                    s.setValue((double) value[0]);
+                ImDouble value = new ImDouble(s.value());
+                if (ImGui.inputDouble(label, value, 0.1, 1.0, "%.3f")) {
+                    s.setValue(clamp(value.get(), s.min(), s.max()));
                 }
             } else if (setting instanceof BooleanSetting s) {
                 ImBoolean value = new ImBoolean(s.value());
@@ -456,7 +493,20 @@ public final class ImGuiScriptEditorPanel {
         if (args == null || args.isBlank()) {
             return List.of();
         }
-        return List.of(args.trim().split("\\s+"));
+        return EbslTokenizer.tokenize(args).stream()
+            .filter(token -> !token.equals(EbslSyntax.LINE_END)
+                && !token.equals(EbslSyntax.STATEMENT_END)
+                && !token.equals(EbslSyntax.BLOCK_OPEN)
+                && !token.equals(EbslSyntax.BLOCK_CLOSE))
+            .toList();
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private void duplicateNodeLine(ScriptGraphNode node) {

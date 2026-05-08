@@ -9,6 +9,8 @@ import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
 import imgui.type.ImBoolean;
+import imgui.type.ImDouble;
+import imgui.type.ImInt;
 
 import java.util.List;
 
@@ -40,15 +42,15 @@ final class ImGuiSettingControls {
                 PathfinderSettings.save();
             }
         } else if (setting instanceof IntSetting s) {
-            int[] v = {s.value()};
-            if (ImGui.sliderInt(setting.displayName(), v, s.min(), s.max())) {
-                s.setValue(v[0]);
+            ImInt v = new ImInt(s.value());
+            if (ImGui.inputInt(setting.displayName(), v)) {
+                s.setValue(clamp(v.get(), s.min(), s.max()));
                 PathfinderSettings.save();
             }
         } else if (setting instanceof DoubleSetting s) {
-            float[] v = {(float) s.value().doubleValue()};
-            if (ImGui.sliderFloat(setting.displayName(), v, (float) s.min(), (float) s.max(), "%.2f")) {
-                s.setValue((double) v[0]);
+            ImDouble v = new ImDouble(s.value());
+            if (ImGui.inputDouble(setting.displayName(), v, 0.1, 1.0, "%.3f")) {
+                s.setValue(clamp(v.get(), s.min(), s.max()));
                 PathfinderSettings.save();
             }
         } else if (setting instanceof ColorSetting s) {
@@ -72,5 +74,13 @@ final class ImGuiSettingControls {
             setting.setValue(packed);
             PathfinderSettings.save();
         }
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

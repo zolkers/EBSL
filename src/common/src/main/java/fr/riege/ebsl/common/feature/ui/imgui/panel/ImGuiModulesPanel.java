@@ -17,6 +17,7 @@ import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImBoolean;
+import imgui.type.ImDouble;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 
@@ -135,12 +136,12 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
             ImBoolean v = new ImBoolean(s.value());
             if (ImGui.checkbox(setting.displayName(), v)) { s.setValue(v.get()); save.run(); }
         } else if (setting instanceof IntSetting s) {
-            int[] v = {s.value()};
-            if (ImGui.sliderInt(setting.displayName(), v, s.min(), s.max())) { s.setValue(v[0]); save.run(); }
+            ImInt v = new ImInt(s.value());
+            if (ImGui.inputInt(setting.displayName(), v)) { s.setValue(clamp(v.get(), s.min(), s.max())); save.run(); }
         } else if (setting instanceof DoubleSetting s) {
-            float[] v = {(float) s.value().doubleValue()};
-            if (ImGui.sliderFloat(setting.displayName(), v, (float) s.min(), (float) s.max())) {
-                s.setValue((double) v[0]); save.run();
+            ImDouble v = new ImDouble(s.value());
+            if (ImGui.inputDouble(setting.displayName(), v, 0.1, 1.0, "%.3f")) {
+                s.setValue(clamp(v.get(), s.min(), s.max())); save.run();
             }
         } else if (setting instanceof StringSetting s) {
             ImString v = stringValues.computeIfAbsent(ownerId + "." + setting.id(),
@@ -232,5 +233,13 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     private void saveSetting(BotTask task, Setting<?> setting) {
         BotTaskRegistry.notifySettingChanged(task, setting);
         AnalyticsEventLog.recordAnalytics("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 }
