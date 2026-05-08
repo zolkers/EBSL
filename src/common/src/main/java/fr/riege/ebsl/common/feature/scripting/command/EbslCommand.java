@@ -76,8 +76,8 @@ public final class EbslCommand {
             lines.add((type.executable() ? "  " : "  *") + type.id());
         }
         lines.add("* = declared for compatibility, runtime backend not implemented yet");
-        lines.add("Executable script nodes: " + EbslNodeRegistry.nodes().size());
-        for (EbslNode node : EbslNodeRegistry.nodes()) {
+        lines.add("Executable script nodes: " + EbslNodeRegistry.canonicalNodes().size());
+        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
             lines.add("  " + node.id());
         }
         return lines;

@@ -11,7 +11,6 @@ import fr.riege.ebsl.common.feature.scripting.nodes.CrawlNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CreateListNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CrouchNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.EventCallNode;
-import fr.riege.ebsl.common.feature.scripting.nodes.GoalNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.GoalNearestBlockNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.GotoNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.InteractNode;
@@ -22,7 +21,6 @@ import fr.riege.ebsl.common.feature.scripting.nodes.LookNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.MessageNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.OperatorModNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.OperatorRandomNode;
-import fr.riege.ebsl.common.feature.scripting.nodes.PathNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.PlaceHandNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.PressKeyNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.RemoveFirstFromListNode;
@@ -44,6 +42,7 @@ import fr.riege.ebsl.common.feature.scripting.nodes.WaitUntilNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.WalkNode;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiCatalog;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
+import java.util.LinkedHashSet;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -68,8 +67,6 @@ public final class EbslNodeRegistry {
         register(new GotoNode());
         register(new GoalNearestBlockNode());
         register(new TravelNode());
-        register(new GoalNode());
-        register(new PathNode());
         register(new ComeNode());
         register(new StopNode());
         register(new StopChainNode());
@@ -104,6 +101,10 @@ public final class EbslNodeRegistry {
 
     public static Collection<EbslNode> nodes() {
         return NODES.values();
+    }
+
+    public static Collection<EbslNode> canonicalNodes() {
+        return new LinkedHashSet<>(NODES.values());
     }
 
     private static void register(EbslNode node) {

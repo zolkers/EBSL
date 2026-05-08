@@ -8,7 +8,6 @@ import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
-import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
@@ -190,7 +189,7 @@ public final class ImGuiScriptEditorPanel {
         }
         ScriptGraphNode node = nodes.get(selectedGraphNode);
         EbslNode ebslNode = EbslNodeRegistry.get(node.command());
-        EbslNodeTemplate template = EbslNodeTemplate.of(type(node.command()));
+        EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         syncSelectedEditor(node, ebslNode);
         boolean settingBacked = hasSettings(ebslNode);
         float panelW = 306.0f;
@@ -277,7 +276,7 @@ public final class ImGuiScriptEditorPanel {
     private float drawNode(ImDrawList dl, int index, String key, float x, float y, ScriptGraphNode node) {
         float width = Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
         float height = NODE_H * graphZoom;
-        EbslNodeTemplate template = EbslNodeTemplate.of(type(node.command()));
+        EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         int fill = selectedGraphNode == index ? 0xFF22364A : color(node.category());
         dl.addRectFilled(x, y, x + width, y + height, fill, 6.0f);
         dl.addRect(x, y, x + width, y + height, 0xFF67B7FF, 6.0f, 0, 1.5f);
@@ -328,7 +327,7 @@ public final class ImGuiScriptEditorPanel {
             }
             String command = trimmed.split("\\s+", 2)[0].toLowerCase(Locale.ROOT).replace('-', '_');
             String args = trimmed.length() > command.length() ? trimmed.substring(Math.min(trimmed.length(), command.length())).trim() : "";
-            EbslNodeCategory category = category(command);
+            EbslNodeCategory category = EbslNodeTemplate.of(command).category();
             nodes.add(new ScriptGraphNode(i + 1, trimmed, command, args, category, loadedFile + ":" + (i + 1) + ":" + trimmed));
         }
         return nodes;
@@ -509,22 +508,6 @@ public final class ImGuiScriptEditorPanel {
         loadedRevision = state.scriptRevision();
         source.set(document.source());
         status = "loaded";
-    }
-
-    private static EbslNodeCategory category(String command) {
-        try {
-            return EbslNodeType.byId(command).category();
-        } catch (RuntimeException exception) {
-            return EbslNodeCategory.UTILITY;
-        }
-    }
-
-    private static EbslNodeType type(String command) {
-        try {
-            return EbslNodeType.byId(command);
-        } catch (RuntimeException exception) {
-            return EbslNodeType.CUSTOM_NODE;
-        }
     }
 
     private static int color(EbslNodeCategory category) {

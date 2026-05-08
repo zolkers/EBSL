@@ -1,27 +1,23 @@
 package fr.riege.ebsl.common.feature.scripting.manager;
 
+import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 
 import java.util.Locale;
 
 public record EbslNodeTemplate(
-    EbslNodeType type,
+    String command,
+    EbslNodeCategory category,
     String title,
     String description,
     String argsHint,
     String sampleArgs
 ) {
-    public String command() {
-        return type.id();
-    }
-
     public String sampleLine() {
         return sampleArgs.isBlank() ? command() : command() + " " + sampleArgs;
-    }
-
-    public EbslNodeCategory category() {
-        return type.category();
     }
 
     public boolean matches(String filter) {
@@ -32,10 +28,43 @@ public record EbslNodeTemplate(
             || description.toLowerCase(Locale.ROOT).contains(normalized);
     }
 
+    public static EbslNodeTemplate of(String command) {
+        EbslNode node = EbslNodeRegistry.get(command);
+        if (node != null) {
+            return of(node);
+        }
+        try {
+            return of(EbslNodeType.byId(command));
+        } catch (RuntimeException exception) {
+            return template(command, EbslNodeCategory.UTILITY, prettify(command), "Custom script node.", "args", "");
+        }
+    }
+
+    public static EbslNodeTemplate of(EbslNode node) {
+        EbslNodeType type = typeOrNull(node.id());
+        if (type != null) {
+            return of(type);
+        }
+        EbslNodeCategory category = node.id().startsWith("goal_") ? EbslNodeCategory.WORLD : EbslNodeCategory.UTILITY;
+        String argsHint = node.settings().stream().map(Setting::id).reduce((a, b) -> a + " " + b).orElse("");
+        String sampleArgs = node.settings().stream().map(EbslNodeTemplate::sampleValue).reduce((a, b) -> a + " " + b).orElse("");
+        String title = node.id().startsWith("goal_") ? prettify(node.id().substring("goal_".length())) : prettify(node.id());
+        String description = node.id().startsWith("goal_") ? "Registered pathfinding goal." : category.id() + " node.";
+        return template(node.id(), category, title, description, argsHint, sampleArgs);
+    }
+
     public static EbslNodeTemplate of(EbslNodeType type) {
         return switch (type) {
             case START -> template(type, "Start", "Entry point for a script chain.", "", "");
+            case START_CHAIN -> template(type, "Start Chain", "Entry point for a script branch.", "", "");
+            case EVENT_FUNCTION -> template(type, "Function", "Define a reusable script block.", "name block", "main {\n}");
+            case EVENT_CALL -> template(type, "Call Function", "Call a reusable script block.", "function", "main");
             case WAIT -> template(type, "Wait", "Pause the chain for a duration.", "duration", "1s");
+            case CONTROL_IF -> template(type, "If", "Run a block when a condition is true.", "condition block", "true {\n}");
+            case CONTROL_IF_ELSE -> template(type, "If Else", "Run one of two blocks from a condition.", "condition then else", "true {\n} else {\n}");
+            case CONTROL_REPEAT -> template(type, "Repeat", "Run a block a fixed number of times.", "count block", "3 {\n}");
+            case CONTROL_REPEAT_UNTIL -> template(type, "Repeat Until", "Repeat a block until a condition is true.", "condition block", "true {\n}");
+            case CONTROL_FOREVER -> template(type, "Forever", "Run a block continuously.", "block", "{\n}");
             case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition", "true");
             case MESSAGE -> template(type, "Message", "Send a chat/status message.", "text", "\"hello\"");
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
@@ -76,7 +105,27 @@ public record EbslNodeTemplate(
     }
 
     private static EbslNodeTemplate template(EbslNodeType type, String title, String description, String argsHint, String sampleArgs) {
-        return new EbslNodeTemplate(type, title, description, argsHint, sampleArgs);
+        return template(type.id(), type.category(), title, description, argsHint, sampleArgs);
+    }
+
+    private static EbslNodeTemplate template(String command, EbslNodeCategory category, String title, String description, String argsHint, String sampleArgs) {
+        return new EbslNodeTemplate(command, category, title, description, argsHint, sampleArgs);
+    }
+
+    private static EbslNodeType typeOrNull(String command) {
+        try {
+            return EbslNodeType.byId(command);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private static String sampleValue(Setting<?> setting) {
+        Object value = setting.defaultValue();
+        if (value instanceof Enum<?> e) {
+            return e.name().toLowerCase(Locale.ROOT);
+        }
+        return String.valueOf(value);
     }
 
     private static String prettify(String id) {
