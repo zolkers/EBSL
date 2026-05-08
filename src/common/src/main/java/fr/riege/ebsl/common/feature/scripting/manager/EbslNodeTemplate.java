@@ -41,15 +41,22 @@ public record EbslNodeTemplate(
     }
 
     public static EbslNodeTemplate of(EbslNode node) {
+        if (node.id().startsWith("sensor_")) {
+            return dynamic(node);
+        }
         EbslNodeType type = typeOrNull(node.id());
         if (type != null) {
             return of(type);
         }
-        EbslNodeCategory category = node.id().startsWith("goal_") ? EbslNodeCategory.WORLD : EbslNodeCategory.UTILITY;
+        return dynamic(node);
+    }
+
+    private static EbslNodeTemplate dynamic(EbslNode node) {
+        EbslNodeCategory category = dynamicCategory(node.id());
         String argsHint = node.settings().stream().map(Setting::id).reduce((a, b) -> a + " " + b).orElse("");
         String sampleArgs = node.settings().stream().map(EbslNodeTemplate::sampleValue).reduce((a, b) -> a + " " + b).orElse("");
-        String title = node.id().startsWith("goal_") ? prettify(node.id().substring("goal_".length())) : prettify(node.id());
-        String description = node.id().startsWith("goal_") ? "Registered pathfinding goal." : category.id() + " node.";
+        String title = dynamicTitle(node.id());
+        String description = dynamicDescription(node.id(), category);
         return template(node.id(), category, title, description, argsHint, sampleArgs);
     }
 
@@ -126,6 +133,36 @@ public record EbslNodeTemplate(
             return e.name().toLowerCase(Locale.ROOT);
         }
         return String.valueOf(value);
+    }
+
+    private static EbslNodeCategory dynamicCategory(String command) {
+        if (command.startsWith("goal_")) {
+            return EbslNodeCategory.WORLD;
+        }
+        if (command.startsWith("sensor_")) {
+            return EbslNodeCategory.SENSOR;
+        }
+        return EbslNodeCategory.UTILITY;
+    }
+
+    private static String dynamicTitle(String command) {
+        if (command.startsWith("goal_")) {
+            return prettify(command.substring("goal_".length()));
+        }
+        if (command.startsWith("sensor_")) {
+            return prettify(command.substring("sensor_".length()));
+        }
+        return prettify(command);
+    }
+
+    private static String dynamicDescription(String command, EbslNodeCategory category) {
+        if (command.startsWith("goal_")) {
+            return "Registered pathfinding goal.";
+        }
+        if (command.startsWith("sensor_")) {
+            return "Read a sensor into a script variable.";
+        }
+        return category.id() + " node.";
     }
 
     private static String prettify(String id) {

@@ -25,9 +25,6 @@ public final class EbslCommandStatement implements EbslStatement {
         if (!started) {
             started = true;
             ticksLeft = node == null ? 0 : node.start(new EbslNodeInvocation(args, runtime, runner));
-            if (node == null && command.startsWith("sensor_") && !args.isEmpty()) {
-                runtime.setVariable(args.get(0), runtime.sensor(command, args.subList(1, args.size())));
-            }
         }
         if (ticksLeft > 0) {
             ticksLeft--;

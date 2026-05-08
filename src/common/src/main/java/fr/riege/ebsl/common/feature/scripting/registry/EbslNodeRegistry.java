@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.AddToListNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.BreakNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CatalogGoalNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.CatalogSensorNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.ChangeVariableNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.ComeNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.CrawlNode;
@@ -89,6 +90,9 @@ public final class EbslNodeRegistry {
         register(new SpaceMobNode());
         for (GoalUiDefinition goal : GoalUiCatalog.all()) {
             register(new CatalogGoalNode(goal));
+        }
+        for (EbslSensorRegistry.SensorDefinition sensor : EbslSensorRegistry.definitions()) {
+            register(new CatalogSensorNode(sensor));
         }
     }
 

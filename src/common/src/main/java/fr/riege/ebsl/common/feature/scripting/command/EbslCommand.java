@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.feature.scripting.command;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.terminal.CommandArgument;
@@ -16,6 +17,15 @@ import java.util.List;
 import java.util.Locale;
 
 public final class EbslCommand {
+    private static final List<EbslNodeType> SCRIPT_BLOCKS = List.of(
+        EbslNodeType.EVENT_FUNCTION,
+        EbslNodeType.CONTROL_IF,
+        EbslNodeType.CONTROL_IF_ELSE,
+        EbslNodeType.CONTROL_REPEAT,
+        EbslNodeType.CONTROL_REPEAT_UNTIL,
+        EbslNodeType.CONTROL_FOREVER
+    );
+
     private EbslCommand() {
     }
 
@@ -66,19 +76,31 @@ public final class EbslCommand {
 
     static List<String> taskLines() {
         List<String> lines = new ArrayList<>();
-        lines.add("EBSL task catalogue: " + EbslNodeType.values().length);
-        EbslNodeCategory category = null;
-        for (EbslNodeType type : EbslNodeType.values()) {
-            if (category != type.category()) {
-                category = type.category();
-                lines.add("[" + category.id() + "]");
+        lines.add("EBSL executable nodes: " + EbslNodeRegistry.canonicalNodes().size());
+        for (EbslNodeCategory category : EbslNodeCategory.values()) {
+            boolean header = false;
+            for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
+                EbslNodeTemplate template = EbslNodeTemplate.of(node);
+                if (template.category() != category) {
+                    continue;
+                }
+                if (!header) {
+                    lines.add("[" + category.id() + "]");
+                    header = true;
+                }
+                lines.add("  " + template.command());
             }
-            lines.add((type.executable() ? "  " : "  *") + type.id());
-        }
-        lines.add("* = declared for compatibility, runtime backend not implemented yet");
-        lines.add("Executable script nodes: " + EbslNodeRegistry.canonicalNodes().size());
-        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
-            lines.add("  " + node.id());
+            for (EbslNodeType block : SCRIPT_BLOCKS) {
+                EbslNodeTemplate template = EbslNodeTemplate.of(block);
+                if (template.category() != category) {
+                    continue;
+                }
+                if (!header) {
+                    lines.add("[" + category.id() + "]");
+                    header = true;
+                }
+                lines.add("  " + template.command());
+            }
         }
         return lines;
     }
@@ -88,9 +110,20 @@ public final class EbslCommand {
             return filter(EbslCommandAction.ids(), context.partial());
         }
         if ("tasks".equalsIgnoreCase(context.previousArg(0))) {
-            return filter(EbslNodeType.ids(), context.partial());
+            return filter(taskIds(), context.partial());
         }
         return List.of();
+    }
+
+    private static List<String> taskIds() {
+        List<String> ids = new ArrayList<>();
+        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
+            ids.add(node.id());
+        }
+        for (EbslNodeType block : SCRIPT_BLOCKS) {
+            ids.add(block.id());
+        }
+        return List.copyOf(ids);
     }
 
     private static List<String> filter(List<String> values, String partial) {
