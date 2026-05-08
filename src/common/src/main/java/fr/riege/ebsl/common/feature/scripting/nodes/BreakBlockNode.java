@@ -2,6 +2,8 @@ package fr.riege.ebsl.common.feature.scripting.nodes;
 
 import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.domain.world.TargetedBlock;
+import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
@@ -13,7 +15,10 @@ import java.util.Locale;
 
 @EbslNodeDefinition(EbslNodeType.BREAK_BLOCK)
 public final class BreakBlockNode extends AbstractEbslNode {
-    private static final String DEFAULT_MAX_DURATION = "5s";
+    private static final String DEFAULT_MAX_DURATION = "30s";
+
+    private TargetedBlock target;
+    private BlockId fallbackTarget;
 
     @Override
     protected void registerSettings() {
@@ -28,18 +33,44 @@ public final class BreakBlockNode extends AbstractEbslNode {
 
     @Override
     public int start(EbslNodeInvocation invocation) {
+        target = invocation.runtime().platform().player().targetedBlockHit();
+        fallbackTarget = target == null ? invocation.runtime().platform().player().targetedBlock() : target.block();
         TimedInputNode.press(invocation.runtime(), EbslInputKey.ATTACK);
         return EbslDuration.ticks(maxDuration(invocation.args()));
     }
 
     @Override
     public boolean isComplete(EbslNodeInvocation invocation) {
-        BlockId target = invocation.runtime().platform().player().targetedBlock();
-        if (target == null) {
+        String expected = expectedBlock(invocation.args());
+        if (target != null) {
+            if (invocation.runtime().platform().world().isAir(target.x(), target.y(), target.z())) {
+                return true;
+            }
+            BlockId current = invocation.runtime().platform().world().getBlock(target.x(), target.y(), target.z());
+            return !matchesExpected(current, expected, target.block());
+        }
+
+        BlockId currentTarget = invocation.runtime().platform().player().targetedBlock();
+        if (currentTarget == null) {
             return true;
         }
-        String expected = expectedBlock(invocation.args());
-        return !expected.isBlank() && !target.toString().equalsIgnoreCase(expected);
+        return !matchesExpected(currentTarget, expected, fallbackTarget);
+    }
+
+    @Override
+    public void finish(EbslNodeInvocation invocation) {
+        target = null;
+        fallbackTarget = null;
+    }
+
+    private static boolean matchesExpected(BlockId current, String expected, BlockId captured) {
+        if (current == null) {
+            return false;
+        }
+        if (!expected.isBlank()) {
+            return BlockAimTargeting.matches(current, expected);
+        }
+        return captured != null && current.toString().equalsIgnoreCase(captured.toString());
     }
 
     private static String expectedBlock(List<String> args) {

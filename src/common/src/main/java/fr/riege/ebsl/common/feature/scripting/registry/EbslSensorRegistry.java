@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting.registry;
 
 import fr.riege.ebsl.common.core.registry.MapRegistry;
+import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslCardinalDirection;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslInputKey;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
@@ -32,6 +33,7 @@ public final class EbslSensorRegistry {
             parameter("y", "Y", "64"),
             parameter("z", "Z", "0"),
             parameter("distance", "Distance", "3")), EbslSensorRegistry::distanceBetween);
+        register("sensor_targeted_block_exists", EbslSensorRegistry::targetedBlockExists);
         register("sensor_targeted_block", List.of(parameter("block", "Block", "")), EbslSensorRegistry::targetedBlock);
         register("sensor_look_direction", List.of(parameter("direction", "Direction", "north")), EbslSensorRegistry::lookDirection);
         register("sensor_touching_entity", List.of(parameter("radius", "Radius", "2")), EbslSensorRegistry::touchingEntity);
@@ -98,8 +100,16 @@ public final class EbslSensorRegistry {
     }
 
     private static boolean targetedBlock(EbslScriptRuntime runtime, List<String> args) {
-        var target = runtime.platform().player().targetedBlock();
-        return target != null && (args.isEmpty() || target.toString().equalsIgnoreCase(args.get(0)));
+        var target = runtime.platform().player().targetedBlockHit();
+        if (target == null || runtime.platform().world().isAir(target.x(), target.y(), target.z())) {
+            return false;
+        }
+        return args.isEmpty() || BlockAimTargeting.matches(target.block(), args.get(0));
+    }
+
+    private static boolean targetedBlockExists(EbslScriptRuntime runtime, List<String> args) {
+        var target = runtime.platform().player().targetedBlockHit();
+        return target != null && !runtime.platform().world().isAir(target.x(), target.y(), target.z());
     }
 
     private static boolean touchingEntity(EbslScriptRuntime runtime, List<String> args) {

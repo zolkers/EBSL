@@ -91,7 +91,7 @@ public record EbslNodeTemplate(
             case PRESS_KEY -> template(type, "Press Key", "Press a named input key.", "key duration", "jump 2t");
             case LOOK -> template(type, "Look", "Rotate view toward a direction/target.", "args", "");
             case BREAK -> template(type, "Break", "Hold attack/break input.", "duration", "2t");
-            case BREAK_BLOCK -> template(type, "Break Block", "Hold attack until the targeted block disappears or changes.", "[block_id] [max_duration]", "minecraft:oak_leaves 5s");
+            case BREAK_BLOCK -> template(type, "Break Block", "Hold attack until the targeted block disappears or changes.", "[block_id] [max_duration]", "minecraft:oak_leaves");
             case USE -> template(type, "Use", "Use item/interact input.", "duration", "2t");
             case INTERACT -> template(type, "Interact", "Interact with targeted block/entity.", "duration", "2t");
             case SWING -> template(type, "Swing", "Swing the player hand.", "", "");

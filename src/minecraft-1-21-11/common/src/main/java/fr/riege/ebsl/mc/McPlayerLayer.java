@@ -3,6 +3,7 @@ package fr.riege.ebsl.mc;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.domain.world.TargetedBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -74,11 +75,12 @@ public class McPlayerLayer implements IPlayerLayer {
         return player == null ? 0.0f : player.getHealth();
     }
 
-    @Override public BlockId targetedBlock() {
+    @Override public TargetedBlock targetedBlockHit() {
         if (client.level == null || !(client.hitResult instanceof BlockHitResult hit)) return null;
         if (hit.getType() == HitResult.Type.MISS) return null;
-        var id = BuiltInRegistries.BLOCK.getKey(client.level.getBlockState(hit.getBlockPos()).getBlock());
-        return new BlockId(id.getNamespace(), id.getPath());
+        var pos = hit.getBlockPos();
+        var id = BuiltInRegistries.BLOCK.getKey(client.level.getBlockState(pos).getBlock());
+        return new TargetedBlock(pos.getX(), pos.getY(), pos.getZ(), new BlockId(id.getNamespace(), id.getPath()));
     }
 
     @Override public Integer entityId() {
