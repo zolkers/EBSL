@@ -5,10 +5,12 @@ import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import imgui.ImGui;
+import imgui.flag.ImGuiCol;
 import imgui.type.ImString;
 
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ public final class ImGuiScriptNodePalettePanel {
             ImGui.inputText("##ebsl-node-palette-filter", filter);
             ImGui.separator();
             for (EbslNodeCategory category : EbslNodeCategory.values()) {
+                pushCategoryColors(category);
                 if (ImGui.collapsingHeader(category.id())) {
                     for (EbslNodeTemplate template : templates()) {
                         if (template.category() == category && template.matches(filter.get())) {
@@ -44,6 +47,7 @@ public final class ImGuiScriptNodePalettePanel {
                         }
                     }
                 }
+                ImGui.popStyleColor(4);
             }
             ImGui.end();
         }
@@ -58,5 +62,12 @@ public final class ImGuiScriptNodePalettePanel {
             templates.add(EbslNodeTemplate.of(block));
         }
         return templates;
+    }
+
+    private void pushCategoryColors(EbslNodeCategory category) {
+        ImGui.pushStyleColor(ImGuiCol.Header, EbslNodeCategoryColors.header(category));
+        ImGui.pushStyleColor(ImGuiCol.HeaderHovered, EbslNodeCategoryColors.headerHovered(category));
+        ImGui.pushStyleColor(ImGuiCol.HeaderActive, EbslNodeCategoryColors.headerHovered(category));
+        ImGui.pushStyleColor(ImGuiCol.Text, EbslNodeCategoryColors.text(category));
     }
 }

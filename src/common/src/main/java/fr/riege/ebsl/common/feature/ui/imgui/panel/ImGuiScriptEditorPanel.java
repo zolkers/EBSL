@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
+import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
@@ -305,10 +306,10 @@ public final class ImGuiScriptEditorPanel {
         float width = Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
         float height = NODE_H * graphZoom;
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
-        int fill = selectedGraphNode == index ? 0xFF22364A : color(node.category());
+        int fill = selectedGraphNode == index ? 0xFF22364A : EbslNodeCategoryColors.body(node.category());
         dl.addRectFilled(x, y, x + width, y + height, fill, 6.0f);
         dl.addRect(x, y, x + width, y + height, 0xFF67B7FF, 6.0f, 0, 1.5f);
-        dl.addRectFilled(x, y, x + width, y + 18.0f * graphZoom, headerColor(node.category()), 6.0f);
+        dl.addRectFilled(x, y, x + width, y + 18.0f * graphZoom, EbslNodeCategoryColors.header(node.category()), 6.0f);
         dl.addCircleFilled(x + 10.0f * graphZoom, y + height * 0.5f, 4.0f * graphZoom, 0xFF67B7FF);
         dl.addCircleFilled(x + width - 10.0f * graphZoom, y + height * 0.5f, 4.0f * graphZoom, 0xFF67B7FF);
         dl.addText(x + 18.0f * graphZoom, y + 3.0f * graphZoom, UiTheme.TEXT, template.title());
@@ -376,7 +377,7 @@ public final class ImGuiScriptEditorPanel {
             NodePosition position = nodePosition(nodes.get(i), i);
             float px = x + 8.0f + Math.min(w - 16.0f, Math.max(0.0f, position.x() / 8.0f));
             float py = y + 8.0f + Math.min(h - 16.0f, Math.max(0.0f, position.y() / 8.0f));
-            dl.addRectFilled(px, py, px + 6.0f, py + 4.0f, color(nodes.get(i).category()));
+            dl.addRectFilled(px, py, px + 6.0f, py + 4.0f, EbslNodeCategoryColors.body(nodes.get(i).category()));
         }
     }
 
@@ -505,30 +506,6 @@ public final class ImGuiScriptEditorPanel {
         loadedRevision = state.scriptRevision();
         source.set(document.source());
         status = "loaded";
-    }
-
-    private static int color(EbslNodeCategory category) {
-        return switch (category) {
-            case FLOW -> 0xFF203049;
-            case CONTROL -> 0xFF39294C;
-            case DATA -> 0xFF263A34;
-            case WORLD -> 0xFF45351F;
-            case PLAYER -> 0xFF2A4052;
-            case SENSOR -> 0xFF29433E;
-            case UTILITY -> 0xFF303742;
-        };
-    }
-
-    private static int headerColor(EbslNodeCategory category) {
-        return switch (category) {
-            case FLOW -> 0xFF2E5E9E;
-            case CONTROL -> 0xFF7249A8;
-            case DATA -> 0xFF3D7E61;
-            case WORLD -> 0xFF9A7434;
-            case PLAYER -> 0xFF3D82A8;
-            case SENSOR -> 0xFF438C81;
-            case UTILITY -> 0xFF566272;
-        };
     }
 
     private record ScriptGraphNode(int lineNumber, String line, String command, String args, EbslNodeCategory category, String key) {
