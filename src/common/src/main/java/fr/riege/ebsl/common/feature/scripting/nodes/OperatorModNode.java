@@ -1,11 +1,15 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.OPERATOR_MOD)
 public final class OperatorModNode extends AbstractEbslNode {
+    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "result"));
+    private final StringSetting left = registerSetting(new StringSetting("left", "Left", "0"));
+    private final StringSetting right = registerSetting(new StringSetting("right", "Right", "1"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

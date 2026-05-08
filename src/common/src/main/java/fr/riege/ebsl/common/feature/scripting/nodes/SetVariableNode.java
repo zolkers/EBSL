@@ -1,11 +1,14 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(value = EbslNodeType.SET_VARIABLE, aliases = {"set"})
 public final class SetVariableNode extends AbstractEbslNode {
+    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "name"));
+    private final StringSetting value = registerSetting(new StringSetting("value", "Value", "0"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

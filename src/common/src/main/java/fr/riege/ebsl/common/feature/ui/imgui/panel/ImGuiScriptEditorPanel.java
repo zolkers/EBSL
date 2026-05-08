@@ -1,10 +1,18 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
+import fr.riege.ebsl.common.core.settings.BooleanSetting;
+import fr.riege.ebsl.common.core.settings.DoubleSetting;
+import fr.riege.ebsl.common.core.settings.EnumSetting;
+import fr.riege.ebsl.common.core.settings.IntSetting;
+import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.core.settings.StringSetting;
+import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
@@ -13,6 +21,8 @@ import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImDrawList;
 import imgui.ImGui;
+import imgui.type.ImBoolean;
+import imgui.type.ImInt;
 import imgui.type.ImString;
 
 import java.util.ArrayList;
@@ -28,6 +38,7 @@ public final class ImGuiScriptEditorPanel {
     private final ImString source = new ImString(EbslScriptManager.DEFAULT_SOURCE, BUFFER_SIZE);
     private final ImString selectedCommand = new ImString("", 96);
     private final ImString selectedArgs = new ImString("", 512);
+    private final Map<String, ImString> settingTextValues = new HashMap<>();
     private String loadedFile = "";
     private int loadedRevision = -1;
     private String status = "idle";
@@ -178,30 +189,41 @@ public final class ImGuiScriptEditorPanel {
             return;
         }
         ScriptGraphNode node = nodes.get(selectedGraphNode);
+        EbslNode ebslNode = EbslNodeRegistry.get(node.command());
         EbslNodeTemplate template = EbslNodeTemplate.of(type(node.command()));
-        syncSelectedEditor(node);
+        syncSelectedEditor(node, ebslNode);
+        boolean settingBacked = hasSettings(ebslNode);
         float panelW = 306.0f;
+        float panelH = settingBacked ? 320.0f : 236.0f;
         float x = editor.right() - panelW - 12.0f;
         float y = editor.y() + 48.0f;
         ImDrawList dl = ImGui.getWindowDrawList();
-        dl.addRectFilled(x, y, x + panelW, y + 236.0f, 0xEE121A22, 5.0f);
-        dl.addRect(x, y, x + panelW, y + 236.0f, 0xFF67B7FF, 5.0f, 0, 1.0f);
+        dl.addRectFilled(x, y, x + panelW, y + panelH, 0xEE121A22, 5.0f);
+        dl.addRect(x, y, x + panelW, y + panelH, 0xFF67B7FF, 5.0f, 0, 1.0f);
         ImGui.setCursorScreenPos(x + 10.0f, y + 8.0f);
         ImGui.text(template.title());
         ImGui.setCursorScreenPos(x + 10.0f, y + 28.0f);
         ImGui.textDisabled(template.description());
         ImGui.setCursorScreenPos(x + 10.0f, y + 34.0f);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 62.0f);
-        ImGui.setNextItemWidth(panelW - 20.0f);
-        ImGui.inputText("##ebsl-node-command", selectedCommand);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 94.0f);
-        ImGui.setNextItemWidth(panelW - 20.0f);
-        ImGui.inputText("##ebsl-node-args", selectedArgs);
-        ImGui.setCursorScreenPos(x + 10.0f, y + 122.0f);
-        ImGui.textDisabled("args: " + template.argsHint());
-        ImGui.setCursorScreenPos(x + 10.0f, y + 150.0f);
+        ImGui.setCursorScreenPos(x + 10.0f, y + 58.0f);
+        if (settingBacked) {
+            ImGui.beginChild("##ebsl-node-settings", panelW - 20.0f, 164.0f, true);
+            renderNodeSettings(ebslNode, panelW - 40.0f);
+            ImGui.endChild();
+        } else {
+            ImGui.setNextItemWidth(panelW - 20.0f);
+            ImGui.inputText("##ebsl-node-command", selectedCommand);
+            ImGui.setCursorScreenPos(x + 10.0f, y + 90.0f);
+            ImGui.setNextItemWidth(panelW - 20.0f);
+            ImGui.inputText("##ebsl-node-args", selectedArgs);
+        }
+        float hintY = settingBacked ? y + 232.0f : y + 122.0f;
+        float actionY = settingBacked ? y + 260.0f : y + 150.0f;
+        ImGui.setCursorScreenPos(x + 10.0f, hintY);
+        ImGui.textDisabled(settingBacked ? "fields are node settings" : "args: " + template.argsHint());
+        ImGui.setCursorScreenPos(x + 10.0f, actionY);
         if (ImGui.button("Apply", 64.0f, 24.0f)) {
-            replaceNodeLine(node, selectedCommand.get(), selectedArgs.get());
+            applyNodeEdit(node, ebslNode);
         }
         ImGui.sameLine();
         if (ImGui.button("Duplicate", 82.0f, 24.0f)) {
@@ -211,11 +233,16 @@ public final class ImGuiScriptEditorPanel {
         if (ImGui.button("Delete", 64.0f, 24.0f)) {
             deleteNodeLine(node);
         }
-        ImGui.setCursorScreenPos(x + 10.0f, y + 182.0f);
-        if (ImGui.button("Use template args", 132.0f, 24.0f)) {
-            selectedArgs.set(template.sampleArgs());
+        ImGui.setCursorScreenPos(x + 10.0f, actionY + 32.0f);
+        if (ImGui.button(settingBacked ? "Load sample" : "Use template args", 132.0f, 24.0f)) {
+            if (settingBacked) {
+                ebslNode.loadArgs(splitArgs(template.sampleArgs()));
+                settingTextValues.clear();
+            } else {
+                selectedArgs.set(template.sampleArgs());
+            }
         }
-        dl.addText(x + 10.0f, y + 214.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
+        dl.addText(x + 10.0f, y + panelH - 22.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
     }
 
     private void panAndZoomCanvas(UiRect canvas) {
@@ -340,13 +367,77 @@ public final class ImGuiScriptEditorPanel {
         status = "inserted " + command;
     }
 
-    private void syncSelectedEditor(ScriptGraphNode node) {
+    private void syncSelectedEditor(ScriptGraphNode node, EbslNode ebslNode) {
         if (selectedGraphKey.equals(node.key())) {
             return;
         }
         selectedGraphKey = node.key();
         selectedCommand.set(node.command());
         selectedArgs.set(node.args());
+        settingTextValues.clear();
+        if (ebslNode != null) {
+            ebslNode.loadArgs(splitArgs(node.args()));
+        }
+    }
+
+    private void applyNodeEdit(ScriptGraphNode node, EbslNode ebslNode) {
+        if (hasSettings(ebslNode)) {
+            replaceNodeLine(node, node.command(), ebslNode.argsFromSettings());
+            return;
+        }
+        replaceNodeLine(node, selectedCommand.get(), selectedArgs.get());
+    }
+
+    private boolean hasSettings(EbslNode node) {
+        return node != null && !node.settings().isEmpty();
+    }
+
+    private void renderNodeSettings(EbslNode node, float width) {
+        for (Setting<?> setting : node.settings()) {
+            ImGui.setNextItemWidth(width);
+            String label = setting.displayName() + "##ebsl-node-setting-" + node.id() + "-" + setting.id();
+            if (setting instanceof StringSetting s) {
+                String key = node.id() + "." + setting.id();
+                ImString value = settingTextValues.computeIfAbsent(key, ignored -> new ImString(s.value(), 512));
+                if (!value.get().equals(s.value())) {
+                    value.set(s.value());
+                }
+                if (ImGui.inputText(label, value)) {
+                    s.setValue(value.get());
+                }
+            } else if (setting instanceof IntSetting s) {
+                int[] value = {s.value()};
+                if (ImGui.sliderInt(label, value, s.min(), s.max())) {
+                    s.setValue(value[0]);
+                }
+            } else if (setting instanceof DoubleSetting s) {
+                float[] value = {(float) s.value().doubleValue()};
+                if (ImGui.sliderFloat(label, value, (float) s.min(), (float) s.max(), "%.2f")) {
+                    s.setValue((double) value[0]);
+                }
+            } else if (setting instanceof BooleanSetting s) {
+                ImBoolean value = new ImBoolean(s.value());
+                if (ImGui.checkbox(label, value)) {
+                    s.setValue(value.get());
+                }
+            } else if (setting instanceof EnumSetting<?> s) {
+                renderEnumSetting(s, label);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E extends Enum<E>> void renderEnumSetting(EnumSetting<?> raw, String label) {
+        EnumSetting<E> setting = (EnumSetting<E>) raw;
+        E[] values = setting.enumType().getEnumConstants();
+        String[] labels = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            labels[i] = values[i].name().toLowerCase(Locale.ROOT);
+        }
+        ImInt selected = new ImInt(setting.value().ordinal());
+        if (ImGui.combo(label, selected, labels)) {
+            setting.setValue(values[selected.get()]);
+        }
     }
 
     private void replaceNodeLine(ScriptGraphNode node, String command, String args) {
@@ -360,6 +451,13 @@ public final class ImGuiScriptEditorPanel {
         mutateSourceLine(node.lineNumber(), replacement, LineMutation.REPLACE);
         selectedGraphKey = "";
         status = "updated node";
+    }
+
+    private List<String> splitArgs(String args) {
+        if (args == null || args.isBlank()) {
+            return List.of();
+        }
+        return List.of(args.trim().split("\\s+"));
     }
 
     private void duplicateNodeLine(ScriptGraphNode node) {

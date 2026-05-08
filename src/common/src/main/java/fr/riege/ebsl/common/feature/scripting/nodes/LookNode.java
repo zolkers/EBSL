@@ -1,11 +1,14 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.LOOK)
 public final class LookNode extends AbstractEbslNode {
+    private final StringSetting yaw = registerSetting(new StringSetting("yaw", "Yaw", "0"));
+    private final StringSetting pitch = registerSetting(new StringSetting("pitch", "Pitch", "0"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

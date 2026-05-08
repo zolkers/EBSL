@@ -1,11 +1,14 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.LIST_LENGTH)
 public final class ListLengthNode extends AbstractEbslNode {
+    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "length"));
+    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

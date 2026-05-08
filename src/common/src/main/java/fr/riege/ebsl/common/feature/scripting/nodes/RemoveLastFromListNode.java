@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
@@ -7,6 +8,7 @@ import java.util.List;
 
 @EbslNodeDefinition(EbslNodeType.REMOVE_LAST_FROM_LIST)
 public final class RemoveLastFromListNode extends AbstractEbslNode {
+    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

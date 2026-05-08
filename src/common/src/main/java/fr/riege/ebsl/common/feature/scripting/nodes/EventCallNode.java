@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
@@ -8,6 +9,7 @@ import java.util.List;
 
 @EbslNodeDefinition(EbslNodeType.EVENT_CALL)
 public final class EventCallNode extends AbstractEbslNode {
+    private final StringSetting function = registerSetting(new StringSetting("function", "Function", "main"));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

@@ -1,5 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.IntSetting;
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
@@ -12,6 +14,8 @@ import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 
 @EbslNodeDefinition(value = EbslNodeType.GOAL_NEAREST_BLOCK, aliases = {"nearest_block", "find_block"})
 public final class GoalNearestBlockNode extends NavigationNode {
+    private final StringSetting blockId = registerSetting(new StringSetting("block_id", "Block", "minecraft:oak_leaves"));
+    private final IntSetting radius = registerSetting(new IntSetting("radius", "Radius", 32, 1, 128));
 
     @Override
     public int start(EbslNodeInvocation invocation) {

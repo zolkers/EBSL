@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting;
 
+import fr.riege.ebsl.common.core.settings.Setting;
 import java.util.List;
 
 public interface EbslNode {
@@ -19,6 +20,17 @@ public interface EbslNode {
 
     default boolean isWaitUntil() {
         return false;
+    }
+
+    default List<Setting<?>> settings() {
+        return List.of();
+    }
+
+    default void loadArgs(List<String> args) {
+    }
+
+    default String argsFromSettings() {
+        return "";
     }
 
     int start(EbslNodeInvocation invocation);

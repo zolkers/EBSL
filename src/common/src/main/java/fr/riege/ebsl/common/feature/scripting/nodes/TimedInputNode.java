@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslInputKey;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
@@ -7,11 +8,13 @@ import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 abstract class TimedInputNode extends AbstractEbslNode {
     private final EbslInputKey key;
     private final String fallbackDuration;
+    private final StringSetting duration;
 
     TimedInputNode(EbslInputKey key, String fallbackDuration) {
         super();
         this.key = key;
         this.fallbackDuration = fallbackDuration;
+        this.duration = registerSetting(new StringSetting("duration", "Duration", fallbackDuration));
     }
 
     @Override
