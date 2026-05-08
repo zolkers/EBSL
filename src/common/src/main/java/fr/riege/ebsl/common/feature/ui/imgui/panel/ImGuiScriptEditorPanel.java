@@ -233,7 +233,7 @@ public final class ImGuiScriptEditorPanel {
         ImGui.textDisabled(template.description());
 
         float contentTop = panel.y() + 62.0f;
-        float footerHeight = 94.0f;
+        float footerHeight = 74.0f;
         float contentHeight = Math.max(96.0f, panel.height() - (contentTop - panel.y()) - footerHeight);
         ImGui.setCursorScreenPos(panel.x() + pad, contentTop);
         if (settingBacked) {
@@ -248,9 +248,7 @@ public final class ImGuiScriptEditorPanel {
             ImGui.inputText("##ebsl-node-args", selectedArgs);
         }
 
-        float actionY = panel.bottom() - 72.0f;
-        ImGui.setCursorScreenPos(panel.x() + pad, actionY - 26.0f);
-        ImGui.textDisabled(settingBacked ? "fields are node settings" : "args: " + template.argsHint());
+        float actionY = panel.bottom() - 60.0f;
         ImGui.setCursorScreenPos(panel.x() + pad, actionY);
         if (ImGui.button("Apply", 64.0f, 24.0f)) {
             applyNodeEdit(node, ebslNode);
@@ -272,7 +270,6 @@ public final class ImGuiScriptEditorPanel {
                 selectedArgs.set(template.sampleArgs());
             }
         }
-        dl.addText(panel.x() + pad, panel.bottom() - 22.0f, UiTheme.TEXT_DIM, node.category().id() + " | line " + node.lineNumber());
     }
 
     private void panAndZoomCanvas(UiRect canvas) {
