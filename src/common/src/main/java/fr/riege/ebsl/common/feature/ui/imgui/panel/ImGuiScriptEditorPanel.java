@@ -32,8 +32,11 @@ import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImDrawList;
 import imgui.ImGui;
+import imgui.ImGuiInputTextCallbackData;
+import imgui.callback.ImGuiInputTextCallback;
 import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiCol;
+import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiStyleVar;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
@@ -55,6 +58,7 @@ public final class ImGuiScriptEditorPanel {
     private final ImString selectedCommand = new ImString("", 96);
     private final ImString selectedArgs = new ImString("", 512);
     private final Map<String, ImString> settingTextValues = new HashMap<>();
+    private final CodeEditorInputCallback codeEditorInputCallback = new CodeEditorInputCallback();
     private String loadedFile = "";
     private int loadedRevision = -1;
     private String status = "idle";
@@ -68,6 +72,9 @@ public final class ImGuiScriptEditorPanel {
     private float lastMouseX;
     private float lastMouseY;
     private boolean docOpenRequested;
+    private int codeCursorPos;
+    private int codeSelectionStart;
+    private int codeSelectionEnd;
 
     public void render(EbslUiState state, UiRect viewport, EbslPlatform platform) {
         ensureLoaded(state, platform);
@@ -254,10 +261,44 @@ public final class ImGuiScriptEditorPanel {
         ImGui.pushStyleVar(ImGuiStyleVar.FramePadding, EbslCodeEditorStyle.DARK.textPadding(), EbslCodeEditorStyle.DARK.textPadding());
         ImGui.pushStyleColor(ImGuiCol.Text, EbslCodeEditorStyle.DARK.editableTextColor());
         ImGui.pushStyleColor(ImGuiCol.FrameBg, EbslCodeEditorStyle.DARK.frameColor());
-        ImGui.inputTextMultiline("##ebsl-code-editor", source, textArea.width(), textArea.height());
+        ImGui.inputTextMultiline("##ebsl-code-editor", source, textArea.width(), textArea.height(),
+            ImGuiInputTextFlags.CallbackAlways, codeEditorInputCallback);
+        boolean editorActive = ImGui.isItemActive() || ImGui.isItemFocused();
         ImGui.popStyleColor(2);
         ImGui.popStyleVar();
+        drawCodeCaret(dl, textArea, editorActive);
         dl.addText(code.right() - 128.0f, code.y() + 8.0f, UiTheme.TEXT_DIM, lineCount() + " lines");
+    }
+
+    private void drawCodeCaret(ImDrawList dl, UiRect textArea, boolean editorActive) {
+        if (!editorActive || codeSelectionStart != codeSelectionEnd || !caretVisible()) {
+            return;
+        }
+        EbslCodeEditorStyle style = EbslCodeEditorStyle.DARK;
+        String sourceText = source.get();
+        int cursor = Math.max(0, Math.min(codeCursorPos, sourceText.length()));
+        int lineStart = 0;
+        int line = 0;
+        for (int i = 0; i < cursor; i++) {
+            if (sourceText.charAt(i) == '\n') {
+                line++;
+                lineStart = i + 1;
+            }
+        }
+        String beforeCursor = sourceText.substring(lineStart, cursor).replace("\r", "");
+        float x = textArea.x() + style.textPadding() + textAdvance(beforeCursor);
+        float y = textArea.y() + style.textPadding() + line * ImGui.getTextLineHeight();
+        if (y < textArea.y() || y > textArea.bottom()) {
+            return;
+        }
+        dl.pushClipRect(textArea.x(), textArea.y(), textArea.right(), textArea.bottom(), true);
+        dl.addLine(x, y, x, y + ImGui.getTextLineHeight(), style.caretColor(), 1.4f);
+        dl.popClipRect();
+    }
+
+    private static boolean caretVisible() {
+        double blink = EbslCodeEditorStyle.DARK.caretBlinkSeconds();
+        return blink <= 0.0 || ((int) (ImGui.getTime() / blink)) % 2 == 0;
     }
 
     private void drawSyntaxHighlight(ImDrawList dl, UiRect textArea) {
@@ -304,6 +345,15 @@ public final class ImGuiScriptEditorPanel {
         int visible = Math.min(count, Math.max(1, (int) ((gutter.height() - 12) / lineHeight)));
         for (int i = 0; i < visible; i++) {
             dl.addText(gutter.x() + 12.0f, gutter.y() + 8.0f + i * lineHeight, UiTheme.TEXT_DIM, Integer.toString(i + 1));
+        }
+    }
+
+    private final class CodeEditorInputCallback extends ImGuiInputTextCallback {
+        @Override
+        public void accept(ImGuiInputTextCallbackData data) {
+            codeCursorPos = data.getCursorPos();
+            codeSelectionStart = data.getSelectionStart();
+            codeSelectionEnd = data.getSelectionEnd();
         }
     }
 
