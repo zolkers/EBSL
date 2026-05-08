@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
+import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
@@ -14,6 +15,9 @@ public final class CatalogGoalNode extends NavigationNode {
     public CatalogGoalNode(GoalUiDefinition definition) {
         super(PREFIX + definition.id());
         this.definition = definition;
+        for (GoalParameter parameter : definition.parameters()) {
+            registerSetting(new IntSetting(parameter.id(), parameter.label(), 0, -30000000, 30000000));
+        }
     }
 
     @Override

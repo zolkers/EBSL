@@ -36,11 +36,11 @@ public record EbslNodeTemplate(
         return switch (type) {
             case START -> template(type, "Start", "Entry point for a script chain.", "", "");
             case WAIT -> template(type, "Wait", "Pause the chain for a duration.", "duration", "1s");
-            case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition args", "");
+            case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition", "true");
             case MESSAGE -> template(type, "Message", "Send a chat/status message.", "text", "\"hello\"");
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
             case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 2");
-            case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "target args", "");
+            case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "x y z", "0 64 0");
             case GOAL -> template(type, "Goal", "Run a registered pathfinding goal.", "goal args", "");
             case PATH -> template(type, "Path", "Follow or calculate path behavior.", "path args", "");
             case COME -> template(type, "Come", "Ask the bot to come to the player.", "", "");
@@ -64,10 +64,10 @@ public record EbslNodeTemplate(
             case REMOVE_FIRST_FROM_LIST -> template(type, "Remove First", "Remove the first list value.", "list", "items");
             case REMOVE_LAST_FROM_LIST -> template(type, "Remove Last", "Remove the last list value.", "list", "items");
             case REMOVE_LIST_ITEM, REMOVE_FROM_LIST -> template(type, "Remove Item", "Remove an indexed list value.", "list index", "items 0");
-            case LIST_ITEM -> template(type, "List Item", "Read an indexed list item.", "list index", "items 0");
-            case LIST_LENGTH -> template(type, "List Length", "Read a list length.", "list", "items");
-            case OPERATOR_RANDOM -> template(type, "Random", "Generate a random numeric value.", "min max", "0 10");
-            case OPERATOR_MOD -> template(type, "Modulo", "Compute modulo.", "a b", "10 2");
+            case LIST_ITEM -> template(type, "List Item", "Read an indexed list item.", "variable list index", "item items 0");
+            case LIST_LENGTH -> template(type, "List Length", "Read a list length.", "variable list", "length items");
+            case OPERATOR_RANDOM -> template(type, "Random", "Generate a random numeric value.", "variable min max", "random 0 10");
+            case OPERATOR_MOD -> template(type, "Modulo", "Compute modulo.", "variable left right", "result 10 2");
             case STOP -> template(type, "Stop", "Stop player/path action.", "", "");
             case STOP_CHAIN -> template(type, "Stop Chain", "Stop current script chain.", "", "");
             case STOP_ALL -> template(type, "Stop All", "Stop all running chains/actions.", "", "");
