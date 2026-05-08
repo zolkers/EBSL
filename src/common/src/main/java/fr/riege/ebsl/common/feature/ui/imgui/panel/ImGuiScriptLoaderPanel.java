@@ -25,6 +25,15 @@ public final class ImGuiScriptLoaderPanel {
         if (ImGui.button("Run now", -1.0f, 24.0f)) {
             EbslScriptTask.INSTANCE.runFile(state.selectedScriptFile());
         }
+        if (ImGui.button("Stop selected", -1.0f, 24.0f)) {
+            EbslScriptTask.INSTANCE.stop(state.selectedScriptFile());
+        }
+        if (ImGui.button("Stop all", -1.0f, 24.0f)) {
+            EbslScriptTask.INSTANCE.stopAll();
+        }
         ImGui.textDisabled("Task status: " + EbslScriptTask.INSTANCE.status());
+        for (String line : EbslScriptTask.INSTANCE.activeLines()) {
+            ImGui.textDisabled(line);
+        }
     }
 }

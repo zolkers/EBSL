@@ -5,13 +5,22 @@ EBSL is a tiny task scripting layer for EBSL bot workflows. It maps Pathmind-sty
 Scripts use the `.ebsl` extension and can be loaded with:
 
 ```text
-ebsl run main.ebsl
+ebsl run main
 ```
 
 The Minecraft storage layer resolves that as `scripts/main.ebsl` inside the mod storage directory. The task can also run inline text through:
 
 ```text
 ebsl inline message "hello"
+```
+
+Multiple scripts can run at the same time. Each run gets a handle such as `main#1`; stop a specific run by handle, stop every run of a file by script name, or stop everything:
+
+```text
+ebsl status
+ebsl stop main#1
+ebsl stop main
+ebsl stop all
 ```
 
 ## Basics

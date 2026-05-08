@@ -56,10 +56,10 @@ public final class EbslCommand {
 
     static CommandResult runFile(CommandContext ctx) {
         if (ctx.argCount() != 2) {
-            return CommandResult.badUsage("ebsl run <file.ebsl>");
+            return CommandResult.badUsage("ebsl run <file>");
         }
-        EbslScriptTask.INSTANCE.runFile(ctx.arg(1));
-        return CommandResult.ok("Running EBSL file " + ctx.arg(1));
+        String handle = EbslScriptTask.INSTANCE.runFile(ctx.arg(1));
+        return CommandResult.ok("Running EBSL file " + ctx.arg(1) + " as " + handle);
     }
 
     static CommandResult runInline(CommandContext ctx) {
@@ -70,8 +70,24 @@ public final class EbslCommand {
         for (int i = 1; i < ctx.argCount(); i++) {
             parts.add(ctx.arg(i));
         }
-        EbslScriptTask.INSTANCE.runInline(String.join(" ", parts));
-        return CommandResult.ok("Running inline EBSL.");
+        String handle = EbslScriptTask.INSTANCE.runInline(String.join(" ", parts));
+        return CommandResult.ok("Running inline EBSL as " + handle);
+    }
+
+    static CommandResult stop(CommandContext ctx) {
+        String selector = ctx.argCount() >= 2 ? ctx.arg(1) : "all";
+        int stopped = EbslScriptTask.INSTANCE.stop(selector);
+        if (stopped == 0) {
+            return CommandResult.ok("No EBSL script matched " + selector + ".");
+        }
+        return CommandResult.ok("Stopped " + stopped + " EBSL script(s).");
+    }
+
+    static CommandResult status(CommandContext ctx) {
+        List<String> lines = new ArrayList<>();
+        lines.add("EBSL: " + EbslScriptTask.INSTANCE.status());
+        lines.addAll(EbslScriptTask.INSTANCE.activeLines());
+        return CommandResult.ok(lines);
     }
 
     static List<String> taskLines() {
@@ -111,6 +127,9 @@ public final class EbslCommand {
         }
         if ("tasks".equalsIgnoreCase(context.previousArg(0))) {
             return filter(taskIds(), context.partial());
+        }
+        if ("stop".equalsIgnoreCase(context.previousArg(0))) {
+            return filter(EbslScriptTask.INSTANCE.activeSelectors(), context.partial());
         }
         return List.of();
     }

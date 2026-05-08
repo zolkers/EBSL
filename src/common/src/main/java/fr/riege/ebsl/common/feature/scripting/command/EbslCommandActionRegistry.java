@@ -12,12 +12,8 @@ final class EbslCommandActionRegistry {
     static {
         register(EbslCommandAction.RUN, EbslCommand::runFile);
         register(EbslCommandAction.INLINE, EbslCommand::runInline);
-        register(EbslCommandAction.STOP, context -> {
-            EbslScriptTask.INSTANCE.setEnabled(false);
-            EbslScriptTask.INSTANCE.onDisable();
-            return CommandResult.ok("EBSL stopped.");
-        });
-        register(EbslCommandAction.STATUS, context -> CommandResult.ok("EBSL: " + EbslScriptTask.INSTANCE.status()));
+        register(EbslCommandAction.STOP, EbslCommand::stop);
+        register(EbslCommandAction.STATUS, EbslCommand::status);
         register(EbslCommandAction.TASKS, context -> CommandResult.ok(EbslCommand.taskLines()));
     }
 
