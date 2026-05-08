@@ -32,7 +32,8 @@ sourceSets {
 }
 
 dependencies {
-    implementation project(':common')
+    compileOnly project(':common')
+    runtimeOnly files(project(':common').sourceSets.main.output.classesDirs)
     
     compileOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
     runtimeOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
@@ -114,6 +115,7 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
+    dependsOn project(':common').tasks.named('classes')
 }
 
 tasks.named('test') {

@@ -2,10 +2,15 @@ package fr.riege.ebsl.loader.layer;
 
 import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
 import net.minecraft.client.Minecraft;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MinecraftImGuiLayer implements IImGuiLayer {
+    private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-imgui");
+
     private final Minecraft client;
     private Runnable drawPanels;
+    private boolean renderFailureLogged;
 
     public MinecraftImGuiLayer(Minecraft client) {
         this.client = client;
@@ -21,7 +26,15 @@ public class MinecraftImGuiLayer implements IImGuiLayer {
 
     protected final void drawRegisteredFrame() {
         if (drawPanels != null) {
-            drawPanels.run();
+            try {
+                drawPanels.run();
+                renderFailureLogged = false;
+            } catch (Throwable throwable) {
+                if (!renderFailureLogged) {
+                    LOGGER.error("EBSL ImGui frame failed", throwable);
+                    renderFailureLogged = true;
+                }
+            }
         }
     }
 
