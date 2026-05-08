@@ -97,7 +97,7 @@ public record EbslNodeTemplate(
             case INTERACT -> template(type, "Interact", "Interact with targeted block/entity.", "duration", "2t");
             case SWING -> template(type, "Swing", "Swing the player hand.", "", "");
             case PLACE_HAND -> template(type, "Place Hand", "Place using current hand.", "duration", "2t");
-            case SET_VARIABLE -> template(type, "Set Variable", "Assign a variable.", "name value", "value 1");
+            case SET_VARIABLE -> template(type, "Set Variable", "Assign a variable. Alias: var.", "name value", "wood minecraft:oak_log");
             case CHANGE_VARIABLE -> template(type, "Change Variable", "Add a delta to a variable.", "name delta", "value 1");
             case CREATE_LIST -> template(type, "Create List", "Create an empty list variable.", "name", "items");
             case ADD_TO_LIST -> template(type, "Add To List", "Append a value to a list.", "list value", "items stone");

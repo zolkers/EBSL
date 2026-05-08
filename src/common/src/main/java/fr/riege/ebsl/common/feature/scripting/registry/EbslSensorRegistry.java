@@ -104,7 +104,7 @@ public final class EbslSensorRegistry {
         if (target == null || runtime.platform().world().isAir(target.x(), target.y(), target.z())) {
             return false;
         }
-        return args.isEmpty() || BlockAimTargeting.matches(target.block(), args.get(0));
+        return args.isEmpty() || BlockAimTargeting.matches(target.block(), runtime.text(args.get(0)));
     }
 
     private static boolean targetedBlockExists(EbslScriptRuntime runtime, List<String> args) {

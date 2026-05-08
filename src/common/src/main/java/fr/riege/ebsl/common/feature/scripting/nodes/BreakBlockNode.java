@@ -48,7 +48,7 @@ public final class BreakBlockNode extends AbstractEbslNode {
 
     @Override
     public boolean isComplete(EbslNodeInvocation invocation) {
-        String expected = expectedBlock(invocation.args());
+        String expected = expectedBlock(invocation);
         if (target != null) {
             if (invocation.runtime().platform().world().isAir(target.x(), target.y(), target.z())) {
                 return true;
@@ -80,11 +80,12 @@ public final class BreakBlockNode extends AbstractEbslNode {
         return captured != null && current.toString().equalsIgnoreCase(captured.toString());
     }
 
-    private static String expectedBlock(List<String> args) {
+    private static String expectedBlock(EbslNodeInvocation invocation) {
+        List<String> args = invocation.args();
         if (args.isEmpty() || looksLikeDuration(args.getFirst())) {
             return "";
         }
-        return args.getFirst().trim();
+        return invocation.runtime().text(args.getFirst()).trim();
     }
 
     private static String maxDuration(List<String> args) {

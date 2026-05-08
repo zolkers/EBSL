@@ -25,7 +25,7 @@ public final class GoalNearestBlockNode extends NavigationNode {
         if (invocation.args().isEmpty()) {
             return 0;
         }
-        String target = invocation.arg(0);
+        String target = invocation.runtime().text(invocation.arg(0));
         int searchRadius = (int) invocation.runtime().argNumber(invocation.args(), 1, 32.0);
         int reachRadius = (int) invocation.runtime().argNumber(invocation.args(), 2, 4.0);
         BlockAimTarget block = BlockAimTargeting.nearest(invocation.runtime().platform(), target, Math.max(1, searchRadius), false);
