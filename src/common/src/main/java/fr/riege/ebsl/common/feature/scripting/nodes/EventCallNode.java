@@ -9,7 +9,10 @@ import java.util.List;
 
 @EbslNodeDefinition(EbslNodeType.EVENT_CALL)
 public final class EventCallNode extends AbstractEbslNode {
-    private final StringSetting function = registerSetting(new StringSetting("function", "Function", "main"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("function", "Function", "main"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

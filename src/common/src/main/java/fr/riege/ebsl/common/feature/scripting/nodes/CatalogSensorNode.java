@@ -6,11 +6,15 @@ import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 
 public final class CatalogSensorNode extends AbstractEbslNode {
     private final EbslSensorRegistry.SensorDefinition definition;
-    private final StringSetting output = registerSetting(new StringSetting("output", "Output", "result"));
 
     public CatalogSensorNode(EbslSensorRegistry.SensorDefinition definition) {
         super(definition.id());
         this.definition = definition;
+    }
+
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("output", "Output", "result"));
         for (EbslSensorRegistry.SensorParameter parameter : definition.parameters()) {
             registerSetting(new StringSetting(parameter.id(), parameter.label(), parameter.defaultValue()));
         }

@@ -8,8 +8,11 @@ import java.util.List;
 
 @EbslNodeDefinition(value = EbslNodeType.REMOVE_LIST_ITEM, aliases = {"remove_from_list"})
 public final class RemoveListItemNode extends AbstractEbslNode {
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
-    private final StringSetting index = registerSetting(new StringSetting("index", "Index", "0"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("list", "List", "items"));
+        registerSetting(new StringSetting("index", "Index", "0"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

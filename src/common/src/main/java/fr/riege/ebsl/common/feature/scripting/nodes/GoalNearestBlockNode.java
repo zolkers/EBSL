@@ -14,9 +14,12 @@ import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 
 @EbslNodeDefinition(value = EbslNodeType.GOAL_NEAREST_BLOCK, aliases = {"nearest_block", "find_block"})
 public final class GoalNearestBlockNode extends NavigationNode {
-    private final StringSetting blockId = registerSetting(new StringSetting("block_id", "Block", "minecraft:oak_leaves"));
-    private final IntSetting searchRadius = registerSetting(new IntSetting("search_radius", "Search Radius", 32, 1, 128));
-    private final IntSetting reachRadius = registerSetting(new IntSetting("reach_radius", "Reach Radius", 2, 1, 12));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("block_id", "Block", "minecraft:oak_leaves"));
+        registerSetting(new IntSetting("search_radius", "Search Radius", 32, 1, 128));
+        registerSetting(new IntSetting("reach_radius", "Reach Radius", 2, 1, 12));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

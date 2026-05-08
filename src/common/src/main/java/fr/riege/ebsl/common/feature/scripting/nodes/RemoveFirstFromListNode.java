@@ -7,7 +7,10 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.REMOVE_FIRST_FROM_LIST)
 public final class RemoveFirstFromListNode extends AbstractEbslNode {
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("list", "List", "items"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

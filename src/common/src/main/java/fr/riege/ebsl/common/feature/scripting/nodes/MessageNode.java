@@ -7,7 +7,12 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.MESSAGE)
 public final class MessageNode extends AbstractEbslNode {
-    private final StringSetting text = registerSetting(new StringSetting("text", "Text", "hello"));
+    private StringSetting text;
+
+    @Override
+    protected void registerSettings() {
+        text = registerSetting(new StringSetting("text", "Text", "hello"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {
@@ -17,6 +22,7 @@ public final class MessageNode extends AbstractEbslNode {
 
     @Override
     public void loadArgs(java.util.List<String> args) {
+        settings();
         text.setValue(String.join(" ", args));
     }
 }

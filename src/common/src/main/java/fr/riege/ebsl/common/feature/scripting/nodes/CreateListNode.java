@@ -7,7 +7,10 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.CREATE_LIST)
 public final class CreateListNode extends AbstractEbslNode {
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("list", "List", "items"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

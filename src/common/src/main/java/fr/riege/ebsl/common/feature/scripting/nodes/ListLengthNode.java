@@ -7,8 +7,11 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.LIST_LENGTH)
 public final class ListLengthNode extends AbstractEbslNode {
-    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "length"));
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("variable", "Variable", "length"));
+        registerSetting(new StringSetting("list", "List", "items"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

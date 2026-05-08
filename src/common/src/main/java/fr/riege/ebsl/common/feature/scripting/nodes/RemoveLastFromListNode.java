@@ -8,7 +8,10 @@ import java.util.List;
 
 @EbslNodeDefinition(EbslNodeType.REMOVE_LAST_FROM_LIST)
 public final class RemoveLastFromListNode extends AbstractEbslNode {
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("list", "List", "items"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

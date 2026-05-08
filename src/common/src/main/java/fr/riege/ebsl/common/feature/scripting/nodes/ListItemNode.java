@@ -8,9 +8,12 @@ import java.util.List;
 
 @EbslNodeDefinition(EbslNodeType.LIST_ITEM)
 public final class ListItemNode extends AbstractEbslNode {
-    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "item"));
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
-    private final StringSetting index = registerSetting(new StringSetting("index", "Index", "0"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("variable", "Variable", "item"));
+        registerSetting(new StringSetting("list", "List", "items"));
+        registerSetting(new StringSetting("index", "Index", "0"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

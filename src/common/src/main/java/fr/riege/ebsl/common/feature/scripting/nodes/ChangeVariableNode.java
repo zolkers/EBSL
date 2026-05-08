@@ -7,8 +7,11 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(value = EbslNodeType.CHANGE_VARIABLE, aliases = {"change"})
 public final class ChangeVariableNode extends AbstractEbslNode {
-    private final StringSetting variable = registerSetting(new StringSetting("variable", "Variable", "name"));
-    private final StringSetting amount = registerSetting(new StringSetting("amount", "Amount", "1"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("variable", "Variable", "name"));
+        registerSetting(new StringSetting("amount", "Amount", "1"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

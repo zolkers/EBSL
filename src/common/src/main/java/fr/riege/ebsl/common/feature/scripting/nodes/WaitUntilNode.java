@@ -8,7 +8,12 @@ import java.util.List;
 
 @EbslNodeDefinition(value = EbslNodeType.CONTROL_WAIT_UNTIL, aliases = {"wait_until"})
 public final class WaitUntilNode extends AbstractEbslNode {
-    private final StringSetting condition = registerSetting(new StringSetting("condition", "Condition", "true"));
+    private StringSetting condition;
+
+    @Override
+    protected void registerSettings() {
+        condition = registerSetting(new StringSetting("condition", "Condition", "true"));
+    }
 
     @Override
     public boolean isWaitUntil() {
@@ -17,11 +22,13 @@ public final class WaitUntilNode extends AbstractEbslNode {
 
     @Override
     public void loadArgs(List<String> args) {
+        settings();
         condition.setValue(args.isEmpty() ? condition.defaultValue() : String.join(" ", args));
     }
 
     @Override
     public String argsFromSettings() {
+        settings();
         return condition.value().trim();
     }
 

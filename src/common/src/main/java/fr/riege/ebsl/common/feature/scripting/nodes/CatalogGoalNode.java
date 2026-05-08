@@ -15,6 +15,10 @@ public final class CatalogGoalNode extends NavigationNode {
     public CatalogGoalNode(GoalUiDefinition definition) {
         super(PREFIX + definition.id());
         this.definition = definition;
+    }
+
+    @Override
+    protected void registerSettings() {
         for (GoalParameter parameter : definition.parameters()) {
             registerSetting(new IntSetting(parameter.id(), parameter.label(), 0, -30000000, 30000000));
         }

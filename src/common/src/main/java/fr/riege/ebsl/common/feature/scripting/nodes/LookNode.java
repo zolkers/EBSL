@@ -7,8 +7,11 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.LOOK)
 public final class LookNode extends AbstractEbslNode {
-    private final StringSetting yaw = registerSetting(new StringSetting("yaw", "Yaw", "0"));
-    private final StringSetting pitch = registerSetting(new StringSetting("pitch", "Pitch", "0"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("yaw", "Yaw", "0"));
+        registerSetting(new StringSetting("pitch", "Pitch", "0"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

@@ -7,8 +7,11 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
 @EbslNodeDefinition(EbslNodeType.ADD_TO_LIST)
 public final class AddToListNode extends AbstractEbslNode {
-    private final StringSetting list = registerSetting(new StringSetting("list", "List", "items"));
-    private final StringSetting value = registerSetting(new StringSetting("value", "Value", "value"));
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("list", "List", "items"));
+        registerSetting(new StringSetting("value", "Value", "value"));
+    }
 
     @Override
     public int start(EbslNodeInvocation invocation) {

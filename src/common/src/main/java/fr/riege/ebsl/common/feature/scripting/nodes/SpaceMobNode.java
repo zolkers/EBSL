@@ -13,12 +13,22 @@ import fr.riege.ebsl.common.feature.task.SpaceMobTask;
 
 @EbslNodeDefinition(EbslNodeType.SPACE_MOB)
 public final class SpaceMobNode extends AbstractEbslNode {
-    private final StringSetting target = registerSetting(new StringSetting("target", "Target", "closest"));
-    private final DoubleSetting distance = registerSetting(new DoubleSetting("distance", "Distance", 3.0, 0.1, 12.0));
-    private final DoubleSetting tolerance = registerSetting(new DoubleSetting("tolerance", "Tolerance", 0.35, 0.05, 4.0));
-    private final IntSetting radius = registerSetting(new IntSetting("radius", "Radius", 32, 1, 128));
-    private final BooleanSetting track = registerSetting(new BooleanSetting("track", "Track", true));
-    private final StringSetting duration = registerSetting(new StringSetting("duration", "Duration", ""));
+    private StringSetting target;
+    private DoubleSetting distance;
+    private DoubleSetting tolerance;
+    private IntSetting radius;
+    private BooleanSetting track;
+    private StringSetting duration;
+
+    @Override
+    protected void registerSettings() {
+        target = registerSetting(new StringSetting("target", "Target", "closest"));
+        distance = registerSetting(new DoubleSetting("distance", "Distance", 3.0, 0.1, 12.0));
+        tolerance = registerSetting(new DoubleSetting("tolerance", "Tolerance", 0.35, 0.05, 4.0));
+        radius = registerSetting(new IntSetting("radius", "Radius", 32, 1, 128));
+        track = registerSetting(new BooleanSetting("track", "Track", true));
+        duration = registerSetting(new StringSetting("duration", "Duration", ""));
+    }
 
     @Override
     public void finish(EbslNodeInvocation invocation) {
@@ -42,6 +52,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
 
     @Override
     public void loadArgs(java.util.List<String> args) {
+        settings();
         Cursor cursor = new Cursor(new EbslNodeInvocation(args, null, null));
         if (cursor.peek(SpaceMobDirective.ON)) {
             cursor.next();
@@ -57,6 +68,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
 
     @Override
     public String argsFromSettings() {
+        settings();
         StringBuilder builder = new StringBuilder("on ");
         if (target.value().isBlank() || "closest".equalsIgnoreCase(target.value())) {
             builder.append("closest");

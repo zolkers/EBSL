@@ -8,13 +8,16 @@ import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 abstract class TimedInputNode extends AbstractEbslNode {
     private final EbslInputKey key;
     private final String fallbackDuration;
-    private final StringSetting duration;
 
     TimedInputNode(EbslInputKey key, String fallbackDuration) {
         super();
         this.key = key;
         this.fallbackDuration = fallbackDuration;
-        this.duration = registerSetting(new StringSetting("duration", "Duration", fallbackDuration));
+    }
+
+    @Override
+    protected void registerSettings() {
+        registerSetting(new StringSetting("duration", "Duration", fallbackDuration));
     }
 
     @Override
