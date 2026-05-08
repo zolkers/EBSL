@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.feature.aim;
 
 import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.domain.world.BlockGroupRegistry;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
@@ -84,6 +85,9 @@ public final class BlockAimTargeting {
         String normalized = target.trim().toLowerCase(Locale.ROOT).replace('\\', '/');
         String exact = id.toString().toLowerCase(Locale.ROOT);
         if (exact.equals(normalized)) {
+            return true;
+        }
+        if (!normalized.contains(":") && BlockGroupRegistry.matches(id, normalized)) {
             return true;
         }
         String path = id.path().toLowerCase(Locale.ROOT);

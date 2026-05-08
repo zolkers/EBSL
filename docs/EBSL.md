@@ -97,14 +97,14 @@ This pattern keeps searching for oak leaves, aims smoothly at the nearest loaded
 start
 
 forever {
-  goal_nearest_block minecraft:oak_leaves 32 4
+  goal_nearest_block leaf 32 4
 
-  repeat_until sensor_targeted_block minecraft:oak_leaves {
-    aim_at_block minecraft:oak_leaves 32 6t
+  repeat_until sensor_targeted_block leaf {
+    aim_at_block leaf 32 6t
     wait 1t
   }
 
-  break_block minecraft:oak_leaves
+  break_block leaf
   wait 3t
 }
 ```
