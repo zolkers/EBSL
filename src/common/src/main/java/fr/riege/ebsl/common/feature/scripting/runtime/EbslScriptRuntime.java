@@ -53,10 +53,6 @@ public final class EbslScriptRuntime {
         return variables.getOrDefault(name, 0.0);
     }
 
-    public boolean hasVariable(String name) {
-        return variables.containsKey(name);
-    }
-
     public void setVariable(String name, Object value) {
         variables.put(name, value);
     }
@@ -88,7 +84,6 @@ public final class EbslScriptRuntime {
     public Object value(String token) {
         if (token == null) return "";
         if (token.startsWith(EbslSyntax.VARIABLE_PREFIX)) return variable(token.substring(EbslSyntax.VARIABLE_PREFIX.length()));
-        if (hasVariable(token)) return variable(token);
         if ("true".equalsIgnoreCase(token)) return true;
         if ("false".equalsIgnoreCase(token)) return false;
         try {
@@ -156,8 +151,4 @@ public final class EbslScriptRuntime {
         return index < args.size() ? number(value(args.get(index))) : fallback;
     }
 
-    public String text(String token) {
-        Object value = value(token);
-        return value == null ? "" : value.toString();
-    }
 }

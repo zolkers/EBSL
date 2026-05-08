@@ -47,7 +47,7 @@ public final class AimAtBlockNode extends AbstractEbslNode {
         if (invocation.args().isEmpty()) {
             return null;
         }
-        String blockId = invocation.runtime().text(invocation.arg(0));
+        String blockId = invocation.runtime().value(invocation.arg(0)).toString();
         int radius = (int) invocation.runtime().argNumber(invocation.args(), 1, 32.0);
         return BlockAimTargeting.nearest(invocation.runtime().platform(), blockId, radius, false);
     }

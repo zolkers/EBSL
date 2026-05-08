@@ -16,7 +16,7 @@ class EbslScriptEngineTest {
     void compilesNestedFlowAndFunctions() {
         EbslProgram program = EbslScriptEngine.compile("""
             start
-            var wood minecraft:oak_log
+            set wood minecraft:oak_log
             set score 0
             repeat 3 {
               change score 1
@@ -36,14 +36,14 @@ class EbslScriptEngineTest {
     }
 
     @Test
-    void varAliasCompilesAsVariableDeclaration() {
+    void variablesRequireExplicitPrefixWhenRead() {
         EbslProgram program = EbslScriptEngine.compile("""
-            var wood minecraft:oak_log
-            goal_nearest_block wood 32
+            set wood minecraft:oak_log
+            goal_nearest_block $wood 32
             """);
 
         assertEquals(2, program.statements().size());
-        assertEquals("set_variable", EbslNodeRegistry.get("var").id());
+        assertEquals("set_variable", EbslNodeRegistry.get("set").id());
     }
 
     @Test

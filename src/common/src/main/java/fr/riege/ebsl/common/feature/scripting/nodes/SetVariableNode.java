@@ -5,7 +5,7 @@ import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 
-@EbslNodeDefinition(value = EbslNodeType.SET_VARIABLE, aliases = {"set", "var"})
+@EbslNodeDefinition(value = EbslNodeType.SET_VARIABLE, aliases = {"set"})
 public final class SetVariableNode extends AbstractEbslNode {
     @Override
     protected void registerSettings() {

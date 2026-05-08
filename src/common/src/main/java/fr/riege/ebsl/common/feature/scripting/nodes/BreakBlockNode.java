@@ -85,7 +85,7 @@ public final class BreakBlockNode extends AbstractEbslNode {
         if (args.isEmpty() || looksLikeDuration(args.getFirst())) {
             return "";
         }
-        return invocation.runtime().text(args.getFirst()).trim();
+        return invocation.runtime().value(args.getFirst()).toString().trim();
     }
 
     private static String maxDuration(List<String> args) {
