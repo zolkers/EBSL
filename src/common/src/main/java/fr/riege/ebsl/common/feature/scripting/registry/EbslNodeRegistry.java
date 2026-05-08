@@ -49,56 +49,57 @@ import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
 import java.util.LinkedHashSet;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.function.Supplier;
 
 public final class EbslNodeRegistry {
-    private static final MapRegistry<String, EbslNode> NODES = new MapRegistry<>(null);
+    private static final MapRegistry<String, RegisteredNode> NODES = new MapRegistry<>(null);
 
     static {
-        register(new StartNode());
-        register(new StartChainNode());
-        register(new EventCallNode());
-        register(new SetVariableNode());
-        register(new ChangeVariableNode());
-        register(new CreateListNode());
-        register(new AddToListNode());
-        register(new RemoveFirstFromListNode());
-        register(new RemoveLastFromListNode());
-        register(new RemoveListItemNode());
-        register(new ListItemNode());
-        register(new ListLengthNode());
-        register(new OperatorRandomNode());
-        register(new OperatorModNode());
-        register(new GotoNode());
-        register(new GoalNearestBlockNode());
-        register(new TravelNode());
-        register(new ComeNode());
-        register(new StopNode());
-        register(new StopChainNode());
-        register(new StopAllNode());
-        register(new WaitNode());
-        register(new WaitUntilNode());
-        register(new MessageNode());
-        register(new WalkNode());
-        register(new JumpNode());
-        register(new CrawlNode());
-        register(new CrouchNode());
-        register(new SprintNode());
-        register(new PressKeyNode());
-        register(new AimAtNode());
-        register(new AimAtBlockNode());
-        register(new SwingNode());
-        register(new BreakNode());
-        register(new BreakBlockNode());
-        register(new UseNode());
-        register(new InteractNode());
-        register(new PlaceHandNode());
-        register(new LookNode());
-        register(new SpaceMobNode());
+        register(StartNode::new);
+        register(StartChainNode::new);
+        register(EventCallNode::new);
+        register(SetVariableNode::new);
+        register(ChangeVariableNode::new);
+        register(CreateListNode::new);
+        register(AddToListNode::new);
+        register(RemoveFirstFromListNode::new);
+        register(RemoveLastFromListNode::new);
+        register(RemoveListItemNode::new);
+        register(ListItemNode::new);
+        register(ListLengthNode::new);
+        register(OperatorRandomNode::new);
+        register(OperatorModNode::new);
+        register(GotoNode::new);
+        register(GoalNearestBlockNode::new);
+        register(TravelNode::new);
+        register(ComeNode::new);
+        register(StopNode::new);
+        register(StopChainNode::new);
+        register(StopAllNode::new);
+        register(WaitNode::new);
+        register(WaitUntilNode::new);
+        register(MessageNode::new);
+        register(WalkNode::new);
+        register(JumpNode::new);
+        register(CrawlNode::new);
+        register(CrouchNode::new);
+        register(SprintNode::new);
+        register(PressKeyNode::new);
+        register(AimAtNode::new);
+        register(AimAtBlockNode::new);
+        register(SwingNode::new);
+        register(BreakNode::new);
+        register(BreakBlockNode::new);
+        register(UseNode::new);
+        register(InteractNode::new);
+        register(PlaceHandNode::new);
+        register(LookNode::new);
+        register(SpaceMobNode::new);
         for (GoalUiDefinition goal : GoalUiCatalog.all()) {
-            register(new CatalogGoalNode(goal));
+            register(() -> new CatalogGoalNode(goal));
         }
         for (EbslSensorRegistry.SensorDefinition sensor : EbslSensorRegistry.definitions()) {
-            register(new CatalogSensorNode(sensor));
+            register(() -> new CatalogSensorNode(sensor));
         }
     }
 
@@ -106,25 +107,39 @@ public final class EbslNodeRegistry {
     }
 
     public static EbslNode get(String id) {
-        return NODES.get(normalize(id));
+        RegisteredNode node = NODES.get(normalize(id));
+        return node == null ? null : node.prototype();
+    }
+
+    public static EbslNode create(String id) {
+        RegisteredNode node = NODES.get(normalize(id));
+        return node == null ? null : node.create();
     }
 
     public static Collection<EbslNode> nodes() {
-        return NODES.values();
+        return NODES.values().stream().map(RegisteredNode::prototype).toList();
     }
 
     public static Collection<EbslNode> canonicalNodes() {
-        return new LinkedHashSet<>(NODES.values());
+        return new LinkedHashSet<>(nodes());
     }
 
-    private static void register(EbslNode node) {
-        NODES.register(normalize(node.id()), node);
-        for (String alias : node.aliases()) {
-            NODES.register(normalize(alias), node);
+    private static void register(Supplier<EbslNode> factory) {
+        EbslNode prototype = factory.get();
+        RegisteredNode registered = new RegisteredNode(prototype, factory);
+        NODES.register(normalize(prototype.id()), registered);
+        for (String alias : prototype.aliases()) {
+            NODES.register(normalize(alias), registered);
         }
     }
 
     private static String normalize(String id) {
-        return id.toLowerCase(Locale.ROOT).replace('-', '_');
+        return id == null ? "" : id.toLowerCase(Locale.ROOT).replace('-', '_');
+    }
+
+    private record RegisteredNode(EbslNode prototype, Supplier<EbslNode> factory) {
+        private EbslNode create() {
+            return factory.get();
+        }
     }
 }

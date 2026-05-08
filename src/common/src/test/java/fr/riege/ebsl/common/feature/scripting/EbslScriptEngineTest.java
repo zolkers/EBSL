@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EbslScriptEngineTest {
@@ -46,5 +47,11 @@ class EbslScriptEngineTest {
         assertEquals("goal_walk", EbslNodeRegistry.get("goal_walk").id());
         assertEquals("walk", EbslNodeRegistry.get("walk").id());
         assertEquals("break_block", EbslNodeRegistry.get("break_block").id());
+    }
+
+    @Test
+    void createsFreshRuntimeNodeInstances() {
+        assertNotSame(EbslNodeRegistry.create("aim_at_block"), EbslNodeRegistry.create("aim_at_block"));
+        assertNotSame(EbslNodeRegistry.get("aim_at_block"), EbslNodeRegistry.create("aim_at_block"));
     }
 }
