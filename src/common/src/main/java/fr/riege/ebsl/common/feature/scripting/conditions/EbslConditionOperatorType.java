@@ -21,11 +21,11 @@ public enum EbslConditionOperatorType {
         this.aliases = List.of(aliases);
     }
 
-    String id() {
+    public String id() {
         return id;
     }
 
-    List<String> aliases() {
+    public List<String> aliases() {
         return aliases;
     }
 }

@@ -8,6 +8,10 @@ import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorStyle;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslSyntaxHighlighter;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslSyntaxThemeRegistry;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslSyntaxToken;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
@@ -23,6 +27,7 @@ import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import imgui.ImDrawList;
 import imgui.ImGui;
+import imgui.flag.ImGuiCol;
 import imgui.type.ImString;
 
 import java.util.ArrayList;
@@ -158,9 +163,31 @@ public final class ImGuiScriptEditorPanel {
         UiRect gutter = new UiRect(code.x(), code.y(), 52, code.height());
         dl.addRectFilled(gutter.x(), gutter.y(), gutter.right(), gutter.bottom(), 0xFF111923, 4.0f);
         drawLineNumbers(dl, gutter);
-        ImGui.setCursorScreenPos(code.x() + 58.0f, code.y() + 6.0f);
+        UiRect textArea = new UiRect(code.x() + 58, code.y() + 6, Math.round(code.width() - 64.0f), Math.round(code.height() - 12.0f));
+        drawSyntaxHighlight(dl, textArea);
+        ImGui.setCursorScreenPos(textArea.x(), textArea.y());
+        ImGui.pushStyleColor(ImGuiCol.Text, EbslCodeEditorStyle.DARK.editableTextColor());
+        ImGui.pushStyleColor(ImGuiCol.FrameBg, EbslCodeEditorStyle.DARK.frameColor());
         ImGui.inputTextMultiline("##ebsl-code-editor", source, code.width() - 64.0f, code.height() - 12.0f);
+        ImGui.popStyleColor(2);
         dl.addText(code.right() - 128.0f, code.y() + 8.0f, UiTheme.TEXT_DIM, lineCount() + " lines");
+    }
+
+    private void drawSyntaxHighlight(ImDrawList dl, UiRect textArea) {
+        EbslCodeEditorStyle style = EbslCodeEditorStyle.DARK;
+        List<List<EbslSyntaxToken>> lines = EbslSyntaxHighlighter.highlight(source.get());
+        int visible = Math.min(lines.size(), Math.max(1, (int) ((textArea.height() - style.textPadding()) / style.lineHeight())));
+        for (int lineIndex = 0; lineIndex < visible; lineIndex++) {
+            float x = textArea.x() + style.textPadding();
+            float y = textArea.y() + style.textPadding() + lineIndex * style.lineHeight();
+            for (EbslSyntaxToken token : lines.get(lineIndex)) {
+                int color = EbslSyntaxThemeRegistry.style(token.kind()).color();
+                if (color != 0) {
+                    dl.addText(x, y, color, token.text());
+                }
+                x += token.text().length() * style.characterWidth();
+            }
+        }
     }
 
     private void drawLineNumbers(ImDrawList dl, UiRect gutter) {
