@@ -17,6 +17,9 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 public final class AStarPathfinder extends AbstractPathfinder {
+    private static final double[] BEST_PATH_COEFFICIENTS = {1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0};
+    private static final double MIN_FALLBACK_DISTANCE = 5.0;
+    private static final double MIN_FALLBACK_IMPROVEMENT = 0.01;
 
     private final ThreadLocal<PathfindingSession> currentSession = new ThreadLocal<>();
 
@@ -46,6 +49,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         node.inOpen = true;
         node.cachedFCost = fCost;
         session.nodes.put(packedPos, node);
+        session.initializeFallback(node);
         openSet.insertOrUpdate(packedPos, fCost);
     }
 
@@ -122,6 +126,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
             candidate.parent = currentNode;
             candidate.gCost = gCost;
             candidate.moveType = inferMoveType(offset);
+            session.recordFallbackCandidate(candidate);
             if (candidate.isTarget(requestTarget)) {
                 return candidate;
             }
@@ -135,6 +140,12 @@ public final class AStarPathfinder extends AbstractPathfinder {
             if (profiling) profHeapNanos += System.nanoTime() - t3;
         }
         return null;
+    }
+
+    @Override
+    protected Node bestFallbackNode(Node defaultFallback) {
+        PathfindingSession session = currentSession.get();
+        return session == null ? defaultFallback : session.bestFallback(defaultFallback);
     }
 
     private static double gTolerance(double a, double b) {
@@ -241,11 +252,68 @@ public final class AStarPathfinder extends AbstractPathfinder {
         final Long2ObjectOpenHashMap<Node> nodes      = new Long2ObjectOpenHashMap<>();
         final LongSet                      closedSet  = new LongOpenHashSet();
         final EvaluationContextImpl        reusableContext;
+        final Node[]                       bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
+        final double[]                     bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
         int                                expandedCount = 0;
 
         PathfindingSession() {
             
             reusableContext = new EvaluationContextImpl(null, null, null, null);
+        }
+
+        void initializeFallback(Node start) {
+            for (int i = 0; i < BEST_PATH_COEFFICIENTS.length; i++) {
+                bestFallbackNodes[i] = start;
+                bestFallbackScores[i] = fallbackScore(start, BEST_PATH_COEFFICIENTS[i]);
+            }
+        }
+
+        void recordFallbackCandidate(Node node) {
+            if (node == null || !Double.isFinite(node.gCost)) {
+                return;
+            }
+            for (int i = 0; i < BEST_PATH_COEFFICIENTS.length; i++) {
+                double score = fallbackScore(node, BEST_PATH_COEFFICIENTS[i]);
+                if (bestFallbackNodes[i] == null || bestFallbackScores[i] - score > MIN_FALLBACK_IMPROVEMENT) {
+                    bestFallbackNodes[i] = node;
+                    bestFallbackScores[i] = score;
+                }
+            }
+        }
+
+        Node bestFallback(Node defaultFallback) {
+            Node best = defaultFallback;
+            double bestDistance = distanceFromRootSquared(defaultFallback);
+            double minDistanceSquared = MIN_FALLBACK_DISTANCE * MIN_FALLBACK_DISTANCE;
+            for (Node candidate : bestFallbackNodes) {
+                double distance = distanceFromRootSquared(candidate);
+                if (distance >= minDistanceSquared) {
+                    return candidate;
+                }
+                if (distance > bestDistance) {
+                    best = candidate;
+                    bestDistance = distance;
+                }
+            }
+            return best;
+        }
+
+        private static double fallbackScore(Node node, double coefficient) {
+            return node.heuristic + node.gCost / coefficient;
+        }
+
+        private static double distanceFromRootSquared(Node node) {
+            if (node == null) {
+                return 0.0;
+            }
+            Node root = node;
+            while (root.parent != null) {
+                root = root.parent;
+            }
+            double dx = node.position.x - root.position.x;
+            double dy = node.position.y - root.position.y;
+            double dz = node.position.z - root.position.z;
+            return dx * dx + dy * dy + dz * dz;
         }
     }
 }

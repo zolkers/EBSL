@@ -142,7 +142,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
                 }
             }
 
-            return determinePostLoopResult(currentDepth, start, target, bestFallbackNode);
+            return determinePostLoopResult(currentDepth, start, target, bestFallbackNode(bestFallbackNode));
 
         } catch (Exception e) {
             LOGGER.error("Pathfinding failed from {} to {}", start, target, e);
@@ -211,6 +211,10 @@ public abstract class AbstractPathfinder implements Pathfinder {
         }
         List<PathPosition> positions = tracePathPositions(endNode);
         return new PathImpl(start, target, positions);
+    }
+
+    protected Node bestFallbackNode(Node defaultFallback) {
+        return defaultFallback;
     }
 
     private List<PathPosition> tracePathPositions(Node leafNode) {
