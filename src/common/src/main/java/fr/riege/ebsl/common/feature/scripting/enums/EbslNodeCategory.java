@@ -8,10 +8,8 @@ public enum EbslNodeCategory {
     DATA,
     WORLD,
     PLAYER,
-    INTERFACE,
     SENSOR,
-    UTILITY,
-    PARAMETER;
+    UTILITY;
 
     public String id() {
         return name().toLowerCase(Locale.ROOT);

@@ -517,10 +517,8 @@ public final class ImGuiScriptEditorPanel {
             case DATA -> 0xFF263A34;
             case WORLD -> 0xFF45351F;
             case PLAYER -> 0xFF2A4052;
-            case INTERFACE -> 0xFF3B3446;
             case SENSOR -> 0xFF29433E;
             case UTILITY -> 0xFF303742;
-            case PARAMETER -> 0xFF3E3333;
         };
     }
 
@@ -531,10 +529,8 @@ public final class ImGuiScriptEditorPanel {
             case DATA -> 0xFF3D7E61;
             case WORLD -> 0xFF9A7434;
             case PLAYER -> 0xFF3D82A8;
-            case INTERFACE -> 0xFF725F91;
             case SENSOR -> 0xFF438C81;
             case UTILITY -> 0xFF566272;
-            case PARAMETER -> 0xFF865F5F;
         };
     }
 
