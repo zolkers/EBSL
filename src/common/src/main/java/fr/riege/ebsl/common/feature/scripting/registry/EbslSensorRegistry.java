@@ -116,7 +116,7 @@ public final class EbslSensorRegistry {
         double radius = runtime.argNumber(args, 0, 2.0);
         double radiusSq = radius * radius;
         Vec3d playerPos = runtime.platform().player().position();
-        return runtime.platform().entities().entitiesForRendering().stream()
+        return runtime.platform().entities().livingEntitiesForTargeting().stream()
             .anyMatch(entity -> entity.distanceToSq(playerPos) <= radiusSq);
     }
 

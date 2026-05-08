@@ -113,8 +113,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private EntitySnapshot findClosestMob(EbslPlatform platform) {
         double maxDistanceSq = searchRadius.value() * searchRadius.value();
-        return platform.entities().entitiesForRendering().stream()
-            .filter(EntitySnapshot::mob)
+        return platform.entities().mobsForTargeting().stream()
             .filter(entity -> isUsableTarget(platform, entity))
             .filter(entity -> entity.distanceToSq(platform.player().position()) <= maxDistanceSq)
             .min(Comparator.comparingDouble(entity -> entity.distanceToSq(platform.player().position())))
@@ -125,8 +124,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
         String query = normalize(targetName.value());
         if (query.isEmpty()) return null;
         double maxDistanceSq = searchRadius.value() * searchRadius.value();
-        return platform.entities().entitiesForRendering().stream()
-            .filter(EntitySnapshot::living)
+        return platform.entities().mobsForTargeting().stream()
             .filter(entity -> isUsableTarget(platform, entity))
             .filter(entity -> entity.distanceToSq(platform.player().position()) <= maxDistanceSq)
             .filter(entity -> matchesName(entity, query))
@@ -136,7 +134,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private EntitySnapshot findById(EbslPlatform platform, Integer id) {
         if (id == null) return null;
-        return platform.entities().entitiesForRendering().stream()
+        return platform.entities().mobsForTargeting().stream()
             .filter(entity -> entity.id() == id)
             .findFirst()
             .orElse(null);
@@ -154,6 +152,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
         Integer playerId = platform.player().entityId();
         return entity != null
             && entity.living()
+            && entity.mob()
             && (playerId == null || entity.id() != (int) playerId)
             && entity.alive()
             && !entity.removed()
