@@ -124,6 +124,7 @@ public enum EbslNodeType {
     WAIT(EbslNodeCategory.UTILITY, true),
     STICKY_NOTE(EbslNodeCategory.UTILITY, false),
     MESSAGE(EbslNodeCategory.UTILITY, true),
+    NO_RENDER(EbslNodeCategory.UTILITY, true),
     TEMPLATE(EbslNodeCategory.UTILITY, false),
     STOP_CHAIN(EbslNodeCategory.UTILITY, true),
     STOP_ALL(EbslNodeCategory.UTILITY, true),

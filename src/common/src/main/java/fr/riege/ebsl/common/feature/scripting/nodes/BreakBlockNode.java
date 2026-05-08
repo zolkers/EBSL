@@ -36,7 +36,14 @@ public final class BreakBlockNode extends AbstractEbslNode {
         target = invocation.runtime().platform().player().targetedBlockHit();
         fallbackTarget = target == null ? invocation.runtime().platform().player().targetedBlock() : target.block();
         TimedInputNode.press(invocation.runtime(), EbslInputKey.ATTACK);
+        invocation.runtime().platform().input().attackTargetedBlock();
         return EbslDuration.ticks(maxDuration(invocation.args()));
+    }
+
+    @Override
+    public void tick(EbslNodeInvocation invocation) {
+        TimedInputNode.press(invocation.runtime(), EbslInputKey.ATTACK);
+        invocation.runtime().platform().input().attackTargetedBlock();
     }
 
     @Override

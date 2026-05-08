@@ -8,15 +8,30 @@ import java.util.Map;
 
 public final class RenderingSystem {
     private static final Map<String, ActiveBatch> BATCHES = new LinkedHashMap<>();
+    private static volatile boolean enabled = true;
 
     private RenderingSystem() {
     }
 
     public static synchronized void submit(RenderBatch batch) {
+        if (!enabled) {
+            return;
+        }
         if (batch == null || batch.primitives().isEmpty()) {
             return;
         }
         BATCHES.put(batch.id(), new ActiveBatch(batch, batch.ttlTicks()));
+    }
+
+    public static boolean enabled() {
+        return enabled;
+    }
+
+    public static synchronized void setEnabled(boolean enabled) {
+        RenderingSystem.enabled = enabled;
+        if (!enabled) {
+            clear();
+        }
     }
 
     public static synchronized boolean remove(String id) {
@@ -54,6 +69,9 @@ public final class RenderingSystem {
     }
 
     public static void renderWorld(RenderHandle handle) {
+        if (!enabled) {
+            return;
+        }
         Map<RenderStage, List<RenderBatch>> snapshot = snapshotByStage();
         for (RenderStage stage : RenderStage.values()) {
             List<RenderBatch> batches = snapshot.get(stage);

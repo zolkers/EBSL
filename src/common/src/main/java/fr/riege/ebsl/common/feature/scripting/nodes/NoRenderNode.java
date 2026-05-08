@@ -1,0 +1,26 @@
+package fr.riege.ebsl.common.feature.scripting.nodes;
+
+import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
+import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.platform.render.RenderingSystem;
+
+import java.util.Locale;
+
+@EbslNodeDefinition(value = EbslNodeType.NO_RENDER, aliases = {"disable_render", "render_off"})
+public final class NoRenderNode extends AbstractEbslNode {
+    @Override
+    public int start(EbslNodeInvocation invocation) {
+        RenderingSystem.setEnabled(!disable(invocation.has(0) ? invocation.arg(0) : ""));
+        return 0;
+    }
+
+    private static boolean disable(String token) {
+        String normalized = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
+        return normalized.isBlank()
+            || normalized.equals("on")
+            || normalized.equals("true")
+            || normalized.equals("disable")
+            || normalized.equals("off");
+    }
+}

@@ -30,5 +30,6 @@ public interface IInputLayer {
     default void setSprintDown(boolean down) {}
     default void setAttackDown(boolean down) {}
     default void setUseDown(boolean down) {}
+    default boolean attackTargetedBlock() { return false; }
     default void lookAt(float yaw, float pitch) {}
 }

@@ -2,9 +2,14 @@ package fr.riege.ebsl.loader.layer;
 
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public class MinecraftInputLayer implements IInputLayer {
     protected final Minecraft client;
+    private BlockPos destroyingBlock;
 
     public MinecraftInputLayer(Minecraft client) {
         this.client = client;
@@ -32,6 +37,7 @@ public class MinecraftInputLayer implements IInputLayer {
         client.options.keyAttack.setDown(false);
         client.options.keyUse.setDown(false);
         client.options.keyPickItem.setDown(false);
+        destroyingBlock = null;
     }
 
     @Override public boolean forwardDown() { return client.options.keyUp.isDown(); }
@@ -48,8 +54,33 @@ public class MinecraftInputLayer implements IInputLayer {
     @Override public void setJumpDown(boolean down) { client.options.keyJump.setDown(down); }
     @Override public void setSneakDown(boolean down) { client.options.keyShift.setDown(down); }
     @Override public void setSprintDown(boolean down) { client.options.keySprint.setDown(down); }
-    @Override public void setAttackDown(boolean down) { client.options.keyAttack.setDown(down); }
+    @Override public void setAttackDown(boolean down) {
+        client.options.keyAttack.setDown(down);
+        if (!down) {
+            destroyingBlock = null;
+        }
+    }
     @Override public void setUseDown(boolean down) { client.options.keyUse.setDown(down); }
+
+    @Override
+    public boolean attackTargetedBlock() {
+        if (client.player == null || client.gameMode == null || !(client.hitResult instanceof BlockHitResult hit)) {
+            return false;
+        }
+        if (hit.getType() == HitResult.Type.MISS) {
+            destroyingBlock = null;
+            return false;
+        }
+        BlockPos pos = hit.getBlockPos();
+        boolean handled = pos.equals(destroyingBlock)
+            ? client.gameMode.continueDestroyBlock(pos, hit.getDirection())
+            : client.gameMode.startDestroyBlock(pos, hit.getDirection());
+        destroyingBlock = handled ? pos : null;
+        if (handled) {
+            client.player.swing(InteractionHand.MAIN_HAND);
+        }
+        return handled;
+    }
 
     @Override
     public void lookAt(float yaw, float pitch) {

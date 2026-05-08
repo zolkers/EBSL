@@ -39,7 +39,11 @@ public class EbslCore {
         platform.events().onTick(event -> navigationService.tick());
         platform.events().onTick(event -> BotTaskRegistry.update(platform));
         platform.events().onTick(event -> RenderingSystem.tick());
-        platform.events().onRenderWorld(event -> BotTaskRegistry.render(platform));
+        platform.events().onRenderWorld(event -> {
+            if (RenderingSystem.enabled()) {
+                BotTaskRegistry.render(platform);
+            }
+        });
         platform.events().onTick(event -> {
             if (uiService.isVisible() && !platform.input().isMouseGrabbed() && !navigationService.isNavigating()) {
                 platform.input().releaseGameplayKeys();
@@ -54,7 +58,9 @@ public class EbslCore {
                 event.viewMatrix(),
                 event.projMatrix());
             RenderingSystem.renderWorld(platform.render());
-            PathVisualizer.renderWorld(platform.render());
+            if (RenderingSystem.enabled()) {
+                PathVisualizer.renderWorld(platform.render());
+            }
             platform.render().endFrame();
         });
         platform.imgui().registerFrame(() -> {

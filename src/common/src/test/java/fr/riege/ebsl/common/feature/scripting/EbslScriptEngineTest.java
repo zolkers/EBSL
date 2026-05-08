@@ -47,6 +47,7 @@ class EbslScriptEngineTest {
         assertEquals("goal_walk", EbslNodeRegistry.get("goal_walk").id());
         assertEquals("walk", EbslNodeRegistry.get("walk").id());
         assertEquals("break_block", EbslNodeRegistry.get("break_block").id());
+        assertEquals("no_render", EbslNodeRegistry.get("no_render").id());
     }
 
     @Test

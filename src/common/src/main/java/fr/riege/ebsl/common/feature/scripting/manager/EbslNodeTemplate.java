@@ -74,6 +74,7 @@ public record EbslNodeTemplate(
             case CONTROL_FOREVER -> template(type, "Forever", "Run a block continuously.", "block", "{\n}");
             case CONTROL_WAIT_UNTIL -> template(type, "Wait Until", "Pause until a sensor/condition is true.", "condition", "true");
             case MESSAGE -> template(type, "Message", "Send a chat/status message.", "text", "\"hello\"");
+            case NO_RENDER -> template(type, "No Render", "Disable EBSL world/path/task rendering.", "[on|false]", "");
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
             case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 4");
             case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "x y z", "0 64 0");

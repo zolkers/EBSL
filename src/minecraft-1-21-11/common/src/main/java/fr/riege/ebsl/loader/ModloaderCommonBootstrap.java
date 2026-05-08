@@ -10,6 +10,7 @@ import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
 import fr.riege.ebsl.common.core.log.AppLog;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.layer.ModloaderEventBus;
 import fr.riege.ebsl.loader.layer.ModloaderNavigationService;
@@ -82,7 +83,7 @@ public final class ModloaderCommonBootstrap {
     }
 
     public static void beforeRenderWorld() {
-        if (navigation != null) {
+        if (navigation != null && RenderingSystem.enabled()) {
             navigation.renderCameraFrame();
         }
     }

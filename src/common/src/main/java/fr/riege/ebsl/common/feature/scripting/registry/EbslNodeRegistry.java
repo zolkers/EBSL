@@ -23,6 +23,7 @@ import fr.riege.ebsl.common.feature.scripting.nodes.ListItemNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.ListLengthNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.LookNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.MessageNode;
+import fr.riege.ebsl.common.feature.scripting.nodes.NoRenderNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.OperatorModNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.OperatorRandomNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.PlaceHandNode;
@@ -79,6 +80,7 @@ public final class EbslNodeRegistry {
         register(WaitNode::new);
         register(WaitUntilNode::new);
         register(MessageNode::new);
+        register(NoRenderNode::new);
         register(WalkNode::new);
         register(JumpNode::new);
         register(CrawlNode::new);
