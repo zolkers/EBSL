@@ -137,6 +137,15 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         return runs.stream().map(ScriptRun::summary).toList();
     }
 
+    public List<String> activeFiles() {
+        return runs.stream()
+            .map(ScriptRun::fileName)
+            .filter(file -> !file.isBlank())
+            .map(EbslScriptManager::normalizeFileName)
+            .distinct()
+            .toList();
+    }
+
     public List<String> activeSelectors() {
         List<String> selectors = new ArrayList<>();
         selectors.add("all");
@@ -245,6 +254,10 @@ public final class EbslScriptTask extends Settingable implements BotTask {
 
         String label() {
             return label;
+        }
+
+        String fileName() {
+            return fileName;
         }
 
         String summary() {
