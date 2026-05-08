@@ -78,8 +78,6 @@ public record EbslNodeTemplate(
             case GOTO -> template(type, "Goto", "Navigate to explicit coordinates.", "x y z", "0 64 0");
             case GOAL_NEAREST_BLOCK -> template(type, "Nearest Block", "Find the nearest matching loaded block and path within reach radius.", "block_id search_radius reach_radius", "minecraft:oak_leaves 32 4");
             case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "x y z", "0 64 0");
-            case GOAL -> template(type, "Goal", "Run a registered pathfinding goal.", "goal args", "");
-            case PATH -> template(type, "Path", "Follow or calculate path behavior.", "path args", "");
             case COME -> template(type, "Come", "Ask the bot to come to the player.", "", "");
             case SPACE_MOB -> template(type, "Space Mob", "Use the SpaceMob task from a script node.", "on|off [name] [distance] [tolerance] [radius] [track]", "on closest 3 0.35 32 track");
             case AIM_AT -> template(type, "Aim At", "Smoothly aim at world coordinates.", "x y z [duration]", "0 64 0 8t");
@@ -103,7 +101,7 @@ public record EbslNodeTemplate(
             case ADD_TO_LIST -> template(type, "Add To List", "Append a value to a list.", "list value", "items stone");
             case REMOVE_FIRST_FROM_LIST -> template(type, "Remove First", "Remove the first list value.", "list", "items");
             case REMOVE_LAST_FROM_LIST -> template(type, "Remove Last", "Remove the last list value.", "list", "items");
-            case REMOVE_LIST_ITEM, REMOVE_FROM_LIST -> template(type, "Remove Item", "Remove an indexed list value.", "list index", "items 0");
+            case REMOVE_LIST_ITEM -> template(type, "Remove Item", "Remove an indexed list value.", "list index", "items 0");
             case LIST_ITEM -> template(type, "List Item", "Read an indexed list item.", "variable list index", "item items 0");
             case LIST_LENGTH -> template(type, "List Length", "Read a list length.", "variable list", "length items");
             case OPERATOR_RANDOM -> template(type, "Random", "Generate a random numeric value.", "variable min max", "random 0 10");

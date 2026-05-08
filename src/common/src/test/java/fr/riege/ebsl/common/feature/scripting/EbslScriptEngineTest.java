@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting;
 
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
@@ -47,10 +48,11 @@ class EbslScriptEngineTest {
     }
 
     @Test
-    void keepsPathmindNodeCatalogueAvailableAsTaskIds() {
+    void keepsExecutableNodeTypesFocused() {
         assertEquals(EbslNodeType.GOTO, EbslNodeType.byId("goto"));
         assertEquals(EbslNodeType.CONTROL_REPEAT_UNTIL, EbslNodeType.byId("control-repeat-until"));
-        assertTrue(EbslNodeType.ids().contains("sensor_health_below"));
+        assertFalse(EbslNodeType.ids().contains("sensor_health_below"));
+        assertTrue(EbslSensorRegistry.definition("sensor_health_below") != null);
     }
 
     @Test
