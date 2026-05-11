@@ -1,7 +1,9 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -11,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AStarPathfinderTest {
     @Test
@@ -74,10 +77,42 @@ class AStarPathfinderTest {
     }
 
     @Test
+    void timeBudgetReturnsFallbackEvenBeforeEarlyFallbackThreshold() throws Exception {
+        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(true)
+            .maxIterations(10000)
+            .maxCalculationTimeMs(1)
+            .processors(java.util.List.of(new SlowProcessor()))
+            .build());
+
+        PathfinderResult result = pathfinder.findPath(
+            new PathPosition(0, 64, 0),
+            new PathPosition(1000, 64, 0),
+            null
+        ).toCompletableFuture().get(1, TimeUnit.SECONDS);
+
+        assertEquals(PathState.FALLBACK, result.getPathState());
+        assertTrue(result.getPath().length() > 1);
+    }
+
+    @Test
     void processorRegistryCreatesFreshStandardProcessors() {
         assertNotSame(
             NodeProcessorRegistry.createStandardProcessors().getFirst(),
             NodeProcessorRegistry.createStandardProcessors().getFirst()
         );
+    }
+
+    private static final class SlowProcessor implements NodeProcessor {
+        @Override
+        public boolean isValid(EvaluationContext context) {
+            try {
+                Thread.sleep(2);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+            return true;
+        }
     }
 }

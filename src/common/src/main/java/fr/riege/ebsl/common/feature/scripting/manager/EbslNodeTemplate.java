@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting.manager;
 
-import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
@@ -46,15 +46,15 @@ public record EbslNodeTemplate(
         }
         EbslNodeType type = typeOrNull(node.id());
         if (type != null) {
-            return of(type);
+            return withNodeFields(of(type), node);
         }
         return dynamic(node);
     }
 
     private static EbslNodeTemplate dynamic(EbslNode node) {
         EbslNodeCategory category = dynamicCategory(node.id());
-        String argsHint = node.settings().stream().map(Setting::id).reduce((a, b) -> a + " " + b).orElse("");
-        String sampleArgs = node.settings().stream().map(EbslNodeTemplate::sampleValue).reduce((a, b) -> a + " " + b).orElse("");
+        String argsHint = fieldsHint(node);
+        String sampleArgs = fieldsSample(node);
         String title = dynamicTitle(node.id());
         String description = dynamicDescription(node.id(), category);
         return template(node.id(), category, title, description, argsHint, sampleArgs);
@@ -121,6 +121,13 @@ public record EbslNodeTemplate(
         return new EbslNodeTemplate(command, category, title, description, argsHint, sampleArgs);
     }
 
+    private static EbslNodeTemplate withNodeFields(EbslNodeTemplate base, EbslNode node) {
+        if (node.fields().isEmpty()) {
+            return base;
+        }
+        return template(base.command(), base.category(), base.title(), base.description(), fieldsHint(node), fieldsSample(node));
+    }
+
     private static EbslNodeType typeOrNull(String command) {
         try {
             return EbslNodeType.byId(command);
@@ -129,12 +136,18 @@ public record EbslNodeTemplate(
         }
     }
 
-    private static String sampleValue(Setting<?> setting) {
-        Object value = setting.defaultValue();
-        if (value instanceof Enum<?> e) {
-            return e.name().toLowerCase(Locale.ROOT);
-        }
-        return String.valueOf(value);
+    private static String fieldsHint(EbslNode node) {
+        return node.fields().stream()
+            .map(EbslNodeField::id)
+            .reduce((a, b) -> a + " " + b)
+            .orElse("");
+    }
+
+    private static String fieldsSample(EbslNode node) {
+        return node.fields().stream()
+            .map(EbslNodeField::defaultValue)
+            .reduce((a, b) -> a + " " + b)
+            .orElse("");
     }
 
     private static EbslNodeCategory dynamicCategory(String command) {

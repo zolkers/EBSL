@@ -22,6 +22,7 @@ public final class BlockAimTargeting {
 
     public static BlockAimTarget nearest(EbslPlatform platform, String target, int radius, boolean requireLineOfSight) {
         IWorldLayer world = platform.world();
+        BlockSelector selector = BlockSelector.parse(target);
         Vec3d pos = platform.player().position();
         int px = (int) Math.floor(pos.x());
         int py = (int) Math.floor(pos.y());
@@ -41,7 +42,7 @@ public final class BlockAimTargeting {
                         continue;
                     }
                     int z = pz + dz;
-                    if (!world.isLoaded(x, y, z) || !matches(world.getBlock(x, y, z), target)) {
+                    if (!world.isLoaded(x, y, z) || !selector.matches(world.getBlock(x, y, z))) {
                         continue;
                     }
                     Vec3d aimPoint = aimPoint(platform, x, y, z, requireLineOfSight);
@@ -69,7 +70,7 @@ public final class BlockAimTargeting {
                 fallbackDistance = distance;
                 fallback = point;
             }
-            if (!requireLineOfSight || platform.world().hasLineOfSight(eye, point)) {
+            if (!requireLineOfSight || platform.world().canRayTraceBlock(eye, point, x, y, z)) {
                 return point;
             }
         }

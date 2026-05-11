@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDoc;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocEntry;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocGenerator;
@@ -10,6 +11,7 @@ import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocParameter;
 import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocSection;
 import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphNodePosition;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
@@ -164,12 +166,20 @@ public final class ImGuiScriptEditorPanel {
             if (ImGui.beginChild("##ebsl-ide-settings-scroll", width - 24.0f, height - 72.0f, false)) {
                 ImGuiSettingRenderContext context = new ImGuiSettingRenderContext(
                     "script-editor-setting", -1.0f, this::saveSettings, editorSettingTextValues);
-                for (Setting<?> setting : EbslCodeEditorSettings.all()) {
-                    ImGuiSettingRendererRegistry.render(setting, context);
-                }
+                renderIdeSettingsGroup("Editor", EbslCodeEditorSettings.editorAppearanceSettings(), context);
+                ImGui.spacing();
+                renderIdeSettingsGroup("Language", EbslCodeEditorSettings.languageThemeSettings(), context);
                 ImGui.endChild();
             }
             ImGui.endPopup();
+        }
+    }
+
+    private void renderIdeSettingsGroup(String title, List<Setting<?>> settings, ImGuiSettingRenderContext context) {
+        ImGui.text(title);
+        ImGui.separator();
+        for (Setting<?> setting : settings) {
+            ImGuiSettingRendererRegistry.render(setting, context);
         }
     }
 
@@ -230,6 +240,9 @@ public final class ImGuiScriptEditorPanel {
         }
         for (EbslLanguageDocParameter parameter : entry.parameters()) {
             docLine(parameter.id(), parameter.label() + " = " + parameter.defaultValue());
+            if (!parameter.description().isBlank()) {
+                ImGui.textWrapped(parameter.description());
+            }
         }
         ImGui.spacing();
     }
@@ -486,7 +499,7 @@ public final class ImGuiScriptEditorPanel {
         ImGui.setCursorScreenPos(panel.x() + pad, contentTop);
         if (settingBacked) {
             ImGui.beginChild("##ebsl-node-settings", contentWidth, contentHeight, true);
-            renderNodeSettings(ebslNode, Math.max(120.0f, contentWidth - 20.0f));
+            renderNodeSettings(node.command(), ebslNode, Math.max(120.0f, contentWidth - 20.0f));
             ImGui.endChild();
         } else {
             ImGui.setNextItemWidth(contentWidth);
@@ -675,15 +688,19 @@ public final class ImGuiScriptEditorPanel {
         return node != null && !node.settings().isEmpty();
     }
 
-    private void renderNodeSettings(EbslNode node, float width) {
+    private void renderNodeSettings(String command, EbslNode node, float width) {
         ImGuiSettingRenderContext context = new ImGuiSettingRenderContext(
             "ebsl-node-setting-" + node.id(),
             width,
             () -> { },
             settingTextValues
         );
-        for (Setting<?> setting : node.settings()) {
+        for (EbslNodeField field : node.fields()) {
+            Setting<?> setting = field.setting();
             ImGuiSettingRendererRegistry.render(setting, context);
+            ImGui.textDisabled(EbslNodeFieldHelp.meta(setting));
+            ImGui.textWrapped(field.description());
+            ImGui.spacing();
         }
     }
 

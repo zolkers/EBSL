@@ -82,11 +82,12 @@ public final class LongRangePathSession {
     public SegmentGoal planSegmentGoal(double fromX, double fromZ) {
         double dx = finalGoalX + 0.5 - fromX;
         double dz = finalGoalZ + 0.5 - fromZ;
-        double distance = Math.sqrt(dx * dx + dz * dz);
         double maxSegmentDistance = PathfinderSettings.instance().maxSegmentDistance.value();
-        if (distance <= maxSegmentDistance) {
+        double distanceSquared = dx * dx + dz * dz;
+        if (distanceSquared <= maxSegmentDistance * maxSegmentDistance) {
             return new SegmentGoal(finalGoalX, finalGoalZ, false);
         }
+        double distance = Math.sqrt(distanceSquared);
 
         double scale = maxSegmentDistance / Math.max(distance, 1.0e-6);
         int segmentX = (int) Math.floor(fromX + dx * scale);

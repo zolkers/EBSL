@@ -1,11 +1,12 @@
 package fr.riege.ebsl.common.feature.scripting.docs;
 
-import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.domain.world.BlockGroupType;
 import fr.riege.ebsl.common.domain.world.BlockSelectorOperator;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
 import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
@@ -46,7 +47,7 @@ public final class EbslLanguageDocGenerator {
             usage(node.id(), template.argsHint()),
             template.sampleLine(),
             node.aliases(),
-            node.settings().stream().map(EbslLanguageDocGenerator::settingParameter).toList()
+            node.fields().stream().map(EbslLanguageDocGenerator::fieldParameter).toList()
         );
     }
 
@@ -74,7 +75,11 @@ public final class EbslLanguageDocGenerator {
                 usage(sensor.id(), sensor.parameters().stream().map(EbslSensorRegistry.SensorParameter::defaultValue).reduce((a, b) -> a + " " + b).orElse("")),
                 List.of(),
                 sensor.parameters().stream()
-                    .map(parameter -> new EbslLanguageDocParameter(parameter.id(), parameter.label(), parameter.defaultValue()))
+                    .map(parameter -> new EbslLanguageDocParameter(
+                        parameter.id(),
+                        parameter.label(),
+                        parameter.defaultValue(),
+                        EbslNodeFieldHelp.description(sensor.id(), parameter.id())))
                     .toList()
             ))
             .sorted(Comparator.comparing(EbslLanguageDocEntry::id))
@@ -122,8 +127,12 @@ public final class EbslLanguageDocGenerator {
         return List.copyOf(entries);
     }
 
-    private static EbslLanguageDocParameter settingParameter(Setting<?> setting) {
-        return new EbslLanguageDocParameter(setting.id(), setting.displayName(), String.valueOf(setting.defaultValue()));
+    private static EbslLanguageDocParameter fieldParameter(EbslNodeField field) {
+        return new EbslLanguageDocParameter(
+            field.id(),
+            field.label(),
+            field.defaultValue(),
+            field.description());
     }
 
     private static String usage(String id, String args) {

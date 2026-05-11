@@ -19,6 +19,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -110,6 +111,22 @@ public class McWorldLayer implements IWorldLayer {
             ClipContext.Fluid.NONE,
             CollisionContext.empty()));
         return hit.getType() == HitResult.Type.MISS;
+    }
+
+    @Override public boolean canRayTraceBlock(Vec3d from, Vec3d to, int targetX, int targetY, int targetZ) {
+        Level level = level();
+        if (level == null) return false;
+        var hit = level.clip(new ClipContext(
+            new Vec3(from.x(), from.y(), from.z()),
+            new Vec3(to.x(), to.y(), to.z()),
+            ClipContext.Block.OUTLINE,
+            ClipContext.Fluid.NONE,
+            CollisionContext.empty()));
+        if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = blockHit.getBlockPos();
+            return pos.getX() == targetX && pos.getY() == targetY && pos.getZ() == targetZ;
+        }
+        return IWorldLayer.super.canRayTraceBlock(from, to, targetX, targetY, targetZ);
     }
 
     @Override public boolean isPartialSupport(int x, int y, int z) {

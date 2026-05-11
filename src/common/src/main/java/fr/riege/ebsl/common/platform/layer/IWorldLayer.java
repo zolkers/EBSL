@@ -16,6 +16,22 @@ public interface IWorldLayer {
     double getBlockHeight(int x, int y, int z);
     default boolean requiresJumpForStep(int x, int y, int z, int moveDx, int moveDz) { return false; }
     default boolean hasLineOfSight(Vec3d from, Vec3d to) { return true; }
+    default boolean canRayTraceBlock(Vec3d from, Vec3d to, int targetX, int targetY, int targetZ) {
+        int steps = Math.max(1, (int) Math.ceil(from.distanceTo(to) * 8.0));
+        for (int i = 1; i <= steps; i++) {
+            double t = (double) i / steps;
+            int x = (int) Math.floor(from.x() + (to.x() - from.x()) * t);
+            int y = (int) Math.floor(from.y() + (to.y() - from.y()) * t);
+            int z = (int) Math.floor(from.z() + (to.z() - from.z()) * t);
+            if (x == targetX && y == targetY && z == targetZ) {
+                return true;
+            }
+            if (isLoaded(x, y, z) && !isAir(x, y, z) && isSolid(x, y, z)) {
+                return false;
+            }
+        }
+        return false;
+    }
     default boolean isPartialSupport(int x, int y, int z) {
         double top = getBlockHeight(x, y - 1, z);
         return top > 0.0 && top < 0.95;

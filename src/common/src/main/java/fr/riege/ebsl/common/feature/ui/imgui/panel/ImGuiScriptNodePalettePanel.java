@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
@@ -43,7 +44,10 @@ public final class ImGuiScriptNodePalettePanel {
                             if (ImGui.selectable(template.title() + "##" + template.command(), false)) {
                                 state.requestScriptInsert(template.sampleLine());
                             }
-                            ImGui.textDisabled(template.command() + "  " + template.argsHint());
+                            String signature = EbslNodeFieldHelp.signature(template.command());
+                            ImGui.textDisabled(signature.isBlank()
+                                ? template.command()
+                                : template.command() + "  " + signature);
                         }
                     }
                 }

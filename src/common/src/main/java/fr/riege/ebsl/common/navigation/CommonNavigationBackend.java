@@ -19,6 +19,8 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.result.PathImpl;
+import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.service.NavigationService;
@@ -90,10 +92,10 @@ public final class CommonNavigationBackend implements NavigationService {
         if (isLongRangeGoal(pos.x(), pos.z(), x, z)) {
             longRangeSession.startBlockGoal(x, y, z);
             LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(pos.x(), pos.z());
-            int segmentY = segmentGoal.segmented()
-                ? resolveGoalYForXZ(segmentGoal.x(), (int) Math.floor(pos.y()), segmentGoal.z())
-                : y;
-            startPathTo(new PathPosition(segmentGoal.x(), segmentY, segmentGoal.z()), this.onFinished, true, false);
+            PathPosition segmentTarget = segmentGoal.segmented()
+                ? resolveSpeculativeSegmentTarget(pos.x(), pos.z(), (int) Math.floor(pos.y()), segmentGoal)
+                : new PathPosition(segmentGoal.x(), y, segmentGoal.z());
+            startPathTo(segmentTarget, this.onFinished, true, false);
             return;
         }
         startPathTo(new PathPosition(x, y, z), this.onFinished, true, true);
@@ -108,14 +110,14 @@ public final class CommonNavigationBackend implements NavigationService {
         Vec3d pos = player.position();
         longRangeSession.start(x, z);
         LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(pos.x(), pos.z());
-        int y = resolveGoalYForXZ(segmentGoal.x(), (int) Math.floor(pos.y()), segmentGoal.z());
-        startPathTo(new PathPosition(segmentGoal.x(), y, segmentGoal.z()), null, true, false);
+        startPathTo(resolveSpeculativeSegmentTarget(pos.x(), pos.z(), (int) Math.floor(pos.y()), segmentGoal), null, true, false);
     }
 
     private static boolean isLongRangeGoal(double fromX, double fromZ, int goalX, int goalZ) {
         double dx = goalX + 0.5 - fromX;
         double dz = goalZ + 0.5 - fromZ;
-        return Math.sqrt(dx * dx + dz * dz) > PathfinderSettings.instance().maxSegmentDistance.value();
+        double maxSegmentDistance = PathfinderSettings.instance().maxSegmentDistance.value();
+        return dx * dx + dz * dz > maxSegmentDistance * maxSegmentDistance;
     }
 
     @Override public void startPathTest(int x, int y, int z) {
@@ -295,6 +297,11 @@ public final class CommonNavigationBackend implements NavigationService {
         goalX = effectiveTarget.flooredX();
         goalY = effectiveTarget.flooredY();
         goalZ = effectiveTarget.flooredZ();
+        if (start.equals(effectiveTarget)) {
+            lastResult = new PathfinderResultImpl(PathState.FOUND, new PathImpl(start, effectiveTarget, List.of(start)));
+            markIdle(false);
+            return;
+        }
         PathfinderConfiguration config = instantConfiguration();
         AStarPathfinder activePathfinder = new AStarPathfinder(config);
         pathfinder = activePathfinder;
@@ -491,11 +498,13 @@ public final class CommonNavigationBackend implements NavigationService {
             fromZ = sz + 0.5;
         }
         LongRangePathSession.SegmentGoal segmentGoal = longRangeSession.planSegmentGoal(fromX, fromZ);
-        int gy = longRangeSession.requiresExactY() && !segmentGoal.segmented()
-            ? longRangeSession.finalGoalY()
-            : resolveGoalYForXZ(segmentGoal.x(), start.flooredY(), segmentGoal.z());
-        PathPosition target = new PathPosition(segmentGoal.x(), gy, segmentGoal.z());
-        PathfinderConfiguration config = queuedConfiguration();
+        PathPosition target = longRangeSession.requiresExactY() && !segmentGoal.segmented()
+            ? new PathPosition(segmentGoal.x(), longRangeSession.finalGoalY(), segmentGoal.z())
+            : resolveSpeculativeSegmentTarget(fromX, fromZ, start.flooredY(), segmentGoal);
+        int targetX = target.flooredX();
+        int targetY = target.flooredY();
+        int targetZ = target.flooredZ();
+        PathfinderConfiguration config = queuedConfiguration(true);
         AStarPathfinder queuedPathfinder = new AStarPathfinder(config);
         int requestId = longRangeSession.markSegmentCalculationStarted(queuedPathfinder);
         LongRangePathSession.SegmentAttachment attachment = startFromPlayer
@@ -504,7 +513,7 @@ public final class CommonNavigationBackend implements NavigationService {
         boolean finalRollingHorizon = rollingHorizon;
         queuedPathfinder.findPath(start, target)
             .whenComplete((result, throwable) -> onGameThread(() -> handleQueuedLongRangeResult(
-                requestId, result, throwable, config, attachment, finalRollingHorizon, segmentGoal.x(), gy, segmentGoal.z())));
+                requestId, result, throwable, config, attachment, finalRollingHorizon, targetX, targetY, targetZ)));
     }
 
     private void handleQueuedLongRangeResult(int requestId, PathfinderResult result, Throwable throwable,
@@ -590,6 +599,38 @@ public final class CommonNavigationBackend implements NavigationService {
         return bestDistance <= 12.0;
     }
 
+    private PathPosition resolveSpeculativeSegmentTarget(double fromX, double fromZ, int preferredY,
+                                                         LongRangePathSession.SegmentGoal segmentGoal) {
+        int goalX = segmentGoal.x();
+        int goalZ = segmentGoal.z();
+        PathPosition direct = new PathPosition(goalX, resolveGoalYForXZ(goalX, preferredY, goalZ), goalZ);
+        if (!segmentGoal.segmented() || isLoadedWalkableXZ(goalX, direct.flooredY(), goalZ)) {
+            return direct;
+        }
+
+        int steps = PathfinderSettings.instance().segmentTargetBacktrackSteps.value();
+        if (steps <= 0) {
+            return direct;
+        }
+
+        double targetX = goalX + 0.5;
+        double targetZ = goalZ + 0.5;
+        for (int step = 1; step <= steps; step++) {
+            double t = step / (double) (steps + 1);
+            int x = (int) Math.floor(targetX + (fromX - targetX) * t);
+            int z = (int) Math.floor(targetZ + (fromZ - targetZ) * t);
+            int y = resolveGoalYForXZ(x, preferredY, z);
+            if (isLoadedWalkableXZ(x, y, z)) {
+                return new PathPosition(x, y, z);
+            }
+        }
+        return direct;
+    }
+
+    private boolean isLoadedWalkableXZ(int x, int y, int z) {
+        return world.isLoaded(x, y, z) && checker.isWalkable(x, y, z);
+    }
+
     private PathPosition resolveTarget(PathPosition target) {
         int x = target.flooredX();
         int y = target.flooredY();
@@ -659,11 +700,13 @@ public final class CommonNavigationBackend implements NavigationService {
             PathfinderSettings.instance().repairCalculationTimeMs.value());
     }
 
-    private PathfinderConfiguration queuedConfiguration() {
-        return configuration(
-            PathfinderSettings.instance().queuedLongRangeMaxIterations.value(),
-            PathfinderSettings.instance().queuedLongRangeMaxLength.value(),
-            PathfinderSettings.instance().queuedCalculationTimeMs.value());
+    private PathfinderConfiguration queuedConfiguration(boolean speculative) {
+        int maxIterations = PathfinderSettings.instance().queuedLongRangeMaxIterations.value();
+        int maxLength = PathfinderSettings.instance().queuedLongRangeMaxLength.value();
+        int maxCalculationTimeMs = PathfinderSettings.instance().queuedCalculationTimeMs.value();
+        return speculative
+            ? speculativeConfiguration(maxIterations, maxLength, maxCalculationTimeMs)
+            : configuration(maxIterations, maxLength, maxCalculationTimeMs);
     }
 
     private PathfinderConfiguration configuration(int maxIterations, int maxLength, int maxCalculationTimeMs) {
@@ -680,6 +723,24 @@ public final class CommonNavigationBackend implements NavigationService {
             .earlyFallbackIterations(PathfinderSettings.instance().earlyFallbackIterations.value())
             .earlyFallbackMinPathNodes(PathfinderSettings.instance().earlyFallbackMinPathNodes.value())
             .earlyFallbackMinProgressRatio(PathfinderSettings.instance().earlyFallbackMinProgressRatio.value())
+            .maxCalculationTimeMs(maxCalculationTimeMs)
+            .build();
+    }
+
+    private PathfinderConfiguration speculativeConfiguration(int maxIterations, int maxLength, int maxCalculationTimeMs) {
+        return PathfinderConfiguration.builder()
+            .maxIterations(maxIterations)
+            .maxLength(maxLength)
+            .provider(provider)
+            .processors(NodeProcessorRegistry.createStandardProcessors())
+            .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
+                PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
+            .async(true)
+            .fallback(true)
+            .earlyFallback(true)
+            .earlyFallbackIterations(PathfinderSettings.instance().speculativeLongRangeFallbackIterations.value())
+            .earlyFallbackMinPathNodes(PathfinderSettings.instance().speculativeLongRangeFallbackMinNodes.value())
+            .earlyFallbackMinProgressRatio(PathfinderSettings.instance().speculativeLongRangeFallbackProgress.value())
             .maxCalculationTimeMs(maxCalculationTimeMs)
             .build();
     }

@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.feature.scripting;
 
 import fr.riege.ebsl.common.core.settings.Setting;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public interface EbslNode {
     String id();
@@ -24,6 +25,13 @@ public interface EbslNode {
 
     default List<Setting<?>> settings() {
         return List.of();
+    }
+
+    default List<EbslNodeField> fields() {
+        List<Setting<?>> settings = settings();
+        return IntStream.range(0, settings.size())
+            .mapToObj(index -> EbslNodeField.fromSetting(id(), index, settings.get(index)))
+            .toList();
     }
 
     default void loadArgs(List<String> args) {

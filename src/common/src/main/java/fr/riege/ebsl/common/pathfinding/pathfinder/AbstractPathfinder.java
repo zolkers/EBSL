@@ -149,6 +149,10 @@ public abstract class AbstractPathfinder implements Pathfinder {
                     return new PathfinderResultImpl(PathState.FALLBACK,
                             reconstructPath(start, target, earlyFallbackNode));
                 }
+                if (shouldReturnTimeBudgetFallback(startedAtNanos, startNode, earlyFallbackNode)) {
+                    return new PathfinderResultImpl(PathState.FALLBACK,
+                            reconstructPath(start, target, earlyFallbackNode));
+                }
             }
 
             return determinePostLoopResult(currentDepth, start, target, bestFallbackNode(bestFallbackNode));
@@ -224,6 +228,14 @@ public abstract class AbstractPathfinder implements Pathfinder {
     private boolean hasExceededCalculationTime(long startedAtNanos) {
         long budgetMs = pathfinderConfiguration.maxCalculationTimeMs;
         return budgetMs > 0L && (System.nanoTime() - startedAtNanos) >= budgetMs * 1_000_000L;
+    }
+
+    private boolean shouldReturnTimeBudgetFallback(long startedAtNanos, Node startNode, Node fallbackNode) {
+        return pathfinderConfiguration.fallback
+                && hasExceededCalculationTime(startedAtNanos)
+                && fallbackNode != null
+                && fallbackNode != startNode
+                && fallbackNode.depth > 0;
     }
 
     private boolean isUsableEarlyFallback(Node startNode, Node fallbackNode) {

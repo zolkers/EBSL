@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EbslScriptEngineTest {
@@ -68,5 +69,20 @@ class EbslScriptEngineTest {
     void createsFreshRuntimeNodeInstances() {
         assertNotSame(EbslNodeRegistry.create("aim_at_block"), EbslNodeRegistry.create("aim_at_block"));
         assertNotSame(EbslNodeRegistry.get("aim_at_block"), EbslNodeRegistry.create("aim_at_block"));
+    }
+
+    @Test
+    void nodeArgumentsAreSettingsBackedFields() {
+        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
+            assertEquals(node.settings().size(), node.fields().size(), node.id());
+            for (int i = 0; i < node.fields().size(); i++) {
+                EbslNodeField field = node.fields().get(i);
+                assertEquals(i, field.argumentIndex(), node.id() + "." + field.id());
+                assertSame(node.settings().get(i), field.setting(), node.id() + "." + field.id());
+                assertFalse(field.label().isBlank(), node.id() + "." + field.id());
+                assertFalse(field.type().isBlank(), node.id() + "." + field.id());
+                assertFalse(field.description().isBlank(), node.id() + "." + field.id());
+            }
+        }
     }
 }

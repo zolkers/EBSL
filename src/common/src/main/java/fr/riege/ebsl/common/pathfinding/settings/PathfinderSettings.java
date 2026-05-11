@@ -115,6 +115,12 @@ public final class PathfinderSettings extends Settingable {
         "repair_calculation_time_ms", "Repair time budget ms", 25, 0, 1000));
     public final IntSetting queuedCalculationTimeMs = registerSetting(new IntSetting(
         "queued_calculation_time_ms", "Queued time budget ms", 60, 0, 5000));
+    public final IntSetting speculativeLongRangeFallbackIterations = registerSetting(new IntSetting(
+        "speculative_long_range_fallback_iterations", "Speculative fallback iterations", 220, 20, 10000));
+    public final IntSetting speculativeLongRangeFallbackMinNodes = registerSetting(new IntSetting(
+        "speculative_long_range_fallback_min_nodes", "Speculative fallback min nodes", 5, 2, 100));
+    public final DoubleSetting speculativeLongRangeFallbackProgress = registerSetting(new DoubleSetting(
+        "speculative_long_range_fallback_progress", "Speculative fallback progress", 0.025, 0.0, 1.0));
     public final DoubleSetting stuckDistThreshold = registerSetting(new DoubleSetting(
         "stuck_dist_threshold", "Stuck distance", 0.2, 0.01, 1.0));
     public final IntSetting stuckTimeMs = registerSetting(new IntSetting(
@@ -201,6 +207,8 @@ public final class PathfinderSettings extends Settingable {
         "final_goal_xz_tolerance", "Final XZ tolerance", 1.75, 0.1, 8.0));
     public final DoubleSetting maxSegmentDistance = registerSetting(new DoubleSetting(
         "max_segment_distance", "Max segment distance", 150.0, 16.0, 512.0));
+    public final IntSetting segmentTargetBacktrackSteps = registerSetting(new IntSetting(
+        "segment_target_backtrack_steps", "Segment target backtrack steps", 18, 0, 96));
     public final IntSetting segmentRetryCooldownMs = registerSetting(new IntSetting(
         "segment_retry_cooldown_ms", "Segment retry cooldown ms", 1500, 0, 10000));
     public final IntSetting playerStartAfterFailures = registerSetting(new IntSetting(
@@ -403,7 +411,10 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.instantCalculationTimeMs,
             INSTANCE.defaultCalculationTimeMs,
             INSTANCE.repairCalculationTimeMs,
-            INSTANCE.queuedCalculationTimeMs);
+            INSTANCE.queuedCalculationTimeMs,
+            INSTANCE.speculativeLongRangeFallbackIterations,
+            INSTANCE.speculativeLongRangeFallbackMinNodes,
+            INSTANCE.speculativeLongRangeFallbackProgress);
     }
 
     public static List<Setting<?>> executionSettings() {
@@ -459,6 +470,7 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.preparedSwitchRemainingDistance,
             INSTANCE.finalGoalXzTolerance,
             INSTANCE.maxSegmentDistance,
+            INSTANCE.segmentTargetBacktrackSteps,
             INSTANCE.segmentRetryCooldownMs,
             INSTANCE.playerStartAfterFailures,
             INSTANCE.playerStartRecoveryRatio);

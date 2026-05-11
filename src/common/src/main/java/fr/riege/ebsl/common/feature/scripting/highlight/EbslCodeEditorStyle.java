@@ -1,5 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting.highlight;
 
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings.EbslCodeEditorColor;
+
 public enum EbslCodeEditorStyle {
     DARK;
 
@@ -8,27 +10,27 @@ public enum EbslCodeEditorStyle {
     }
 
     public int backgroundColor() {
-        return settings().backgroundColor.value();
+        return settings().editorColor(EbslCodeEditorColor.BACKGROUND);
     }
 
     public int borderColor() {
-        return settings().borderColor.value();
+        return settings().editorColor(EbslCodeEditorColor.BORDER);
     }
 
     public int gutterColor() {
-        return settings().gutterColor.value();
+        return settings().editorColor(EbslCodeEditorColor.GUTTER);
     }
 
     public int editableTextColor() {
-        return settings().nativeTextColor.value();
+        return settings().editorColor(EbslCodeEditorColor.NATIVE_TEXT);
     }
 
     public int frameColor() {
-        return settings().frameColor.value();
+        return settings().editorColor(EbslCodeEditorColor.FRAME);
     }
 
     public int caretColor() {
-        return settings().caretColor.value();
+        return settings().editorColor(EbslCodeEditorColor.CARET);
     }
 
     public double caretBlinkSeconds() {
