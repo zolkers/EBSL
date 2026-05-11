@@ -47,9 +47,12 @@ import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImString;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 public final class ImGuiScriptEditorPanel {
     private static final int BUFFER_SIZE = 65536;
@@ -57,6 +60,8 @@ public final class ImGuiScriptEditorPanel {
     private static final float GRAPH_INSPECTOR_MIN_WIDTH = 330.0f;
     private static final float GRAPH_INSPECTOR_MAX_WIDTH = 410.0f;
     private static final float GRAPH_INSPECTOR_GAP = 10.0f;
+    private static final float EDGE_NODE_MARGIN = 22.0f;
+    private static final float EDGE_PORT_STUB = 26.0f;
     private static final String DOC_POPUP_ID = "EBSL Language Doc##ebsl-language-doc";
     private static final String IDE_SETTINGS_POPUP_ID = "IDE Settings##ebsl-ide-settings";
 
@@ -280,23 +285,20 @@ public final class ImGuiScriptEditorPanel {
         drawGrid(dl, canvas);
         List<EbslScriptGraphNode> nodes = graphNodes();
         ensureAutoLayout(nodes);
-        float previousOutX = 0.0f;
-        float previousOutY = 0.0f;
+        List<GraphNodeLayout> layouts = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
             EbslScriptGraphNode node = nodes.get(i);
             NodePosition position = nodePosition(node, i);
             float nodeX = canvas.x() + graphPanX + position.x() * graphZoom;
             float nodeY = canvas.y() + graphPanY + position.y() * graphZoom;
-            float width = drawNode(dl, manager, i, node.key(), nodeX, nodeY, node);
-            float inX = nodeX + 10.0f * graphZoom;
-            float inY = nodeY + NODE_H * graphZoom * 0.5f;
-            float outX = nodeX + width - 10.0f * graphZoom;
-            float outY = inY;
-            if (i > 0) {
-                drawEdge(dl, previousOutX, previousOutY, inX, inY, node.depth());
-            }
-            previousOutX = outX;
-            previousOutY = outY;
+            float width = nodeWidth(node);
+            layouts.add(new GraphNodeLayout(i, node, nodeX, nodeY, width, NODE_H * graphZoom));
+        }
+        for (int i = 1; i < layouts.size(); i++) {
+            drawEdge(dl, layouts.get(i - 1), layouts.get(i), layouts);
+        }
+        for (GraphNodeLayout layout : layouts) {
+            drawNode(dl, manager, layout.index(), layout.node().key(), layout.x(), layout.y(), layout.node(), layout.width());
         }
         if (nodes.isEmpty()) {
             dl.addText(canvas.x() + 20.0f, canvas.y() + 20.0f, UiTheme.TEXT_MUTED, "Empty script");
@@ -427,12 +429,241 @@ public final class ImGuiScriptEditorPanel {
         return source.get().isEmpty() ? 1 : source.get().split("\\R", -1).length;
     }
 
-    private void drawEdge(ImDrawList dl, float fromX, float fromY, float toX, float toY, int depth) {
-        float lane = Math.max(42.0f, Math.abs(toX - fromX) * 0.45f);
-        int color = depth > 0 ? 0xAA67B7FF : 0xCC67B7FF;
-        dl.addBezierCubic(fromX, fromY, fromX + lane, fromY, toX - lane, toY, toX, toY, color, 2.0f);
+    private void drawEdge(ImDrawList dl, GraphNodeLayout from, GraphNodeLayout to, List<GraphNodeLayout> layouts) {
+        float portInset = 10.0f * graphZoom;
+        float fromX = from.right() - portInset;
+        float fromY = from.centerY();
+        float toX = to.x() + portInset;
+        float toY = to.centerY();
+        float stub = EDGE_PORT_STUB * graphZoom;
+        float startLaneX = from.right() + stub;
+        float endLaneX = to.x() - stub;
+        float startRouteY = fromY;
+        float endRouteY = toY;
+        if (needsSeparatedPortLanes(fromX, startLaneX, fromY, endLaneX, toX, toY)) {
+            float separation = Math.max(10.0f, 14.0f * graphZoom);
+            float direction = to.centerY() >= from.centerY() ? 1.0f : -1.0f;
+            startRouteY = fromY - direction * separation;
+            endRouteY = toY + direction * separation;
+        }
+        int color = to.node().depth() > 0 ? 0xAA67B7FF : 0xCC67B7FF;
+        List<EdgePoint> route = routeEdge(
+            new EdgePoint(startLaneX, startRouteY),
+            new EdgePoint(endLaneX, endRouteY),
+            layouts);
+
+        drawEdgeSegment(dl, fromX, fromY, startLaneX, fromY, color);
+        drawEdgeSegment(dl, startLaneX, fromY, startLaneX, startRouteY, color);
+        for (int i = 1; i < route.size(); i++) {
+            EdgePoint a = route.get(i - 1);
+            EdgePoint b = route.get(i);
+            drawEdgeSegment(dl, a.x(), a.y(), b.x(), b.y(), color);
+        }
+        drawEdgeSegment(dl, endLaneX, endRouteY, endLaneX, toY, color);
+        drawEdgeSegment(dl, endLaneX, toY, toX, toY, color);
         dl.addCircleFilled(fromX, fromY, 3.5f, 0xFF67B7FF);
         dl.addCircleFilled(toX, toY, 3.5f, 0xFF67B7FF);
+    }
+
+    private static boolean needsSeparatedPortLanes(float startA, float startB, float startY,
+                                                   float endA, float endB, float endY) {
+        if (Math.abs(startY - endY) > 1.0f) {
+            return false;
+        }
+        return startB >= endA || horizontalRangesOverlap(startA, startB, endA, endB);
+    }
+
+    private static boolean horizontalRangesOverlap(float a1, float a2, float b1, float b2) {
+        float aMin = Math.min(a1, a2);
+        float aMax = Math.max(a1, a2);
+        float bMin = Math.min(b1, b2);
+        float bMax = Math.max(b1, b2);
+        return Math.min(aMax, bMax) - Math.max(aMin, bMin) > 1.0f;
+    }
+
+    private List<EdgePoint> routeEdge(EdgePoint start, EdgePoint end, List<GraphNodeLayout> layouts) {
+        float margin = EDGE_NODE_MARGIN * graphZoom;
+        List<EdgeObstacle> obstacles = edgeObstacles(layouts, margin);
+        List<Float> xs = new ArrayList<>();
+        List<Float> ys = new ArrayList<>();
+        addCoord(xs, start.x());
+        addCoord(xs, end.x());
+        addCoord(ys, start.y());
+        addCoord(ys, end.y());
+        float minX = Math.min(start.x(), end.x());
+        float maxX = Math.max(start.x(), end.x());
+        float minY = Math.min(start.y(), end.y());
+        float maxY = Math.max(start.y(), end.y());
+        for (EdgeObstacle obstacle : obstacles) {
+            minX = Math.min(minX, obstacle.left());
+            maxX = Math.max(maxX, obstacle.right());
+            minY = Math.min(minY, obstacle.top());
+            maxY = Math.max(maxY, obstacle.bottom());
+            addCoord(xs, obstacle.left());
+            addCoord(xs, obstacle.right());
+            addCoord(ys, obstacle.top());
+            addCoord(ys, obstacle.bottom());
+        }
+        addCoord(xs, minX - margin * 1.5f);
+        addCoord(xs, maxX + margin * 1.5f);
+        addCoord(ys, minY - margin * 1.5f);
+        addCoord(ys, maxY + margin * 1.5f);
+        Collections.sort(xs);
+        Collections.sort(ys);
+
+        int sx = coordIndex(xs, start.x());
+        int sy = coordIndex(ys, start.y());
+        int ex = coordIndex(xs, end.x());
+        int ey = coordIndex(ys, end.y());
+        double[][] dist = new double[xs.size()][ys.size()];
+        int[][] prevX = new int[xs.size()][ys.size()];
+        int[][] prevY = new int[xs.size()][ys.size()];
+        for (int x = 0; x < xs.size(); x++) {
+            java.util.Arrays.fill(dist[x], Double.POSITIVE_INFINITY);
+            java.util.Arrays.fill(prevX[x], -1);
+            java.util.Arrays.fill(prevY[x], -1);
+        }
+        PriorityQueue<RouteNode> queue = new PriorityQueue<>(Comparator.comparingDouble(RouteNode::cost));
+        dist[sx][sy] = 0.0;
+        queue.add(new RouteNode(sx, sy, 0.0));
+        while (!queue.isEmpty()) {
+            RouteNode current = queue.poll();
+            if (current.cost() > dist[current.x()][current.y()]) {
+                continue;
+            }
+            if (current.x() == ex && current.y() == ey) {
+                break;
+            }
+            relaxRouteNeighbor(current.x(), current.y(), current.x() - 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
+            relaxRouteNeighbor(current.x(), current.y(), current.x() + 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
+            relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() - 1, xs, ys, obstacles, dist, prevX, prevY, queue);
+            relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() + 1, xs, ys, obstacles, dist, prevX, prevY, queue);
+        }
+        if (!Double.isFinite(dist[ex][ey])) {
+            return List.of(start, end);
+        }
+        List<EdgePoint> reversed = new ArrayList<>();
+        int x = ex;
+        int y = ey;
+        while (x >= 0 && y >= 0) {
+            reversed.add(new EdgePoint(xs.get(x), ys.get(y)));
+            if (x == sx && y == sy) {
+                break;
+            }
+            int px = prevX[x][y];
+            int py = prevY[x][y];
+            x = px;
+            y = py;
+        }
+        Collections.reverse(reversed);
+        return simplifyRoute(reversed);
+    }
+
+    private List<EdgeObstacle> edgeObstacles(List<GraphNodeLayout> layouts, float margin) {
+        List<EdgeObstacle> obstacles = new ArrayList<>();
+        for (GraphNodeLayout layout : layouts) {
+            obstacles.add(new EdgeObstacle(layout.x() - margin, layout.y() - margin, layout.right() + margin, layout.bottom() + margin));
+        }
+        return obstacles;
+    }
+
+    private void relaxRouteNeighbor(int x, int y, int nx, int ny, List<Float> xs, List<Float> ys,
+                                    List<EdgeObstacle> obstacles, double[][] dist, int[][] prevX,
+                                    int[][] prevY, PriorityQueue<RouteNode> queue) {
+        if (nx < 0 || ny < 0 || nx >= xs.size() || ny >= ys.size()) {
+            return;
+        }
+        EdgePoint from = new EdgePoint(xs.get(x), ys.get(y));
+        EdgePoint to = new EdgePoint(xs.get(nx), ys.get(ny));
+        if (pointInsideObstacle(to, obstacles) || segmentIntersectsObstacle(from, to, obstacles)) {
+            return;
+        }
+        double nextCost = dist[x][y] + Math.abs(to.x() - from.x()) + Math.abs(to.y() - from.y());
+        if (nextCost >= dist[nx][ny]) {
+            return;
+        }
+        dist[nx][ny] = nextCost;
+        prevX[nx][ny] = x;
+        prevY[nx][ny] = y;
+        queue.add(new RouteNode(nx, ny, nextCost));
+    }
+
+    private static boolean pointInsideObstacle(EdgePoint point, List<EdgeObstacle> obstacles) {
+        for (EdgeObstacle obstacle : obstacles) {
+            if (point.x() > obstacle.left() && point.x() < obstacle.right()
+                && point.y() > obstacle.top() && point.y() < obstacle.bottom()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean segmentIntersectsObstacle(EdgePoint from, EdgePoint to, List<EdgeObstacle> obstacles) {
+        for (EdgeObstacle obstacle : obstacles) {
+            if (Math.abs(from.y() - to.y()) < 0.5f) {
+                float y = from.y();
+                float minX = Math.min(from.x(), to.x());
+                float maxX = Math.max(from.x(), to.x());
+                if (y > obstacle.top() && y < obstacle.bottom()
+                    && maxX > obstacle.left() && minX < obstacle.right()) {
+                    return true;
+                }
+            } else if (Math.abs(from.x() - to.x()) < 0.5f) {
+                float x = from.x();
+                float minY = Math.min(from.y(), to.y());
+                float maxY = Math.max(from.y(), to.y());
+                if (x > obstacle.left() && x < obstacle.right()
+                    && maxY > obstacle.top() && minY < obstacle.bottom()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static List<EdgePoint> simplifyRoute(List<EdgePoint> points) {
+        if (points.size() <= 2) {
+            return points;
+        }
+        List<EdgePoint> simplified = new ArrayList<>();
+        simplified.add(points.getFirst());
+        for (int i = 1; i < points.size() - 1; i++) {
+            EdgePoint previous = simplified.getLast();
+            EdgePoint current = points.get(i);
+            EdgePoint next = points.get(i + 1);
+            boolean horizontal = Math.abs(previous.y() - current.y()) < 0.5f && Math.abs(current.y() - next.y()) < 0.5f;
+            boolean vertical = Math.abs(previous.x() - current.x()) < 0.5f && Math.abs(current.x() - next.x()) < 0.5f;
+            if (!horizontal && !vertical) {
+                simplified.add(current);
+            }
+        }
+        simplified.add(points.getLast());
+        return simplified;
+    }
+
+    private static void addCoord(List<Float> coords, float value) {
+        for (float coord : coords) {
+            if (Math.abs(coord - value) < 0.5f) {
+                return;
+            }
+        }
+        coords.add(value);
+    }
+
+    private static int coordIndex(List<Float> coords, float value) {
+        for (int i = 0; i < coords.size(); i++) {
+            if (Math.abs(coords.get(i) - value) < 0.5f) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void drawEdgeSegment(ImDrawList dl, float x1, float y1, float x2, float y2, int color) {
+        if (Math.abs(x1 - x2) < 0.5f && Math.abs(y1 - y2) < 0.5f) {
+            return;
+        }
+        dl.addLine(x1, y1, x2, y2, color, 2.0f);
     }
 
     private void renderGraphToolbar(UiRect editor, EbslScriptManager manager) {
@@ -579,8 +810,7 @@ public final class ImGuiScriptEditorPanel {
         });
     }
 
-    private float drawNode(ImDrawList dl, EbslScriptManager manager, int index, String key, float x, float y, EbslScriptGraphNode node) {
-        float width = Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
+    private float drawNode(ImDrawList dl, EbslScriptManager manager, int index, String key, float x, float y, EbslScriptGraphNode node, float width) {
         float height = NODE_H * graphZoom;
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         int fill = selectedGraphNode == index ? 0xFF22364A : EbslNodeCategoryColors.body(node.category());
@@ -600,6 +830,10 @@ public final class ImGuiScriptEditorPanel {
         }
         dragNode(manager, key);
         return width;
+    }
+
+    private float nodeWidth(EbslScriptGraphNode node) {
+        return Math.max(156.0f, Math.min(280.0f, node.line().length() * 7.0f + 24.0f)) * graphZoom;
     }
 
     private void dragNode(EbslScriptManager manager, String key) {
@@ -855,6 +1089,30 @@ public final class ImGuiScriptEditorPanel {
         private NodePosition move(float dx, float dy) {
             return new NodePosition(x + dx, y + dy);
         }
+    }
+
+    private record GraphNodeLayout(int index, EbslScriptGraphNode node, float x, float y, float width, float height) {
+        private float right() {
+            return x + width;
+        }
+
+        private float bottom() {
+            return y + height;
+        }
+
+        private float centerY() {
+            return y + height * 0.5f;
+        }
+
+    }
+
+    private record EdgeObstacle(float left, float top, float right, float bottom) {
+    }
+
+    private record EdgePoint(float x, float y) {
+    }
+
+    private record RouteNode(int x, int y, double cost) {
     }
 
     private enum LineMutation {
