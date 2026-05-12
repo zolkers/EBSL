@@ -6,8 +6,6 @@ import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.platform.render.RenderingSystem;
 
-import java.util.Locale;
-
 @EbslNodeDefinition(value = EbslNodeType.NO_RENDER, aliases = {"disable_render", "render_off"})
 public final class NoRenderNode extends AbstractEbslNode {
     @Override
@@ -22,11 +20,6 @@ public final class NoRenderNode extends AbstractEbslNode {
     }
 
     private static boolean disable(String token) {
-        String normalized = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
-        return normalized.isBlank()
-            || normalized.equals("on")
-            || normalized.equals("true")
-            || normalized.equals("disable")
-            || normalized.equals("off");
+        return NoRenderDirective.disablesRendering(token);
     }
 }

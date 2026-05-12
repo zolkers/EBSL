@@ -9,6 +9,7 @@ import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
 import fr.riege.ebsl.common.core.log.AppLog;
+import fr.riege.ebsl.common.core.log.AppLogLevel;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
@@ -154,7 +155,7 @@ public final class ModloaderCommonBootstrap {
                         String loggerName = event.getLoggerName();
                         int dot = loggerName.lastIndexOf('.');
                         String shortLogger = dot >= 0 ? loggerName.substring(dot + 1) : loggerName;
-                        receiver.receive(new AppLog.LogEntry(time, event.getLevel().name(), shortLogger,
+                        receiver.receive(new AppLog.LogEntry(time, AppLogLevel.fromName(event.getLevel().name()), shortLogger,
                             event.getMessage().getFormattedMessage()));
                     }
                 };

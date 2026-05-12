@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.log.AppLog;
+import fr.riege.ebsl.common.core.log.AppLogLevel;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import imgui.ImDrawList;
 import imgui.ImGui;
@@ -46,18 +47,18 @@ final class ImGuiMcLogPanel {
         float[] col = levelColor(entry.level());
         ImGui.textColored(0.35f, 0.42f, 0.52f, 1.0f, entry.time());
         ImGui.sameLine();
-        ImGui.textColored(col[0], col[1], col[2], 1.0f, "[" + entry.level() + "]");
+        ImGui.textColored(col[0], col[1], col[2], 1.0f, "[" + entry.level().label() + "]");
         ImGui.sameLine();
         ImGui.textColored(0.50f, 0.60f, 0.72f, 1.0f, entry.logger() + ":");
         ImGui.sameLine();
         ImGui.textColored(0.85f, 0.90f, 0.95f, 1.0f, entry.text());
     }
 
-    private static float[] levelColor(String level) {
+    private static float[] levelColor(AppLogLevel level) {
         return switch (level) {
-            case "ERROR", "FATAL" -> new float[]{0.90f, 0.30f, 0.25f};
-            case "WARN" -> new float[]{0.95f, 0.72f, 0.20f};
-            case "DEBUG", "TRACE" -> new float[]{0.42f, 0.52f, 0.62f};
+            case ERROR, FATAL -> new float[]{0.90f, 0.30f, 0.25f};
+            case WARN -> new float[]{0.95f, 0.72f, 0.20f};
+            case DEBUG, TRACE -> new float[]{0.42f, 0.52f, 0.62f};
             default -> new float[]{0.55f, 0.85f, 0.55f};
         };
     }

@@ -71,8 +71,8 @@ public final class EbslThreading {
         int cores = Runtime.getRuntime().availableProcessors();
         return switch (domain) {
             case PATHFINDING -> Math.max(1, cores / 2);
-            case MODULES, TASKS -> Math.max(1, Math.min(4, cores / 3));
-            case RENDERING, IO, GENERAL -> Math.max(1, Math.min(2, cores / 4));
+            case MODULES, TASKS -> Math.clamp(cores / 3, 1, 4);
+            case RENDERING, IO, GENERAL -> Math.clamp(cores / 4, 1, 2);
         };
     }
 }

@@ -13,7 +13,7 @@ public final class AppLog {
 
     private AppLog() {}
 
-    public record LogEntry(String time, String level, String logger, String text) {}
+    public record LogEntry(String time, AppLogLevel level, String logger, String text) {}
 
     @FunctionalInterface
     public interface Appender {

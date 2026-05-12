@@ -26,7 +26,8 @@ public final class EbslScriptTask extends Settingable implements BotTask {
 
     private final List<ScriptRun> runs = new ArrayList<>();
     private int nextRunId = 1;
-    private String status = "idle";
+    private EbslScriptTaskStatus status = EbslScriptTaskStatus.IDLE;
+    private String statusDetail = "";
 
     private EbslScriptTask() {
     }
@@ -55,10 +56,14 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         }
         if (runs.isEmpty()) {
             setEnabled(false);
-            status = lastFinished == null ? "idle" : lastFinished;
+            if (lastFinished == null) {
+                setStatus(EbslScriptTaskStatus.IDLE);
+            } else {
+                setStatus(EbslScriptTaskStatus.SUMMARY, lastFinished);
+            }
             return;
         }
-        status = activeStatus();
+        setStatus(EbslScriptTaskStatus.RUNNING, activeStatus());
     }
 
     @Override
@@ -73,7 +78,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         runs.add(run);
         setEnabled(true);
         run.start(EbslServices.platform());
-        status = "running " + run.handle();
+        setStatus(EbslScriptTaskStatus.RUNNING, run.handle());
         return run.handle();
     }
 
@@ -84,13 +89,13 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         runs.add(run);
         setEnabled(true);
         run.start(EbslServices.platform());
-        status = "running " + run.handle();
+        setStatus(EbslScriptTaskStatus.RUNNING, run.handle());
         return run.handle();
     }
 
     public void loadFile(String file) {
         scriptFile.setValue(EbslScriptManager.normalizeFileName(file));
-        status = "loaded " + scriptFile.value();
+        setStatus(EbslScriptTaskStatus.LOADED, scriptFile.value());
     }
 
     public int stop(String selector) {
@@ -111,7 +116,11 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         if (runs.isEmpty()) {
             setEnabled(false);
         }
-        status = stopped == 0 ? "no script matched " + selector : "stopped " + stopped + " script(s)";
+        if (stopped == 0) {
+            setStatus(EbslScriptTaskStatus.NO_SCRIPT_MATCHED, selector);
+        } else {
+            setStatus(EbslScriptTaskStatus.STOPPED, stopped + " script(s)");
+        }
         return stopped;
     }
 
@@ -122,12 +131,16 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         }
         runs.clear();
         setEnabled(false);
-        status = stopped == 0 ? "idle" : "stopped " + stopped + " script(s)";
+        if (stopped == 0) {
+            setStatus(EbslScriptTaskStatus.IDLE);
+        } else {
+            setStatus(EbslScriptTaskStatus.STOPPED, stopped + " script(s)");
+        }
         return stopped;
     }
 
     public String status() {
-        return status;
+        return status.message(statusDetail);
     }
 
     public List<String> activeLines() {
@@ -160,6 +173,15 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         return runs.size() == 1 ? runs.getFirst().summary() : runs.size() + " scripts running";
     }
 
+    private void setStatus(EbslScriptTaskStatus status) {
+        setStatus(status, "");
+    }
+
+    private void setStatus(EbslScriptTaskStatus status, String detail) {
+        this.status = status;
+        this.statusDetail = detail == null ? "" : detail;
+    }
+
     private String handle(String label) {
         return label + "#" + nextRunId++;
     }
@@ -181,7 +203,8 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         private EbslProgram program;
         private EbslRunner runner;
         private String loadedSource = "";
-        private String status = "queued";
+        private EbslScriptRunStatus status = EbslScriptRunStatus.QUEUED;
+        private String statusDetail = "";
         private boolean terminal;
 
         private ScriptRun(String handle, String label, String fileName, String inlineSource) {
@@ -214,7 +237,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
                 return;
             }
             runner.tick();
-            status = runner.status();
+            setStatus(EbslScriptRunStatus.RUNNER_STATUS, runner.status());
         }
 
         void start(EbslPlatform platform) {
@@ -226,7 +249,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
             }
             runner = EbslScriptEngine.runner(program, platform);
             runner.start();
-            status = "running";
+            setStatus(EbslScriptRunStatus.RUNNING);
         }
 
         void stop() {
@@ -234,7 +257,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
                 runner.stop();
                 runner = null;
             }
-            status = "stopped";
+            setStatus(EbslScriptRunStatus.STOPPED);
         }
 
         boolean done() {
@@ -261,7 +284,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
         }
 
         String summary() {
-            return handle + " [" + label + "] " + status;
+            return handle + " [" + label + "] " + status.message(statusDetail);
         }
 
         private void compile(String source) {
@@ -270,13 +293,22 @@ public final class EbslScriptTask extends Settingable implements BotTask {
                 program = EbslScriptEngine.compile(source);
                 runner = null;
                 terminal = false;
-                status = "compiled";
+                setStatus(EbslScriptRunStatus.COMPILED);
             } catch (RuntimeException exception) {
                 program = null;
                 runner = null;
                 terminal = true;
-                status = "compile error: " + exception.getMessage();
+                setStatus(EbslScriptRunStatus.COMPILE_ERROR, exception.getMessage());
             }
+        }
+
+        private void setStatus(EbslScriptRunStatus status) {
+            setStatus(status, "");
+        }
+
+        private void setStatus(EbslScriptRunStatus status, String detail) {
+            this.status = status;
+            this.statusDetail = detail == null ? "" : detail;
         }
 
         private String source(EbslPlatform platform) {

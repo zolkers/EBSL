@@ -7,6 +7,7 @@ import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
+import fr.riege.ebsl.common.feature.scripting.EbslDurationUnit;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.task.MobTargetMode;
 import fr.riege.ebsl.common.feature.task.SpaceMobTask;
@@ -128,7 +129,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
             return false;
         }
         String last = invocation.args().get(invocation.args().size() - 1);
-        return last.endsWith("t") || last.endsWith("s") || last.endsWith("ms");
+        return EbslDurationUnit.hasDurationSuffix(last);
     }
 
     private static final class Cursor {
@@ -164,7 +165,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
                 return fallback;
             }
             String token = invocation.arg(index);
-            if (token.endsWith("t") || token.endsWith("s") || token.endsWith("ms")
+            if (EbslDurationUnit.hasDurationSuffix(token)
                 || SpaceMobDirective.byToken(token) == SpaceMobDirective.TRACK) {
                 return fallback;
             }
@@ -177,7 +178,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
                 return fallback;
             }
             String token = invocation.arg(index);
-            if (token.endsWith("t") || token.endsWith("s") || token.endsWith("ms")
+            if (EbslDurationUnit.hasDurationSuffix(token)
                 || SpaceMobDirective.byToken(token) == SpaceMobDirective.TRACK) {
                 return fallback;
             }

@@ -27,8 +27,7 @@ public final class EbslCommandStatement implements EbslStatement {
             started = true;
             ticksLeft = node == null ? 0 : node.start(new EbslNodeInvocation(args, runtime, runner));
         }
-        if (ticksLeft > 0) {
-            if (node != null) {
+        if (ticksLeft > 0 && node != null) {
                 EbslNodeInvocation invocation = new EbslNodeInvocation(args, runtime, runner);
                 node.tick(invocation);
                 if (node.isComplete(invocation)) {
@@ -38,7 +37,7 @@ public final class EbslCommandStatement implements EbslStatement {
                     return EbslStep.RUNNING;
                 }
             }
-        }
+
         if (node != null && node.waitsForNavigation() && runtime.navigation().isNavigating()) {
             return EbslStep.RUNNING;
         }
