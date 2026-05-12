@@ -43,6 +43,9 @@ public final class BlockSelector {
     private record Not(Expression expression) implements Expression {
         @Override
         public boolean matches(BlockId id) {
+            if (expression instanceof Term term && term.token().isBlank()) {
+                return false;
+            }
             return !expression.matches(id);
         }
     }

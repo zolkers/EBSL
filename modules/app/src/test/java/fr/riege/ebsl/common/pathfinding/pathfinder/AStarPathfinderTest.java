@@ -4,6 +4,8 @@ import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfigur
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcessor;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -102,6 +104,8 @@ class AStarPathfinderTest {
             NodeProcessorRegistry.createStandardProcessors().getFirst(),
             NodeProcessorRegistry.createStandardProcessors().getFirst()
         );
+        assertTrue(NodeProcessorRegistry.createStandardProcessors().stream().anyMatch(LayerPathProcessor.class::isInstance));
+        assertTrue(NodeProcessorRegistry.createStandardProcessors().stream().anyMatch(QualityAwarePathProcessor.class::isInstance));
     }
 
     private static final class SlowProcessor implements NodeProcessor {

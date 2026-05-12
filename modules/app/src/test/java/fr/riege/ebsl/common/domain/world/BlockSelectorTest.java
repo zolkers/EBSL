@@ -29,4 +29,29 @@ class BlockSelectorTest {
         assertTrue(BlockSelector.parse("leaves").matches(BlockId.of("minecraft:oak_leaves")));
         assertFalse(BlockSelector.parse("minecraft:leaves").matches(BlockId.of("minecraft:oak_leaves")));
     }
+
+    @Test
+    void givesAndPrecedenceOverOr() {
+        BlockSelector selector = BlockSelector.parse("stone|wood&!crimson_stem");
+
+        assertTrue(selector.matches(BlockId.of("minecraft:stone")));
+        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
+        assertFalse(selector.matches(BlockId.of("minecraft:crimson_stem")));
+    }
+
+    @Test
+    void normalizesWhitespaceCaseAndDashes() {
+        BlockSelector selector = BlockSelector.parse("  OAK-LEAVES  |  birch-log  ");
+
+        assertTrue(selector.matches(BlockId.of("minecraft:oak_leaves")));
+        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
+        assertFalse(selector.matches(BlockId.of("minecraft:stone")));
+    }
+
+    @Test
+    void blankOrMalformedSelectorsDoNotMatch() {
+        assertFalse(BlockSelector.parse("").matches(BlockId.of("minecraft:stone")));
+        assertFalse(BlockSelector.parse("!").matches(BlockId.of("minecraft:stone")));
+        assertFalse(BlockSelector.parse("wood&").matches(BlockId.of("minecraft:oak_log")));
+    }
 }
