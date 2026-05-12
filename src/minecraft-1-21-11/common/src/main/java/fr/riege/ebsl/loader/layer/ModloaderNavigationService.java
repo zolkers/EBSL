@@ -1,5 +1,6 @@
 package fr.riege.ebsl.loader.layer;
 
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
@@ -14,8 +15,8 @@ import net.minecraft.client.Minecraft;
 public final class ModloaderNavigationService implements NavigationService {
     private final CommonNavigationBackend backend;
 
-    public ModloaderNavigationService(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
-        this.backend = new CommonNavigationBackend(world, player, physics, Minecraft.getInstance()::execute);
+    public ModloaderNavigationService(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
+        this.backend = new CommonNavigationBackend(world, player, physics, input, Minecraft.getInstance()::execute);
     }
 
     @Override public void startBlockGoal(int x, int y, int z) { backend.startBlockGoal(x, y, z); }

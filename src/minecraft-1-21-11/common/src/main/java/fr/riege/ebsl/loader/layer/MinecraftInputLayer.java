@@ -27,13 +27,7 @@ public class MinecraftInputLayer implements IInputLayer {
 
     @Override
     public void releaseGameplayKeys() {
-        client.options.keyUp.setDown(false);
-        client.options.keyDown.setDown(false);
-        client.options.keyLeft.setDown(false);
-        client.options.keyRight.setDown(false);
-        client.options.keyJump.setDown(false);
-        client.options.keyShift.setDown(false);
-        client.options.keySprint.setDown(false);
+        releaseMovementKeys();
         client.options.keyAttack.setDown(false);
         client.options.keyUse.setDown(false);
         client.options.keyPickItem.setDown(false);
@@ -80,14 +74,5 @@ public class MinecraftInputLayer implements IInputLayer {
             client.player.swing(InteractionHand.MAIN_HAND);
         }
         return handled;
-    }
-
-    @Override
-    public void lookAt(float yaw, float pitch) {
-        if (client.player == null) {
-            return;
-        }
-        client.player.setYRot(yaw);
-        client.player.setXRot(pitch);
     }
 }

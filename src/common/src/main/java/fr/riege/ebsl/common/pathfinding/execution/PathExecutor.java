@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
@@ -22,6 +23,7 @@ public final class PathExecutor {
 
     private final IPlayerLayer player;
     private final IPhysicsLayer physics;
+    private final IInputLayer input;
     private final WalkabilityChecker checker;
     private final PathTracker pathTracker = new PathTracker();
     private final PathRecoveryController recoveryController = new PathRecoveryController();
@@ -57,13 +59,14 @@ public final class PathExecutor {
     private long lastRepairReasonTime;
     private Node.MoveType lastKnownMoveType = Node.MoveType.WALK;
 
-    public PathExecutor(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
+    public PathExecutor(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
         this.player = player;
         this.physics = physics;
+        this.input = input;
         this.checker = new WalkabilityChecker(world);
         this.rotationExecutor = new RotationExecutor(player, physics);
         this.rotationController = new PathRotationController(world, player, rotationExecutor);
-        this.movementController = new WalkMovementController(world, player, physics, checker);
+        this.movementController = new WalkMovementController(world, player, input, checker);
     }
 
     public void start(List<Node> path, int goalX, int goalY, int goalZ, boolean precise) {
@@ -218,7 +221,7 @@ public final class PathExecutor {
             proximity);
         PathRecoveryController.RecoveryDecision recovery = recoveryController.update(
             player,
-            physics,
+            input,
                 progress,
             allowReplan,
             now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
@@ -236,7 +239,7 @@ public final class PathExecutor {
         if (recovery.action() == PathRecoveryController.Action.TICK_HANDLED) return;
         if (recovery.action() == PathRecoveryController.Action.ALIGN_TO_PATH) {
             Vec3d correction = pathTracker.computeCorrectionToPath(playerPos, proximity);
-            InputApplier.applyCornerAlignment(player, physics, correction.x(), correction.z());
+            InputApplier.applyCornerAlignment(player, input, correction.x(), correction.z());
             return;
         }
         boolean recoveryJump = recovery.action() == PathRecoveryController.Action.RECOVERY_JUMP;
@@ -260,7 +263,7 @@ public final class PathExecutor {
                 allowJumps && !recoveryJump, allowSneak && sneakLatched,
                 pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
         }
-        physics.setSneak(allowSneak && sneakLatched && !player.isInWater());
+        input.setSneakDown(allowSneak && sneakLatched && !player.isInWater());
     }
 
     public void stop() {
@@ -288,7 +291,7 @@ public final class PathExecutor {
     }
 
     public void releaseAll() {
-        InputApplier.releaseAll(physics, allowSneak && sneakLatched);
+        InputApplier.releaseAll(input, allowSneak && sneakLatched);
     }
 
     private void resetTransientState() {
@@ -308,7 +311,7 @@ public final class PathExecutor {
     private boolean pauseForBlockingClientState() {
         if (player.isFlying()) {
             releaseAll();
-            physics.setSneak(true);
+            input.setSneakDown(true);
             return true;
         }
         return false;
@@ -359,7 +362,7 @@ public final class PathExecutor {
         double dz = (goalZ + goalCenterZ) - playerPos.z();
         double hDist = Math.sqrt(dx * dx + dz * dz);
         if (exactGoalCentering && hDist > preciseGoalTolerance) {
-            InputApplier.applyGoalCentering(player, physics, dx, dz);
+            InputApplier.applyGoalCentering(player, input, dx, dz);
         } else {
             releaseAll();
         }

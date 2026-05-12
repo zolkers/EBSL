@@ -31,8 +31,6 @@ class RotationExecutorTest {
                 capturedYaw[0] = yaw; capturedPitch[0] = pitch;
             }
             @Override public double rotationGcd() { return 0.1; }
-            @Override public void setSneak(boolean v) {}
-            @Override public void clearInputs() {}
         };
     }
 

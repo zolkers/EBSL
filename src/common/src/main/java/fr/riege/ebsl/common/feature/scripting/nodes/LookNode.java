@@ -18,7 +18,7 @@ public final class LookNode extends AbstractEbslNode {
         if (invocation.args().size() >= 2) {
             float yaw = (float) invocation.runtime().number(invocation.runtime().value(invocation.arg(0)));
             float pitch = (float) invocation.runtime().number(invocation.runtime().value(invocation.arg(1)));
-            invocation.runtime().platform().input().lookAt(yaw, pitch);
+            invocation.runtime().platform().physics().setRotation(yaw, pitch);
         }
         return 0;
     }

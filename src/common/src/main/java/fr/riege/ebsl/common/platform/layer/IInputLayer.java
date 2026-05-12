@@ -14,6 +14,16 @@ public interface IInputLayer {
     default void releaseGameplayKeys() {
     }
 
+    default void releaseMovementKeys() {
+        setForwardDown(false);
+        setBackwardDown(false);
+        setLeftDown(false);
+        setRightDown(false);
+        setJumpDown(false);
+        setSneakDown(false);
+        setSprintDown(false);
+    }
+
     default boolean forwardDown() { return false; }
     default boolean backwardDown() { return false; }
     default boolean leftDown() { return false; }
@@ -31,5 +41,4 @@ public interface IInputLayer {
     default void setAttackDown(boolean down) {}
     default void setUseDown(boolean down) {}
     default boolean attackTargetedBlock() { return false; }
-    default void lookAt(float yaw, float pitch) {}
 }

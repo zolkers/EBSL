@@ -24,8 +24,8 @@ public final class CommonSettingsStore {
 
     public static void load(IStorageLayer storage) {
         try {
-            storage.load(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
-            storage.load(SCRIPT_EDITOR_KEY).ifPresent(json -> loadSettings(EbslCodeEditorSettings.all(), json));
+            storage.loadJson(PATHFINDER_KEY).ifPresent(json -> loadSettings(PathfinderSettings.all(), json));
+            storage.loadJson(SCRIPT_EDITOR_KEY).ifPresent(json -> loadSettings(EbslCodeEditorSettings.all(), json));
         } catch (RuntimeException exception) {
             LOGGER.warn("Could not load pathfinder settings; keeping defaults.", exception);
         }
@@ -33,8 +33,8 @@ public final class CommonSettingsStore {
 
     public static void loadBotSettings(IStorageLayer storage) {
         try {
-            storage.load(MODULES_KEY).ifPresent(CommonSettingsStore::loadModuleSettings);
-            storage.load(TASKS_KEY).ifPresent(CommonSettingsStore::loadTaskSettings);
+            storage.loadJson(MODULES_KEY).ifPresent(CommonSettingsStore::loadModuleSettings);
+            storage.loadJson(TASKS_KEY).ifPresent(CommonSettingsStore::loadTaskSettings);
         } catch (RuntimeException exception) {
             LOGGER.warn("Could not load module/task settings; keeping defaults.", exception);
         }
@@ -42,10 +42,10 @@ public final class CommonSettingsStore {
 
     public static void save(IStorageLayer storage) {
         try {
-            storage.save(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
-            storage.save(SCRIPT_EDITOR_KEY, saveSettings(EbslCodeEditorSettings.all()).toString());
-            storage.save(MODULES_KEY, saveModuleSettings().toString());
-            storage.save(TASKS_KEY, saveTaskSettings().toString());
+            storage.saveJson(PATHFINDER_KEY, saveSettings(PathfinderSettings.all()).toString());
+            storage.saveJson(SCRIPT_EDITOR_KEY, saveSettings(EbslCodeEditorSettings.all()).toString());
+            storage.saveJson(MODULES_KEY, saveModuleSettings().toString());
+            storage.saveJson(TASKS_KEY, saveTaskSettings().toString());
         } catch (RuntimeException exception) {
             LOGGER.warn("Could not save settings.", exception);
         }

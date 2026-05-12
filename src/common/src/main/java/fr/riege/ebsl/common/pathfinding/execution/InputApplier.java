@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 
 final class InputApplier {
@@ -10,12 +10,12 @@ final class InputApplier {
     private InputApplier() {
     }
 
-    static void releaseAll(IPhysicsLayer physics, boolean keepSneaking) {
-        physics.clearInputs();
-        physics.setSneak(keepSneaking);
+    static void releaseAll(IInputLayer input, boolean keepSneaking) {
+        input.releaseMovementKeys();
+        input.setSneakDown(keepSneaking);
     }
 
-    static void applyRelativeMovement(IPlayerLayer player, IPhysicsLayer physics, double dx, double dz,
+    static void applyRelativeMovement(IPlayerLayer player, IInputLayer input, double dx, double dz,
                                       double forwardThreshold,
                                       double backwardThreshold,
                                       double strafeThreshold) {
@@ -28,32 +28,32 @@ final class InputApplier {
         double forwardDot = dx * forwardX + dz * forwardZ;
         double strafeDot = dx * rightX + dz * rightZ;
 
-        physics.setForward(forwardDot > forwardThreshold);
-        physics.setBackward(forwardDot < backwardThreshold);
+        input.setForwardDown(forwardDot > forwardThreshold);
+        input.setBackwardDown(forwardDot < backwardThreshold);
 
         boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT;
         double effectiveStrafeThreshold = mostlyForward
             ? Math.max(strafeThreshold, STRAFE_SUPPRESSION_DOT)
             : strafeThreshold;
-        physics.setRight(strafeDot > effectiveStrafeThreshold);
-        physics.setLeft(strafeDot < -effectiveStrafeThreshold);
+        input.setRightDown(strafeDot > effectiveStrafeThreshold);
+        input.setLeftDown(strafeDot < -effectiveStrafeThreshold);
     }
 
-    static void applyGoalCentering(IPlayerLayer player, IPhysicsLayer physics, double dx, double dz) {
+    static void applyGoalCentering(IPlayerLayer player, IInputLayer input, double dx, double dz) {
         float yawToGoal = (float) Math.toDegrees(Math.atan2(-dx, dz));
         float relativeYaw = wrapDegrees(yawToGoal - player.yaw());
 
-        physics.setForward(relativeYaw > -67.5 && relativeYaw <= 67.5);
-        physics.setBackward(relativeYaw > 112.5 || relativeYaw <= -112.5);
-        physics.setLeft(relativeYaw > -157.5 && relativeYaw <= -22.5);
-        physics.setRight(relativeYaw > 22.5 && relativeYaw <= 157.5);
-        physics.setSprint(false);
+        input.setForwardDown(relativeYaw > -67.5 && relativeYaw <= 67.5);
+        input.setBackwardDown(relativeYaw > 112.5 || relativeYaw <= -112.5);
+        input.setLeftDown(relativeYaw > -157.5 && relativeYaw <= -22.5);
+        input.setRightDown(relativeYaw > 22.5 && relativeYaw <= 157.5);
+        input.setSprintDown(false);
         boolean inWater = player.isInWater();
-        physics.setJump(inWater);
-        physics.setSneak(!inWater);
+        input.setJumpDown(inWater);
+        input.setSneakDown(!inWater);
     }
 
-    static void applyCornerAlignment(IPlayerLayer player, IPhysicsLayer physics, double dx, double dz) {
+    static void applyCornerAlignment(IPlayerLayer player, IInputLayer input, double dx, double dz) {
         double hDist = Math.sqrt(dx * dx + dz * dz);
         if (hDist < 1.0e-6) {
             return;
@@ -61,15 +61,15 @@ final class InputApplier {
 
         applyRelativeMovement(
             player,
-            physics,
+            input,
             dx / hDist,
             dz / hDist,
             0.05,
             -0.80,
             0.08);
-        physics.setBackward(false);
-        physics.setSprint(false);
-        physics.setJump(false);
+        input.setBackwardDown(false);
+        input.setSprintDown(false);
+        input.setJumpDown(false);
     }
 
     private static float wrapDegrees(float value) {

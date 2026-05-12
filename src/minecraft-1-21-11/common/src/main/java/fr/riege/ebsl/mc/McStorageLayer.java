@@ -13,7 +13,7 @@ public class McStorageLayer implements IStorageLayer {
     public McStorageLayer(Path dir) { this.dir = dir; }
 
     @Override
-    public void save(String key, String json) {
+    public void saveJson(String key, String json) {
         try {
             Files.createDirectories(dir);
             Files.writeString(dir.resolve(key + ".json"), json);
@@ -21,7 +21,7 @@ public class McStorageLayer implements IStorageLayer {
     }
 
     @Override
-    public Optional<String> load(String key) {
+    public Optional<String> loadJson(String key) {
         try {
             var file = dir.resolve(key + ".json");
             return Files.exists(file) ? Optional.of(Files.readString(file)) : Optional.empty();

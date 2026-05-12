@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
@@ -15,13 +15,13 @@ final class PathRecoveryController {
         cornerAlignStartMs = 0;
     }
 
-    RecoveryDecision update(IPlayerLayer player, IPhysicsLayer physics,
+    RecoveryDecision update(IPlayerLayer player, IInputLayer input,
                             PathProgressSnapshot progress, boolean allowReplan,
                             boolean cooldownPassed, int jumpCooldown, Node.MoveType recoveryMoveType) {
         MovementRecoveryProfile recoveryProfile = MovementRecoveryRegistry.get(recoveryMoveType);
 
         boolean inWater = player.isInWater();
-        keepSurfaceSwimming(physics, inWater);
+        keepSurfaceSwimming(input, inWater);
 
         if (allowReplan && progress.pathStale(recoveryProfile.hardStaleMs()) && cooldownPassed) {
             return RecoveryDecision.repairToSegment("hard stale path progress stale=" + progress.pathStaleMs());
@@ -32,14 +32,14 @@ final class PathRecoveryController {
         }
 
         if (backupTicksLeft > 0) {
-            applyBackupTick(physics);
+            applyBackupTick(input);
             return RecoveryDecision.tickHandled();
         }
 
         boolean drifted = progress.drifted(PathfinderSettings.instance().driftDistance.value());
         if (recoveryProfile.allowBackup() && shouldBackup(player, progress, drifted, inWater)) {
             backupTicksLeft = PathfinderSettings.instance().backupTicks.value();
-            applyBackupTick(physics);
+            applyBackupTick(input);
             return RecoveryDecision.tickHandledWithProgress();
         }
 
@@ -52,7 +52,7 @@ final class PathRecoveryController {
         }
 
         if (recoveryProfile.allowRecoveryJump() && shouldJumpForRecovery(player, progress, drifted, jumpCooldown)) {
-            physics.setJump(true);
+            input.setJumpDown(true);
             return RecoveryDecision.recoveryJump();
         }
 
@@ -80,11 +80,11 @@ final class PathRecoveryController {
         return RecoveryDecision.continueMovement();
     }
 
-    private void keepSurfaceSwimming(IPhysicsLayer physics, boolean inWater) {
+    private void keepSurfaceSwimming(IInputLayer input, boolean inWater) {
         if (!inWater) return;
         backupTicksLeft = 0;
-        physics.setJump(true);
-        physics.setSneak(false);
+        input.setJumpDown(true);
+        input.setSneakDown(false);
     }
 
     private boolean shouldBackup(IPlayerLayer player, PathProgressSnapshot progress, boolean drifted, boolean inWater) {
@@ -120,16 +120,16 @@ final class PathRecoveryController {
         return now - cornerAlignStartMs <= PathfinderSettings.instance().cornerAlignMaxMs.value();
     }
 
-    private void applyBackupTick(IPhysicsLayer physics) {
+    private void applyBackupTick(IInputLayer input) {
         backupTicksLeft--;
-        physics.setForward(false);
-        physics.setBackward(true);
-        physics.setLeft(false);
-        physics.setRight(false);
-        physics.setJump(false);
-        physics.setSprint(false);
+        input.setForwardDown(false);
+        input.setBackwardDown(true);
+        input.setLeftDown(false);
+        input.setRightDown(false);
+        input.setJumpDown(false);
+        input.setSprintDown(false);
         if (backupTicksLeft == 0) {
-            physics.setBackward(false);
+            input.setBackwardDown(false);
         }
     }
 

@@ -4,16 +4,12 @@ import java.util.Optional;
 import java.util.List;
 
 public interface IStorageLayer {
-    void save(String key, String json);
-    Optional<String> load(String key);
+    void saveJson(String key, String json);
+    Optional<String> loadJson(String key);
 
-    default void saveText(String path, String text) {
-        save(path, text);
-    }
+    void saveText(String path, String text);
 
-    default Optional<String> loadText(String path) {
-        return load(path);
-    }
+    Optional<String> loadText(String path);
 
     default void deleteText(String path) {
     }

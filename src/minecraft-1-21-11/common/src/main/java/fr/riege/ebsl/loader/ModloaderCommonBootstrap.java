@@ -48,7 +48,7 @@ public final class ModloaderCommonBootstrap {
         McPlayerLayer player = new McPlayerLayer(client);
         ModloaderCommonBootstrap.client = client;
         events = new ModloaderEventBus();
-        navigation = new ModloaderNavigationService(world, player, physics);
+        navigation = new ModloaderNavigationService(world, player, physics, input);
         ModloaderCommonBootstrap.imgui = imgui instanceof MinecraftImGuiLayer layer ? layer : null;
         ui = new ModloaderUiService();
 

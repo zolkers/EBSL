@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
@@ -38,7 +38,7 @@ final class WalkMovementController {
 
     private final IWorldLayer world;
     private final IPlayerLayer player;
-    private final IPhysicsLayer physics;
+    private final IInputLayer input;
     private final WalkabilityChecker checker;
     private final LayerNavigationPointProvider navigationPointProvider;
     private List<Node> path;
@@ -46,10 +46,10 @@ final class WalkMovementController {
     private int validationTick;
     private MovementValidationResult lastValidationResult = MovementValidationResult.ok();
 
-    WalkMovementController(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, WalkabilityChecker checker) {
+    WalkMovementController(IWorldLayer world, IPlayerLayer player, IInputLayer input, WalkabilityChecker checker) {
         this.world = world;
         this.player = player;
-        this.physics = physics;
+        this.input = input;
         this.checker = checker;
         this.navigationPointProvider = new LayerNavigationPointProvider(checker);
     }
@@ -118,7 +118,7 @@ final class WalkMovementController {
         applyParkourTakeoffGuard(movementWaypoint, playerPos, pursuitSegment, jumpCooldown, allowJumps);
 
         if (!allowJumps) {
-            physics.setJump(player.isInWater());
+            input.setJumpDown(player.isInWater());
             return;
         }
 
@@ -146,21 +146,21 @@ final class WalkMovementController {
         }
 
         if (hDist < walkTargetDeadzone) {
-            physics.setForward(forceForwardWhenCentered);
-            physics.setBackward(false);
-            physics.setLeft(false);
-            physics.setRight(false);
-            physics.setSprint(false);
+            input.setForwardDown(forceForwardWhenCentered);
+            input.setBackwardDown(false);
+            input.setLeftDown(false);
+            input.setRightDown(false);
+            input.setSprintDown(false);
             return;
         }
 
         PathSteering.SteeringVector steering = PathSteering.steer(checker, path, playerPos, targetWp, pursuitSegment);
         InputApplier.applyRelativeMovement(
-            player, physics, steering.x(), steering.z(),
+            player, input, steering.x(), steering.z(),
             settings.walkForwardDot.value(),
             settings.walkBackwardDot.value(),
             settings.walkStrafeDot.value());
-        physics.setSprint(isForwardPressed(steering.x(), steering.z(), settings.walkForwardDot.value())
+        input.setSprintDown(isForwardPressed(steering.x(), steering.z(), settings.walkForwardDot.value())
             && distToFinal > 2.0
             && !nearStepUp
             && (!steering.nearCorner() || !settings.cornerSteeringSlowdown.value()));
@@ -231,12 +231,12 @@ final class WalkMovementController {
             return;
         }
 
-        physics.setForward(false);
-        physics.setBackward(true);
-        physics.setSprint(false);
+        input.setForwardDown(false);
+        input.setBackwardDown(true);
+        input.setSprintDown(false);
         if (Math.abs(lateral) <= PARKOUR_LATERAL_CORRECTION) {
-            physics.setLeft(false);
-            physics.setRight(false);
+            input.setLeftDown(false);
+            input.setRightDown(false);
         }
     }
 
@@ -278,7 +278,7 @@ final class WalkMovementController {
                 pressParkourBrake();
                 return;
             }
-            physics.setSprint(distance >= 3 && verticalDelta >= -1.0);
+            input.setSprintDown(distance >= 3 && verticalDelta >= -1.0);
             if (shortAscentCarry && speedAlong < PARKOUR_SHORT_ASCENT_CARRY_SPEED) {
                 applyParkourAxisInput(dirX, dirZ, true);
             }
@@ -306,7 +306,7 @@ final class WalkMovementController {
         }
         if (!inLandingColumn || prediction.progress() < backLimit || speedAlong < targetAirSpeed(distance, verticalDelta)) {
             applyParkourAxisInput(dirX, dirZ, true);
-            physics.setSprint(false);
+            input.setSprintDown(false);
             return;
         }
         if (profile.shortAscentCarry()) {
@@ -364,7 +364,7 @@ final class WalkMovementController {
         if (waypoint.moveType == Node.MoveType.PARKOUR
             && player.onGround()
             && isGroundedOnParkourLanding(waypoint, playerPos, pursuitSegment)) {
-            physics.setJump(false);
+            input.setJumpDown(false);
             return;
         }
 
@@ -397,9 +397,9 @@ final class WalkMovementController {
             settings.jumpCooldownTicks.value(),
             settings.stallJumpProgressMs.value());
         MovementExecutorRegistry.get(waypoint.moveType).handleJump(context);
-        physics.setJump(context.jumpPressed());
+        input.setJumpDown(context.jumpPressed());
         if (shouldAssistSlimeAscent(waypoint, hDist, jumpCooldown)) {
-            physics.setJump(true);
+            input.setJumpDown(true);
             executor.setJumpCooldown(settings.jumpCooldownTicks.value());
             return;
         }
@@ -409,9 +409,9 @@ final class WalkMovementController {
                 : settings.jumpCooldownTicks.value());
         }
         if (waypoint.moveType == Node.MoveType.PARKOUR && context.jumpPressed()) {
-            physics.setBackward(false);
-            physics.setForward(true);
-            physics.setSprint(false);
+            input.setBackwardDown(false);
+            input.setForwardDown(true);
+            input.setSprintDown(false);
         }
     }
 
@@ -462,15 +462,15 @@ final class WalkMovementController {
             world.isHeadUnderWater(player.eyePosition()));
         MovementExecutorRegistry.get(movementWaypoint.moveType).handleWaterMovement(waterContext);
         if (waterContext.handled()) {
-            physics.setJump(waterContext.jumpPressed());
+            input.setJumpDown(waterContext.jumpPressed());
             if (!sneakLatched) {
-                physics.setSneak(waterContext.shiftPressed());
+                input.setSneakDown(waterContext.shiftPressed());
             }
-            physics.setSprint(waterContext.sprintPressed());
+            input.setSprintDown(waterContext.sprintPressed());
         } else if (movementWaypoint.position.flooredY() > blockY(playerPos)) {
-            physics.setJump(true);
+            input.setJumpDown(true);
         } else if (!sneakLatched) {
-            physics.setSneak(false);
+            input.setSneakDown(false);
         }
     }
 
@@ -479,11 +479,11 @@ final class WalkMovementController {
             return false;
         }
 
-        physics.setJump(false);
+        input.setJumpDown(false);
         if (!sneakLatched) {
-            physics.setSneak(false);
+            input.setSneakDown(false);
         }
-        physics.setSprint(false);
+        input.setSprintDown(false);
         return true;
     }
 
@@ -499,16 +499,16 @@ final class WalkMovementController {
     private void applyClimbMovement(Node movementWaypoint, boolean sneakLatched) {
         Vec3d pos = player.position();
         if (checker.isClimbable(blockX(pos), blockY(pos), blockZ(pos))) {
-            physics.setForward(true);
-            physics.setBackward(false);
+            input.setForwardDown(true);
+            input.setBackwardDown(false);
             if (movementWaypoint.position.flooredY() > blockY(pos)) {
-                physics.setJump(true);
+                input.setJumpDown(true);
             } else if (movementWaypoint.position.flooredY() < blockY(pos)) {
-                physics.setJump(false);
-                physics.setSneak(true);
+                input.setJumpDown(false);
+                input.setSneakDown(true);
             }
         } else if (!sneakLatched) {
-            physics.setSneak(false);
+            input.setSneakDown(false);
         }
     }
 
@@ -588,27 +588,27 @@ final class WalkMovementController {
     private void applyParkourAxisInput(double dirX, double dirZ, boolean forward) {
         InputApplier.applyRelativeMovement(
             player,
-            physics,
+            input,
             forward ? dirX : -dirX,
             forward ? dirZ : -dirZ,
             0.15,
             -0.15,
             0.65);
-        physics.setSprint(false);
+        input.setSprintDown(false);
     }
 
     private void pressParkourBrake() {
-        physics.setForward(false);
-        physics.setBackward(true);
-        physics.setSprint(false);
-        physics.setLeft(false);
-        physics.setRight(false);
+        input.setForwardDown(false);
+        input.setBackwardDown(true);
+        input.setSprintDown(false);
+        input.setLeftDown(false);
+        input.setRightDown(false);
     }
 
     private void clearForwardBack() {
-        physics.setForward(false);
-        physics.setBackward(false);
-        physics.setSprint(false);
+        input.setForwardDown(false);
+        input.setBackwardDown(false);
+        input.setSprintDown(false);
     }
 
     private double parkourJumpRemainingBlocks(Node waypoint, Vec3d playerPos) {

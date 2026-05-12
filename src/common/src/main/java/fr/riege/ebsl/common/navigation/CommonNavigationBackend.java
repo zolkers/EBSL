@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.navigation;
 
 import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.platform.layer.IPlayerLayer;
 import fr.riege.ebsl.common.platform.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
@@ -32,7 +33,7 @@ import java.util.function.Consumer;
 public final class CommonNavigationBackend implements NavigationService {
     private final IWorldLayer world;
     private final IPlayerLayer player;
-    private final IPhysicsLayer physics;
+    private final IInputLayer input;
     private final WalkabilityChecker checker;
     private final LayerNavigationPointProvider provider;
     private final PathExecutor executor;
@@ -55,18 +56,19 @@ public final class CommonNavigationBackend implements NavigationService {
     private boolean allowFall = true;
     private boolean allowWalkDiagonal = true;
 
-    public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics) {
-        this(world, player, physics, Runnable::run);
+    public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
+        this(world, player, physics, input, Runnable::run);
     }
 
-    public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, Consumer<Runnable> gameThread) {
+    public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics,
+                                   IInputLayer input, Consumer<Runnable> gameThread) {
         this.world = world;
         this.player = player;
-        this.physics = physics;
+        this.input = input == null ? new IInputLayer() {} : input;
         this.gameThread = gameThread == null ? Runnable::run : gameThread;
         this.checker = new WalkabilityChecker(world);
         this.provider = new LayerNavigationPointProvider(checker);
-        this.executor = new PathExecutor(world, player, physics);
+        this.executor = new PathExecutor(world, player, physics, this.input);
     }
 
     @Override public void startNavigation(NavigationRequest request) {
@@ -157,7 +159,7 @@ public final class CommonNavigationBackend implements NavigationService {
 
     @Override public void setWalkSneakLatched(boolean value) {
         executor.setSneakLatched(value);
-        physics.setSneak(value);
+        input.setSneakDown(value);
     }
 
     @Override public void startGreenhouseWalk(Vec3d target, Runnable onFinished, boolean isFirst) {
@@ -266,7 +268,7 @@ public final class CommonNavigationBackend implements NavigationService {
         activeNodes = List.of();
         executePath = false;
         if (releaseInputs) {
-            physics.clearInputs();
+            input.releaseMovementKeys();
         }
         Runnable finished = onFinished;
         onFinished = null;
@@ -342,7 +344,7 @@ public final class CommonNavigationBackend implements NavigationService {
                 if (throwable != null) {
                     navigating = false;
                     lastResult = null;
-                    physics.clearInputs();
+                    input.releaseMovementKeys();
                     if (onFailed != null) onFailed.run();
                     return;
                 }
@@ -357,7 +359,7 @@ public final class CommonNavigationBackend implements NavigationService {
             : List.of();
         if (!PathResultClassifier.hasUsablePath(result, positions)) {
             navigating = false;
-            physics.clearInputs();
+            input.releaseMovementKeys();
             if (onFailed != null) onFailed.run();
             return;
         }
