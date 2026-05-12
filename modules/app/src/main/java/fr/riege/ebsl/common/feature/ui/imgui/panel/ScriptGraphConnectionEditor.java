@@ -1,8 +1,11 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphConnection;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphConnectionMode;
 import imgui.ImDrawList;
 import imgui.ImGui;
+import imgui.type.ImInt;
+import imgui.type.ImString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +15,11 @@ import java.util.function.Function;
 
 final class ScriptGraphConnectionEditor {
     private final List<EbslGraphConnection> connections = new ArrayList<>();
+    private final ImString selectedLabel = new ImString("", 128);
+    private final ImInt selectedMode = new ImInt(0);
     private String connectingFromKey = "";
     private String hoveredInputKey = "";
+    private String selectedConnectionId = "";
 
     List<EbslGraphConnection> connections() {
         return List.copyOf(connections);
@@ -24,19 +30,25 @@ final class ScriptGraphConnectionEditor {
         this.connections.addAll(connections);
         connectingFromKey = "";
         hoveredInputKey = "";
+        clearSelection();
     }
 
-    void drawEdges(ImDrawList dl, List<ScriptGraphNodeLayout> layouts,
-                   Map<String, ScriptGraphNodeLayout> layoutByKey, float graphZoom) {
+    boolean drawEdges(ImDrawList dl, List<ScriptGraphNodeLayout> layouts,
+                      Map<String, ScriptGraphNodeLayout> layoutByKey, float graphZoom) {
         connections.removeIf(connection -> !layoutByKey.containsKey(connection.fromKey()) || !layoutByKey.containsKey(connection.toKey()));
+        boolean selected = false;
         for (EbslGraphConnection connection : connections) {
             ScriptGraphNodeLayout from = layoutByKey.get(connection.fromKey());
             ScriptGraphNodeLayout to = layoutByKey.get(connection.toKey());
             if (from != null && to != null) {
-                GraphEdgePainter.draw(dl, from, to, layouts, graphZoom);
+                GraphEdgePainter.draw(dl, from, to, layouts, graphZoom, connection.id().equals(selectedConnectionId));
+                if (handleEdgeHit(connection, from, to, graphZoom)) {
+                    selected = true;
+                }
             }
         }
         hoveredInputKey = "";
+        return selected;
     }
 
     void handlePorts(ScriptGraphNodeLayout layout, float graphZoom, Runnable save, Consumer<String> statusSink) {
@@ -46,17 +58,19 @@ final class ScriptGraphConnectionEditor {
         float portY = layout.centerY();
 
         ImGui.setCursorScreenPos(inputX - hit * 0.5f, portY - hit * 0.5f);
-        if (ImGui.invisibleButton("##ebsl-graph-input-" + layout.index(), hit, hit)) {
-            detachIncoming(layout.node().key(), save, statusSink);
-        }
+        ImGui.invisibleButton("##ebsl-graph-input-" + layout.index(), hit, hit);
         if (ImGui.isItemHovered()) {
             hoveredInputKey = layout.node().key();
+        }
+        if (ImGui.isItemClicked()) {
+            selectFirstIncoming(layout.node().key());
         }
 
         ImGui.setCursorScreenPos(outputX - hit * 0.5f, portY - hit * 0.5f);
         ImGui.invisibleButton("##ebsl-graph-output-" + layout.index(), hit, hit);
         if (ImGui.isItemClicked()) {
             connectingFromKey = layout.node().key();
+            clearSelection();
         }
     }
 
@@ -81,6 +95,7 @@ final class ScriptGraphConnectionEditor {
 
     void detachNode(String key, Runnable save, Consumer<String> statusSink) {
         if (connections.removeIf(connection -> connection.touches(key))) {
+            clearSelection();
             save.run();
             statusSink.accept("detached node");
         }
@@ -88,6 +103,54 @@ final class ScriptGraphConnectionEditor {
 
     void removeNode(String key) {
         connections.removeIf(connection -> connection.touches(key));
+        clearSelection();
+    }
+
+    void clearSelection() {
+        selectedConnectionId = "";
+        selectedLabel.set("");
+        selectedMode.set(0);
+    }
+
+    boolean hasSelectedConnection() {
+        return selectedConnection() != null;
+    }
+
+    void renderSelectedConnectionInspector(Runnable save, Consumer<String> statusSink, float width) {
+        EbslGraphConnection connection = selectedConnection();
+        if (connection == null) {
+            ImGui.text("Link inspector");
+            ImGui.textDisabled("Select a link to edit its execution mode.");
+            return;
+        }
+
+        ImGui.text("Link inspector");
+        ImGui.textDisabled(connection.fromKey() + " -> " + connection.toKey());
+        ImGui.spacing();
+
+        String[] modes = {"flow", "each input"};
+        if (ImGui.combo("Mode", selectedMode, modes)) {
+            replaceSelected(connection.withMode(selectedMode.get() == 1
+                ? EbslGraphConnectionMode.EACH_INPUT
+                : EbslGraphConnectionMode.FLOW));
+            save.run();
+            statusSink.accept("updated link mode");
+        }
+        ImGui.setNextItemWidth(width);
+        if (ImGui.inputText("Label", selectedLabel)) {
+            replaceSelected(selectedConnection().withLabel(selectedLabel.get()));
+            save.run();
+            statusSink.accept("updated link label");
+        }
+        ImGui.textWrapped(connection.mode() == EbslGraphConnectionMode.EACH_INPUT
+            ? "Runs the target once for this incoming link when the flow is materialized."
+            : "Orders the target after all required incoming flow links.");
+        if (ImGui.button("Delete link", 96.0f, 24.0f)) {
+            connections.removeIf(candidate -> candidate.id().equals(selectedConnectionId));
+            clearSelection();
+            save.run();
+            statusSink.accept("deleted link");
+        }
     }
 
     void shiftAfterInsert(int lineNumber, Function<String, Integer> lineReader, Function<Integer, String> keyFactory) {
@@ -106,29 +169,78 @@ final class ScriptGraphConnectionEditor {
 
     private void addConnection(String fromKey, String toKey, Runnable save, Consumer<String> statusSink) {
         EbslGraphConnection connection = new EbslGraphConnection(fromKey, toKey);
-        if (!connections.contains(connection)) {
-            connections.add(connection);
-            save.run();
-            statusSink.accept("connected nodes");
+        for (EbslGraphConnection existing : connections) {
+            if (existing.fromKey().equals(fromKey) && existing.toKey().equals(toKey)) {
+                select(existing);
+                statusSink.accept("selected link");
+                return;
+            }
         }
-    }
-
-    private void detachIncoming(String key, Runnable save, Consumer<String> statusSink) {
-        if (connections.removeIf(connection -> connection.toKey().equals(key))) {
-            save.run();
-            statusSink.accept("detached input");
-        }
+        connections.add(connection);
+        select(connection);
+        save.run();
+        statusSink.accept("connected nodes");
     }
 
     private void shift(Function<String, String> mapper) {
         List<EbslGraphConnection> shifted = new ArrayList<>();
         for (EbslGraphConnection connection : connections) {
-            EbslGraphConnection mapped = new EbslGraphConnection(mapper.apply(connection.fromKey()), mapper.apply(connection.toKey()));
+            EbslGraphConnection mapped = connection.remap(mapper);
             if (!mapped.fromKey().equals(mapped.toKey()) && !shifted.contains(mapped)) {
                 shifted.add(mapped);
             }
         }
         connections.clear();
         connections.addAll(shifted);
+        clearSelection();
+    }
+
+    private boolean handleEdgeHit(EbslGraphConnection connection, ScriptGraphNodeLayout from,
+                                  ScriptGraphNodeLayout to, float graphZoom) {
+        float portInset = 10.0f * graphZoom;
+        float midX = (from.right() - portInset + to.x() + portInset) * 0.5f;
+        float midY = (from.centerY() + to.centerY()) * 0.5f;
+        float size = Math.max(18.0f, 18.0f * graphZoom);
+        ImGui.setCursorScreenPos(midX - size * 0.5f, midY - size * 0.5f);
+        ImGui.invisibleButton("##ebsl-graph-edge-" + connection.id(), size, size);
+        if (!ImGui.isItemClicked()) {
+            return false;
+        }
+        select(connection);
+        return true;
+    }
+
+    private void selectFirstIncoming(String key) {
+        for (EbslGraphConnection connection : connections) {
+            if (connection.toKey().equals(key)) {
+                select(connection);
+                return;
+            }
+        }
+    }
+
+    private EbslGraphConnection selectedConnection() {
+        for (EbslGraphConnection connection : connections) {
+            if (connection.id().equals(selectedConnectionId)) {
+                return connection;
+            }
+        }
+        return null;
+    }
+
+    private void select(EbslGraphConnection connection) {
+        selectedConnectionId = connection.id();
+        selectedLabel.set(connection.label());
+        selectedMode.set(connection.mode() == EbslGraphConnectionMode.EACH_INPUT ? 1 : 0);
+    }
+
+    private void replaceSelected(EbslGraphConnection replacement) {
+        for (int i = 0; i < connections.size(); i++) {
+            if (connections.get(i).id().equals(selectedConnectionId)) {
+                connections.set(i, replacement);
+                select(replacement);
+                return;
+            }
+        }
     }
 }

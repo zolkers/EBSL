@@ -91,7 +91,10 @@ final class ImGuiScriptGraphView {
             layouts.add(new ScriptGraphNodeLayout(i, node, nodeX, nodeY, width, NODE_H * graphZoom));
         }
         Map<String, ScriptGraphNodeLayout> layoutByKey = layoutByKey(layouts);
-        connections.drawEdges(dl, layouts, layoutByKey, graphZoom);
+        if (connections.drawEdges(dl, layouts, layoutByKey, graphZoom)) {
+            selectedGraphNode = -1;
+            selectedGraphKey = "";
+        }
         for (ScriptGraphNodeLayout layout : layouts) {
             drawNode(dl, manager, layout, interactive);
         }
@@ -147,7 +150,7 @@ final class ImGuiScriptGraphView {
     }
 
     private void renderFloatingNodeInspector(EbslScriptManager manager, UiRect editor, List<EbslScriptGraphNode> nodes) {
-        if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
+        if (!connections.hasSelectedConnection() && (selectedGraphNode < 0 || selectedGraphNode >= nodes.size())) {
             return;
         }
         UiRect panel = new UiRect(editor.right() - 318, editor.y() + 48, 306, Math.round(Math.min(360.0f, editor.height() - 60.0f)));
@@ -160,6 +163,10 @@ final class ImGuiScriptGraphView {
         dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF26313D, 5.0f, 0, 1.0f);
 
         float pad = 12.0f;
+        if (connections.hasSelectedConnection()) {
+            renderEdgeInspector(manager, panel, pad);
+            return;
+        }
         if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
             ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + pad);
             ImGui.text("Node inspector");
@@ -300,12 +307,24 @@ final class ImGuiScriptGraphView {
         if (ImGui.invisibleButton("##ebsl-graph-node-" + index, width - portHit * 2.0f, height)) {
             selectedGraphNode = index;
             selectedGraphKey = "";
+            connections.clearSelection();
         }
         if (interactive) {
             dragNode(manager, key);
             connections.handlePorts(layout, graphZoom, () -> saveGraphLayout(manager), statusSink);
         }
         return width;
+    }
+
+    private void renderEdgeInspector(EbslScriptManager manager, UiRect panel, float pad) {
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF2F271A, 5.0f, 0, 1.0f);
+        ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + 12.0f);
+        connections.renderSelectedConnectionInspector(
+            () -> saveGraphLayout(manager),
+            statusSink,
+            Math.max(120.0f, panel.width() - pad * 2.0f)
+        );
     }
 
     private float nodeWidth(EbslScriptGraphNode node) {

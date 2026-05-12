@@ -113,8 +113,13 @@ public final class EbslScriptManager {
         JsonArray connections = new JsonArray();
         for (EbslGraphConnection connection : document.connections()) {
             JsonObject edge = new JsonObject();
+            edge.addProperty("id", connection.id());
             edge.addProperty("from", connection.fromKey());
             edge.addProperty("to", connection.toKey());
+            edge.addProperty("mode", connection.mode().id());
+            if (!connection.label().isBlank()) {
+                edge.addProperty("label", connection.label());
+            }
             connections.add(edge);
         }
         root.add("connections", connections);
@@ -169,8 +174,13 @@ public final class EbslScriptManager {
             }
             String from = edge.get("from").getAsString();
             String to = edge.get("to").getAsString();
+            String id = edge.has("id") ? edge.get("id").getAsString() : "";
+            EbslGraphConnectionMode mode = edge.has("mode")
+                ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
+                : EbslGraphConnectionMode.FLOW;
+            String label = edge.has("label") ? edge.get("label").getAsString() : "";
             if (!from.isBlank() && !to.isBlank() && !from.equals(to)) {
-                connections.add(new EbslGraphConnection(from, to));
+                connections.add(new EbslGraphConnection(id, from, to, mode, label));
             }
         }
         return connections;

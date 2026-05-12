@@ -13,6 +13,11 @@ final class GraphEdgePainter {
     }
 
     static void draw(ImDrawList dl, ScriptGraphNodeLayout from, ScriptGraphNodeLayout to, List<ScriptGraphNodeLayout> layouts, float graphZoom) {
+        draw(dl, from, to, layouts, graphZoom, false);
+    }
+
+    static void draw(ImDrawList dl, ScriptGraphNodeLayout from, ScriptGraphNodeLayout to,
+                     List<ScriptGraphNodeLayout> layouts, float graphZoom, boolean selected) {
         float portInset = 10.0f * graphZoom;
         float fromX = from.right() - portInset;
         float fromY = from.centerY();
@@ -29,7 +34,7 @@ final class GraphEdgePainter {
             startRouteY = fromY - direction * separation;
             endRouteY = toY + direction * separation;
         }
-        int color = to.node().depth() > 0 ? 0xAA67B7FF : 0xCC67B7FF;
+        int color = selected ? 0xFFFFD166 : (to.node().depth() > 0 ? 0xAA67B7FF : 0xCC67B7FF);
         List<GraphEdgeRouter.EdgePoint> route = GraphEdgeRouter.route(
             new GraphEdgeRouter.EdgePoint(startLaneX, startRouteY),
             new GraphEdgeRouter.EdgePoint(endLaneX, endRouteY),
@@ -45,8 +50,9 @@ final class GraphEdgePainter {
         }
         drawSegment(dl, endLaneX, endRouteY, endLaneX, toY, color);
         drawSegment(dl, endLaneX, toY, toX, toY, color);
-        dl.addCircleFilled(fromX, fromY, 3.5f, 0xFF67B7FF);
-        dl.addCircleFilled(toX, toY, 3.5f, 0xFF67B7FF);
+        int portColor = selected ? 0xFFFFD166 : 0xFF67B7FF;
+        dl.addCircleFilled(fromX, fromY, 3.5f, portColor);
+        dl.addCircleFilled(toX, toY, 3.5f, portColor);
     }
 
     private static boolean needsSeparatedPortLanes(float startA, float startB, float startY,

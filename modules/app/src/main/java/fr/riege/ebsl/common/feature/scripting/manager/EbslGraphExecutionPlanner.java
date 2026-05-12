@@ -29,16 +29,22 @@ public final class EbslGraphExecutionPlanner {
         }
 
         GraphSort sort = sort(lineByKey, document.connections());
-        if (!sort.usedGraph()) {
+        if (!sort.usedGraph() && !hasEachInputEdges(lineByKey, document.connections())) {
             return source;
         }
-        List<GraphLine> ordered = new ArrayList<>(sort.ordered());
+        List<GraphLine> ordered = new ArrayList<>(sort.usedGraph() ? sort.ordered() : List.of());
         for (GraphLine line : lines) {
             if (!sort.visited().contains(line.key())) {
                 ordered.add(line);
             }
         }
-        return joinLines(ordered);
+        return joinLines(materializeEachInputEdges(ordered, lineByKey, document.connections()));
+    }
+
+    private static boolean hasEachInputEdges(Map<String, GraphLine> lines, List<EbslGraphConnection> connections) {
+        return connections.stream().anyMatch(connection -> connection.mode() == EbslGraphConnectionMode.EACH_INPUT
+            && lines.containsKey(connection.fromKey())
+            && lines.containsKey(connection.toKey()));
     }
 
     private static GraphSort sort(Map<String, GraphLine> lines, List<EbslGraphConnection> connections) {
@@ -50,7 +56,9 @@ public final class EbslGraphExecutionPlanner {
         }
         boolean usedGraph = false;
         for (EbslGraphConnection connection : connections) {
-            if (!lines.containsKey(connection.fromKey()) || !lines.containsKey(connection.toKey())) {
+            if (connection.mode() != EbslGraphConnectionMode.FLOW
+                || !lines.containsKey(connection.fromKey())
+                || !lines.containsKey(connection.toKey())) {
                 continue;
             }
             if (outgoing.get(connection.fromKey()).contains(connection.toKey())) {
@@ -94,6 +102,37 @@ public final class EbslGraphExecutionPlanner {
             return GraphSort.unused();
         }
         return new GraphSort(true, ordered, visited);
+    }
+
+    private static List<GraphLine> materializeEachInputEdges(List<GraphLine> ordered,
+                                                             Map<String, GraphLine> lines,
+                                                             List<EbslGraphConnection> connections) {
+        Map<String, List<EbslGraphConnection>> eachInputByFrom = new HashMap<>();
+        for (EbslGraphConnection connection : connections) {
+            if (connection.mode() == EbslGraphConnectionMode.EACH_INPUT
+                && lines.containsKey(connection.fromKey())
+                && lines.containsKey(connection.toKey())) {
+                eachInputByFrom.computeIfAbsent(connection.fromKey(), ignored -> new ArrayList<>()).add(connection);
+            }
+        }
+        if (eachInputByFrom.isEmpty()) {
+            return ordered;
+        }
+        List<GraphLine> expanded = new ArrayList<>();
+        for (GraphLine line : ordered) {
+            expanded.add(line);
+            for (EbslGraphConnection connection : eachInputByFrom.getOrDefault(line.key(), List.of())) {
+                GraphLine target = lines.get(connection.toKey());
+                String label = connection.label().isBlank() ? "" : " " + connection.label();
+                expanded.add(new GraphLine(
+                    target.lineNumber(),
+                    target.key() + "#" + connection.id(),
+                    "# graph edge " + connection.mode().id() + label
+                ));
+                expanded.add(target);
+            }
+        }
+        return expanded;
     }
 
     private static List<GraphLine> graphLines(String source, IntFunction<String> keyFactory) {

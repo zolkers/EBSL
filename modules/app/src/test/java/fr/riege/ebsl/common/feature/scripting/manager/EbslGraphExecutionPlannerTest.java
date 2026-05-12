@@ -52,6 +52,57 @@ final class EbslGraphExecutionPlannerTest {
     }
 
     @Test
+    void supportsMultipleFlowInputsToSameNodeWithoutDuplicatingIt() {
+        EbslGraphDocument graph = new EbslGraphDocument(
+            Map.of(),
+            List.of(
+                new EbslGraphConnection("main.ebsl:1", "main.ebsl:3"),
+                new EbslGraphConnection("main.ebsl:2", "main.ebsl:3")
+            )
+        );
+
+        String planned = EbslGraphExecutionPlanner.plan("main.ebsl", """
+            message first
+            message second
+            message merged
+            """, graph);
+
+        assertEquals("""
+            message first
+            message second
+            message merged
+            """, planned);
+    }
+
+    @Test
+    void eachInputLinksMaterializeAnExplicitExtraExecutionInGeneratedCode() {
+        EbslGraphDocument graph = new EbslGraphDocument(
+            Map.of(),
+            List.of(new EbslGraphConnection(
+                "edge-a",
+                "main.ebsl:1",
+                "main.ebsl:3",
+                EbslGraphConnectionMode.EACH_INPUT,
+                "retry"
+            ))
+        );
+
+        String planned = EbslGraphExecutionPlanner.plan("main.ebsl", """
+            message first
+            message second
+            message target
+            """, graph);
+
+        assertEquals("""
+            message first
+            # graph edge each_input retry
+            message target
+            message second
+            message target
+            """, planned);
+    }
+
+    @Test
     void keepsBlockScriptsTextOrdered() {
         EbslGraphDocument graph = new EbslGraphDocument(
             Map.of(),
