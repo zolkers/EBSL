@@ -1,4 +1,5 @@
 plugins {
+    id 'idea'
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
 
@@ -11,6 +12,18 @@ subprojects {
     
     plugins.withId('java') {
         tasks.withType(Jar).configureEach { zip64 = true }
+    }
+}
+
+allprojects {
+    apply plugin: 'idea'
+
+    idea {
+        module {
+            name = project == rootProject
+                ? rootProject.name
+                : project.path.substring(1).replace(':', '-')
+        }
     }
 }
 

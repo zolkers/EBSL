@@ -48,6 +48,8 @@ public final class PathfinderSettings extends Settingable {
         "render_fly_color", "Fly path", 0xE6C792EA));
     public final DoubleSetting walkCost = registerSetting(new DoubleSetting("walk_cost", "Walk", 0.0, 0.0, 10.0));
     public final DoubleSetting diagonalCost = registerSetting(new DoubleSetting("diagonal_cost", "Diagonal", 0.0, 0.0, 10.0));
+    public final DoubleSetting stepUpCost = registerSetting(new DoubleSetting("step_up_cost", "Step up", 1.0, 0.0, 20.0));
+    public final DoubleSetting stepDownCost = registerSetting(new DoubleSetting("step_down_cost", "Step down", 0.25, 0.0, 20.0));
     public final DoubleSetting fullStepAscentBaseCost = registerSetting(new DoubleSetting(
         "full_step_ascent_base_cost", "Full step ascent base", 1.0, 0.0, 20.0));
     public final DoubleSetting fullStepAscentDyCost = registerSetting(new DoubleSetting(
@@ -341,6 +343,8 @@ public final class PathfinderSettings extends Settingable {
         return List.of(
             INSTANCE.walkCost,
             INSTANCE.diagonalCost,
+            INSTANCE.stepUpCost,
+            INSTANCE.stepDownCost,
             INSTANCE.fullStepAscentBaseCost,
             INSTANCE.fullStepAscentDyCost,
             INSTANCE.partialAscentCost,

@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'ebsl'
+rootProject.name = 'EBSL'
 include('app')
 include('common')
 include('common:base')

@@ -29,6 +29,8 @@ public final class LayerPathProcessor implements NodeProcessor {
     private double maxJumpHeight = DEFAULT_MOB_JUMP_HEIGHT;
     private double walkCost;
     private double diagonalCost;
+    private double stepUpCost;
+    private double stepDownCost;
     private double swimCost;
     private double climbCost;
     private double partialAscentCost;
@@ -150,10 +152,12 @@ public final class LayerPathProcessor implements NodeProcessor {
         double additionalCost = movementTypeCost(currentPoint, previousPoint, dy, diagonalMove, partialAscent);
 
         if (dy > ASCENT_DY_THRESHOLD) {
+            additionalCost += stepUpCost;
             if (fullStepSupport) {
                 additionalCost += fullStepAscentDyCost * dy + fullStepAscentBaseCost;
             }
         } else if (dy < DESCENT_DY_THRESHOLD) {
+            additionalCost += stepDownCost;
             additionalCost += fallDyCost * Math.abs(dy);
         }
 
@@ -330,6 +334,8 @@ public final class LayerPathProcessor implements NodeProcessor {
         maxJumpHeight = Math.max(DEFAULT_MOB_JUMP_HEIGHT, settings.maxJumpHeight.value());
         walkCost = settings.walkCost.value();
         diagonalCost = settings.diagonalCost.value();
+        stepUpCost = settings.stepUpCost.value();
+        stepDownCost = settings.stepDownCost.value();
         swimCost = settings.swimCost.value();
         climbCost = settings.climbCost.value();
         partialAscentCost = settings.partialAscentCost.value();
