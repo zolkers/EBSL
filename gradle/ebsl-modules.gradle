@@ -1,0 +1,22 @@
+ext {
+    ebslContractModules = [
+        ':common:base',
+        ':common:events',
+        ':common:world-api',
+        ':common:render-api',
+        ':common:platform-api'
+    ]
+
+    ebslPathfinderModules = [
+        ':common:pathfinder-core',
+        ':common:pathfinder-execution',
+        ':common:pathfinder-debug'
+    ]
+
+    ebslNavigationModules = [
+        ':common:navigation'
+    ]
+
+    ebslRuntimeClassModules =
+        ebslContractModules + ebslPathfinderModules + ebslNavigationModules + [':app']
+}

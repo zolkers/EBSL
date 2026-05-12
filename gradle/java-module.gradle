@@ -1,0 +1,33 @@
+apply plugin: 'java-library'
+
+group = 'fr.riege.ebsl'
+version = rootProject.findProperty('mod_version') ?: '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.named('compileJava') {
+    doLast {
+        def sources = fileTree('src/main/java').filter { it.name.endsWith('.java') }
+        sources.each { file ->
+            def content = file.text
+            if (content.contains('net.minecraft.') || content.contains('net.fabricmc.')) {
+                throw new GradleException("Minecraft/Fabric import detected in ${project.path}: ${file.path}")
+            }
+        }
+    }
+}

@@ -1,0 +1,28 @@
+apply from: rootProject.file('gradle/java-module.gradle')
+
+dependencies {
+    api project(':common:base')
+    api project(':common:world-api')
+    api 'it.unimi.dsi:fastutil:8.5.15'
+}
+
+tasks.named('compileJava') {
+    doLast {
+        def forbiddenImports = [
+            'fr.riege.ebsl.common.feature.',
+            'fr.riege.ebsl.common.platform.layer.',
+            'fr.riege.ebsl.common.platform.render.',
+            'fr.riege.ebsl.common.pathfinding.debug.',
+            'fr.riege.ebsl.common.pathfinding.execution.',
+            'fr.riege.ebsl.common.pathfinding.rotation.'
+        ]
+
+        fileTree('src/main/java').matching { include '**/*.java' }.each { file ->
+            def content = file.text
+            def forbiddenImport = forbiddenImports.find { content.contains(it) }
+            if (forbiddenImport != null) {
+                throw new GradleException("Forbidden pathfinder-core import '${forbiddenImport}' in ${file.path}")
+            }
+        }
+    }
+}

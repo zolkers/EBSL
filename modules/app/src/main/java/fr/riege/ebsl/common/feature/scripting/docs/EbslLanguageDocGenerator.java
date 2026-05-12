@@ -1,0 +1,156 @@
+package fr.riege.ebsl.common.feature.scripting.docs;
+
+import fr.riege.ebsl.common.domain.world.BlockGroupType;
+import fr.riege.ebsl.common.domain.world.BlockSelectorOperator;
+import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
+import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
+import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+
+public final class EbslLanguageDocGenerator {
+    private EbslLanguageDocGenerator() {
+    }
+
+    public static EbslLanguageDoc generate() {
+        return new EbslLanguageDoc(List.of(
+            new EbslLanguageDocSection("Nodes", nodeEntries()),
+            new EbslLanguageDocSection("Control Blocks", controlEntries()),
+            new EbslLanguageDocSection("Sensors", sensorEntries()),
+            new EbslLanguageDocSection("Operators", operatorEntries()),
+            new EbslLanguageDocSection("Block Selectors", blockSelectorEntries())
+        ));
+    }
+
+    private static List<EbslLanguageDocEntry> nodeEntries() {
+        return EbslNodeRegistry.canonicalNodes().stream()
+            .map(EbslLanguageDocGenerator::nodeEntry)
+            .sorted(Comparator.comparing(EbslLanguageDocEntry::id))
+            .toList();
+    }
+
+    private static EbslLanguageDocEntry nodeEntry(EbslNode node) {
+        EbslNodeTemplate template = EbslNodeTemplate.of(node);
+        return new EbslLanguageDocEntry(
+            node.id(),
+            template.title(),
+            template.description(),
+            usage(node.id(), template.argsHint()),
+            template.sampleLine(),
+            node.aliases(),
+            node.fields().stream().map(EbslLanguageDocGenerator::fieldParameter).toList()
+        );
+    }
+
+    private static List<EbslLanguageDocEntry> controlEntries() {
+        return Arrays.stream(EbslBlockStatementType.values())
+            .map(type -> new EbslLanguageDocEntry(
+                type.id(),
+                title(type.id()),
+                "Script block statement.",
+                usage(type.id(), "condition|count block"),
+                type.id() + " {\n}",
+                type.aliases(),
+                List.of()
+            ))
+            .toList();
+    }
+
+    private static List<EbslLanguageDocEntry> sensorEntries() {
+        return EbslSensorRegistry.definitions().stream()
+            .map(sensor -> new EbslLanguageDocEntry(
+                sensor.id(),
+                title(sensor.id()),
+                "Boolean sensor usable in conditions.",
+                usage(sensor.id(), sensor.parameters().stream().map(EbslSensorRegistry.SensorParameter::id).reduce((a, b) -> a + " " + b).orElse("")),
+                usage(sensor.id(), sensor.parameters().stream().map(EbslSensorRegistry.SensorParameter::defaultValue).reduce((a, b) -> a + " " + b).orElse("")),
+                List.of(),
+                sensor.parameters().stream()
+                    .map(parameter -> new EbslLanguageDocParameter(
+                        parameter.id(),
+                        parameter.label(),
+                        parameter.defaultValue(),
+                        EbslNodeFieldHelp.description(sensor.id(), parameter.id())))
+                    .toList()
+            ))
+            .sorted(Comparator.comparing(EbslLanguageDocEntry::id))
+            .toList();
+    }
+
+    private static List<EbslLanguageDocEntry> operatorEntries() {
+        return Arrays.stream(EbslConditionOperatorType.values())
+            .map(type -> new EbslLanguageDocEntry(
+                type.id(),
+                title(type.id()),
+                "Condition operator.",
+                "left " + type.id() + " right",
+                "value " + type.id() + " 1",
+                type.aliases(),
+                List.of()
+            ))
+            .toList();
+    }
+
+    private static List<EbslLanguageDocEntry> blockSelectorEntries() {
+        List<EbslLanguageDocEntry> entries = new ArrayList<>();
+        for (BlockSelectorOperator operator : BlockSelectorOperator.values()) {
+            entries.add(new EbslLanguageDocEntry(
+                operator.name().toLowerCase(Locale.ROOT),
+                operator.name(),
+                "Block selector logical operator.",
+                "selector " + operator.token() + " selector",
+                "leaf" + operator.token() + "wood",
+                List.of(operator.token()),
+                List.of()
+            ));
+        }
+        for (BlockGroupType group : BlockGroupType.values()) {
+            entries.add(new EbslLanguageDocEntry(
+                group.name().toLowerCase(Locale.ROOT),
+                title(group.name()),
+                "Registered block selector predicate.",
+                String.join("|", group.tokens()),
+                group.tokens()[0],
+                Arrays.stream(group.tokens()).skip(1).toList(),
+                List.of()
+            ));
+        }
+        return List.copyOf(entries);
+    }
+
+    private static EbslLanguageDocParameter fieldParameter(EbslNodeField field) {
+        return new EbslLanguageDocParameter(
+            field.id(),
+            field.label(),
+            field.defaultValue(),
+            field.description());
+    }
+
+    private static String usage(String id, String args) {
+        return args == null || args.isBlank() ? id : id + " " + args;
+    }
+
+    private static String title(String id) {
+        String normalized = id == null ? "" : id.toLowerCase(Locale.ROOT);
+        StringBuilder title = new StringBuilder();
+        for (String part : normalized.split("_")) {
+            if (part.isBlank()) {
+                continue;
+            }
+            if (!title.isEmpty()) {
+                title.append(' ');
+            }
+            title.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return title.toString();
+    }
+}
