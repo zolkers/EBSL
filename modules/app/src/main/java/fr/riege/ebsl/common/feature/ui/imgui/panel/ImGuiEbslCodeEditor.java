@@ -81,7 +81,7 @@ final class ImGuiEbslCodeEditor {
         EbslCodeEditorStyle style = EbslCodeEditorStyle.DARK;
         List<List<EbslSyntaxToken>> lines = EbslSyntaxHighlighter.highlight(source.get());
         float lineHeight = ImGui.getTextLineHeight();
-        int visible = Math.min(lines.size(), Math.max(1, (int) ((textArea.height() - style.textPadding()) / lineHeight)));
+        int visible = Math.clamp((int) ((textArea.height() - style.textPadding()) / lineHeight), 1, lines.size());
         dl.pushClipRect(textArea.x(), textArea.y(), textArea.right(), textArea.bottom(), true);
         for (int lineIndex = 0; lineIndex < visible; lineIndex++) {
             float x = textArea.x() + style.textPadding();
@@ -118,7 +118,7 @@ final class ImGuiEbslCodeEditor {
     private static void drawLineNumbers(ImDrawList dl, UiRect gutter, ImString source) {
         int count = lineCount(source);
         float lineHeight = ImGui.getTextLineHeight();
-        int visible = Math.min(count, Math.max(1, (int) ((gutter.height() - 12) / lineHeight)));
+        int visible = Math.clamp((int) ((gutter.height() - 12) / lineHeight), 1, count);
         for (int i = 0; i < visible; i++) {
             dl.addText(gutter.x() + 12.0f, gutter.y() + 8.0f + i * lineHeight, UiTheme.TEXT_DIM, Integer.toString(i + 1));
         }
