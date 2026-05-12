@@ -315,7 +315,7 @@ public final class EbslScriptTask extends Settingable implements BotTask {
             if (inlineSource != null) {
                 return inlineSource;
             }
-            return platform.storage().loadText(EbslScriptManager.path(fileName)).orElse(EbslScriptManager.DEFAULT_SOURCE);
+            return new EbslScriptManager(platform.storage()).executableSource(fileName);
         }
     }
 }

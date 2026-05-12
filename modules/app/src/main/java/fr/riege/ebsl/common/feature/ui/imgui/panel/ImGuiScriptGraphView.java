@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphDocument;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphNodePosition;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
@@ -10,6 +11,7 @@ import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
 import fr.riege.ebsl.common.feature.ui.imgui.graph.EbslGraphAutoLayout;
 import fr.riege.ebsl.common.feature.ui.imgui.graph.EbslScriptGraphNode;
@@ -41,6 +43,7 @@ final class ImGuiScriptGraphView {
     private final ImString selectedArgs = new ImString("", 512);
     private final Map<String, ImString> settingTextValues = new HashMap<>();
     private final Map<String, NodePosition> graphNodePositions = new HashMap<>();
+    private final ScriptGraphConnectionEditor connections = new ScriptGraphConnectionEditor();
     private String loadedFile = "";
     private int selectedGraphNode = -1;
     private String selectedGraphKey = "";
@@ -87,12 +90,12 @@ final class ImGuiScriptGraphView {
             float width = nodeWidth(node);
             layouts.add(new ScriptGraphNodeLayout(i, node, nodeX, nodeY, width, NODE_H * graphZoom));
         }
-        for (int i = 1; i < layouts.size(); i++) {
-            GraphEdgePainter.draw(dl, layouts.get(i - 1), layouts.get(i), layouts, graphZoom);
-        }
+        Map<String, ScriptGraphNodeLayout> layoutByKey = layoutByKey(layouts);
+        connections.drawEdges(dl, layouts, layoutByKey, graphZoom);
         for (ScriptGraphNodeLayout layout : layouts) {
-            drawNode(dl, manager, layout.index(), layout.node().key(), layout.x(), layout.y(), layout.node(), layout.width());
+            drawNode(dl, manager, layout, interactive);
         }
+        connections.finishDrag(dl, layoutByKey, graphZoom, () -> saveGraphLayout(manager), statusSink);
         if (nodes.isEmpty()) {
             dl.addText(canvas.x() + 20.0f, canvas.y() + 20.0f, UiTheme.TEXT_MUTED, "Empty script");
         }
@@ -107,9 +110,11 @@ final class ImGuiScriptGraphView {
     void loadGraphLayout(EbslScriptManager manager, String loadedFile) {
         this.loadedFile = loadedFile;
         graphNodePositions.clear();
-        for (Map.Entry<String, EbslGraphNodePosition> entry : manager.loadGraphLayout(loadedFile).entrySet()) {
+        EbslGraphDocument document = manager.loadGraphDocument(loadedFile);
+        for (Map.Entry<String, EbslGraphNodePosition> entry : document.positions().entrySet()) {
             graphNodePositions.put(entry.getKey(), new NodePosition(entry.getValue().x(), entry.getValue().y()));
         }
+        connections.load(document.connections());
     }
 
     private void renderGraphToolbar(UiRect editor, EbslScriptManager manager) {
@@ -126,13 +131,19 @@ final class ImGuiScriptGraphView {
             autoLayoutGraph(manager);
         }
         ImGui.sameLine();
+        if (ImGui.button("Run flow", 74.0f, 22.0f)) {
+            manager.save(loadedFile, source.get());
+            EbslScriptTask.INSTANCE.runFile(loadedFile);
+            statusSink.accept("executed flow");
+        }
+        ImGui.sameLine();
         if (ImGui.button("Reset view", 82.0f, 22.0f)) {
             graphPanX = 0.0f;
             graphPanY = 0.0f;
             graphZoom = 1.0f;
         }
         ImGui.sameLine();
-        ImGui.textDisabled("auto layout | drag nodes | right-drag canvas | wheel zoom");
+        ImGui.textDisabled("drag ports to connect | detach in inspector | right-drag canvas | wheel zoom");
     }
 
     private void renderFloatingNodeInspector(EbslScriptManager manager, UiRect editor, List<EbslScriptGraphNode> nodes) {
@@ -192,6 +203,11 @@ final class ImGuiScriptGraphView {
             applyNodeEdit(manager, node, ebslNode);
         }
         ImGui.sameLine();
+        if (ImGui.button("Run", 52.0f, 24.0f)) {
+            EbslScriptTask.INSTANCE.runInline(node.line());
+            statusSink.accept("executed node");
+        }
+        ImGui.sameLine();
         if (ImGui.button("Duplicate", 82.0f, 24.0f)) {
             duplicateNodeLine(manager, node);
         }
@@ -207,6 +223,10 @@ final class ImGuiScriptGraphView {
             } else {
                 selectedArgs.set(template.sampleArgs());
             }
+        }
+        ImGui.sameLine();
+        if (ImGui.button("Detach", 72.0f, 24.0f)) {
+            connections.detachNode(node.key(), () -> saveGraphLayout(manager), statusSink);
         }
     }
 
@@ -256,7 +276,13 @@ final class ImGuiScriptGraphView {
         });
     }
 
-    private float drawNode(ImDrawList dl, EbslScriptManager manager, int index, String key, float x, float y, EbslScriptGraphNode node, float width) {
+    private float drawNode(ImDrawList dl, EbslScriptManager manager, ScriptGraphNodeLayout layout, boolean interactive) {
+        int index = layout.index();
+        String key = layout.node().key();
+        float x = layout.x();
+        float y = layout.y();
+        EbslScriptGraphNode node = layout.node();
+        float width = layout.width();
         float height = NODE_H * graphZoom;
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         int fill = selectedGraphNode == index ? 0xFF22364A : EbslNodeCategoryColors.body(node.category());
@@ -269,12 +295,16 @@ final class ImGuiScriptGraphView {
         dl.addText(x + 20.0f * graphZoom, y + 24.0f * graphZoom, UiTheme.TEXT_MUTED, node.command());
         dl.addText(x + 20.0f * graphZoom, y + 40.0f * graphZoom, UiTheme.TEXT_DIM, node.args().isBlank() ? template.argsHint() : node.args());
 
-        ImGui.setCursorScreenPos(x, y);
-        if (ImGui.invisibleButton("##ebsl-graph-node-" + index, width, height)) {
+        float portHit = Math.max(18.0f, 18.0f * graphZoom);
+        ImGui.setCursorScreenPos(x + portHit, y);
+        if (ImGui.invisibleButton("##ebsl-graph-node-" + index, width - portHit * 2.0f, height)) {
             selectedGraphNode = index;
             selectedGraphKey = "";
         }
-        dragNode(manager, key);
+        if (interactive) {
+            dragNode(manager, key);
+            connections.handlePorts(layout, graphZoom, () -> saveGraphLayout(manager), statusSink);
+        }
         return width;
     }
 
@@ -398,13 +428,16 @@ final class ImGuiScriptGraphView {
     private void duplicateNodeLine(EbslScriptManager manager, EbslScriptGraphNode node) {
         mutateSourceLine(node.lineNumber(), node.line(), LineMutation.DUPLICATE);
         shiftGraphPositionsAfterInsert(node.lineNumber());
+        connections.shiftAfterInsert(node.lineNumber(), this::layoutLine, this::layoutKey);
         saveGraphLayout(manager);
         statusSink.accept("duplicated node");
     }
 
     private void deleteNodeLine(EbslScriptManager manager, EbslScriptGraphNode node) {
         mutateSourceLine(node.lineNumber(), "", LineMutation.DELETE);
+        connections.removeNode(node.key());
         shiftGraphPositionsAfterDelete(node.lineNumber());
+        connections.shiftAfterDelete(node.lineNumber(), this::layoutLine, this::layoutKey);
         selectedGraphNode = -1;
         selectedGraphKey = "";
         saveGraphLayout(manager);
@@ -432,7 +465,7 @@ final class ImGuiScriptGraphView {
         for (Map.Entry<String, NodePosition> entry : graphNodePositions.entrySet()) {
             positions.put(entry.getKey(), new EbslGraphNodePosition(entry.getValue().x(), entry.getValue().y()));
         }
-        manager.saveGraphLayout(loadedFile, positions);
+        manager.saveGraphDocument(loadedFile, new EbslGraphDocument(positions, connections.connections()));
     }
 
     private void autoLayoutGraph(EbslScriptManager manager) {
@@ -442,6 +475,14 @@ final class ImGuiScriptGraphView {
         }
         saveGraphLayout(manager);
         statusSink.accept("auto layout");
+    }
+
+    private static Map<String, ScriptGraphNodeLayout> layoutByKey(List<ScriptGraphNodeLayout> layouts) {
+        Map<String, ScriptGraphNodeLayout> byKey = new HashMap<>();
+        for (ScriptGraphNodeLayout layout : layouts) {
+            byKey.put(layout.node().key(), layout);
+        }
+        return byKey;
     }
 
     private String layoutKey(int lineNumber) {

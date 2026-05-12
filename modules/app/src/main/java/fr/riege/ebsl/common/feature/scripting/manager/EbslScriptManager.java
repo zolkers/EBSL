@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +40,12 @@ public final class EbslScriptManager {
         String normalized = normalizeFileName(fileName);
         String source = storage.loadText(path(normalized)).orElse(DEFAULT_SOURCE);
         return new EbslScriptDocument(normalized, source);
+    }
+
+    public String executableSource(String fileName) {
+        String normalized = normalizeFileName(fileName);
+        String source = storage.loadText(path(normalized)).orElse(DEFAULT_SOURCE);
+        return EbslGraphExecutionPlanner.plan(normalized, source, loadGraphDocument(normalized));
     }
 
     public EbslScriptDocument create(String fileName) {
@@ -81,23 +89,52 @@ public final class EbslScriptManager {
     }
 
     public Map<String, EbslGraphNodePosition> loadGraphLayout(String fileName) {
-        return storage.loadText(graphLayoutPath(fileName)).map(this::parseGraphLayout).orElseGet(Map::of);
+        return loadGraphDocument(fileName).positions();
     }
 
     public void saveGraphLayout(String fileName, Map<String, EbslGraphNodePosition> positions) {
+        saveGraphDocument(fileName, new EbslGraphDocument(positions, List.of()));
+    }
+
+    public EbslGraphDocument loadGraphDocument(String fileName) {
+        return storage.loadText(graphLayoutPath(fileName)).map(this::parseGraphDocument).orElseGet(EbslGraphDocument::empty);
+    }
+
+    public void saveGraphDocument(String fileName, EbslGraphDocument document) {
         JsonObject root = new JsonObject();
-        for (Map.Entry<String, EbslGraphNodePosition> entry : positions.entrySet()) {
+        JsonObject positions = new JsonObject();
+        for (Map.Entry<String, EbslGraphNodePosition> entry : document.positions().entrySet()) {
             JsonObject node = new JsonObject();
             node.addProperty("x", entry.getValue().x());
             node.addProperty("y", entry.getValue().y());
-            root.add(entry.getKey(), node);
+            positions.add(entry.getKey(), node);
         }
+        root.add("positions", positions);
+        JsonArray connections = new JsonArray();
+        for (EbslGraphConnection connection : document.connections()) {
+            JsonObject edge = new JsonObject();
+            edge.addProperty("from", connection.fromKey());
+            edge.addProperty("to", connection.toKey());
+            connections.add(edge);
+        }
+        root.add("connections", connections);
         storage.saveText(graphLayoutPath(fileName), root.toString());
     }
 
-    private Map<String, EbslGraphNodePosition> parseGraphLayout(String json) {
+    private EbslGraphDocument parseGraphDocument(String json) {
         try {
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            JsonObject positionRoot = root.has("positions") && root.get("positions").isJsonObject()
+                ? root.getAsJsonObject("positions")
+                : root;
+            return new EbslGraphDocument(parseGraphPositions(positionRoot), parseGraphConnections(root));
+        } catch (RuntimeException exception) {
+            return EbslGraphDocument.empty();
+        }
+    }
+
+    private Map<String, EbslGraphNodePosition> parseGraphPositions(JsonObject root) {
+        try {
             Map<String, EbslGraphNodePosition> positions = new HashMap<>();
             for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
                 if (!entry.getValue().isJsonObject()) {
@@ -115,6 +152,28 @@ public final class EbslScriptManager {
         } catch (RuntimeException exception) {
             return Map.of();
         }
+    }
+
+    private List<EbslGraphConnection> parseGraphConnections(JsonObject root) {
+        if (!root.has("connections") || !root.get("connections").isJsonArray()) {
+            return List.of();
+        }
+        List<EbslGraphConnection> connections = new ArrayList<>();
+        for (JsonElement element : root.getAsJsonArray("connections")) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject edge = element.getAsJsonObject();
+            if (!edge.has("from") || !edge.has("to")) {
+                continue;
+            }
+            String from = edge.get("from").getAsString();
+            String to = edge.get("to").getAsString();
+            if (!from.isBlank() && !to.isBlank() && !from.equals(to)) {
+                connections.add(new EbslGraphConnection(from, to));
+            }
+        }
+        return connections;
     }
 
     private static String graphLayoutPath(String fileName) {
