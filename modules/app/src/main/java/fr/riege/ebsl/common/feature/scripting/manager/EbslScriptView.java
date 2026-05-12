@@ -1,8 +1,8 @@
 package fr.riege.ebsl.common.feature.scripting.manager;
 
 public enum EbslScriptView {
-    CODE("Code"),
-    GRAPH("Graph");
+    GRAPH("Graph"),
+    CODE("Code");
 
     private final String label;
 

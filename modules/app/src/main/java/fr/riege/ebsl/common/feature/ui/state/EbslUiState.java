@@ -13,7 +13,7 @@ public final class EbslUiState {
     private RightPanelMode rightPanelMode = RightPanelMode.MODULE_LIST;
     private PathfinderModule selectedModule;
     private BotTask selectedTask;
-    private EbslScriptView scriptView = EbslScriptView.CODE;
+    private EbslScriptView scriptView = EbslScriptView.GRAPH;
     private String selectedScriptFile = EbslScriptManager.DEFAULT_FILE;
     private String pendingScriptInsert = "";
     private int scriptRevision;
