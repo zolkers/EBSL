@@ -5,6 +5,9 @@ import fr.riege.ebsl.common.pathfinding.ProcessedPath;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityContext;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityRegistry;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.Collection;
@@ -16,10 +19,23 @@ public record PathPlan(
     List<PathPosition> positions,
     List<Node> rawNodes,
     List<Node> navigationNodes,
-    double pathLength
+    double pathLength,
+    PathQualityReport quality
 ) {
+    public PathPlan {
+        quality = quality == null ? PathQualityReport.UNKNOWN : quality;
+    }
+
     public static PathPlan empty(PathfinderResult result, PathfinderConfiguration configuration) {
-        return new PathPlan(result, configuration, List.of(), List.of(), List.of(), 0.0);
+        PathQualityReport quality = PathQualityRegistry.evaluate(new PathQualityContext(
+            result,
+            configuration,
+            List.of(),
+            List.of(),
+            List.of(),
+            0.0
+        ));
+        return new PathPlan(result, configuration, List.of(), List.of(), List.of(), 0.0, quality);
     }
 
     public static PathPlan from(PathfinderResult result,
@@ -30,15 +46,25 @@ public record PathPlan(
             ? List.copyOf(list)
             : List.copyOf(positions);
         if (processedPath == null) {
-            return new PathPlan(result, configuration, positionList, List.of(), List.of(), 0.0);
+            PathQualityReport quality = PathQualityRegistry.evaluate(PathQualityContext.of(result, configuration, positionList));
+            return new PathPlan(result, configuration, positionList, List.of(), List.of(), 0.0, quality);
         }
+        PathQualityReport quality = PathQualityRegistry.evaluate(new PathQualityContext(
+            result,
+            configuration,
+            positionList,
+            processedPath.rawNodes(),
+            processedPath.navigationPath(),
+            processedPath.pathLength()
+        ));
         return new PathPlan(
             result,
             configuration,
             positionList,
             List.copyOf(processedPath.rawNodes()),
             List.copyOf(processedPath.navigationPath()),
-            processedPath.pathLength());
+            processedPath.pathLength(),
+            quality);
     }
 
     public boolean successful() {

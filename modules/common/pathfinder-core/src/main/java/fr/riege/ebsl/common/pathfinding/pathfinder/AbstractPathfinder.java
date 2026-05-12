@@ -15,6 +15,8 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityContext;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityRegistry;
 import fr.riege.ebsl.common.pathfinding.result.PathImpl;
 import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -101,8 +103,8 @@ public abstract class AbstractPathfinder implements Pathfinder {
                 }
             }
             if (!startValid) {
-                return new PathfinderResultImpl(PathState.FAILED,
-                        new PathImpl(start, target, EMPTY_PATH_POSITIONS));
+                return quality(new PathfinderResultImpl(PathState.FAILED,
+                        new PathImpl(start, target, EMPTY_PATH_POSITIONS)));
             }
 
             PrimitiveMinHeap openSet = new PrimitiveMinHeap(1024);
@@ -128,30 +130,30 @@ public abstract class AbstractPathfinder implements Pathfinder {
                 }
 
                 if (hasReachedPathLengthLimit(currentNode)) {
-                    return new PathfinderResultImpl(PathState.LENGTH_LIMITED,
-                            reconstructPath(start, target, currentNode));
+                    return quality(new PathfinderResultImpl(PathState.LENGTH_LIMITED,
+                            reconstructPath(start, target, currentNode)));
                 }
 
                 if (currentNode.isTarget(target)) {
-                    return new PathfinderResultImpl(PathState.FOUND,
-                            reconstructPath(start, target, currentNode));
+                    return quality(new PathfinderResultImpl(PathState.FOUND,
+                            reconstructPath(start, target, currentNode)));
                 }
 
                 Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
                 if (reachedTarget != null) {
-                    return new PathfinderResultImpl(PathState.FOUND,
-                            reconstructPath(start, target, reachedTarget));
+                    return quality(new PathfinderResultImpl(PathState.FOUND,
+                            reconstructPath(start, target, reachedTarget)));
                 }
 
                 Node earlyFallbackNode = bestFallbackNode(bestFallbackNode);
                 if (shouldReturnEarlyFallback(currentDepth, earlyFallbackCheckEvery, startedAtNanos, startNode,
                         earlyFallbackNode)) {
-                    return new PathfinderResultImpl(PathState.FALLBACK,
-                            reconstructPath(start, target, earlyFallbackNode));
+                    return quality(new PathfinderResultImpl(PathState.FALLBACK,
+                            reconstructPath(start, target, earlyFallbackNode)));
                 }
                 if (shouldReturnTimeBudgetFallback(startedAtNanos, startNode, earlyFallbackNode)) {
-                    return new PathfinderResultImpl(PathState.FALLBACK,
-                            reconstructPath(start, target, earlyFallbackNode));
+                    return quality(new PathfinderResultImpl(PathState.FALLBACK,
+                            reconstructPath(start, target, earlyFallbackNode)));
                 }
             }
 
@@ -159,8 +161,8 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
         } catch (Exception e) {
             LOGGER.error("Pathfinding failed from {} to {}", start, target, e);
-            return new PathfinderResultImpl(PathState.FAILED,
-                    new PathImpl(start, target, EMPTY_PATH_POSITIONS));
+            return quality(new PathfinderResultImpl(PathState.FAILED,
+                    new PathImpl(start, target, EMPTY_PATH_POSITIONS)));
         } finally {
             for (NodeProcessor p : processors) {
                 try {
@@ -183,14 +185,14 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
     private PathfinderResult createAbortedResult(PathPosition start, PathPosition target, Node fallbackNode) {
         abortRequested.set(false);
-        return new PathfinderResultImpl(PathState.ABORTED, reconstructPath(start, target, fallbackNode));
+        return quality(new PathfinderResultImpl(PathState.ABORTED, reconstructPath(start, target, fallbackNode)));
     }
 
     private PathfinderResult handlePathingException(PathPosition start, PathPosition target,
                                                      Throwable throwable) {
         LOGGER.error("Pathfinding task failed from {} to {}", start, target, throwable);
-        return new PathfinderResultImpl(PathState.FAILED,
-                new PathImpl(start, target, EMPTY_PATH_POSITIONS));
+        return quality(new PathfinderResultImpl(PathState.FAILED,
+                new PathImpl(start, target, EMPTY_PATH_POSITIONS)));
     }
 
     protected Node createStartNode(PathPosition startPos, PathPosition targetPos) {
@@ -257,15 +259,24 @@ public abstract class AbstractPathfinder implements Pathfinder {
     private PathfinderResult determinePostLoopResult(int depthReached, PathPosition start,
                                                       PathPosition target, Node fallbackNode) {
         if (depthReached >= pathfinderConfiguration.maxIterations) {
-            return new PathfinderResultImpl(PathState.MAX_ITERATIONS_REACHED,
-                    reconstructPath(start, target, fallbackNode));
+            return quality(new PathfinderResultImpl(PathState.MAX_ITERATIONS_REACHED,
+                    reconstructPath(start, target, fallbackNode)));
         }
         if (pathfinderConfiguration.fallback) {
-            return new PathfinderResultImpl(PathState.FALLBACK,
-                    reconstructPath(start, target, fallbackNode));
+            return quality(new PathfinderResultImpl(PathState.FALLBACK,
+                    reconstructPath(start, target, fallbackNode)));
         }
-        return new PathfinderResultImpl(PathState.FAILED,
-                new PathImpl(start, target, EMPTY_PATH_POSITIONS));
+        return quality(new PathfinderResultImpl(PathState.FAILED,
+                new PathImpl(start, target, EMPTY_PATH_POSITIONS)));
+    }
+
+    private PathfinderResult quality(PathfinderResultImpl result) {
+        Collection<PathPosition> positions = result.getPath() == null ? List.of() : result.getPath().collect();
+        return result.withQuality(PathQualityRegistry.evaluate(PathQualityContext.of(
+            result,
+            pathfinderConfiguration,
+            positions
+        )));
     }
 
     protected Path reconstructPath(PathPosition start, PathPosition target, Node endNode) {
