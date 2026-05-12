@@ -61,6 +61,26 @@ public final class PathfinderSettings extends Settingable {
     public final DoubleSetting fallDyCost = registerSetting(new DoubleSetting("fall_dy_cost", "Fall height", 0.1, 0.0, 10.0));
     public final DoubleSetting swimCost = registerSetting(new DoubleSetting("swim_cost", "Swim", 1.5, 0.0, 20.0));
     public final DoubleSetting climbCost = registerSetting(new DoubleSetting("climb_cost", "Climb", 2.0, 0.0, 20.0));
+    public final DoubleSetting qualityWalkRisk = registerSetting(new DoubleSetting(
+        "quality_walk_risk", "Quality walk risk", 0.0, 0.0, 1.0));
+    public final DoubleSetting qualityDiagonalRisk = registerSetting(new DoubleSetting(
+        "quality_diagonal_risk", "Quality diagonal risk", 0.04, 0.0, 1.0));
+    public final DoubleSetting qualityStepDownRisk = registerSetting(new DoubleSetting(
+        "quality_step_down_risk", "Quality step down risk", 0.08, 0.0, 1.0));
+    public final DoubleSetting qualityStepUpRisk = registerSetting(new DoubleSetting(
+        "quality_step_up_risk", "Quality step up risk", 0.12, 0.0, 1.0));
+    public final DoubleSetting qualitySwimRisk = registerSetting(new DoubleSetting(
+        "quality_swim_risk", "Quality swim risk", 0.20, 0.0, 1.0));
+    public final DoubleSetting qualityClimbRisk = registerSetting(new DoubleSetting(
+        "quality_climb_risk", "Quality climb risk", 0.20, 0.0, 1.0));
+    public final DoubleSetting qualityJumpRisk = registerSetting(new DoubleSetting(
+        "quality_jump_risk", "Quality jump risk", 0.30, 0.0, 1.0));
+    public final DoubleSetting qualityFallRisk = registerSetting(new DoubleSetting(
+        "quality_fall_risk", "Quality fall risk", 0.42, 0.0, 1.0));
+    public final DoubleSetting qualityParkourRisk = registerSetting(new DoubleSetting(
+        "quality_parkour_risk", "Quality parkour risk", 0.55, 0.0, 1.0));
+    public final DoubleSetting qualityFlyRisk = registerSetting(new DoubleSetting(
+        "quality_fly_risk", "Quality fly risk", 0.10, 0.0, 1.0));
     public final DoubleSetting cardinalWallCost = registerSetting(new DoubleSetting(
         "cardinal_wall_cost", "Cardinal wall proximity", 0.55, 0.0, 5.0));
     public final DoubleSetting diagonalWallCost = registerSetting(new DoubleSetting(
@@ -353,6 +373,20 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.fallDyCost,
             INSTANCE.swimCost,
             INSTANCE.climbCost);
+    }
+
+    public static List<Setting<?>> qualitySettings() {
+        return List.of(
+            INSTANCE.qualityWalkRisk,
+            INSTANCE.qualityDiagonalRisk,
+            INSTANCE.qualityStepDownRisk,
+            INSTANCE.qualityStepUpRisk,
+            INSTANCE.qualitySwimRisk,
+            INSTANCE.qualityClimbRisk,
+            INSTANCE.qualityJumpRisk,
+            INSTANCE.qualityFallRisk,
+            INSTANCE.qualityParkourRisk,
+            INSTANCE.qualityFlyRisk);
     }
 
     public static List<Setting<?>> renderingSettings() {

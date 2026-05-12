@@ -20,6 +20,7 @@ final class ImGuiPathfinderSettingsPanel {
         ImGui.spacing();
         ImGuiSettingControls.renderGroup("General", PathfinderSettings.generalSettings());
         ImGuiSettingControls.renderGroup("Movement cost", PathfinderSettings.movementCostSettings());
+        ImGuiSettingControls.renderGroup("Path quality", PathfinderSettings.qualitySettings());
         ImGuiSettingControls.renderGroup("Execution", PathfinderSettings.executionSettings());
         ImGuiSettingControls.renderGroup("Recovery", PathfinderSettings.recoverySettings());
         ImGuiSettingControls.renderGroup("Smoothing", PathfinderSettings.smoothingSettings());

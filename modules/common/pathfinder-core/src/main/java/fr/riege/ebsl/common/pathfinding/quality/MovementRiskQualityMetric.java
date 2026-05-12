@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
 
@@ -27,16 +28,18 @@ final class MovementRiskQualityMetric implements PathQualityMetric {
     }
 
     private static double risk(Node.MoveType type) {
+        PathfinderSettings settings = PathfinderSettings.instance();
         return switch (type) {
-            case WALK -> 0.0;
-            case WALK_DIAGONAL -> 0.04;
-            case STEP_DOWN -> 0.08;
-            case STEP_UP -> 0.12;
-            case SWIM, CLIMB -> 0.20;
-            case JUMP -> 0.30;
-            case FALL -> 0.42;
-            case PARKOUR -> 0.55;
-            case FLY -> 0.10;
+            case WALK -> settings.qualityWalkRisk.value();
+            case WALK_DIAGONAL -> settings.qualityDiagonalRisk.value();
+            case STEP_DOWN -> settings.qualityStepDownRisk.value();
+            case STEP_UP -> settings.qualityStepUpRisk.value();
+            case SWIM -> settings.qualitySwimRisk.value();
+            case CLIMB -> settings.qualityClimbRisk.value();
+            case JUMP -> settings.qualityJumpRisk.value();
+            case FALL -> settings.qualityFallRisk.value();
+            case PARKOUR -> settings.qualityParkourRisk.value();
+            case FLY -> settings.qualityFlyRisk.value();
         };
     }
 }
