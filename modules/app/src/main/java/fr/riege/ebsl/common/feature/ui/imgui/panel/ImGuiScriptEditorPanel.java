@@ -931,9 +931,9 @@ public final class ImGuiScriptEditorPanel {
         );
         for (EbslNodeField field : node.fields()) {
             Setting<?> setting = field.setting();
+            ImGui.textWrapped(field.description());
             ImGuiSettingRendererRegistry.render(setting, context);
             ImGui.textDisabled(EbslNodeFieldHelp.meta(setting));
-            ImGui.textWrapped(field.description());
             ImGui.spacing();
         }
     }
