@@ -75,7 +75,7 @@ final class EbslGraphExecutionPlannerTest {
     }
 
     @Test
-    void eachInputLinksMaterializeAnExplicitExtraExecutionInGeneratedCode() {
+    void eachInputLinksMaterializeExtraExecutionWithoutGeneratedComments() {
         EbslGraphDocument graph = new EbslGraphDocument(
             Map.of(),
             List.of(new EbslGraphConnection(
@@ -95,7 +95,6 @@ final class EbslGraphExecutionPlannerTest {
 
         assertEquals("""
             message first
-            # graph edge each_input retry
             message target
             message second
             message target

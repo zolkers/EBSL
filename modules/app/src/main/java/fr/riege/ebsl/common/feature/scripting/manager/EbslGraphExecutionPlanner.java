@@ -123,12 +123,6 @@ public final class EbslGraphExecutionPlanner {
             expanded.add(line);
             for (EbslGraphConnection connection : eachInputByFrom.getOrDefault(line.key(), List.of())) {
                 GraphLine target = lines.get(connection.toKey());
-                String label = connection.label().isBlank() ? "" : " " + connection.label();
-                expanded.add(new GraphLine(
-                    target.lineNumber(),
-                    target.key() + "#" + connection.id(),
-                    "# graph edge " + connection.mode().id() + label
-                ));
                 expanded.add(target);
             }
         }
