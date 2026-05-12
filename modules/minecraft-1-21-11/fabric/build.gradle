@@ -34,9 +34,11 @@ sourceSets {
 dependencies {
     compileOnly project(':app')
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
+        compileOnly project(modulePath)
         runtimeOnly files(project(modulePath).sourceSets.main.output.classesDirs)
     }
     
+    compileOnly project(mcCommonProject.path)
     compileOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
     runtimeOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
 

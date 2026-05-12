@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
+        compileOnly project(modulePath)
         compileOnly files(project(modulePath).sourceSets.main.output.classesDirs)
     }
 
