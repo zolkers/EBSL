@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -14,8 +15,15 @@ public record PathQualityContext(
     List<PathPosition> positions,
     List<Node> rawNodes,
     List<Node> navigationNodes,
-    double pathLength
+    double pathLength,
+    WalkabilityChecker checker
 ) {
+    public PathQualityContext(PathfinderResult result, PathfinderConfiguration configuration,
+                              List<PathPosition> positions, List<Node> rawNodes,
+                              List<Node> navigationNodes, double pathLength) {
+        this(result, configuration, positions, rawNodes, navigationNodes, pathLength, null);
+    }
+
     public PathQualityContext {
         positions = positions == null ? List.of() : List.copyOf(positions);
         rawNodes = rawNodes == null ? List.of() : List.copyOf(rawNodes);
@@ -26,7 +34,7 @@ public record PathQualityContext(
     public static PathQualityContext of(PathfinderResult result, PathfinderConfiguration configuration,
                                         Collection<PathPosition> positions) {
         List<PathPosition> positionList = positions == null ? List.of() : List.copyOf(positions);
-        return new PathQualityContext(result, configuration, positionList, List.of(), List.of(), directPathLength(positionList));
+        return new PathQualityContext(result, configuration, positionList, List.of(), List.of(), directPathLength(positionList), null);
     }
 
     public PathPosition start() {

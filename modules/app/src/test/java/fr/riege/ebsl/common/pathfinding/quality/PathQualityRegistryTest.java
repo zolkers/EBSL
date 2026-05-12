@@ -1,11 +1,14 @@
 package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.result.PathImpl;
 import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -64,5 +67,76 @@ final class PathQualityRegistryTest {
 
         assertTrue(report.score() < 0.75, "fallback risky path should not look excellent");
         assertTrue(report.contributions().stream().anyMatch(c -> c.metricId().equals("movement_risk")));
+    }
+
+    @Test
+    void terrainOpportunityRewardsLoadedOpenWalkableGround() {
+        List<PathPosition> positions = List.of(
+            new PathPosition(0, 64, 0),
+            new PathPosition(1, 64, 0),
+            new PathPosition(2, 64, 0)
+        );
+        PathfinderResultImpl result = new PathfinderResultImpl(
+            PathState.FOUND,
+            new PathImpl(positions.getFirst(), positions.getLast(), positions)
+        );
+
+        PathQualityReport open = PathQualityRegistry.evaluate(new PathQualityContext(
+            result,
+            PathfinderConfiguration.DEFAULT,
+            positions,
+            List.of(),
+            List.of(),
+            2.0,
+            new WalkabilityChecker(new TestWorld(false))
+        ));
+        PathQualityReport boxed = PathQualityRegistry.evaluate(new PathQualityContext(
+            result,
+            PathfinderConfiguration.DEFAULT,
+            positions,
+            List.of(),
+            List.of(),
+            2.0,
+            new WalkabilityChecker(new TestWorld(true))
+        ));
+
+        double openTerrain = contribution(open, "terrain_opportunity");
+        double boxedTerrain = contribution(boxed, "terrain_opportunity");
+        assertTrue(openTerrain > boxedTerrain, "open terrain should be considered more favorable");
+        assertTrue(openTerrain >= 0.85, "flat loaded ground should be very favorable");
+    }
+
+    private static double contribution(PathQualityReport report, String metricId) {
+        return report.contributions().stream()
+            .filter(contribution -> contribution.metricId().equals(metricId))
+            .findFirst()
+            .orElseThrow()
+            .score();
+    }
+
+    private record TestWorld(boolean boxed) implements IWorldLayer {
+        @Override
+        public BlockId getBlock(int x, int y, int z) {
+            return isAir(x, y, z) ? BlockId.AIR : BlockId.of("minecraft:stone");
+        }
+
+        @Override
+        public boolean isAir(int x, int y, int z) {
+            return !isSolid(x, y, z);
+        }
+
+        @Override
+        public boolean isSolid(int x, int y, int z) {
+            if (y == 63) {
+                return true;
+            }
+            return boxed && y == 64 && (z == 1 || z == -1);
+        }
+
+        @Override public boolean isWater(int x, int y, int z) { return false; }
+        @Override public boolean isLava(int x, int y, int z) { return false; }
+        @Override public boolean isLoaded(int x, int y, int z) { return true; }
+        @Override public int getTopSolidY(int x, int z) { return 63; }
+        @Override public double getBlockHeight(int x, int y, int z) { return isSolid(x, y, z) ? 1.0 : 0.0; }
     }
 }

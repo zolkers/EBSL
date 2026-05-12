@@ -15,6 +15,7 @@ public final class PathQualityRegistry {
         register(new EfficiencyQualityMetric());
         register(new MovementRiskQualityMetric());
         register(new SmoothnessQualityMetric());
+        register(new TerrainOpportunityQualityMetric());
     }
 
     private PathQualityRegistry() {

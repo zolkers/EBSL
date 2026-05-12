@@ -126,6 +126,6 @@ public final class PathPlanningService {
         ProcessedPath processedPath = options.processPath()
             ? WalkPathProcessor.process(positions, configuration, checker)
             : null;
-        return PathPlan.from(result, configuration, positions, processedPath);
+        return PathPlan.from(result, configuration, positions, processedPath, checker);
     }
 }

@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.navigation;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.ProcessedPath;
+import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
@@ -42,6 +43,14 @@ public record PathPlan(
                                 PathfinderConfiguration configuration,
                                 Collection<PathPosition> positions,
                                 ProcessedPath processedPath) {
+        return from(result, configuration, positions, processedPath, null);
+    }
+
+    public static PathPlan from(PathfinderResult result,
+                                PathfinderConfiguration configuration,
+                                Collection<PathPosition> positions,
+                                ProcessedPath processedPath,
+                                WalkabilityChecker checker) {
         List<PathPosition> positionList = positions instanceof List<PathPosition> list
             ? List.copyOf(list)
             : List.copyOf(positions);
@@ -55,7 +64,8 @@ public record PathPlan(
             positionList,
             processedPath.rawNodes(),
             processedPath.navigationPath(),
-            processedPath.pathLength()
+            processedPath.pathLength(),
+            checker
         ));
         return new PathPlan(
             result,
