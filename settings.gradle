@@ -10,14 +10,31 @@ pluginManagement {
 }
 
 rootProject.name = 'ebsl'
+include('app')
 include('common')
+include('common:base')
+include('common:events')
+include('common:world-api')
+include('common:render-api')
+include('common:platform-api')
+include('common:pathfinder-core')
+include('common:pathfinder-execution')
+include('common:pathfinder-debug')
+include('common:navigation')
 include('minecraft-1-21-11:common')
 include('minecraft-1-21-11:fabric')
 
-
-
-
-project(':common').projectDir = file('src/common')
-project(':minecraft-1-21-11').projectDir = file('src/minecraft-1-21-11')
-project(':minecraft-1-21-11:common').projectDir = file('src/minecraft-1-21-11/common')
-project(':minecraft-1-21-11:fabric').projectDir = file('src/minecraft-1-21-11/fabric')
+project(':app').projectDir = file('modules/app')
+project(':common').projectDir = file('modules/common')
+project(':common:base').projectDir = file('modules/common/base')
+project(':common:events').projectDir = file('modules/common/events')
+project(':common:world-api').projectDir = file('modules/common/world-api')
+project(':common:render-api').projectDir = file('modules/common/render-api')
+project(':common:platform-api').projectDir = file('modules/common/platform-api')
+project(':common:pathfinder-core').projectDir = file('modules/common/pathfinder-core')
+project(':common:pathfinder-execution').projectDir = file('modules/common/pathfinder-execution')
+project(':common:pathfinder-debug').projectDir = file('modules/common/pathfinder-debug')
+project(':common:navigation').projectDir = file('modules/common/navigation')
+project(':minecraft-1-21-11').projectDir = file('modules/minecraft-1-21-11')
+project(':minecraft-1-21-11:common').projectDir = file('modules/minecraft-1-21-11/common')
+project(':minecraft-1-21-11:fabric').projectDir = file('modules/minecraft-1-21-11/fabric')

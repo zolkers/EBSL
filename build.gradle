@@ -2,6 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
 
+apply from: rootProject.file('gradle/ebsl-modules.gradle')
 
 subprojects {
     def subPath = project.path.replace(':', '/').replaceFirst('^/', '')
@@ -26,4 +27,3 @@ tasks.register('buildMod121Fabric') {
     description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
     dependsOn ':minecraft-1-21-11:fabric:build'
 }
-
