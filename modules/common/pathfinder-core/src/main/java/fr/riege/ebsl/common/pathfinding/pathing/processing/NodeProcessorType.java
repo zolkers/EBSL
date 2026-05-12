@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing;
 
 public enum NodeProcessorType {
-    LAYER
+    LAYER,
+    QUALITY_AWARE
 }

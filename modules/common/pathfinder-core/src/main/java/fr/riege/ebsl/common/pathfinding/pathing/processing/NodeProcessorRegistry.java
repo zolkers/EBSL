@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.pathfinding.pathing.processing;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcessor;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +14,7 @@ public final class NodeProcessorRegistry {
 
     static {
         register(NodeProcessorType.LAYER, LayerPathProcessor::new);
+        register(NodeProcessorType.QUALITY_AWARE, QualityAwarePathProcessor::new);
     }
 
     private NodeProcessorRegistry() {
@@ -37,6 +39,6 @@ public final class NodeProcessorRegistry {
     }
 
     public static List<NodeProcessor> createStandardProcessors() {
-        return createAll(NodeProcessorType.LAYER);
+        return createAll(NodeProcessorType.LAYER, NodeProcessorType.QUALITY_AWARE);
     }
 }

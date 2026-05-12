@@ -10,12 +10,14 @@ import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfigur
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public final class PathPlanningService {
@@ -50,11 +52,19 @@ public final class PathPlanningService {
         Objects.requireNonNull(start, "start");
         Objects.requireNonNull(target, "target");
         PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
+        return planOnce(start, target, effectiveOptions)
+            .thenCompose(primary -> shouldRetryForQuality(primary, effectiveOptions)
+                ? planOnce(start, target, cautiousOptions(effectiveOptions))
+                    .thenApply(cautious -> selectBestPlan(primary, cautious, effectiveOptions))
+                : CompletableFuture.completedFuture(primary));
+    }
+
+    private CompletionStage<PathPlan> planOnce(PathPosition start, PathPosition target, PathPlannerOptions options) {
         clearCaches();
-        PathfinderConfiguration configuration = configuration(effectiveOptions);
+        PathfinderConfiguration configuration = configuration(options);
         AStarPathfinder pathfinder = new AStarPathfinder(configuration);
         return pathfinder.findPath(start.floor(), resolveTarget(target))
-            .thenApply(result -> toPlan(result, configuration, effectiveOptions));
+            .thenApply(result -> toPlan(result, configuration, options));
     }
 
     public PathPosition positionFromEntity(double x, double y, double z) {
@@ -111,7 +121,56 @@ public final class PathPlanningService {
             .earlyFallbackMinPathNodes(settings.earlyFallbackMinPathNodes.value())
             .earlyFallbackMinProgressRatio(settings.earlyFallbackMinProgressRatio.value())
             .maxCalculationTimeMs(effectiveOptions.maxCalculationTimeMs())
+            .qualityRiskCostWeight(effectiveOptions.qualityPlanningMode().costAware()
+                ? effectiveOptions.qualityRiskCostWeight()
+                : 0.0)
+            .qualityTerrainCostWeight(effectiveOptions.qualityPlanningMode().costAware()
+                ? effectiveOptions.qualityTerrainCostWeight()
+                : 0.0)
             .build();
+    }
+
+    private static boolean shouldRetryForQuality(PathPlan plan, PathPlannerOptions options) {
+        return options.qualityPlanningMode().retryPoorPlans()
+            && plan != null
+            && plan.usable()
+            && plan.quality().score() < options.qualityRetryMinScore();
+    }
+
+    private static PathPlannerOptions cautiousOptions(PathPlannerOptions options) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        double modeMultiplier = options.qualityPlanningMode() == PathQualityPlanningMode.CAUTIOUS
+            ? 1.35
+            : 1.0;
+        return options.toBuilder()
+            .qualityRiskCostWeight(options.qualityRiskCostWeight() * settings.qualityRetryRiskMultiplier.value() * modeMultiplier)
+            .qualityTerrainCostWeight(options.qualityTerrainCostWeight() * settings.qualityRetryTerrainMultiplier.value() * modeMultiplier)
+            .maxIterations((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxIterations() * 1.25)))
+            .maxLength((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxLength() * 1.15)))
+            .maxCalculationTimeMs(options.maxCalculationTimeMs() <= 0
+                ? 0
+                : (int) Math.min(Integer.MAX_VALUE, Math.round(options.maxCalculationTimeMs() * 1.35)))
+            .build();
+    }
+
+    private static PathPlan selectBestPlan(PathPlan primary, PathPlan cautious, PathPlannerOptions options) {
+        if (cautious == null || !cautious.usable()) {
+            return primary;
+        }
+        if (primary == null || !primary.usable()) {
+            return cautious;
+        }
+        if (primary.complete() && !cautious.complete()) {
+            return primary;
+        }
+        if (!primary.complete() && cautious.complete()) {
+            return cautious;
+        }
+        double improvement = cautious.quality().score() - primary.quality().score();
+        if (improvement >= options.qualityRetryImprovement()) {
+            return cautious;
+        }
+        return primary;
     }
 
     private PathPlan toPlan(PathfinderResult result,

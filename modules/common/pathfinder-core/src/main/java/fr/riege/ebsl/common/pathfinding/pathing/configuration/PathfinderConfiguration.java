@@ -23,6 +23,8 @@ public final class PathfinderConfiguration {
     public final int                  earlyFallbackMinPathNodes;
     public final double               earlyFallbackMinProgressRatio;
     public final long                 maxCalculationTimeMs;
+    public final double               qualityRiskCostWeight;
+    public final double               qualityTerrainCostWeight;
     public final NavigationPointProvider provider;
     public final HeuristicWeights     heuristicWeights;
     public final List<NodeProcessor>  processors;
@@ -40,6 +42,8 @@ public final class PathfinderConfiguration {
         this.earlyFallbackMinPathNodes = b.earlyFallbackMinPathNodes;
         this.earlyFallbackMinProgressRatio = b.earlyFallbackMinProgressRatio;
         this.maxCalculationTimeMs = b.maxCalculationTimeMs;
+        this.qualityRiskCostWeight = b.qualityRiskCostWeight;
+        this.qualityTerrainCostWeight = b.qualityTerrainCostWeight;
         this.provider         = b.provider;
         this.heuristicWeights = b.heuristicWeights;
         this.processors       = Collections.unmodifiableList(b.processors);
@@ -62,6 +66,8 @@ public final class PathfinderConfiguration {
         private int                  earlyFallbackMinPathNodes = 8;
         private double               earlyFallbackMinProgressRatio = 0.08;
         private long                 maxCalculationTimeMs = 0L;
+        private double               qualityRiskCostWeight = 0.0;
+        private double               qualityTerrainCostWeight = 0.0;
         private NavigationPointProvider provider      = DefaultNavigationPointProvider.INSTANCE;
         private HeuristicWeights     heuristicWeights = HeuristicWeights.DEFAULT_WEIGHTS;
         private List<NodeProcessor>  processors       = List.of();
@@ -81,6 +87,8 @@ public final class PathfinderConfiguration {
             return this;
         }
         public Builder maxCalculationTimeMs(long v)    { this.maxCalculationTimeMs = v; return this; }
+        public Builder qualityRiskCostWeight(double v) { this.qualityRiskCostWeight = Math.max(0.0, v); return this; }
+        public Builder qualityTerrainCostWeight(double v) { this.qualityTerrainCostWeight = Math.max(0.0, v); return this; }
         public Builder provider(NavigationPointProvider v) { this.provider     = v; return this; }
         public Builder heuristicWeights(HeuristicWeights v){ this.heuristicWeights = v; return this; }
         public Builder processors(List<NodeProcessor> v)   { this.processors   = v; return this; }

@@ -4,14 +4,22 @@ import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
+import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.result.PathImpl;
 import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -106,12 +114,63 @@ final class PathQualityRegistryTest {
         assertTrue(openTerrain >= 0.85, "flat loaded ground should be very favorable");
     }
 
+    @Test
+    void qualityAwareProcessorAddsConfiguredRiskCost() {
+        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false));
+        LayerNavigationPointProvider provider = new LayerNavigationPointProvider(checker);
+        QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
+        PathPosition previous = new PathPosition(0, 64, 0);
+        PathPosition current = new PathPosition(2, 64, 0);
+        PathfinderConfiguration disabled = PathfinderConfiguration.builder()
+            .provider(provider)
+            .build();
+        PathfinderConfiguration enabled = PathfinderConfiguration.builder()
+            .provider(provider)
+            .qualityRiskCostWeight(2.0)
+            .build();
+
+        assertEquals(0.0, processor.calculateCostContribution(
+            new TestEvaluationContext(disabled, provider, previous, current)).value, 0.0001);
+        assertEquals(PathfinderSettings.instance().qualityParkourRisk.value() * 2.0, processor.calculateCostContribution(
+            new TestEvaluationContext(enabled, provider, previous, current)).value, 0.0001);
+    }
+
     private static double contribution(PathQualityReport report, String metricId) {
         return report.contributions().stream()
             .filter(contribution -> contribution.metricId().equals(metricId))
             .findFirst()
             .orElseThrow()
             .score();
+    }
+
+    private record TestEvaluationContext(PathfinderConfiguration configuration,
+                                         NavigationPointProvider provider,
+                                         PathPosition previous,
+                                         PathPosition current) implements EvaluationContext {
+        @Override public PathPosition getCurrentPathPosition() { return current; }
+        @Override public PathPosition getPreviousPathPosition() { return previous; }
+        @Override public int getCurrentNodeDepth() { return 1; }
+        @Override public double getCurrentNodeHeuristicValue() { return 0.0; }
+        @Override public double getPathCostToPreviousPosition() { return 0.0; }
+        @Override public double getBaseTransitionCost() { return 1.0; }
+        @Override public PathPosition getGrandparentPathPosition() { return null; }
+
+        @Override
+        public SearchContext getSearchContext() {
+            return new TestSearchContext(configuration, provider, previous, current);
+        }
+    }
+
+    private record TestSearchContext(PathfinderConfiguration configuration,
+                                     NavigationPointProvider provider,
+                                     PathPosition start,
+                                     PathPosition target) implements SearchContext {
+        @Override public PathPosition getStartPathPosition() { return start; }
+        @Override public PathPosition getTargetPathPosition() { return target; }
+        @Override public PathfinderConfiguration getPathfinderConfiguration() { return configuration; }
+        @Override public NavigationPointProvider getNavigationPointProvider() { return provider; }
+        @Override public Map<String, Object> getSharedData() { return Map.of(); }
+        @Override public EnvironmentContext getEnvironmentContext() { return null; }
     }
 
     private record TestWorld(boolean boxed) implements IWorldLayer {

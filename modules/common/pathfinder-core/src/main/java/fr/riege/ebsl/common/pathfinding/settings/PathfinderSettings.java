@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.settings;
 
 import fr.riege.ebsl.common.core.settings.*;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 
 import java.util.List;
 
@@ -81,6 +82,20 @@ public final class PathfinderSettings extends Settingable {
         "quality_parkour_risk", "Quality parkour risk", 0.55, 0.0, 1.0));
     public final DoubleSetting qualityFlyRisk = registerSetting(new DoubleSetting(
         "quality_fly_risk", "Quality fly risk", 0.10, 0.0, 1.0));
+    public final EnumSetting<PathQualityPlanningMode> qualityPlanningMode = registerSetting(new EnumSetting<>(
+        "quality_planning_mode", "Quality planning", PathQualityPlanningMode.BALANCED, PathQualityPlanningMode.class));
+    public final DoubleSetting qualityRiskCostWeight = registerSetting(new DoubleSetting(
+        "quality_risk_cost_weight", "Quality risk cost weight", 0.75, 0.0, 8.0));
+    public final DoubleSetting qualityTerrainCostWeight = registerSetting(new DoubleSetting(
+        "quality_terrain_cost_weight", "Quality terrain cost weight", 0.45, 0.0, 8.0));
+    public final DoubleSetting qualityRetryMinScore = registerSetting(new DoubleSetting(
+        "quality_retry_min_score", "Quality retry min score", 0.62, 0.0, 1.0));
+    public final DoubleSetting qualityRetryImprovement = registerSetting(new DoubleSetting(
+        "quality_retry_improvement", "Quality retry improvement", 0.04, 0.0, 0.5));
+    public final DoubleSetting qualityRetryRiskMultiplier = registerSetting(new DoubleSetting(
+        "quality_retry_risk_multiplier", "Quality retry risk multiplier", 1.65, 1.0, 6.0));
+    public final DoubleSetting qualityRetryTerrainMultiplier = registerSetting(new DoubleSetting(
+        "quality_retry_terrain_multiplier", "Quality retry terrain multiplier", 1.45, 1.0, 6.0));
     public final DoubleSetting cardinalWallCost = registerSetting(new DoubleSetting(
         "cardinal_wall_cost", "Cardinal wall proximity", 0.55, 0.0, 5.0));
     public final DoubleSetting diagonalWallCost = registerSetting(new DoubleSetting(
@@ -386,7 +401,14 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.qualityJumpRisk,
             INSTANCE.qualityFallRisk,
             INSTANCE.qualityParkourRisk,
-            INSTANCE.qualityFlyRisk);
+            INSTANCE.qualityFlyRisk,
+            INSTANCE.qualityPlanningMode,
+            INSTANCE.qualityRiskCostWeight,
+            INSTANCE.qualityTerrainCostWeight,
+            INSTANCE.qualityRetryMinScore,
+            INSTANCE.qualityRetryImprovement,
+            INSTANCE.qualityRetryRiskMultiplier,
+            INSTANCE.qualityRetryTerrainMultiplier);
     }
 
     public static List<Setting<?>> renderingSettings() {

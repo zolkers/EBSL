@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.navigation;
 
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 public record PathPlannerOptions(
@@ -13,7 +14,12 @@ public record PathPlannerOptions(
     boolean allowFall,
     boolean allowWalkDiagonal,
     boolean processPath,
-    int maxCalculationTimeMs
+    int maxCalculationTimeMs,
+    PathQualityPlanningMode qualityPlanningMode,
+    double qualityRiskCostWeight,
+    double qualityTerrainCostWeight,
+    double qualityRetryMinScore,
+    double qualityRetryImprovement
 ) {
     public static PathPlannerOptions defaults() {
         PathfinderSettings settings = PathfinderSettings.instance();
@@ -22,6 +28,11 @@ public record PathPlannerOptions(
             .maxLength(settings.defaultWalkMaxLength.value())
             .maxCalculationTimeMs(settings.defaultCalculationTimeMs.value())
             .maxJumpHeight(settings.maxJumpHeight.value())
+            .qualityPlanningMode(settings.qualityPlanningMode.value())
+            .qualityRiskCostWeight(settings.qualityRiskCostWeight.value())
+            .qualityTerrainCostWeight(settings.qualityTerrainCostWeight.value())
+            .qualityRetryMinScore(settings.qualityRetryMinScore.value())
+            .qualityRetryImprovement(settings.qualityRetryImprovement.value())
             .build();
     }
 
@@ -46,7 +57,12 @@ public record PathPlannerOptions(
             .allowFall(allowFall)
             .allowWalkDiagonal(allowWalkDiagonal)
             .processPath(processPath)
-            .maxCalculationTimeMs(maxCalculationTimeMs);
+            .maxCalculationTimeMs(maxCalculationTimeMs)
+            .qualityPlanningMode(qualityPlanningMode)
+            .qualityRiskCostWeight(qualityRiskCostWeight)
+            .qualityTerrainCostWeight(qualityTerrainCostWeight)
+            .qualityRetryMinScore(qualityRetryMinScore)
+            .qualityRetryImprovement(qualityRetryImprovement);
     }
 
     public static Builder builder() {
@@ -65,6 +81,11 @@ public record PathPlannerOptions(
         private boolean allowWalkDiagonal = true;
         private boolean processPath = true;
         private int maxCalculationTimeMs = 0;
+        private PathQualityPlanningMode qualityPlanningMode = PathQualityPlanningMode.OFF;
+        private double qualityRiskCostWeight = 0.0;
+        private double qualityTerrainCostWeight = 0.0;
+        private double qualityRetryMinScore = 0.0;
+        private double qualityRetryImprovement = 0.0;
 
         public Builder maxIterations(int value) {
             this.maxIterations = value;
@@ -121,6 +142,31 @@ public record PathPlannerOptions(
             return this;
         }
 
+        public Builder qualityPlanningMode(PathQualityPlanningMode value) {
+            this.qualityPlanningMode = value == null ? PathQualityPlanningMode.OFF : value;
+            return this;
+        }
+
+        public Builder qualityRiskCostWeight(double value) {
+            this.qualityRiskCostWeight = value;
+            return this;
+        }
+
+        public Builder qualityTerrainCostWeight(double value) {
+            this.qualityTerrainCostWeight = value;
+            return this;
+        }
+
+        public Builder qualityRetryMinScore(double value) {
+            this.qualityRetryMinScore = value;
+            return this;
+        }
+
+        public Builder qualityRetryImprovement(double value) {
+            this.qualityRetryImprovement = value;
+            return this;
+        }
+
         public PathPlannerOptions build() {
             return new PathPlannerOptions(
                 Math.max(1, maxIterations),
@@ -133,7 +179,12 @@ public record PathPlannerOptions(
                 allowFall,
                 allowWalkDiagonal,
                 processPath,
-                Math.max(0, maxCalculationTimeMs));
+                Math.max(0, maxCalculationTimeMs),
+                qualityPlanningMode == null ? PathQualityPlanningMode.OFF : qualityPlanningMode,
+                Math.max(0.0, qualityRiskCostWeight),
+                Math.max(0.0, qualityTerrainCostWeight),
+                Math.clamp(qualityRetryMinScore, 0.0, 1.0),
+                Math.clamp(qualityRetryImprovement, 0.0, 1.0));
         }
     }
 }
