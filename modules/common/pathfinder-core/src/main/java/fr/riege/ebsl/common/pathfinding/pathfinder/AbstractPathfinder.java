@@ -80,6 +80,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
         }
     }
 
+    @SuppressWarnings("java:S3776")
     private PathfinderResult executePathingAlgorithm(PathPosition start, PathPosition target,
                                                       EnvironmentContext environmentContext) {
         initializeSearch();

@@ -155,6 +155,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     }
 
     @Override
+    @SuppressWarnings("java:S3776")
     public Cost calculateCostContribution(EvaluationContext context) {
         PathPosition current = context.getCurrentPathPosition();
         PathPosition previous = context.getPreviousPathPosition();

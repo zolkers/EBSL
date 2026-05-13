@@ -165,6 +165,7 @@ public final class PathExecutor {
         refreshVisualizer();
     }
 
+    @SuppressWarnings("java:S3776")
     public void tick() {
         if (!canTickMovement()) {
             return;
