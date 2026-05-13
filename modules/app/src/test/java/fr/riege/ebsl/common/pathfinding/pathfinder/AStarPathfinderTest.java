@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
+import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AStarPathfinderTest {
     @Test
     void returnsAsSoonAsAValidSuccessorReachesTarget() throws Exception {
-        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
             .async(false)
             .fallback(false)
             .build());
@@ -38,7 +39,7 @@ class AStarPathfinderTest {
 
     @Test
     void fallbackStillReturnsForwardProgressWhenSearchIsCapped() throws Exception {
-        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
             .async(false)
             .fallback(true)
             .maxIterations(8)
@@ -57,7 +58,7 @@ class AStarPathfinderTest {
 
     @Test
     void earlyFallbackReturnsUsableProgressBeforeIterationCap() throws Exception {
-        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
             .async(false)
             .fallback(true)
             .maxIterations(10000)
@@ -80,7 +81,7 @@ class AStarPathfinderTest {
 
     @Test
     void timeBudgetReturnsFallbackEvenBeforeEarlyFallbackThreshold() throws Exception {
-        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder()
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
             .async(false)
             .fallback(true)
             .maxIterations(10000)

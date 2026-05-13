@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding;
 
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
+import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public final class LongRangePathSession {
     private int currentSegmentId;
     private int calculationSegmentId = -1;
     private boolean segmentCalculationInFlight;
-    private AStarPathfinder backgroundPathfinder;
+    private InspectablePathfinder backgroundPathfinder;
     private PendingSegment preparedSegment;
     private long nextRetryAfterMs;
     private int failedSegmentCalculations;
@@ -165,7 +165,7 @@ public final class LongRangePathSession {
             && progressRatio >= PathfinderSettings.instance().playerStartRecoveryRatio.value());
     }
 
-    public int markSegmentCalculationStarted(AStarPathfinder pathfinder) {
+    public int markSegmentCalculationStarted(InspectablePathfinder pathfinder) {
         segmentCalculationInFlight = true;
         calculationSegmentId = currentSegmentId;
         backgroundPathfinder = pathfinder;

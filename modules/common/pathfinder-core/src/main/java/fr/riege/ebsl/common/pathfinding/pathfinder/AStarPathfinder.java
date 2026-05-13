@@ -6,10 +6,11 @@ import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
+import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.util.RegionKey;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
@@ -17,7 +18,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
-public final class AStarPathfinder extends AbstractPathfinder {
+final class AStarPathfinder extends AbstractPathfinder implements InspectablePathfinder {
     private static final double[] BEST_PATH_COEFFICIENTS = {1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0};
     private static final double MIN_FALLBACK_DISTANCE = 5.0;
     private static final double MIN_FALLBACK_IMPROVEMENT = 0.01;
@@ -39,7 +40,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
     private boolean profiling;
     private boolean captureClosedSet;
 
-    public AStarPathfinder(PathfinderConfiguration configuration) {
+    AStarPathfinder(PathfinderConfiguration configuration) {
         super(configuration);
     }
 
@@ -257,10 +258,13 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
 
-    public LongSet getClosedSet() { return lastClosedSet; }
+    LongSet getClosedSet() { return lastClosedSet; }
+
+    @Override
     public long getExploredCount() { return exploredCount; }
 
 
+    @Override
     public String getProfilingReport() {
         if (!profiling) return "profiling disabled";
         return String.format(
@@ -281,7 +285,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
     private Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
-        WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof LayerNavigationPointProvider provider
+        WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof WorldNavigationPointProvider provider
             ? provider.checker()
             : null;
         return pathfinderConfiguration.movementClassifier.classify(new MovementClassificationContext(

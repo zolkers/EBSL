@@ -99,6 +99,7 @@ Every pull request should include:
 - Prefer existing module boundaries and helper APIs.
 - Keep Minecraft/Fabric imports out of platform-independent modules.
 - Follow the module boundaries and extension contracts in [docs/architecture.md](docs/architecture.md).
+- Treat [docs/architecture/api-surface.md](docs/architecture/api-surface.md) as the source of truth for public API, SPI, and implementation visibility.
 - Do not commit generated files, local run data, IDE files, or `.codex-tmp/`.
 - Avoid hardcoded fully-qualified Java type names outside imports.
 - Keep tests focused on behavior and risk.

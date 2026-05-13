@@ -8,11 +8,13 @@ import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
+import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResults;
+import fr.riege.ebsl.common.pathfinding.pathing.result.Paths;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.result.PathImpl;
-import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
@@ -31,9 +33,9 @@ final class PathQualityRegistryTest {
             new PathPosition(1, 64, 0),
             new PathPosition(2, 64, 0)
         );
-        PathfinderResultImpl result = new PathfinderResultImpl(
+        PathfinderResult result = PathfinderResults.of(
             PathState.FOUND,
-            new PathImpl(positions.getFirst(), positions.getLast(), positions)
+            Paths.of(positions.getFirst(), positions.getLast(), positions)
         );
 
         PathQualityReport report = PathQualityRegistry.evaluate(PathQualityContext.of(
@@ -58,9 +60,9 @@ final class PathQualityRegistryTest {
         risky.setMoveType(Node.MoveType.PARKOUR);
         Node turn = new Node(positions.get(2));
         turn.setMoveType(Node.MoveType.WALK);
-        PathfinderResultImpl result = new PathfinderResultImpl(
+        PathfinderResult result = PathfinderResults.of(
             PathState.FALLBACK,
-            new PathImpl(positions.getFirst(), new PathPosition(8, 64, 0), positions)
+            Paths.of(positions.getFirst(), new PathPosition(8, 64, 0), positions)
         );
 
         PathQualityReport report = PathQualityRegistry.evaluate(new PathQualityContext(
@@ -83,9 +85,9 @@ final class PathQualityRegistryTest {
             new PathPosition(1, 64, 0),
             new PathPosition(2, 64, 0)
         );
-        PathfinderResultImpl result = new PathfinderResultImpl(
+        PathfinderResult result = PathfinderResults.of(
             PathState.FOUND,
-            new PathImpl(positions.getFirst(), positions.getLast(), positions)
+            Paths.of(positions.getFirst(), positions.getLast(), positions)
         );
 
         PathQualityReport open = PathQualityRegistry.evaluate(new PathQualityContext(
@@ -116,7 +118,7 @@ final class PathQualityRegistryTest {
     @Test
     void qualityAwareProcessorAddsConfiguredRiskCost() {
         WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false, true));
-        LayerNavigationPointProvider provider = new LayerNavigationPointProvider(checker);
+        WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(checker);
         QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
         PathPosition previous = new PathPosition(0, 64, 0);
         PathPosition current = new PathPosition(2, 64, 0);
@@ -137,7 +139,7 @@ final class PathQualityRegistryTest {
     @Test
     void qualityAwareProcessorUsesConfiguredMovementContracts() {
         WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false));
-        LayerNavigationPointProvider provider = new LayerNavigationPointProvider(checker);
+        WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(checker);
         QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
         PathPosition previous = new PathPosition(0, 64, 0);
         PathPosition current = new PathPosition(1, 64, 0);
