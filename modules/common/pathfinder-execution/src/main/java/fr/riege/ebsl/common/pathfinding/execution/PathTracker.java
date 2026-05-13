@@ -262,7 +262,7 @@ final class PathTracker {
 
     private double computePathProgress(Vec3d playerPos) {
         if (path.isEmpty()) return 0.0;
-        if (pursuitSegment + 1L >= path.size()) return path.size() - 1;
+        if (pursuitSegment + 1L >= path.size()) return (double) path.size() - 1.0;
         double dx = pathCache.segmentDx(pursuitSegment);
         double dy = pathCache.segmentDy(pursuitSegment);
         double dz = pathCache.segmentDz(pursuitSegment);

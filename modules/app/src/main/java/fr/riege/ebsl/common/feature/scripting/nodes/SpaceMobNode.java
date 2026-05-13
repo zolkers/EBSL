@@ -81,7 +81,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
         builder.append(' ').append(distance.value())
             .append(' ').append(tolerance.value())
             .append(' ').append(radius.value());
-        if (track.value()) {
+        if (Boolean.TRUE.equals(track.value())) {
             builder.append(" track");
         }
         if (!duration.value().isBlank()) {

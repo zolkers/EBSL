@@ -47,7 +47,9 @@ final class PathRotationController {
     }
 
     void rebuild(List<Node> path) {
-        this.cameraPath = PathfinderSettings.instance().useCameraRail.value() ? CameraRailBuilder.build(path) : Collections.emptyList();
+        this.cameraPath = Boolean.TRUE.equals(PathfinderSettings.instance().useCameraRail.value())
+            ? CameraRailBuilder.build(path)
+            : Collections.emptyList();
         this.cameraIndex = 0;
         this.lastCameraCheckPos = null;
         this.camTargetIdx = -1;
@@ -146,11 +148,11 @@ final class PathRotationController {
                 plan.yawThreshold(), plan.pitchThreshold(), plan.durationMs(), plan.yawEasing(), plan.pitchEasing(), true);
         }
 
-        if (PathfinderSettings.instance().useCameraRail.value() && !cameraPath.isEmpty()) {
+        if (Boolean.TRUE.equals(PathfinderSettings.instance().useCameraRail.value()) && !cameraPath.isEmpty()) {
             int camTarget = pickCameraRailTarget(playerPos);
             Vec3d rotTargetPos = getCameraRailGuideTarget(playerPos, camTarget);
             rotTargetPos = naturalizeCameraTarget(playerPos, path, pursuitSegment, rotTargetPos);
-            int visualizerIndex = Math.clamp(camTarget + 1, 0, cameraPath.size() - 1);
+            int visualizerIndex = (int) Math.clamp(camTarget + 1L, 0L, cameraPath.size() - 1L);
             return defaultRotationTarget(path, pursuitSegment, alreadyRotating, "camera_rail", camTarget, visualizerIndex, rotTargetPos);
         }
 
@@ -393,8 +395,8 @@ final class PathRotationController {
             return 0.0;
         }
         int aIdx = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int bIdx = Math.clamp(aIdx + 1, 0, path.size() - 1);
-        int cIdx = Math.clamp(aIdx + 2, 0, path.size() - 1);
+        int bIdx = (int) Math.clamp(aIdx + 1L, 0L, path.size() - 1L);
+        int cIdx = (int) Math.clamp(aIdx + 2L, 0L, path.size() - 1L);
         if (aIdx == bIdx || bIdx == cIdx) {
             return 0.0;
         }

@@ -29,9 +29,9 @@ public class MinecraftImGuiLayer implements IImGuiLayer {
             try {
                 drawPanels.run();
                 renderFailureLogged = false;
-            } catch (Throwable throwable) {
+            } catch (Exception exception) {
                 if (!renderFailureLogged) {
-                    LOGGER.error("EBSL ImGui frame failed", throwable);
+                    LOGGER.error("EBSL ImGui frame failed", exception);
                     renderFailureLogged = true;
                 }
             }

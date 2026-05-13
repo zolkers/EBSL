@@ -90,7 +90,7 @@ public final class ParkourJumpPlanner {
             || !hasColumnHeadroom(to.flooredX(), to.flooredY(), to.flooredZ())) {
             return ParkourJumpPlan.rejected("missing takeoff or landing headroom");
         }
-        if (!hasArcClearance(from, to, distanceBlocks, verticalDelta)) {
+        if (!hasArcClearance(from, to, verticalDelta)) {
             return ParkourJumpPlan.rejected("jump arc is blocked");
         }
         if (!hasActualGap(from, to, distanceBlocks)) {
@@ -134,7 +134,7 @@ public final class ParkourJumpPlanner {
         return rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum";
     }
 
-    private boolean hasArcClearance(PathPosition from, PathPosition to, int distanceBlocks, double verticalDelta) {
+    private boolean hasArcClearance(PathPosition from, PathPosition to, double verticalDelta) {
         double dx = to.centeredX() - from.centeredX();
         double dz = to.centeredZ() - from.centeredZ();
         double horizontalLength = Math.sqrt(dx * dx + dz * dz);

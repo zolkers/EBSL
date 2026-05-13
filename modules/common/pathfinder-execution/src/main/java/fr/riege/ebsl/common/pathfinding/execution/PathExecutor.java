@@ -22,7 +22,6 @@ public final class PathExecutor {
     public enum State { IDLE, WALKING, REPLANNING, FINISHED, FAILED }
 
     private final IPlayerLayer player;
-    private final IPhysicsLayer physics;
     private final IInputLayer input;
     private final WalkabilityChecker checker;
     private final PathTracker pathTracker = new PathTracker();
@@ -61,7 +60,6 @@ public final class PathExecutor {
 
     public PathExecutor(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
         this.player = player;
-        this.physics = physics;
         this.input = input;
         this.checker = new WalkabilityChecker(world);
         this.rotationExecutor = new RotationExecutor(player, physics);

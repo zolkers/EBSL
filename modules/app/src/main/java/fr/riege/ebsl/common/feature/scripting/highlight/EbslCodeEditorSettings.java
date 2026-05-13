@@ -103,7 +103,7 @@ public final class EbslCodeEditorSettings extends Settingable {
 
     public int editorColor(EbslCodeEditorColor color) {
         EbslCodeEditorPalette palette = editorTheme.value();
-        if (!customEditorColors.value()) {
+        if (!Boolean.TRUE.equals(customEditorColors.value())) {
             return switch (color) {
                 case BACKGROUND -> palette.backgroundColor();
                 case BORDER -> palette.borderColor();
@@ -124,7 +124,7 @@ public final class EbslCodeEditorSettings extends Settingable {
     }
 
     public EbslTokenStyle tokenStyle(EbslTokenKind kind) {
-        if (!customTokenColors.value()) {
+        if (!Boolean.TRUE.equals(customTokenColors.value())) {
             return languageTheme.value().style(kind);
         }
         return new EbslTokenStyle(tokenColorSetting(kind).value());

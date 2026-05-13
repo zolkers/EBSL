@@ -25,7 +25,7 @@ final class PathSteering {
         desiredX /= desiredLen;
         desiredZ /= desiredLen;
         PathfinderSettings settings = PathfinderSettings.instance();
-        if (!settings.cornerSteeringEnabled.value()) {
+        if (!Boolean.TRUE.equals(settings.cornerSteeringEnabled.value())) {
             return new SteeringVector(desiredX, desiredZ, false);
         }
 

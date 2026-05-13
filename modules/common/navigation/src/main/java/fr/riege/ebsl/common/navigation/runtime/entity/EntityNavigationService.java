@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class EntityNavigationService implements NavigationService {
@@ -21,7 +22,7 @@ public class EntityNavigationService implements NavigationService {
     private final Consumer<Runnable> callbackThread;
 
     private volatile NavigationStatus status = NavigationStatus.IDLE;
-    private volatile PathPlan lastPlan;
+    private final AtomicReference<PathPlan> lastPlan = new AtomicReference<>();
     private PathPlannerOptions options = PathPlannerOptions.defaults();
     private Runnable onFinished;
     private Runnable onFailed;
@@ -42,7 +43,7 @@ public class EntityNavigationService implements NavigationService {
     }
 
     public PathPlan lastPlan() {
-        return lastPlan;
+        return lastPlan.get();
     }
 
     public void setPlannerOptions(PathPlannerOptions options) {
@@ -108,7 +109,8 @@ public class EntityNavigationService implements NavigationService {
     }
 
     @Override public int lastPathNodeCount() {
-        return lastPlan == null ? 0 : lastPlan.navigationNodes().size();
+        PathPlan plan = lastPlan.get();
+        return plan == null ? 0 : plan.navigationNodes().size();
     }
 
     @Override public void tick() {
@@ -142,12 +144,12 @@ public class EntityNavigationService implements NavigationService {
         PathPosition target = new PathPosition(x, y, z);
         planner.plan(start, target, options).whenComplete((plan, throwable) -> callbackThread.accept(() -> {
             if (throwable != null || plan == null || !plan.usable()) {
-                lastPlan = plan;
+                lastPlan.set(plan);
                 status = NavigationStatus.FAILED;
                 if (onFailed != null) onFailed.run();
                 return;
             }
-            lastPlan = plan;
+            lastPlan.set(plan);
             status = NavigationStatus.EXECUTING;
             follower.start(plan, onFinished, onFailed);
         }));

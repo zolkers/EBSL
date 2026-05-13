@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class PathVisualizer {
     private static final int MAX_EXPLORED = 3000;
@@ -20,8 +21,8 @@ public final class PathVisualizer {
     private static final int SHIFT_Z = 12;
     private static final int SHIFT_X = 38;
 
-    private static volatile List<Node> currentPath = Collections.emptyList();
-    private static volatile List<Vec3d> cameraPath = Collections.emptyList();
+    private static final AtomicReference<List<Node>> currentPath = new AtomicReference<>(Collections.emptyList());
+    private static final AtomicReference<List<Vec3d>> cameraPath = new AtomicReference<>(Collections.emptyList());
     private static volatile int currentCameraRailIndex = -1;
     private static double visualCameraRailProgress = -1.0;
     private static Vec3d visualCameraRailPosition;
@@ -55,12 +56,12 @@ public final class PathVisualizer {
     }
 
     public static void setPath(List<Node> path) {
-        currentPath = path != null ? List.copyOf(path) : Collections.emptyList();
+        currentPath.set(path != null ? List.copyOf(path) : Collections.emptyList());
     }
 
     public static void setCameraPath(List<Vec3d> path) {
         List<Vec3d> snapshot = path != null ? List.copyOf(path) : Collections.emptyList();
-        cameraPath = snapshot;
+        cameraPath.set(snapshot);
         if (currentCameraRailIndex >= snapshot.size()) {
             currentCameraRailIndex = -1;
         }
@@ -106,13 +107,13 @@ public final class PathVisualizer {
 
     public static void updateExecution(int camTargetIdx) {
         if (camTargetIdx >= 0) {
-            currentCameraRailIndex = clampIndex(camTargetIdx, cameraPath.size());
+            currentCameraRailIndex = clampIndex(camTargetIdx, cameraPath.get().size());
         }
     }
 
     public static void clear() {
-        currentPath = Collections.emptyList();
-        cameraPath = Collections.emptyList();
+        currentPath.set(Collections.emptyList());
+        cameraPath.set(Collections.emptyList());
         currentCameraRailIndex = -1;
         visualCameraRailProgress = -1.0;
         visualCameraRailPosition = null;
@@ -135,15 +136,15 @@ public final class PathVisualizer {
     private static PathVisualizerSnapshot snapshot() {
         updateVisualCameraRail();
         return new PathVisualizerSnapshot(
-            currentPath,
-            cameraPath,
+            currentPath.get(),
+            cameraPath.get(),
             currentCameraRailIndex,
             visualCameraRailProgress,
             visualCameraRailPosition);
     }
 
     private static void updateVisualCameraRail() {
-        List<Vec3d> path = cameraPath;
+        List<Vec3d> path = cameraPath.get();
         int targetIndex = clampIndex(currentCameraRailIndex, path.size());
         if (targetIndex < 0) {
             visualCameraRailProgress = -1.0;

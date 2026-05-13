@@ -43,8 +43,8 @@ public final class EbslExecutor implements Executor {
         return () -> {
             try {
                 task.run();
-            } catch (Throwable throwable) {
-                throw EbslThreadExceptionHandler.report(domain, owner, throwable);
+            } catch (Exception exception) {
+                throw EbslThreadExceptionHandler.report(domain, owner, exception);
             }
         };
     }
@@ -53,8 +53,8 @@ public final class EbslExecutor implements Executor {
         return () -> {
             try {
                 return task.get();
-            } catch (Throwable throwable) {
-                throw EbslThreadExceptionHandler.report(domain, owner, throwable);
+            } catch (Exception exception) {
+                throw EbslThreadExceptionHandler.report(domain, owner, exception);
             }
         };
     }

@@ -17,7 +17,7 @@ public class McStorageLayer implements IStorageLayer {
         try {
             Files.createDirectories(dir);
             Files.writeString(dir.resolve(key + ".json"), json);
-        } catch (IOException e) { throw new RuntimeException(e); }
+        } catch (IOException e) { throw new StorageAccessException("Unable to save json: " + key, e); }
     }
 
     @Override
@@ -34,7 +34,7 @@ public class McStorageLayer implements IStorageLayer {
             Path file = resolveTextPath(path);
             Files.createDirectories(file.getParent());
             Files.writeString(file, text);
-        } catch (IOException e) { throw new RuntimeException(e); }
+        } catch (IOException e) { throw new StorageAccessException("Unable to save text: " + path, e); }
     }
 
     @Override
@@ -49,7 +49,7 @@ public class McStorageLayer implements IStorageLayer {
     public void deleteText(String path) {
         try {
             Files.deleteIfExists(resolveTextPath(path));
-        } catch (IOException e) { throw new RuntimeException(e); }
+        } catch (IOException e) { throw new StorageAccessException("Unable to delete text: " + path, e); }
     }
 
     @Override
@@ -80,5 +80,11 @@ public class McStorageLayer implements IStorageLayer {
             throw new IllegalArgumentException("Storage path escapes EBSL directory: " + path);
         }
         return resolved;
+    }
+
+    private static final class StorageAccessException extends IllegalStateException {
+        private StorageAccessException(String message, IOException cause) {
+            super(message, cause);
+        }
     }
 }

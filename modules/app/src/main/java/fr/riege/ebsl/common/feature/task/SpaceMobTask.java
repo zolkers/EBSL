@@ -102,7 +102,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private EntitySnapshot selectTarget(EbslPlatform platform) {
         EntitySnapshot current = findById(platform, currentTargetId);
-        if (trackUntilDeath.value() && isUsableTarget(platform, current)) {
+        if (Boolean.TRUE.equals(trackUntilDeath.value()) && isUsableTarget(platform, current)) {
             return current;
         }
         if (targetMode.value() == MobTargetMode.ENTITY_NAME && !targetName.value().isBlank()) {

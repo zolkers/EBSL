@@ -29,7 +29,4 @@ final class MovementSmoothingRegistry {
         return Optional.empty();
     }
 
-    private static void register(Node.MoveType moveType, MovementSmoothing strategy) {
-        STRATEGIES.register(moveType, strategy);
-    }
 }

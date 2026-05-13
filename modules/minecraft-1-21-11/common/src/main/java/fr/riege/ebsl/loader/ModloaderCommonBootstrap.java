@@ -113,14 +113,14 @@ public final class ModloaderCommonBootstrap {
     }
 
     public static double remapScaledX(Window window, double rawX, double scaledX) {
-        if (events == null) return scaledX;
+        if (events == null || window == null) return scaledX;
         fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
             events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawX, scaledX, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.X));
         return event.scaledPos();
     }
 
     public static double remapScaledY(Window window, double rawY, double scaledY) {
-        if (events == null) return scaledY;
+        if (events == null || window == null) return scaledY;
         fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
             events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawY, scaledY, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.Y));
         return event.scaledPos();

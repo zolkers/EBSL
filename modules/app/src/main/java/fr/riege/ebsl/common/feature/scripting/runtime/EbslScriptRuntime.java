@@ -70,7 +70,7 @@ public final class EbslScriptRuntime {
 
     public double number(Object value) {
         if (value instanceof Number n) return n.doubleValue();
-        if (value instanceof Boolean b) return b ? 1.0 : 0.0;
+        if (value instanceof Boolean b) return Boolean.TRUE.equals(b) ? 1.0 : 0.0;
         if (value instanceof String s) {
             try {
                 return Double.parseDouble(s);

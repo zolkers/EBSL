@@ -28,6 +28,7 @@ import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public final class CommonNavigationBackend implements NavigationService {
@@ -41,7 +42,7 @@ public final class CommonNavigationBackend implements NavigationService {
     private final Consumer<Runnable> gameThread;
 
     private AStarPathfinder pathfinder;
-    private volatile PathfinderResult lastResult;
+    private final AtomicReference<PathfinderResult> lastResult = new AtomicReference<>();
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
     private Runnable onFinished;
@@ -168,21 +169,22 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     public PathfinderResult lastResult() {
-        return lastResult;
+        return lastResult.get();
     }
 
     public Collection<PathPosition> lastPathPositions() {
         if (!activeNodes.isEmpty()) {
             return activeNodes.stream().map(node -> node.position).toList();
         }
-        Path path = lastResult == null ? null : lastResult.getPath();
+        PathfinderResult result = lastResult.get();
+        Path path = result == null ? null : result.getPath();
         return path == null ? List.of() : path.collect();
     }
 
     @Override public NavigationStatus pathStatus() {
         if (executor.getState() == PathExecutor.State.REPLANNING) return NavigationStatus.REPLANNING;
         if (executor.getState() == PathExecutor.State.WALKING) return NavigationStatus.EXECUTING;
-        PathfinderResult result = lastResult;
+        PathfinderResult result = lastResult.get();
         if (navigating && result == null) return NavigationStatus.CALCULATING;
         if (result == null) return NavigationStatus.IDLE;
         if (result.hasFailed()) return NavigationStatus.FAILED;
@@ -219,7 +221,7 @@ public final class CommonNavigationBackend implements NavigationService {
             return;
         }
 
-        PathfinderResult result = lastResult;
+        PathfinderResult result = lastResult.get();
         if (!hasUsablePath(result)) {
             return;
         }
@@ -278,7 +280,7 @@ public final class CommonNavigationBackend implements NavigationService {
         this.onFinished = onFinished;
         this.activeNodes = List.of();
         this.executePath = executePath;
-        this.lastResult = null;
+        this.lastResult.set(null);
         navigating = true;
         currentMoveType = Node.MoveType.WALK;
 
@@ -292,7 +294,7 @@ public final class CommonNavigationBackend implements NavigationService {
         goalY = effectiveTarget.flooredY();
         goalZ = effectiveTarget.flooredZ();
         if (start.equals(effectiveTarget)) {
-            lastResult = new PathfinderResultImpl(PathState.FOUND, new PathImpl(start, effectiveTarget, List.of(start)));
+            lastResult.set(new PathfinderResultImpl(PathState.FOUND, new PathImpl(start, effectiveTarget, List.of(start))));
             markIdle(false);
             return;
         }
@@ -335,7 +337,7 @@ public final class CommonNavigationBackend implements NavigationService {
                 pathfinder = null;
                 if (throwable != null) {
                     navigating = false;
-                    lastResult = null;
+                    lastResult.set(null);
                     input.releaseMovementKeys();
                     if (onFailed != null) onFailed.run();
                     return;
@@ -345,7 +347,7 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config, boolean executePath) {
-        lastResult = result;
+        lastResult.set(result);
         Collection<PathPosition> positions = result != null && result.getPath() != null
             ? result.getPath().collect()
             : List.of();
@@ -621,10 +623,10 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private PathPosition resolveSpeculativeSegmentTarget(double fromX, double fromZ, int preferredY,
                                                          LongRangePathSession.SegmentGoal segmentGoal) {
-        int goalX = segmentGoal.x();
-        int goalZ = segmentGoal.z();
-        PathPosition direct = new PathPosition(goalX, resolveGoalYForXZ(goalX, preferredY, goalZ), goalZ);
-        if (!segmentGoal.segmented() || isLoadedWalkableXZ(goalX, direct.flooredY(), goalZ)) {
+        int segmentGoalX = segmentGoal.x();
+        int segmentGoalZ = segmentGoal.z();
+        PathPosition direct = new PathPosition(segmentGoalX, resolveGoalYForXZ(segmentGoalX, preferredY, segmentGoalZ), segmentGoalZ);
+        if (!segmentGoal.segmented() || isLoadedWalkableXZ(segmentGoalX, direct.flooredY(), segmentGoalZ)) {
             return direct;
         }
 
@@ -633,8 +635,8 @@ public final class CommonNavigationBackend implements NavigationService {
             return direct;
         }
 
-        double targetX = goalX + 0.5;
-        double targetZ = goalZ + 0.5;
+        double targetX = segmentGoalX + 0.5;
+        double targetZ = segmentGoalZ + 0.5;
         for (int step = 1; step <= steps; step++) {
             double t = step / (double) (steps + 1);
             int x = (int) Math.floor(targetX + (fromX - targetX) * t);
@@ -656,7 +658,7 @@ public final class CommonNavigationBackend implements NavigationService {
         int y = target.flooredY();
         int z = target.flooredZ();
         if (checker.isSolid(x, y, z)) {
-            return new PathPosition(x, (double) y + 1.0, z);
+            return new PathPosition(x, y + 1.0, z);
         }
         return target;
     }

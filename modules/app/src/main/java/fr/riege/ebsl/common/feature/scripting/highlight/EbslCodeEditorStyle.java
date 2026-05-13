@@ -34,7 +34,7 @@ public enum EbslCodeEditorStyle {
     }
 
     public double caretBlinkSeconds() {
-        return settings().caretBlink.value() ? settings().caretBlinkSeconds.value() : 0.0;
+        return Boolean.TRUE.equals(settings().caretBlink.value()) ? settings().caretBlinkSeconds.value() : 0.0;
     }
 
     public float caretThickness() {
