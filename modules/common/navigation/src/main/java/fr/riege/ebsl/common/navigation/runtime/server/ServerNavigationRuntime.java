@@ -47,8 +47,7 @@ public final class ServerNavigationRuntime {
     }
 
     public PathPlanningService planner() {
-        PathPlanningService planner = new PathPlanningService(world);
-        return planner;
+        return new PathPlanningService(world);
     }
 
     public EntityNavigationService entity(NavigationActor actor, NavigationMotor motor) {

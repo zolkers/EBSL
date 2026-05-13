@@ -21,7 +21,7 @@ final class EbslCommandActionRegistry {
 
     static CommandResult execute(String action, CommandContext context) {
         EbslCommandActionHandler handler = HANDLERS.get(normalize(action));
-        return handler == null ? CommandResult.badUsage(EbslCommand.usage()) : handler.execute(context);
+        return handler == null ? CommandResult.badUsage(EbslCommand.USAGE) : handler.execute(context);
     }
 
     private static void register(EbslCommandAction action, EbslCommandActionHandler handler) {

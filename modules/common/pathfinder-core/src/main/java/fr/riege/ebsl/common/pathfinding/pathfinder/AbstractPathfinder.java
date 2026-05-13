@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractPathfinder implements Pathfinder {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-pathfinder");
 
-    private static final Set<PathPosition> EMPTY_PATH_POSITIONS = new LinkedHashSet<>(0);
+    private static final Set<PathPosition> EMPTY_PATH_POSITIONS = LinkedHashSet.newLinkedHashSet(0);
     private static final double TIE_BREAKER_WEIGHT = 1e-6;
 
     protected final PathfinderConfiguration pathfinderConfiguration;

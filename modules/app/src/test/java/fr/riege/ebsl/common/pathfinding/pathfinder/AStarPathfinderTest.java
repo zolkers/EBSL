@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -111,11 +112,7 @@ class AStarPathfinderTest {
     private static final class SlowProcessor implements NodeProcessor {
         @Override
         public boolean isValid(EvaluationContext context) {
-            try {
-                Thread.sleep(2);
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
             return true;
         }
     }

@@ -1,6 +1,5 @@
 package fr.riege.ebsl.common.domain.world;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -8,55 +7,32 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockSelectorTest {
-    @Test
-    void supportsOrSelectors() {
-        BlockSelector selector = BlockSelector.parse("leaf|wood");
-
-        assertTrue(selector.matches(BlockId.of("minecraft:oak_leaves")));
-        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
-        assertFalse(selector.matches(BlockId.of("minecraft:stone")));
-    }
-
-    @Test
-    void supportsAndNotSelectors() {
-        BlockSelector selector = BlockSelector.parse("wood&!crimson_stem");
-
-        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
-        assertFalse(selector.matches(BlockId.of("minecraft:crimson_stem")));
-    }
-
-    @Test
-    void keepsSimpleSelectors() {
-        assertTrue(BlockSelector.parse("minecraft:oak_leaves").matches(BlockId.of("minecraft:oak_leaves")));
-        assertTrue(BlockSelector.parse("leaves").matches(BlockId.of("minecraft:oak_leaves")));
-        assertFalse(BlockSelector.parse("minecraft:leaves").matches(BlockId.of("minecraft:oak_leaves")));
-    }
-
-    @Test
-    void givesAndPrecedenceOverOr() {
-        BlockSelector selector = BlockSelector.parse("stone|wood&!crimson_stem");
-
-        assertTrue(selector.matches(BlockId.of("minecraft:stone")));
-        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
-        assertFalse(selector.matches(BlockId.of("minecraft:crimson_stem")));
-    }
-
-    @Test
-    void normalizesWhitespaceCaseAndDashes() {
-        BlockSelector selector = BlockSelector.parse("  OAK-LEAVES  |  birch-log  ");
-
-        assertTrue(selector.matches(BlockId.of("minecraft:oak_leaves")));
-        assertTrue(selector.matches(BlockId.of("minecraft:birch_log")));
-        assertFalse(selector.matches(BlockId.of("minecraft:stone")));
-    }
-
     @ParameterizedTest
     @CsvSource({
-        "'',minecraft:stone",
-        "!,minecraft:stone",
-        "wood&,minecraft:oak_log"
+        "leaf|wood,minecraft:oak_leaves,true",
+        "leaf|wood,minecraft:birch_log,true",
+        "leaf|wood,minecraft:stone,false",
+        "wood&!crimson_stem,minecraft:birch_log,true",
+        "wood&!crimson_stem,minecraft:crimson_stem,false",
+        "minecraft:oak_leaves,minecraft:oak_leaves,true",
+        "leaves,minecraft:oak_leaves,true",
+        "minecraft:leaves,minecraft:oak_leaves,false",
+        "stone|wood&!crimson_stem,minecraft:stone,true",
+        "stone|wood&!crimson_stem,minecraft:birch_log,true",
+        "stone|wood&!crimson_stem,minecraft:crimson_stem,false",
+        "'  OAK-LEAVES  |  birch-log  ',minecraft:oak_leaves,true",
+        "'  OAK-LEAVES  |  birch-log  ',minecraft:birch_log,true",
+        "'  OAK-LEAVES  |  birch-log  ',minecraft:stone,false",
+        "'',minecraft:stone,false",
+        "!,minecraft:stone,false",
+        "wood&,minecraft:oak_log,false"
     })
-    void blankOrMalformedSelectorsDoNotMatch(String selectorText, String blockId) {
-        assertFalse(BlockSelector.parse(selectorText).matches(BlockId.of(blockId)));
+    void evaluatesSelectors(String selectorText, String blockId, boolean expected) {
+        boolean matches = BlockSelector.parse(selectorText).matches(BlockId.of(blockId));
+        if (expected) {
+            assertTrue(matches);
+        } else {
+            assertFalse(matches);
+        }
     }
 }

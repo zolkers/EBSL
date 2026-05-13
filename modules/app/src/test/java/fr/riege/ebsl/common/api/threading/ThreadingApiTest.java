@@ -20,12 +20,12 @@ final class ThreadingApiTest {
 
     @Test
     void recordsManagedExecutorFailures() {
-        assertThrows(CompletionException.class, () -> EbslApi.threading()
+        var failure = EbslApi.threading()
             .executor(EbslThreadDomain.GENERAL)
             .run("test.failure", () -> {
                 throw new IllegalStateException("boom");
-            })
-            .join());
+            });
+        assertThrows(CompletionException.class, failure.toCompletableFuture()::join);
 
         var errors = EbslApi.threading().errors();
         assertEquals(1, errors.size());

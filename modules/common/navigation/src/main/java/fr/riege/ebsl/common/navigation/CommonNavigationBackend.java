@@ -48,7 +48,9 @@ public final class CommonNavigationBackend implements NavigationService {
     private Runnable onFinished;
     private Runnable onFailed;
     private List<Node> activeNodes = List.of();
-    private int goalX, goalY, goalZ;
+    private int goalX;
+    private int goalY;
+    private int goalZ;
     private boolean executePath;
     private ExecutionOptions executionOptions = ExecutionOptions.defaults();
     private boolean preciseExecution;

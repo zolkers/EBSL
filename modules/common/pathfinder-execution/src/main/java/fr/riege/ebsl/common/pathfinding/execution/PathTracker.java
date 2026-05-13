@@ -288,7 +288,7 @@ final class PathTracker {
 
     private static double distanceBetween(Node from, Node to) {
         double dx = to.position.centeredX() - from.position.centeredX();
-        double dy = (double) to.position.flooredY() - from.position.flooredY();
+        double dy = to.position.flooredY() - from.position.flooredY();
         double dz = to.position.centeredZ() - from.position.centeredZ();
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }

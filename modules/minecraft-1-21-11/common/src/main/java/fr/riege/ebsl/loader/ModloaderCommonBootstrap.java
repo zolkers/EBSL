@@ -31,7 +31,6 @@ public final class ModloaderCommonBootstrap {
     private static ModloaderEventBus events;
     private static ModloaderNavigationService navigation;
     private static MinecraftImGuiLayer imgui;
-    private static Minecraft client;
     private static ModloaderUiService ui;
     private static DockingInputHandler docking;
     private static long ticks;
@@ -47,7 +46,6 @@ public final class ModloaderCommonBootstrap {
                                   IInputLayer input) {
         McWorldLayer world = new McWorldLayer(client);
         McPlayerLayer player = new McPlayerLayer(client);
-        ModloaderCommonBootstrap.client = client;
         events = new ModloaderEventBus();
         navigation = new ModloaderNavigationService(world, player, physics, input);
         ModloaderCommonBootstrap.imgui = imgui instanceof MinecraftImGuiLayer layer ? layer : null;

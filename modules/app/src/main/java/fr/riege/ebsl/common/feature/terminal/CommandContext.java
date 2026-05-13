@@ -36,7 +36,7 @@ public record CommandContext(String[] args) {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof CommandContext that && Arrays.equals(args, that.args);
+        return other instanceof CommandContext(String[] otherArgs) && Arrays.equals(args, otherArgs);
     }
 
     @Override

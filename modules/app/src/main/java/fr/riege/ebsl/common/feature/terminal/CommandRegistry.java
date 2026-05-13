@@ -98,9 +98,7 @@ public final class CommandRegistry {
         int argIndex = tokens.length - 2;
         String partial = tokens[tokens.length - 1];
         List<String> previousArgs = new ArrayList<>();
-        for (int i = 1; i < tokens.length - 1; i++) {
-            previousArgs.add(tokens[i]);
-        }
+        Collections.addAll(previousArgs, Arrays.copyOfRange(tokens, 1, tokens.length - 1));
         return entry.handler().completer().suggest(previousArgs, argIndex, partial).stream()
             .map(s -> CommandSuggestion.of(s, ""))
             .toList();

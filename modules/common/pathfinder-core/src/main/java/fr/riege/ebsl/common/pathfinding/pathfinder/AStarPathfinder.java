@@ -248,7 +248,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
             exploredCount = session.expandedCount;
             if (captureClosedSet) {
                 lastClosedSet = new LongOpenHashSet(session.closedSet);
-                session.closedSet.forEach((long key) -> PathfindingDiagnostics.recordExploredNode(key));
+                session.closedSet.forEach(PathfindingDiagnostics::recordExploredNode);
             } else {
                 lastClosedSet = new LongOpenHashSet();
             }

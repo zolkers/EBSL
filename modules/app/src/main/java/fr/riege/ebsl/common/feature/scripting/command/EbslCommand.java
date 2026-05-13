@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class EbslCommand {
+    static final String USAGE = "ebsl <run|inline|stop|status|tasks> [args]";
     private static final List<EbslNodeType> SCRIPT_BLOCKS = List.of(
         EbslNodeType.EVENT_FUNCTION,
         EbslNodeType.CONTROL_IF,
@@ -32,7 +33,7 @@ public final class EbslCommand {
     public static CommandSpec spec() {
         return CommandSpec.named("ebsl")
             .description("Run and inspect EBSL scripts")
-            .usage(usage())
+            .usage(USAGE)
             .bothScopes()
             .argument(CommandArgument.dynamic("action", EbslCommandAction::ids))
             .completion(CommandCompletion.builder()
@@ -45,13 +46,9 @@ public final class EbslCommand {
 
     private static CommandResult execute(CommandContext ctx) {
         if (ctx.argCount() == 0) {
-            return CommandResult.ok("Usage: " + usage());
+            return CommandResult.ok("Usage: " + USAGE);
         }
         return EbslCommandActionRegistry.execute(ctx.arg(0), ctx);
-    }
-
-    static String usage() {
-        return "ebsl <run|inline|stop|status|tasks> [args]";
     }
 
     static CommandResult runFile(CommandContext ctx) {

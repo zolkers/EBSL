@@ -66,9 +66,7 @@ public class EbslCore {
             }
             platform.render().endFrame();
         });
-        platform.imgui().registerFrame(() -> {
-            CommonImGuiOverlay.render(platform, navigationService, uiService);
-        });
+        platform.imgui().registerFrame(() -> CommonImGuiOverlay.render(platform, navigationService, uiService));
     }
 
     public EbslPlatform platform() {

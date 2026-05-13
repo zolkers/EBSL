@@ -11,20 +11,28 @@ public final class EbslTokenizer {
         List<String> tokens = new ArrayList<>();
         StringBuilder token = new StringBuilder();
         boolean quoted = false;
-        for (int i = 0; i < source.length(); i++) {
+        int i = 0;
+        while (i < source.length()) {
             char c = source.charAt(i);
             if (!quoted && String.valueOf(c).equals(EbslSyntax.COMMENT)) {
                 i = skipComment(source, i);
                 tokens.add(EbslSyntax.LINE_END);
+                if (i < source.length() && source.charAt(i) == '\n') {
+                    i++;
+                }
             } else if (String.valueOf(c).equals(EbslSyntax.QUOTE)) {
                 quoted = !quoted;
+                i++;
             } else if (quoted) {
                 token.append(c);
+                i++;
             } else if (isSeparator(c)) {
                 flush(token, tokens);
                 addSeparator(c, tokens);
+                i++;
             } else {
                 token.append(c);
+                i++;
             }
         }
         flush(token, tokens);

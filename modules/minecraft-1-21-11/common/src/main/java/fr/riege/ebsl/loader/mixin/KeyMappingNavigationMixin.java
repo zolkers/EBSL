@@ -9,6 +9,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(KeyMapping.class)
 public class KeyMappingNavigationMixin {
+    private KeyMappingNavigationMixin() {
+    }
+
     @Inject(method = "releaseAll", at = @At("HEAD"), cancellable = true)
     private static void ebslPreventReleaseWhenNavigating(CallbackInfo ci) {
         if (EbslServices.isNavigationActive()) {
