@@ -513,17 +513,22 @@ public final class LayerPathProcessor implements NodeProcessor {
         if (totalW <= 0.1) {
             return 0.0;
         }
-        double denominator = totalW;
-        avgX /= denominator;
-        avgZ /= denominator;
+        double[] averageDirection = normalizeWeightedDirection(avgX, avgZ, totalW);
         double cdx = current.x - previous.x;
         double cdz = current.z - previous.z;
         double curLen = Math.sqrt(cdx * cdx + cdz * cdz);
         if (curLen <= 0.1) {
             return 0.0;
         }
-        double dot = (cdx / curLen) * avgX + (cdz / curLen) * avgZ;
+        double dot = (cdx / curLen) * averageDirection[0] + (cdz / curLen) * averageDirection[1];
         double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
         return angleDeg < 5.0 ? -0.3 : (angleDeg / 90.0) * 0.8;
+    }
+
+    private static double[] normalizeWeightedDirection(double x, double z, double weight) {
+        if (weight <= 0.0) {
+            return new double[] {0.0, 0.0};
+        }
+        return new double[] {x / weight, z / weight};
     }
 }

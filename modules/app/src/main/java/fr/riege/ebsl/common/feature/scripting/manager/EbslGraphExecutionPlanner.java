@@ -48,6 +48,24 @@ public final class EbslGraphExecutionPlanner {
     }
 
     private static GraphSort sort(Map<String, GraphLine> lines, List<EbslGraphConnection> connections) {
+        GraphEdges edges = buildFlowEdges(lines, connections);
+        if (!edges.usedGraph()) {
+            return GraphSort.unused();
+        }
+
+        sortOutgoingEdges(lines, edges.outgoing());
+        ArrayDeque<String> queue = initialSortQueue(lines, edges.outgoing(), edges.incomingCounts());
+        List<GraphLine> ordered = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        drainSortQueue(lines, edges.outgoing(), edges.incomingCounts(), queue, ordered, visited);
+
+        if (ordered.isEmpty()) {
+            return GraphSort.unused();
+        }
+        return new GraphSort(true, ordered, visited);
+    }
+
+    private static GraphEdges buildFlowEdges(Map<String, GraphLine> lines, List<EbslGraphConnection> connections) {
         Map<String, List<String>> outgoing = new HashMap<>();
         Map<String, Integer> incomingCounts = new HashMap<>();
         for (String key : lines.keySet()) {
@@ -56,34 +74,46 @@ public final class EbslGraphExecutionPlanner {
         }
         boolean usedGraph = false;
         for (EbslGraphConnection connection : connections) {
-            if (connection.mode() != EbslGraphConnectionMode.FLOW
-                || !lines.containsKey(connection.fromKey())
-                || !lines.containsKey(connection.toKey())) {
-                continue;
+            if (isUsableFlowEdge(lines, connection) && !outgoing.get(connection.fromKey()).contains(connection.toKey())) {
+                outgoing.get(connection.fromKey()).add(connection.toKey());
+                incomingCounts.compute(connection.toKey(), (ignored, count) -> count == null ? 1 : count + 1);
+                usedGraph = true;
             }
-            if (outgoing.get(connection.fromKey()).contains(connection.toKey())) {
-                continue;
-            }
-            outgoing.get(connection.fromKey()).add(connection.toKey());
-            incomingCounts.compute(connection.toKey(), (ignored, count) -> count == null ? 1 : count + 1);
-            usedGraph = true;
         }
-        if (!usedGraph) {
-            return GraphSort.unused();
-        }
+        return new GraphEdges(outgoing, incomingCounts, usedGraph);
+    }
 
+    private static boolean isUsableFlowEdge(Map<String, GraphLine> lines, EbslGraphConnection connection) {
+        return connection.mode() == EbslGraphConnectionMode.FLOW
+            && lines.containsKey(connection.fromKey())
+            && lines.containsKey(connection.toKey());
+    }
+
+    private static void sortOutgoingEdges(Map<String, GraphLine> lines, Map<String, List<String>> outgoing) {
         Comparator<String> bySourceLine = Comparator.comparingInt(key -> lines.get(key).lineNumber());
         for (List<String> targets : outgoing.values()) {
             targets.sort(bySourceLine);
         }
+    }
+
+    private static ArrayDeque<String> initialSortQueue(Map<String, GraphLine> lines,
+                                                       Map<String, List<String>> outgoing,
+                                                       Map<String, Integer> incomingCounts) {
         ArrayDeque<String> queue = new ArrayDeque<>();
         for (String key : lines.keySet()) {
             if (incomingCounts.getOrDefault(key, 0) == 0 && !outgoing.get(key).isEmpty()) {
                 queue.add(key);
             }
         }
-        List<GraphLine> ordered = new ArrayList<>();
-        Set<String> visited = new HashSet<>();
+        return queue;
+    }
+
+    private static void drainSortQueue(Map<String, GraphLine> lines,
+                                       Map<String, List<String>> outgoing,
+                                       Map<String, Integer> incomingCounts,
+                                       ArrayDeque<String> queue,
+                                       List<GraphLine> ordered,
+                                       Set<String> visited) {
         while (!queue.isEmpty()) {
             String key = queue.removeFirst();
             if (!visited.add(key)) {
@@ -97,11 +127,6 @@ public final class EbslGraphExecutionPlanner {
                 }
             }
         }
-
-        if (ordered.isEmpty()) {
-            return GraphSort.unused();
-        }
-        return new GraphSort(true, ordered, visited);
     }
 
     private static List<GraphLine> materializeEachInputEdges(List<GraphLine> ordered,
@@ -159,5 +184,12 @@ public final class EbslGraphExecutionPlanner {
         private static GraphSort unused() {
             return new GraphSort(false, List.of(), Set.of());
         }
+    }
+
+    private record GraphEdges(
+        Map<String, List<String>> outgoing,
+        Map<String, Integer> incomingCounts,
+        boolean usedGraph
+    ) {
     }
 }
