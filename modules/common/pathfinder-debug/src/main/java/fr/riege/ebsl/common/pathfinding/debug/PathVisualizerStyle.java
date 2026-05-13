@@ -31,10 +31,13 @@ record PathVisualizerStyle(
     boolean renderPathNodes,
     boolean renderPathLines,
     boolean renderCameraRail,
+    boolean renderDepthPaths,
     int maxPathNodes,
     int maxCameraNodes,
+    int maxDepthPathNodes,
     float pathLineWidth,
     float cameraLineWidth,
+    float depthLineWidth,
     PathRenderColorMode pathColorMode,
     RenderColor nodeColor,
     RenderColor gradientStartColor,
@@ -59,10 +62,13 @@ record PathVisualizerStyle(
             settings.renderPathNodes.value(),
             settings.renderPathLines.value(),
             settings.renderCameraRail.value(),
+            settings.renderDepthPaths.value(),
             settings.renderMaxPathNodes.value(),
             settings.renderMaxCameraNodes.value(),
+            settings.renderMaxDepthPathNodes.value(),
             settings.renderPathLineWidth.value().floatValue(),
             settings.renderCameraLineWidth.value().floatValue(),
+            settings.renderDepthLineWidth.value().floatValue(),
             settings.renderPathColorMode.value(),
             RenderColor.argb(settings.renderNodeColor.value()),
             RenderColor.argb(settings.renderGradientStartColor.value()),
@@ -128,6 +134,16 @@ record PathVisualizerStyle(
 
     RenderColor cameraNodeColor(boolean active) {
         return active ? CAMERA_NODE_ACTIVE : CAMERA_NODE;
+    }
+
+    RenderColor depthLineColor(int depth, boolean selected, double qualityScore) {
+        float alpha = selected ? 0.92f : 0.34f + (float) (Math.clamp(qualityScore, 0.0, 1.0) * 0.24);
+        float brightness = selected ? 1.0f : 0.72f;
+        return RenderColor.hsv((depth * 0.173f) % 1.0f, 0.78f, brightness, alpha);
+    }
+
+    RenderColor depthEndpointColor(int depth, boolean selected) {
+        return depthLineColor(depth, selected, selected ? 1.0 : 0.55).withAlpha(selected ? 0.88f : 0.42f);
     }
 
     float cameraNodeLineWidth() {

@@ -93,8 +93,9 @@ public final class PathPlanningService {
         PathPlannerOptions depthOptions = depthOptions(baseOptions, depth);
         return planOnce(start, target, depthOptions)
             .thenCompose(candidate -> {
-                PathPlan selected = selectBestPlan(bestPlan, candidate, baseOptions);
-                if (!shouldContinueDepth(selected, baseOptions, depth)) {
+                PathPlan selected = DepthPlanSelector.select(
+                    bestPlan, candidate, IterativeDepthPlanner.requiredImprovement(baseOptions));
+                if (!IterativeDepthPlanner.shouldContinue(selected, baseOptions, depth)) {
                     return CompletableFuture.completedFuture(selected);
                 }
                 return planDepth(start, target, baseOptions, depth + 1, selected);
@@ -164,54 +165,8 @@ public final class PathPlanningService {
             .build();
     }
 
-    private static boolean shouldContinueDepth(PathPlan plan, PathPlannerOptions options, int depth) {
-        if (!options.iterativeDepthEnabled() || depth >= options.iterativeDepthMax()) {
-            return false;
-        }
-        if (plan == null || !plan.usable()) {
-            return true;
-        }
-        return options.qualityPlanningMode().retryPoorPlans()
-            && plan.quality().score() < options.qualityRetryMinScore();
-    }
-
     public static PathPlannerOptions depthOptions(PathPlannerOptions options, int depth) {
-        if (depth <= 1) {
-            return options;
-        }
-        double depthScale = Math.pow(options.iterativeDepthIterationMultiplier(), depth - 1);
-        double timeScale = Math.pow(options.iterativeDepthTimeMultiplier(), depth - 1);
-        double qualityScale = Math.pow(options.iterativeDepthQualityMultiplier(), depth - 1);
-        return options.toBuilder()
-            .qualityRiskCostWeight(options.qualityRiskCostWeight() * qualityScale)
-            .qualityTerrainCostWeight(options.qualityTerrainCostWeight() * qualityScale)
-            .maxIterations((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxIterations() * depthScale)))
-            .maxLength((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxLength() * Math.sqrt(depthScale))))
-            .maxCalculationTimeMs(options.maxCalculationTimeMs() <= 0
-                ? 0
-                : (int) Math.min(Integer.MAX_VALUE, Math.round(options.maxCalculationTimeMs() * timeScale)))
-            .build();
-    }
-
-    private static PathPlan selectBestPlan(PathPlan primary, PathPlan cautious, PathPlannerOptions options) {
-        if (cautious == null || !cautious.usable()) {
-            return primary;
-        }
-        if (primary == null || !primary.usable()) {
-            return cautious;
-        }
-        if (primary.complete() && !cautious.complete()) {
-            return primary;
-        }
-        if (!primary.complete() && cautious.complete()) {
-            return cautious;
-        }
-        double improvement = cautious.quality().score() - primary.quality().score();
-        double requiredImprovement = Math.max(options.qualityRetryImprovement(), options.iterativeDepthMinImprovement());
-        if (improvement >= requiredImprovement) {
-            return cautious;
-        }
-        return primary;
+        return IterativeDepthPlanner.optionsForDepth(options, depth);
     }
 
     private PathPlan toPlan(PathfinderResult result,

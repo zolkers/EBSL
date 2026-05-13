@@ -37,14 +37,20 @@ public final class PathfinderSettings extends Settingable {
         "render_path_lines", "Render path lines", true));
     public final BooleanSetting renderCameraRail = registerSetting(new BooleanSetting(
         "render_camera_rail", "Render camera rail", true));
+    public final BooleanSetting renderDepthPaths = registerSetting(new BooleanSetting(
+        "render_depth_paths", "Render iterative depth paths", true));
     public final IntSetting renderMaxPathNodes = registerSetting(new IntSetting(
         "render_max_path_nodes", "Max rendered path nodes", 300, 1, 4000));
     public final IntSetting renderMaxCameraNodes = registerSetting(new IntSetting(
         "render_max_camera_nodes", "Max rendered camera nodes", 480, 1, 4000));
+    public final IntSetting renderMaxDepthPathNodes = registerSetting(new IntSetting(
+        "render_max_depth_path_nodes", "Max rendered depth path nodes", 360, 1, 4000));
     public final DoubleSetting renderPathLineWidth = registerSetting(new DoubleSetting(
         "render_path_line_width", "Path line width", 2.0, 0.25, 8.0));
     public final DoubleSetting renderCameraLineWidth = registerSetting(new DoubleSetting(
         "render_camera_line_width", "Camera rail line width", 1.25, 0.25, 8.0));
+    public final DoubleSetting renderDepthLineWidth = registerSetting(new DoubleSetting(
+        "render_depth_line_width", "Depth path line width", 1.35, 0.25, 8.0));
     public final EnumSetting<PathRenderColorMode> renderPathColorMode = registerSetting(new EnumSetting<>(
         "render_path_color_mode", "Path color mode", PathRenderColorMode.RAINBOW, PathRenderColorMode.class));
     public final ColorSetting renderNodeColor = registerSetting(new ColorSetting(
@@ -456,10 +462,13 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.renderPathNodes,
             INSTANCE.renderPathLines,
             INSTANCE.renderCameraRail,
+            INSTANCE.renderDepthPaths,
             INSTANCE.renderMaxPathNodes,
             INSTANCE.renderMaxCameraNodes,
+            INSTANCE.renderMaxDepthPathNodes,
             INSTANCE.renderPathLineWidth,
             INSTANCE.renderCameraLineWidth,
+            INSTANCE.renderDepthLineWidth,
             INSTANCE.renderPathColorMode,
             INSTANCE.renderNodeColor,
             INSTANCE.renderGradientStartColor,

@@ -19,20 +19,15 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.pathfinding.debug;
+package fr.riege.ebsl.common.navigation;
 
-import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.diagnostics.DepthPathSnapshot;
-
-import java.util.List;
-
-record PathVisualizerSnapshot(List<Node> path, List<DepthPathSnapshot> depthPaths,
-                              List<Vec3d> cameraPath, int cameraRailIndex,
-                              double cameraRailVisualProgress, Vec3d cameraRailVisualPosition) {
-    PathVisualizerSnapshot {
-        path = List.copyOf(path);
-        depthPaths = List.copyOf(depthPaths);
-        cameraPath = List.copyOf(cameraPath);
+record IterativeDepthProfile(int depth, int maxIterations, int maxLength,
+                             int maxCalculationTimeMs, double qualityScale) {
+    IterativeDepthProfile {
+        depth = Math.max(1, depth);
+        maxIterations = Math.max(1, maxIterations);
+        maxLength = Math.max(1, maxLength);
+        maxCalculationTimeMs = Math.max(0, maxCalculationTimeMs);
+        qualityScale = Math.max(1.0, qualityScale);
     }
 }
