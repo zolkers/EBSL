@@ -7,13 +7,13 @@ EBSL expects local SonarQube at `http://localhost:9000` by default.
 Create a SonarQube token from the local web UI, then run:
 
 ```powershell
-.\scripts\setup-sonar-token.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-sonar-token.ps1
 ```
 
 For non-interactive setup:
 
 ```powershell
-.\scripts\setup-sonar-token.ps1 -Token "squ_..." -HostUrl "http://localhost:9000"
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-sonar-token.ps1 -Token "squ_..." -HostUrl "http://localhost:9000"
 ```
 
 The script stores the token in your user Gradle file:

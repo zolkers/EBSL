@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+set -eu
+
+message_file="$1"
+subject="$(sed -n '1p' "$message_file")"
+
+pattern='^(feat|fix|refactor|test|docs|ci|build|chore|perf|style|remove)(\([a-z0-9][a-z0-9-]*\))?: [a-z0-9].{0,71}$'
+
+case "$subject" in
+  Merge\ *|Revert\ *)
+    exit 0
+    ;;
+esac
+
+if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+  printf '%s\n' "Invalid commit message:"
+  printf '%s\n\n' "  $subject"
+  printf '%s\n' "Use Conventional Commits:"
+  printf '%s\n' "  type(scope): summary"
+  printf '%s\n' "Example:"
+  printf '%s\n' "  fix(pathfinder): stabilize step-up execution"
+  exit 1
+fi

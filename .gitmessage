@@ -1,0 +1,6 @@
+type(scope): summary
+
+Body: explain what changed and why, if useful.
+
+Types: feat, fix, refactor, test, docs, ci, build, chore, perf, style, remove
+Example: fix(pathfinder): stabilize step-up execution

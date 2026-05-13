@@ -3,13 +3,13 @@
 	"id": "ebsl",
 	"version": "${version}",
 	"name": "EBSL",
-	"description": "Pretty sure wynntils doesn't offer that.",
+	"description": "Client-side automation and workflow tooling for pathfinding, overlays, and scriptable Minecraft tasks.",
 	"authors": [
-		"EDGN"
+		"Victor Riegert"
 	],
 	"contact": {
-		"homepage": "https://github.com/riege/ebsl",
-		"sources": "https://github.com/riege/ebsl"
+		"homepage": "https://github.com/zolkers/EBSL",
+		"sources": "https://github.com/zolkers/EBSL"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/ebsl/icon.png",
