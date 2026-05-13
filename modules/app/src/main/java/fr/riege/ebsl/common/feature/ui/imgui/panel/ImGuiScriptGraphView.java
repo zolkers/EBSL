@@ -35,11 +35,7 @@ import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.type.ImString;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 final class ImGuiScriptGraphView {

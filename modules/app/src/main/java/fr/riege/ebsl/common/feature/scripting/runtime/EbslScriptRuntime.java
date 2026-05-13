@@ -18,21 +18,13 @@ import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorRe
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
-import fr.riege.ebsl.common.pathfinding.goal.GoalNear;
-import fr.riege.ebsl.common.pathfinding.goal.GoalXZ;
-import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
-import fr.riege.ebsl.common.pathfinding.goal.NavigationModeType;
+import fr.riege.ebsl.common.pathfinding.goal.*;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.security.SecureRandom;
+import java.util.*;
 
 public final class EbslScriptRuntime {
     private final EbslPlatform platform;

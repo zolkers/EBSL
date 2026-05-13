@@ -14,11 +14,7 @@
 
 package fr.riege.ebsl.common.pathfinding;
 
-import fr.riege.ebsl.common.pathfinding.movement.DefaultMovementTypeClassifier;
-import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
-import fr.riege.ebsl.common.pathfinding.movement.MovementTypeClassifier;
-import fr.riege.ebsl.common.pathfinding.movement.PathSmoother;
-import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
+import fr.riege.ebsl.common.pathfinding.movement.*;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;

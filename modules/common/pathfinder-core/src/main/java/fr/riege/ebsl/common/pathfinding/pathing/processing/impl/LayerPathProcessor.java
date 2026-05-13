@@ -21,8 +21,8 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
-import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 

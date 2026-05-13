@@ -25,11 +25,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfigur
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
-import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
-import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
-import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResults;
-import fr.riege.ebsl.common.pathfinding.pathing.result.Paths;
-import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
+import fr.riege.ebsl.common.pathfinding.pathing.result.*;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityContext;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityRegistry;

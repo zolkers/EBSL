@@ -16,11 +16,7 @@ package fr.riege.ebsl.common.pathfinding.pathing.result;
 
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Creates path instances without exposing their implementation class.
