@@ -123,6 +123,21 @@ def javaSourceFiles = providers.provider {
     }.findAll { it.exists() }
 }
 
+def javaLicenseHeader = '''/*
+ * This file is part of EBSL.
+ *
+ * EBSL is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * EBSL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+'''
+
 tasks.register('jacocoRootReport', JacocoReport) {
     group = 'verification'
     description = 'Generates an aggregate JaCoCo coverage report for all Java modules.'
@@ -288,6 +303,43 @@ tasks.register('hardcodedQualifierVerification') {
     }
 }
 
+tasks.register('verifyJavaLicenseHeaders') {
+    group = 'verification'
+    description = 'Fails when Java source files are missing the GPL license header.'
+
+    inputs.files(javaSourceFiles)
+
+    doLast {
+        def missingHeaders = javaSourceFiles.get().findAll { sourceFile ->
+            !sourceFile.getText('UTF-8').startsWith(javaLicenseHeader)
+        }
+
+        if (!missingHeaders.isEmpty()) {
+            throw new GradleException(
+                'Java source files are missing the GPL license header. Run ./gradlew applyJavaLicenseHeaders:\n'
+                    + missingHeaders.collect { rootProject.relativePath(it) }.join('\n')
+            )
+        }
+    }
+}
+
+tasks.register('applyJavaLicenseHeaders') {
+    group = 'formatting'
+    description = 'Adds the GPL license header to Java source files that do not already have it.'
+
+    inputs.files(javaSourceFiles)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        javaSourceFiles.get().each { sourceFile ->
+            def text = sourceFile.getText('UTF-8')
+            if (!text.startsWith(javaLicenseHeader)) {
+                sourceFile.setText(javaLicenseHeader + text, 'UTF-8')
+            }
+        }
+    }
+}
+
 tasks.register('javaAlignmentWhitespaceVerification') {
     group = 'verification'
     description = 'Fails when Java source uses manual alignment whitespace in code.'
@@ -353,6 +405,7 @@ tasks.register('javaAlignmentWhitespaceVerification') {
 tasks.register('localQuality') {
     group = 'verification'
     description = 'Runs local quality gates: tests, aggregate coverage, and source hygiene checks.'
+    dependsOn tasks.named('verifyJavaLicenseHeaders')
     dependsOn tasks.named('hardcodedQualifierVerification')
     dependsOn tasks.named('javaAlignmentWhitespaceVerification')
     dependsOn tasks.named('jacocoCoverageVerification')
