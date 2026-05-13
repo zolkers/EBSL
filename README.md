@@ -1,5 +1,15 @@
 # EBSL
 
+[![Build](https://github.com/zolkers/EBSL/actions/workflows/build.yml/badge.svg?branch=dev)](https://github.com/zolkers/EBSL/actions/workflows/build.yml)
+[![Quality Gate](https://img.shields.io/badge/quality%20gate-local%20checks-brightgreen)](#quality-gates)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A5%2080%25-brightgreen)](#quality-gates)
+[![Code Review](https://img.shields.io/badge/code%20review-required-blue)](CONTRIBUTING.md)
+[![Conventional Commits](https://img.shields.io/badge/commits-conventional-brightgreen)](CONTRIBUTING.md#commit-conventions)
+[![Java](https://img.shields.io/badge/java-21-orange)](#supported-target)
+[![Minecraft](https://img.shields.io/badge/minecraft-1.21.11-62B47A)](#supported-target)
+[![Fabric](https://img.shields.io/badge/fabric-%E2%89%A5%200.18.4-blue)](#supported-target)
+[![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
+
 EBSL is a Fabric client-side Minecraft automation and workflow toolkit focused on pathfinding, movement execution, world interaction, and scriptable in-game workflows.
 
 The project is currently being prepared for public open-source development. APIs and internal modules may still change quickly.
