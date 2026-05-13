@@ -27,6 +27,18 @@ def coverageProjects = providers.provider {
     subprojects.findAll { it.plugins.hasPlugin('java') && it.extensions.findByName('sourceSets') != null }
 }
 
+def coverageTestTasks = providers.provider {
+    coverageProjects.get().collectMany { project ->
+        project.tasks.withType(Test).toList()
+    }
+}
+
+def jacocoExecutionData = providers.provider {
+    coverageTestTasks.get().collect { testTask ->
+        testTask.extensions.getByType(JacocoTaskExtension).destinationFile
+    }
+}
+
 def sonarMainSourceDirs = providers.provider {
     coverageProjects.get().collectMany { it.extensions.sourceSets.main.allJava.srcDirs }.findAll { it.exists() }
 }
@@ -116,12 +128,10 @@ tasks.register('jacocoRootReport', JacocoReport) {
     description = 'Generates an aggregate JaCoCo coverage report for all Java modules.'
 
     dependsOn providers.provider {
-        coverageProjects.get().collect { it.tasks.matching { task -> task.name == 'test' } }
+        coverageTestTasks.get()
     }
 
-    executionData.from(fileTree(layout.buildDirectory) {
-        include '**/jacoco/*.exec'
-    })
+    executionData.from(jacocoExecutionData)
 
     sourceDirectories.from(providers.provider {
         coverageProjects.get().collect { it.extensions.sourceSets.main.allSource.srcDirs }
@@ -148,9 +158,7 @@ tasks.register('jacocoCoverageVerification', JacocoCoverageVerification) {
     description = 'Verifies aggregate line coverage is at least 80%.'
     dependsOn tasks.named('jacocoRootReport')
 
-    executionData.from(fileTree(layout.buildDirectory) {
-        include '**/jacoco/*.exec'
-    })
+    executionData.from(jacocoExecutionData)
     sourceDirectories.from(providers.provider {
         coverageProjects.get().collect { it.extensions.sourceSets.main.allSource.srcDirs }
     })
