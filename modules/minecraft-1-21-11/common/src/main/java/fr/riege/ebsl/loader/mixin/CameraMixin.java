@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Camera.class)
 public final class CameraMixin {
     @Inject(method = "setup", at = @At("HEAD"))
-    private void ebsl$beforeCameraSetup(Level level,
+    private void ebslBeforeCameraSetup(Level level,
                                         Entity entity,
                                         boolean detached,
                                         boolean mirror,

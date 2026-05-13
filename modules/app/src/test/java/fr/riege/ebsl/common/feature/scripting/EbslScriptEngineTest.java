@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,7 +54,7 @@ class EbslScriptEngineTest {
         assertEquals(EbslNodeType.GOTO, EbslNodeType.byId("goto"));
         assertEquals(EbslNodeType.CONTROL_REPEAT_UNTIL, EbslNodeType.byId("control-repeat-until"));
         assertFalse(EbslNodeType.ids().contains("sensor_health_below"));
-        assertTrue(EbslSensorRegistry.definition("sensor_health_below") != null);
+        assertNotNull(EbslSensorRegistry.definition("sensor_health_below"));
     }
 
     @Test

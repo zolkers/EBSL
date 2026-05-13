@@ -297,7 +297,7 @@ public final class LayerPathProcessor implements NodeProcessor {
             return false;
         }
         var plan = planner.plan(from, to, fromPoint, toPoint);
-        ParkourEvaluationTelemetry.record(from, to, plan);
+        ParkourEvaluationTelemetry.recordEvaluation(from, to, plan);
         return plan.feasible();
     }
 
@@ -481,18 +481,21 @@ public final class LayerPathProcessor implements NodeProcessor {
             return 0;
         }
         var checker = layerProvider.checker();
-        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST; dist++) {
+        int foundDistance = 0;
+        boolean blocked = false;
+        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST && foundDistance == 0 && !blocked; dist++) {
             int ax = bx + stepX * dist;
             int az = bz + stepZ * dist;
-            if (isFullWallBlock(context, ax, by, az)) break;
+            blocked = isFullWallBlock(context, ax, by, az);
             int belowY = by - 1;
-            if (checker.isAir(ax, belowY, az)) continue;
-            if (!checker.isFullWallBlock(ax, belowY, az)) {
+            if (!blocked && !checker.isAir(ax, belowY, az) && !checker.isFullWallBlock(ax, belowY, az)) {
                 double topY = checker.getTopY(ax, belowY, az);
-                if (topY > 0.2 && topY < 0.95) return dist;
+                if (topY > 0.2 && topY < 0.95) {
+                    foundDistance = dist;
+                }
             }
         }
-        return 0;
+        return foundDistance;
     }
 
     private static int detectOpeningAhead(EvaluationContext context, int bx, int by, int bz, int moveDx, int moveDz) {
@@ -500,15 +503,21 @@ public final class LayerPathProcessor implements NodeProcessor {
         int stepX = Integer.signum(moveDx);
         int stepZ = Integer.signum(moveDz);
         int prevSides = countCardinalSideWalls(context, bx, by, bz, moveDx, moveDz);
-        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST; dist++) {
+        int foundDistance = 0;
+        boolean blocked = false;
+        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST && foundDistance == 0 && !blocked; dist++) {
             int ax = bx + stepX * dist;
             int az = bz + stepZ * dist;
-            if (isFullWallBlock(context, ax, by, az) || isFullWallBlock(context, ax, by + 1, az)) break;
-            int aheadSides = countCardinalSideWalls(context, ax, by, az, moveDx, moveDz);
-            if (aheadSides > prevSides && aheadSides >= 1) return dist;
-            prevSides = aheadSides;
+            blocked = isFullWallBlock(context, ax, by, az) || isFullWallBlock(context, ax, by + 1, az);
+            if (!blocked) {
+                int aheadSides = countCardinalSideWalls(context, ax, by, az, moveDx, moveDz);
+                if (aheadSides > prevSides && aheadSides >= 1) {
+                    foundDistance = dist;
+                }
+                prevSides = aheadSides;
+            }
         }
-        return 0;
+        return foundDistance;
     }
 
     private static double directionCost(EvaluationContext context, PathPosition current, PathPosition previous) {

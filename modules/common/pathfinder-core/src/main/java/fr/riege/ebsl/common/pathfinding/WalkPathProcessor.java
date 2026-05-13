@@ -88,30 +88,8 @@ public final class WalkPathProcessor {
             appendDistinct(result, keynodes.get(i));
             Node from = keynodes.get(i);
             Node to = keynodes.get(i + 1);
-            if (to.moveType == Node.MoveType.PARKOUR || from.position.flooredY() != to.position.flooredY()) {
-                continue;
-            }
-
-            double dx = to.position.centeredX() - from.position.centeredX();
-            double dz = to.position.centeredZ() - from.position.centeredZ();
-            double dist = Math.sqrt(dx * dx + dz * dz);
-            double spacing = PathfinderSettings.instance().intermediateSpacing.value();
-            if (dist <= spacing) {
-                continue;
-            }
-
-            int steps = (int) (dist / spacing);
-            int y = from.position.flooredY();
-            for (int step = 1; step < steps; step++) {
-                double t = (double) step / steps;
-                int ix = (int) Math.floor(from.position.centeredX() + dx * t);
-                int iz = (int) Math.floor(from.position.centeredZ() + dz * t);
-                if (checker != null && !checker.isWalkable(ix, y, iz)) {
-                    continue;
-                }
-                Node intermediate = new Node(new PathPosition(ix, y, iz));
-                intermediate.moveType = from.moveType;
-                appendDistinct(result, intermediate);
+            if (canInsertIntermediates(from, to)) {
+                insertIntermediateNodes(result, from, to, checker);
             }
         }
         appendDistinct(result, keynodes.getLast());
@@ -164,5 +142,35 @@ public final class WalkPathProcessor {
         return a == Node.MoveType.STEP_UP || b == Node.MoveType.STEP_UP
             || a == Node.MoveType.JUMP || b == Node.MoveType.JUMP
             || a == Node.MoveType.PARKOUR || b == Node.MoveType.PARKOUR;
+    }
+
+    private static boolean canInsertIntermediates(Node from, Node to) {
+        return to.moveType != Node.MoveType.PARKOUR
+            && from.position.flooredY() == to.position.flooredY()
+            && horizontalDistance(from, to) > PathfinderSettings.instance().intermediateSpacing.value();
+    }
+
+    private static void insertIntermediateNodes(List<Node> result, Node from, Node to, WalkabilityChecker checker) {
+        double dx = to.position.centeredX() - from.position.centeredX();
+        double dz = to.position.centeredZ() - from.position.centeredZ();
+        double spacing = PathfinderSettings.instance().intermediateSpacing.value();
+        int steps = (int) (Math.sqrt(dx * dx + dz * dz) / spacing);
+        int y = from.position.flooredY();
+        for (int step = 1; step < steps; step++) {
+            double t = (double) step / steps;
+            int ix = (int) Math.floor(from.position.centeredX() + dx * t);
+            int iz = (int) Math.floor(from.position.centeredZ() + dz * t);
+            if (checker == null || checker.isWalkable(ix, y, iz)) {
+                Node intermediate = new Node(new PathPosition(ix, y, iz));
+                intermediate.moveType = from.moveType;
+                appendDistinct(result, intermediate);
+            }
+        }
+    }
+
+    private static double horizontalDistance(Node from, Node to) {
+        double dx = to.position.centeredX() - from.position.centeredX();
+        double dz = to.position.centeredZ() - from.position.centeredZ();
+        return Math.sqrt(dx * dx + dz * dz);
     }
 }

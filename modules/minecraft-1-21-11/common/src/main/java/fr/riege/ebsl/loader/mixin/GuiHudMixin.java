@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Gui.class)
 public abstract class GuiHudMixin {
     @Inject(method = "render", at = @At("RETURN"))
-    private void ebsl$onRenderHud(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+    private void ebslOnRenderHud(GuiGraphics graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         Minecraft client = Minecraft.getInstance();
         ModloaderCommonBootstrap.onRenderHud(
             client.getWindow().getGuiScaledWidth(),

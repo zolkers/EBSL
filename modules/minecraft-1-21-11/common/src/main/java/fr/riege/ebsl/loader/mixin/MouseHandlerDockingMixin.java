@@ -13,22 +13,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(MouseHandler.class)
 public abstract class MouseHandlerDockingMixin {
     @Inject(method = "grabMouse", at = @At("HEAD"), cancellable = true)
-    private void ebsl$onGrabMouse(CallbackInfo ci) {
+    private void ebslOnGrabMouse(CallbackInfo ci) {
         if (ModloaderCommonBootstrap.onGrabMouse()) ci.cancel();
     }
 
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
-    private void ebsl$onMouseButton(long windowHandle, MouseButtonInfo button, int action, CallbackInfo ci) {
+    private void ebslOnMouseButton(long windowHandle, MouseButtonInfo button, int action, CallbackInfo ci) {
         if (ModloaderCommonBootstrap.onMouseButton(windowHandle, button.button(), action)) ci.cancel();
     }
 
     @Inject(method = "getScaledXPos(Lcom/mojang/blaze3d/platform/Window;D)D", at = @At("RETURN"), cancellable = true)
-    private static void ebsl$remapDockedScaledX(Window window, double rawX, CallbackInfoReturnable<Double> cir) {
+    private static void ebslRemapDockedScaledX(Window window, double rawX, CallbackInfoReturnable<Double> cir) {
         cir.setReturnValue(ModloaderCommonBootstrap.remapScaledX(window, rawX, cir.getReturnValueD()));
     }
 
     @Inject(method = "getScaledYPos(Lcom/mojang/blaze3d/platform/Window;D)D", at = @At("RETURN"), cancellable = true)
-    private static void ebsl$remapDockedScaledY(Window window, double rawY, CallbackInfoReturnable<Double> cir) {
+    private static void ebslRemapDockedScaledY(Window window, double rawY, CallbackInfoReturnable<Double> cir) {
         cir.setReturnValue(ModloaderCommonBootstrap.remapScaledY(window, rawY, cir.getReturnValueD()));
     }
 }

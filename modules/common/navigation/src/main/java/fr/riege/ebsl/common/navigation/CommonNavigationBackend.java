@@ -810,9 +810,9 @@ public final class CommonNavigationBackend implements NavigationService {
     private static void appendDistinct(List<Node> merged, List<Node> candidates) {
         if (candidates == null) return;
         for (Node candidate : candidates) {
-            if (candidate == null) continue;
-            if (!merged.isEmpty() && merged.getLast().position.equals(candidate.position)) continue;
-            merged.add(candidate);
+            if (candidate != null && (merged.isEmpty() || !merged.getLast().position.equals(candidate.position))) {
+                merged.add(candidate);
+            }
         }
     }
 

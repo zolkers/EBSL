@@ -28,30 +28,25 @@ public final class EbslSyntaxHighlighter {
                 int end = readWhile(line, index, Character::isWhitespace);
                 tokens.add(new EbslSyntaxToken(EbslTokenKind.WHITESPACE, line.substring(index, end)));
                 index = end;
-                continue;
-            }
-            if (line.startsWith(EbslSyntax.COMMENT, index)) {
+            } else if (line.startsWith(EbslSyntax.COMMENT, index)) {
                 tokens.add(new EbslSyntaxToken(EbslTokenKind.COMMENT, line.substring(index)));
-                break;
-            }
-            if (line.startsWith(EbslSyntax.QUOTE, index)) {
+                index = line.length();
+            } else if (line.startsWith(EbslSyntax.QUOTE, index)) {
                 int end = readString(line, index);
                 tokens.add(new EbslSyntaxToken(EbslTokenKind.STRING, line.substring(index, end)));
                 index = end;
                 firstToken = false;
-                continue;
-            }
-            if (isSingleCharToken(c)) {
+            } else if (isSingleCharToken(c)) {
                 tokens.add(new EbslSyntaxToken(EbslTokenClassifierRegistry.classify(Character.toString(c), firstToken), Character.toString(c)));
                 index++;
                 firstToken = false;
-                continue;
+            } else {
+                int end = readWord(line, index);
+                String text = line.substring(index, end);
+                tokens.add(new EbslSyntaxToken(EbslTokenClassifierRegistry.classify(text, firstToken), text));
+                index = end;
+                firstToken = false;
             }
-            int end = readWord(line, index);
-            String text = line.substring(index, end);
-            tokens.add(new EbslSyntaxToken(EbslTokenClassifierRegistry.classify(text, firstToken), text));
-            index = end;
-            firstToken = false;
         }
         return List.copyOf(tokens);
     }

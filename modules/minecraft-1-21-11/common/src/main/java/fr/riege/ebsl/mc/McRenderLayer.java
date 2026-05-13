@@ -11,6 +11,8 @@ import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
+import java.util.Arrays;
+
 public class McRenderLayer implements IRenderLayer {
     private final EbslMeshRenderer meshRenderer = new EbslMeshRenderer();
     private final float[] color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -172,5 +174,50 @@ public class McRenderLayer implements IRenderLayer {
 
     public record Frame(double cameraX, double cameraY, double cameraZ, float[] viewMatrix, float[] projectionMatrix) {
         static final Frame EMPTY = new Frame(0.0, 0.0, 0.0, new float[0], new float[0]);
+
+        public Frame {
+            viewMatrix = viewMatrix == null ? new float[0] : viewMatrix.clone();
+            projectionMatrix = projectionMatrix == null ? new float[0] : projectionMatrix.clone();
+        }
+
+        @Override
+        public float[] viewMatrix() {
+            return viewMatrix.clone();
+        }
+
+        @Override
+        public float[] projectionMatrix() {
+            return projectionMatrix.clone();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Frame that
+                && Double.compare(cameraX, that.cameraX) == 0
+                && Double.compare(cameraY, that.cameraY) == 0
+                && Double.compare(cameraZ, that.cameraZ) == 0
+                && Arrays.equals(viewMatrix, that.viewMatrix)
+                && Arrays.equals(projectionMatrix, that.projectionMatrix);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Double.hashCode(cameraX);
+            result = 31 * result + Double.hashCode(cameraY);
+            result = 31 * result + Double.hashCode(cameraZ);
+            result = 31 * result + Arrays.hashCode(viewMatrix);
+            result = 31 * result + Arrays.hashCode(projectionMatrix);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Frame[cameraX=" + cameraX
+                + ", cameraY=" + cameraY
+                + ", cameraZ=" + cameraZ
+                + ", viewMatrix=" + Arrays.toString(viewMatrix)
+                + ", projectionMatrix=" + Arrays.toString(projectionMatrix)
+                + ']';
+        }
     }
 }

@@ -101,16 +101,17 @@ public final class ParkourJumpPlanner {
 
     private int countApproachBlocks(PathPosition from, int backX, int backZ) {
         int approach = 0;
-        for (int i = 1; i <= MAX_APPROACH_SCAN; i++) {
+        boolean blocked = false;
+        for (int i = 1; i <= MAX_APPROACH_SCAN && !blocked; i++) {
             PathPosition approachPos = from.add((double) backX * i, 0.0, (double) backZ * i);
             NavigationPoint point = provider.getNavigationPoint(approachPos, env);
-            if (!point.isTraversable() || !hasJumpSupport(point)) {
-                break;
+            if (point.isTraversable()
+                && hasJumpSupport(point)
+                && hasColumnHeadroom(approachPos.flooredX(), approachPos.flooredY(), approachPos.flooredZ())) {
+                approach++;
+            } else {
+                blocked = true;
             }
-            if (!hasColumnHeadroom(approachPos.flooredX(), approachPos.flooredY(), approachPos.flooredZ())) {
-                break;
-            }
-            approach++;
         }
         return approach;
     }
@@ -156,10 +157,8 @@ public final class ParkourJumpPlanner {
             double t = (double) i / checks;
             int x = (int) Math.floor(from.centeredX() + (to.centeredX() - from.centeredX()) * t);
             int z = (int) Math.floor(from.centeredZ() + (to.centeredZ() - from.centeredZ()) * t);
-            if (isLandingColumn(to, x, z)) {
-                continue;
-            }
-            if (!isPassable(x, from.flooredY(), z) || !isPassable(x, from.flooredY() + 1, z)) {
+            if (!isLandingColumn(to, x, z)
+                && (!isPassable(x, from.flooredY(), z) || !isPassable(x, from.flooredY() + 1, z))) {
                 return false;
             }
         }

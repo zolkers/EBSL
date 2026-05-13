@@ -25,7 +25,7 @@ final class EbslThreadExceptionHandler implements Thread.UncaughtExceptionHandle
         EbslThreadException exception = throwable instanceof EbslThreadException e
             ? e
             : new EbslThreadException(domain, owner, threadName, throwable);
-        EbslThreadErrorLog.record(domain, owner, threadName, exception);
+        EbslThreadErrorLog.recordError(domain, owner, threadName, exception);
         LOGGER.error("Unhandled EBSL {} task '{}' failed on {}", domain.id(), owner, threadName, exception.getCause());
         return exception;
     }

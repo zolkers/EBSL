@@ -1,6 +1,8 @@
 package fr.riege.ebsl.common.domain.world;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,10 +50,13 @@ class BlockSelectorTest {
         assertFalse(selector.matches(BlockId.of("minecraft:stone")));
     }
 
-    @Test
-    void blankOrMalformedSelectorsDoNotMatch() {
-        assertFalse(BlockSelector.parse("").matches(BlockId.of("minecraft:stone")));
-        assertFalse(BlockSelector.parse("!").matches(BlockId.of("minecraft:stone")));
-        assertFalse(BlockSelector.parse("wood&").matches(BlockId.of("minecraft:oak_log")));
+    @ParameterizedTest
+    @CsvSource({
+        "'',minecraft:stone",
+        "!,minecraft:stone",
+        "wood&,minecraft:oak_log"
+    })
+    void blankOrMalformedSelectorsDoNotMatch(String selectorText, String blockId) {
+        assertFalse(BlockSelector.parse(selectorText).matches(BlockId.of(blockId)));
     }
 }

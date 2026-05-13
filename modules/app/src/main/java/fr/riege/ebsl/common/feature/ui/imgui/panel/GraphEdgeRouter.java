@@ -54,18 +54,19 @@ final class GraphEdgeRouter {
         PriorityQueue<RouteNode> queue = new PriorityQueue<>(Comparator.comparingDouble(RouteNode::cost));
         dist[sx][sy] = 0.0;
         queue.add(new RouteNode(sx, sy, 0.0));
-        while (!queue.isEmpty()) {
+        boolean foundTarget = false;
+        while (!queue.isEmpty() && !foundTarget) {
             RouteNode current = queue.poll();
-            if (current.cost() > dist[current.x()][current.y()]) {
-                continue;
+            if (current.cost() <= dist[current.x()][current.y()]) {
+                if (current.x() == ex && current.y() == ey) {
+                    foundTarget = true;
+                } else {
+                    relaxRouteNeighbor(current.x(), current.y(), current.x() - 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
+                    relaxRouteNeighbor(current.x(), current.y(), current.x() + 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
+                    relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() - 1, xs, ys, obstacles, dist, prevX, prevY, queue);
+                    relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() + 1, xs, ys, obstacles, dist, prevX, prevY, queue);
+                }
             }
-            if (current.x() == ex && current.y() == ey) {
-                break;
-            }
-            relaxRouteNeighbor(current.x(), current.y(), current.x() - 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
-            relaxRouteNeighbor(current.x(), current.y(), current.x() + 1, current.y(), xs, ys, obstacles, dist, prevX, prevY, queue);
-            relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() - 1, xs, ys, obstacles, dist, prevX, prevY, queue);
-            relaxRouteNeighbor(current.x(), current.y(), current.x(), current.y() + 1, xs, ys, obstacles, dist, prevX, prevY, queue);
         }
         if (!Double.isFinite(dist[ex][ey])) {
             return List.of(start, end);

@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public final class WorldRendererMixin {
     @Inject(method = "renderLevel", at = @At("RETURN"))
-    private void ebsl$onRenderLevel(GraphicsResourceAllocator graphicsResourceAllocator,
+    private void ebslOnRenderLevel(GraphicsResourceAllocator graphicsResourceAllocator,
                                     DeltaTracker deltaTracker,
                                     boolean renderBlockOutline,
                                     Camera camera,

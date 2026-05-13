@@ -12,7 +12,7 @@ public final class ParkourEvaluationTelemetry {
     private ParkourEvaluationTelemetry() {
     }
 
-    public static void record(PathPosition from, PathPosition to, ParkourJumpPlan plan) {
+    public static void recordEvaluation(PathPosition from, PathPosition to, ParkourJumpPlan plan) {
         if (plan == null || plan.feasible()) {
             return;
         }

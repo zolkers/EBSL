@@ -26,16 +26,15 @@ public final class EbslParser {
 
     private List<EbslStatement> parseBlock(boolean nested) {
         List<EbslStatement> statements = new ArrayList<>();
-        while (!eof()) {
+        boolean closed = false;
+        while (!eof() && !closed) {
             skipTerminators();
-            if (eof()) {
-                break;
-            }
-            if (peek(EbslSyntax.BLOCK_CLOSE)) {
+            if (!eof() && peek(EbslSyntax.BLOCK_CLOSE)) {
                 closeBlock(nested);
-                break;
+                closed = true;
+            } else if (!eof()) {
+                parseStatement(statements);
             }
-            parseStatement(statements);
         }
         return List.copyOf(statements);
     }

@@ -16,22 +16,16 @@ public final class EbslTokenizer {
             if (!quoted && String.valueOf(c).equals(EbslSyntax.COMMENT)) {
                 i = skipComment(source, i);
                 tokens.add(EbslSyntax.LINE_END);
-                continue;
-            }
-            if (String.valueOf(c).equals(EbslSyntax.QUOTE)) {
+            } else if (String.valueOf(c).equals(EbslSyntax.QUOTE)) {
                 quoted = !quoted;
-                continue;
-            }
-            if (quoted) {
+            } else if (quoted) {
                 token.append(c);
-                continue;
-            }
-            if (isSeparator(c)) {
+            } else if (isSeparator(c)) {
                 flush(token, tokens);
                 addSeparator(c, tokens);
-                continue;
+            } else {
+                token.append(c);
             }
-            token.append(c);
         }
         flush(token, tokens);
         return tokens;

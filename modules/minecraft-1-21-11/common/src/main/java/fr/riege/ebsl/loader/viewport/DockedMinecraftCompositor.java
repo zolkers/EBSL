@@ -8,6 +8,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -75,10 +76,14 @@ public final class DockedMinecraftCompositor {
     private static void drawCopyIntoViewport(RenderTarget target, RenderTarget source) {
         Window window = Minecraft.getInstance().getWindow();
         UiRect viewport = minecraftGuiRectForImGuiViewport(window);
+        var sourceTextureView = source.getColorTextureView();
+        if (sourceTextureView == null) {
+            return;
+        }
         BlitRenderState blit = new BlitRenderState(
             EbslRenderPipelines.DOCKED_VIEWPORT,
             TextureSetup.singleTexture(
-                source.getColorTextureView(),
+                sourceTextureView,
                 RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)),
             new Matrix3x2f(),
             viewport.x(), viewport.y(), viewport.right(), viewport.bottom(),
@@ -93,7 +98,7 @@ public final class DockedMinecraftCompositor {
 
         try (MeshData mesh = builder.build()) {
             if (mesh != null) {
-                drawMesh(target, source, mesh);
+                drawMesh(target, sourceTextureView, mesh);
             }
         }
     }
@@ -109,7 +114,7 @@ public final class DockedMinecraftCompositor {
         return new UiRect(x, y, Math.max(1, right - x), Math.max(1, bottom - y));
     }
 
-    private static void drawMesh(RenderTarget target, RenderTarget source, MeshData mesh) {
+    private static void drawMesh(RenderTarget target, GpuTextureView sourceTextureView, MeshData mesh) {
         MeshData.DrawState drawState = mesh.drawState();
         VertexFormat format = drawState.format();
         GpuBuffer vertexBuffer = format.uploadImmediateVertexBuffer(mesh.vertexBuffer());
@@ -138,7 +143,7 @@ public final class DockedMinecraftCompositor {
             pass.setPipeline(EbslRenderPipelines.DOCKED_VIEWPORT);
             RenderSystem.bindDefaultUniforms(pass);
             pass.setUniform("DynamicTransforms", transform);
-            pass.bindTexture("Sampler0", source.getColorTextureView(),
+            pass.bindTexture("Sampler0", sourceTextureView,
                 RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             pass.setVertexBuffer(0, vertexBuffer);
             pass.setIndexBuffer(indexBuffer, indexType);

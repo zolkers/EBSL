@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.UnaryOperator;
 
 final class ScriptGraphConnectionEditor {
     private final List<EbslGraphConnection> connections = new ArrayList<>();
@@ -153,16 +155,16 @@ final class ScriptGraphConnectionEditor {
         }
     }
 
-    void shiftAfterInsert(int lineNumber, Function<String, Integer> lineReader, Function<Integer, String> keyFactory) {
+    void shiftAfterInsert(int lineNumber, ToIntFunction<String> lineReader, IntFunction<String> keyFactory) {
         shift(key -> {
-            int existingLine = lineReader.apply(key);
+            int existingLine = lineReader.applyAsInt(key);
             return existingLine > lineNumber ? keyFactory.apply(existingLine + 1) : key;
         });
     }
 
-    void shiftAfterDelete(int lineNumber, Function<String, Integer> lineReader, Function<Integer, String> keyFactory) {
+    void shiftAfterDelete(int lineNumber, ToIntFunction<String> lineReader, IntFunction<String> keyFactory) {
         shift(key -> {
-            int existingLine = lineReader.apply(key);
+            int existingLine = lineReader.applyAsInt(key);
             return existingLine > lineNumber ? keyFactory.apply(existingLine - 1) : key;
         });
     }
@@ -182,7 +184,7 @@ final class ScriptGraphConnectionEditor {
         statusSink.accept("connected nodes");
     }
 
-    private void shift(Function<String, String> mapper) {
+    private void shift(UnaryOperator<String> mapper) {
         List<EbslGraphConnection> shifted = new ArrayList<>();
         for (EbslGraphConnection connection : connections) {
             EbslGraphConnection mapped = connection.remap(mapper);

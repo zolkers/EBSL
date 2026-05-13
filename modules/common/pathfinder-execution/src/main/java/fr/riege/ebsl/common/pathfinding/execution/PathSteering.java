@@ -88,19 +88,20 @@ final class PathSteering {
         int baseZ = (int) Math.floor(playerPos.z());
         for (int ox = -1; ox <= 1; ox++) {
             for (int oz = -1; oz <= 1; oz++) {
-                if (ox == 0 && oz == 0) continue;
                 int blockX = baseX + ox;
                 int blockZ = baseZ + oz;
-                if (!isBodyBlocking(checker, blockX, feetY, blockZ)) continue;
-                double closestX = Math.clamp(playerPos.x(), blockX, blockX + 1.0);
-                double closestZ = Math.clamp(playerPos.z(), blockZ, blockZ + 1.0);
-                double awayX = playerPos.x() - closestX;
-                double awayZ = playerPos.z() - closestZ;
-                double dist = horizontalLength(awayX, awayZ);
-                if (dist <= 1.0e-6 || dist > scanRadius) continue;
-                double weight = (scanRadius - dist) / scanRadius;
-                nudgeX += (awayX / dist) * weight;
-                nudgeZ += (awayZ / dist) * weight;
+                if ((ox != 0 || oz != 0) && isBodyBlocking(checker, blockX, feetY, blockZ)) {
+                    double closestX = Math.clamp(playerPos.x(), blockX, blockX + 1.0);
+                    double closestZ = Math.clamp(playerPos.z(), blockZ, blockZ + 1.0);
+                    double awayX = playerPos.x() - closestX;
+                    double awayZ = playerPos.z() - closestZ;
+                    double dist = horizontalLength(awayX, awayZ);
+                    if (dist > 1.0e-6 && dist <= scanRadius) {
+                        double weight = (scanRadius - dist) / scanRadius;
+                        nudgeX += (awayX / dist) * weight;
+                        nudgeZ += (awayZ / dist) * weight;
+                    }
+                }
             }
         }
         return new Vec3d(nudgeX, 0.0, nudgeZ);

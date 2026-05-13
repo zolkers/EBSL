@@ -30,17 +30,16 @@ public final class PathSmoother {
             int budget = computeAdaptiveSkipBudget(anchor, checker);
             int maxCand = (int) Math.clamp(anchorIdx + (long) budget, 0L, raw.size() - 1L);
 
-            for (int cand = anchorIdx + 2; cand <= maxCand; cand++) {
+            boolean scanning = true;
+            for (int cand = anchorIdx + 2; cand <= maxCand && scanning; cand++) {
                 Node prevNode  = raw.get(cand - 1);
                 Node candidate = raw.get(cand);
 
-                if (!canSmoothToCandidate(raw, anchor, prevNode, candidate, anchorIdx, cand, checker)) {
-                    break;
-                }
-                if (hasLineOfSight(anchor, candidate, checker)) {
+                if (canSmoothToCandidate(raw, anchor, prevNode, candidate, anchorIdx, cand, checker)
+                    && hasLineOfSight(anchor, candidate, checker)) {
                     furthest = cand;
                 } else {
-                    break;
+                    scanning = false;
                 }
             }
 

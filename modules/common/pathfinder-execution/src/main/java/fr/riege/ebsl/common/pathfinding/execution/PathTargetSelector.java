@@ -15,23 +15,22 @@ final class PathTargetSelector {
             ? 1
             : PathfinderSettings.instance().cameraLookahead.value();
         int camScanEnd = (int) Math.clamp(start + (long) lookahead, 0L, path.size() - 1L);
-        for (int i = camScanEnd; i >= start; i--) {
-            if (!isWaypointVisible(world, eyePos, path.get(i))) {
-                continue;
+        boolean found = false;
+        for (int i = camScanEnd; i >= start && !found; i--) {
+            if (isLegacyCameraTarget(world, eyePos, playerPos, path, start, i)) {
+                camTarget = i;
+                found = true;
             }
-            if (i > start && !isStraightLineSafe(path, start, i, playerPos.x(), playerPos.z())) {
-                continue;
-            }
-            if (i > start && hasYChangeBetween(path, start, i)) {
-                continue;
-            }
-            if (i > start && cumulativeTurning(path, start, i) > 45.0) {
-                continue;
-            }
-            camTarget = i;
-            break;
         }
         return camTarget;
+    }
+
+    private boolean isLegacyCameraTarget(IWorldLayer world, Vec3d eyePos, Vec3d playerPos,
+                                         List<Node> path, int start, int candidate) {
+        return isWaypointVisible(world, eyePos, path.get(candidate))
+            && (candidate <= start || isStraightLineSafe(path, start, candidate, playerPos.x(), playerPos.z()))
+            && (candidate <= start || !hasYChangeBetween(path, start, candidate))
+            && (candidate <= start || cumulativeTurning(path, start, candidate) <= 45.0);
     }
 
     private static boolean isParkourWindow(List<Node> path, int pursuitSegment) {

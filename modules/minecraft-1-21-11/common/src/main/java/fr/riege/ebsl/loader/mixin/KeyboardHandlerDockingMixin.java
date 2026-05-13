@@ -12,12 +12,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(KeyboardHandler.class)
 public abstract class KeyboardHandlerDockingMixin {
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
-    private void ebsl$onKeyPress(long window, int key, KeyEvent event, CallbackInfo ci) {
+    private void ebslOnKeyPress(long window, int key, KeyEvent event, CallbackInfo ci) {
         if (ModloaderCommonBootstrap.onKeyPress(window, key, 0, event.modifiers())) ci.cancel();
     }
 
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
-    private void ebsl$onCharTyped(long l, CharacterEvent characterEvent, CallbackInfo ci) {
+    private void ebslOnCharTyped(long l, CharacterEvent characterEvent, CallbackInfo ci) {
         if (ModloaderCommonBootstrap.onCharTyped(l, (char) characterEvent.codepoint())) ci.cancel();
     }
 }

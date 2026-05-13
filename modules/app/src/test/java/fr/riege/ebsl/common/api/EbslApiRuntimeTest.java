@@ -7,6 +7,7 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessBlockState;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EbslApiRuntimeTest {
@@ -22,7 +23,7 @@ class EbslApiRuntimeTest {
         service.tick();
 
         assertTrue(service.isNavigating(), "runtime API should create an executable headless service");
-        assertFalse(service.lastPathNodeCount() == 0, "runtime API should expose a populated path");
+        assertNotEquals(0, service.lastPathNodeCount(), "runtime API should expose a populated path");
     }
 
     @Test

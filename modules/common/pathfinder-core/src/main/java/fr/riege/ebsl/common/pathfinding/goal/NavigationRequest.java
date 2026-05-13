@@ -20,8 +20,8 @@ public record NavigationRequest(
     Runnable onFailed
 ) {
     public NavigationRequest {
-        goal = Objects.requireNonNull(goal, "goal");
-        mode = Objects.requireNonNull(mode, "mode");
+        Objects.requireNonNull(goal, "goal");
+        Objects.requireNonNull(mode, "mode");
         if (!Double.isFinite(preciseGoalTolerance) || preciseGoalTolerance < 0.0) {
             throw new IllegalArgumentException("preciseGoalTolerance must be finite and non-negative");
         }

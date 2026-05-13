@@ -1,5 +1,7 @@
 package fr.riege.ebsl.common.feature.scripting.manager;
 
+import java.util.function.UnaryOperator;
+
 public record EbslGraphConnection(String id, String fromKey, String toKey, EbslGraphConnectionMode mode, String label) {
     public EbslGraphConnection(String fromKey, String toKey) {
         this(defaultId(fromKey, toKey), fromKey, toKey, EbslGraphConnectionMode.FLOW, "");
@@ -29,7 +31,7 @@ public record EbslGraphConnection(String id, String fromKey, String toKey, EbslG
         return new EbslGraphConnection(id, fromKey, toKey, mode, label);
     }
 
-    public EbslGraphConnection remap(java.util.function.Function<String, String> mapper) {
+    public EbslGraphConnection remap(UnaryOperator<String> mapper) {
         String mappedFrom = mapper.apply(fromKey);
         String mappedTo = mapper.apply(toKey);
         return new EbslGraphConnection(defaultId(mappedFrom, mappedTo), mappedFrom, mappedTo, mode, label);

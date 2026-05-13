@@ -99,7 +99,8 @@ final class PathTracker {
 
     boolean advancePursuit(Vec3d playerPos, long now) {
         boolean changed = false;
-        while (pursuitSegment + 1 < path.size()) {
+        boolean advancing = true;
+        while (pursuitSegment + 1 < path.size() && advancing) {
             double ax = pathCache.x(pursuitSegment);
             double ay = pathCache.y(pursuitSegment);
             double az = pathCache.z(pursuitSegment);
@@ -111,13 +112,16 @@ final class PathTracker {
                 pursuitSegment++;
                 lastProgressTime = now;
                 changed = true;
-                continue;
+            } else {
+                double t = ((playerPos.x() - ax) * dx + (playerPos.y() - ay) * dy + (playerPos.z() - az) * dz) / lenSq;
+                if (t < 1.0) {
+                    advancing = false;
+                } else {
+                    pursuitSegment++;
+                    lastProgressTime = now;
+                    changed = true;
+                }
             }
-            double t = ((playerPos.x() - ax) * dx + (playerPos.y() - ay) * dy + (playerPos.z() - az) * dz) / lenSq;
-            if (t < 1.0) break;
-            pursuitSegment++;
-            lastProgressTime = now;
-            changed = true;
         }
         return changed;
     }

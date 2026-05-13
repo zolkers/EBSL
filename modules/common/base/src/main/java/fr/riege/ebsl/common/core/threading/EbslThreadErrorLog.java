@@ -15,7 +15,7 @@ public final class EbslThreadErrorLog {
     private EbslThreadErrorLog() {
     }
 
-    static void record(EbslThreadDomain domain, String owner, String threadName, Throwable throwable) {
+    static void recordError(EbslThreadDomain domain, String owner, String threadName, Throwable throwable) {
         Throwable cause = throwable instanceof EbslThreadException e && e.getCause() != null
             ? e.getCause()
             : throwable;

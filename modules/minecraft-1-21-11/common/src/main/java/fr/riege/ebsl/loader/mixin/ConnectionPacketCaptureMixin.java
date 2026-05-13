@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public final class ConnectionPacketCaptureMixin {
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V",
         at = @At("HEAD"))
-    private void ebsl$onInbound(ChannelHandlerContext ctx, Packet<?> packet, CallbackInfo ci) {
+    private void ebslOnInbound(ChannelHandlerContext ctx, Packet<?> packet, CallbackInfo ci) {
         if (packet == null) return;
         PacketType<?> type = packet.type();
         PacketCaptureLog.recordTrace(PacketCaptureLog.buildEvent(
@@ -29,7 +29,7 @@ public final class ConnectionPacketCaptureMixin {
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V",
         at = @At("HEAD"))
-    private void ebsl$onOutbound(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
+    private void ebslOnOutbound(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
         if (packet == null) return;
         PacketType<?> type = packet.type();
         PacketCaptureLog.recordTrace(PacketCaptureLog.buildEvent(

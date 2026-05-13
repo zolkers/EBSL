@@ -34,11 +34,11 @@ public final class PathfindingDiagnostics {
     }
 
     public static void recordTelemetry(String source, String message) {
-        telemetrySink.get().record(source, message);
+        telemetrySink.get().accept(source, message);
     }
 
     @FunctionalInterface
     public interface TelemetrySink {
-        void record(String source, String message);
+        void accept(String source, String message);
     }
 }
