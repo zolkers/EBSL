@@ -8,7 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 public final class ModloaderEventBus implements IEventBus {
-    private final EventBus typedBus = new EventBusImpl();
+    private final EventBus typedBus = EventBuses.create();
     private final List<Consumer<TickEvent>> tickHandlers = new CopyOnWriteArrayList<>();
     private final List<Consumer<RenderWorldEvent>> renderWorldHandlers = new CopyOnWriteArrayList<>();
     private final List<Consumer<RenderHudEvent>> renderHudHandlers = new CopyOnWriteArrayList<>();

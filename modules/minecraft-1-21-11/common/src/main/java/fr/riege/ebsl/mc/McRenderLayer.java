@@ -13,7 +13,7 @@ import org.joml.Vector4f;
 
 import java.util.Arrays;
 
-public class McRenderLayer implements IRenderLayer {
+final class McRenderLayer implements IRenderLayer {
     private final EbslMeshRenderer meshRenderer = new EbslMeshRenderer();
     private final float[] color = {1.0f, 1.0f, 1.0f, 1.0f};
 

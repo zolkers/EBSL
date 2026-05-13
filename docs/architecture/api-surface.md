@@ -29,6 +29,8 @@ The pathfinder extension surface is contract-first:
 - `WorldNavigationPointProvider` exposes world-backed cache/checker behavior without exposing the concrete provider.
 - `NavigationPointProviders` creates provider implementations.
 - `Path`, `PathfinderResult`, `Paths`, and `PathfinderResults` keep result consumers on contracts.
+- `EventBus` and `EventBuses` keep event dispatch consumers on the event contract.
+- `McPlatformLayers` exposes Minecraft-backed platform adapters through platform/world contracts.
 
 Movement classification, movement cost, quality scoring, heuristics, neighbor expansion, and node processing remain explicit contracts:
 
@@ -52,6 +54,10 @@ Implementation packages should not be used as extension points unless a type is 
 Concrete algorithm classes such as `AStarPathfinder` are package-private. Consumers must use `Pathfinders`.
 
 Concrete world-backed navigation point providers are package-private. Consumers must use `NavigationPointProviders`.
+
+Concrete event bus implementations are package-private. Consumers must use `EventBuses`.
+
+Concrete Minecraft layer adapters are package-private. Loader bootstrap code must use `McPlatformLayers`.
 
 ## Rules For New Code
 

@@ -15,10 +15,10 @@ import net.minecraft.world.phys.AABB;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class McEntityLayer implements IEntityLayer {
+final class McEntityLayer implements IEntityLayer {
     private final Minecraft client;
 
-    public McEntityLayer(Minecraft client) {
+    McEntityLayer(Minecraft client) {
         this.client = client;
     }
 

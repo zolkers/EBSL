@@ -8,9 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-public class McStorageLayer implements IStorageLayer {
+final class McStorageLayer implements IStorageLayer {
     private final Path dir;
-    public McStorageLayer(Path dir) { this.dir = dir; }
+    McStorageLayer(Path dir) { this.dir = dir; }
 
     @Override
     public void saveJson(String key, String json) {

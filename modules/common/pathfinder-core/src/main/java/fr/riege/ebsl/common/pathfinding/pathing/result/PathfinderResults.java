@@ -1,7 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.pathing.result;
 
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
-import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 
 import java.util.Objects;
 
@@ -20,7 +19,7 @@ public final class PathfinderResults {
      * @return a pathfinder result
      */
     public static PathfinderResult of(PathState state, Path path) {
-        return new PathfinderResultImpl(Objects.requireNonNull(state, "state"), path);
+        return of(state, path, PathQualityReport.UNKNOWN);
     }
 
     /**
@@ -32,6 +31,39 @@ public final class PathfinderResults {
      * @return a pathfinder result
      */
     public static PathfinderResult of(PathState state, Path path, PathQualityReport quality) {
-        return new PathfinderResultImpl(Objects.requireNonNull(state, "state"), path, quality);
+        return new ImmutablePathfinderResult(
+            Objects.requireNonNull(state, "state"),
+            path,
+            quality == null ? PathQualityReport.UNKNOWN : quality);
+    }
+
+    private record ImmutablePathfinderResult(PathState state, Path path, PathQualityReport quality)
+        implements PathfinderResult {
+        @Override
+        public boolean successful() {
+            return state == PathState.FOUND;
+        }
+
+        @Override
+        public boolean hasFailed() {
+            return state == PathState.FAILED;
+        }
+
+        @Override
+        public boolean hasFallenBack() {
+            return state == PathState.FALLBACK
+                || state == PathState.MAX_ITERATIONS_REACHED
+                || state == PathState.LENGTH_LIMITED;
+        }
+
+        @Override
+        public PathState getPathState() {
+            return state;
+        }
+
+        @Override
+        public Path getPath() {
+            return path;
+        }
     }
 }
