@@ -1,53 +1,21 @@
 package fr.riege.ebsl.common.feature.module.overlay;
 
-import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.EnumSetting;
-import fr.riege.ebsl.common.core.settings.Settingable;
+import fr.riege.ebsl.common.feature.AbstractEnabledFeature;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 
-abstract class AbstractAnchoredOverlayModule extends Settingable implements PathfinderModule {
-    private final String id;
-    private final String displayName;
-    private final String description;
-    private final BooleanSetting enabledSetting = registerSetting(new BooleanSetting("enabled", "Enabled", false));
+abstract class AbstractAnchoredOverlayModule extends AbstractEnabledFeature implements PathfinderModule {
     private final EnumSetting<KeyDisplayAnchor> anchorSetting;
 
     AbstractAnchoredOverlayModule(String id, String displayName, String description, KeyDisplayAnchor defaultAnchor) {
-        this.id = id;
-        this.displayName = displayName;
-        this.description = description;
+        super(id, displayName, description);
         anchorSetting = registerSetting(new EnumSetting<>("anchor", "Position", defaultAnchor, KeyDisplayAnchor.class));
-    }
-
-    @Override
-    public final String id() {
-        return id;
-    }
-
-    @Override
-    public final String displayName() {
-        return displayName;
-    }
-
-    @Override
-    public final String description() {
-        return description;
     }
 
     @Override
     public final PathfinderModuleCategory category() {
         return PathfinderModuleCategory.RENDER;
-    }
-
-    @Override
-    public final boolean isEnabled() {
-        return enabledSetting.value();
-    }
-
-    @Override
-    public final void setEnabled(boolean enabled) {
-        enabledSetting.setValue(enabled);
     }
 
     final KeyDisplayAnchor anchor() {
