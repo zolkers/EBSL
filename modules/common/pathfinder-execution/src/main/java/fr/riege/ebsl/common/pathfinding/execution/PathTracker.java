@@ -110,7 +110,9 @@ final class PathTracker {
     }
 
     double noteMovementProgress(Vec3d playerPos, double stuckDistanceThreshold) {
-        double distMoved = playerPos.distanceTo(lastPos);
+        double dx = playerPos.x() - lastPos.x();
+        double dz = playerPos.z() - lastPos.z();
+        double distMoved = Math.sqrt(dx * dx + dz * dz);
         if (distMoved >= stuckDistanceThreshold) {
             lastProgressTime = System.currentTimeMillis();
         }

@@ -39,6 +39,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -65,6 +66,7 @@ public final class CommonNavigationBackend implements NavigationService {
     private final Consumer<Runnable> gameThread;
 
     private InspectablePathfinder pathfinder;
+    private InspectablePathfinder depthPathfinder;
     private final AtomicReference<PathfinderResult> lastResult = new AtomicReference<>();
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
@@ -81,6 +83,8 @@ public final class CommonNavigationBackend implements NavigationService {
     private boolean allowJump = true;
     private boolean allowFall = true;
     private boolean allowWalkDiagonal = true;
+    private int depthRequestId;
+    private PathQualityReport activeQuality = PathQualityReport.UNKNOWN;
 
     public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
         this(world, player, physics, input, Runnable::run);
@@ -165,9 +169,11 @@ public final class CommonNavigationBackend implements NavigationService {
         onFailed = null;
         activeNodes = List.of();
         executePath = false;
+        activeQuality = PathQualityReport.UNKNOWN;
         executor.stop();
         longRangeSession.clear();
         abortActiveSearch();
+        abortDepthSearch();
     }
 
     @Override public boolean isNavigating() {
@@ -305,6 +311,7 @@ public final class CommonNavigationBackend implements NavigationService {
         this.onFinished = onFinished;
         this.activeNodes = List.of();
         this.executePath = executePath;
+        this.activeQuality = PathQualityReport.UNKNOWN;
         this.lastResult.set(null);
         navigating = true;
         currentMoveType = Node.MoveType.WALK;
@@ -345,7 +352,7 @@ public final class CommonNavigationBackend implements NavigationService {
                     startFullPathTo(start, effectiveTarget, executePath);
                     return;
                 }
-                handleWalkResult(result, config, executePath);
+                handleWalkResult(result, config, executePath, true);
             }));
     }
 
@@ -367,11 +374,12 @@ public final class CommonNavigationBackend implements NavigationService {
                     if (onFailed != null) onFailed.run();
                     return;
                 }
-                handleWalkResult(result, config, executePath);
+                handleWalkResult(result, config, executePath, true);
             }));
     }
 
-    private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config, boolean executePath) {
+    private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config,
+                                  boolean executePath, boolean allowDepthSearch) {
         lastResult.set(result);
         Collection<PathPosition> positions = result != null && result.getPath() != null
             ? result.getPath().collect()
@@ -384,7 +392,9 @@ public final class CommonNavigationBackend implements NavigationService {
         }
 
         ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
-        activeNodes = processed.navigationPath();
+        PathPlan plan = PathPlan.from(result, config, positions, processed, checker);
+        activeNodes = plan.navigationNodes();
+        activeQuality = plan.quality();
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, goalX, goalY, goalZ);
         if (partial && !longRangeSession.isActive()) {
             longRangeSession.startBlockGoal(goalX, goalY, goalZ);
@@ -405,6 +415,9 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         if (executePath) {
             startExecutor(activeNodes, goalX, goalY, goalZ, !longRangeSession.shouldKeepNavigationAlive());
+            if (allowDepthSearch) {
+                queueDepthSearch(2);
+            }
         }
     }
 
@@ -463,6 +476,88 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, preciseExecution, null,
             executionOptions, finishAtPathEnd));
+    }
+
+    private void queueDepthSearch(int depth) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        if (!settings.iterativeDepthEnabled.value()
+            || depth > settings.iterativeDepthMax.value()
+            || longRangeSession.isActive()
+            || !executePath
+            || !navigating) {
+            return;
+        }
+        abortDepthSearch();
+        Vec3d pos = player.position();
+        PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
+        PathPosition target = new PathPosition(goalX, goalY, goalZ);
+        PathfinderConfiguration config = depthConfiguration(depth);
+        InspectablePathfinder requestedPathfinder = Pathfinders.inspectableAStar(config);
+        depthPathfinder = requestedPathfinder;
+        int requestId = ++depthRequestId;
+        requestedPathfinder.findPath(start, target)
+            .whenComplete((result, throwable) -> onGameThread(() ->
+                handleDepthResult(requestId, depth, requestedPathfinder, result, throwable, config)));
+    }
+
+    private void handleDepthResult(int requestId,
+                                   int depth,
+                                   InspectablePathfinder requestedPathfinder,
+                                   PathfinderResult result,
+                                   Throwable throwable,
+                                   PathfinderConfiguration config) {
+        if (requestId != depthRequestId || depthPathfinder != requestedPathfinder || !navigating || longRangeSession.isActive()) {
+            return;
+        }
+        depthPathfinder = null;
+        if (throwable == null) {
+            applyDepthResultIfBetter(result, config);
+        }
+        if (shouldContinueDepth(depth)) {
+            queueDepthSearch(depth + 1);
+        }
+    }
+
+    private void applyDepthResultIfBetter(PathfinderResult result, PathfinderConfiguration config) {
+        Collection<PathPosition> positions = result != null && result.getPath() != null
+            ? result.getPath().collect()
+            : List.of();
+        if (!PathResultClassifier.hasUsablePath(result, positions)) {
+            return;
+        }
+        ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
+        PathPlan plan = PathPlan.from(result, config, positions, processed, checker);
+        if (!isBetterDepthPlan(plan)) {
+            return;
+        }
+        lastResult.set(result);
+        activeNodes = plan.navigationNodes();
+        activeQuality = plan.quality();
+        startExecutor(activeNodes, goalX, goalY, goalZ, true);
+    }
+
+    private boolean isBetterDepthPlan(PathPlan candidate) {
+        if (candidate == null || !candidate.usable()) {
+            return false;
+        }
+        PathfinderResult current = lastResult.get();
+        if (current != null && current.successful() && !candidate.complete()) {
+            return false;
+        }
+        if (current != null && !current.successful() && candidate.complete()) {
+            return true;
+        }
+        double improvement = candidate.quality().score() - activeQuality.score();
+        return improvement >= Math.max(
+            PathfinderSettings.instance().qualityRetryImprovement.value(),
+            PathfinderSettings.instance().iterativeDepthMinImprovement.value());
+    }
+
+    private boolean shouldContinueDepth(int depth) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        return settings.iterativeDepthEnabled.value()
+            && depth < settings.iterativeDepthMax.value()
+            && activeQuality.score() < settings.qualityRetryMinScore.value();
     }
 
     private boolean handleLongRangeProgress(boolean walkExecutionDone) {
@@ -747,6 +842,19 @@ public final class CommonNavigationBackend implements NavigationService {
             PathfinderSettings.instance().repairCalculationTimeMs.value());
     }
 
+    private PathfinderConfiguration depthConfiguration(int depth) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        int normalizedDepth = Math.max(1, depth);
+        double depthScale = Math.pow(settings.iterativeDepthIterationMultiplier.value(), normalizedDepth - 1);
+        double timeScale = Math.pow(settings.iterativeDepthTimeMultiplier.value(), normalizedDepth - 1);
+        double qualityScale = Math.pow(settings.iterativeDepthQualityMultiplier.value(), normalizedDepth - 1);
+        return configuration(
+            (int) Math.min(Integer.MAX_VALUE, Math.round(settings.instantWalkMaxIterations.value() * depthScale)),
+            (int) Math.min(Integer.MAX_VALUE, Math.round(settings.instantWalkMaxLength.value() * Math.sqrt(depthScale))),
+            (int) Math.min(Integer.MAX_VALUE, Math.round(settings.instantCalculationTimeMs.value() * timeScale)),
+            qualityScale);
+    }
+
     private PathfinderConfiguration queuedConfiguration(boolean speculative) {
         int maxIterations = PathfinderSettings.instance().queuedLongRangeMaxIterations.value();
         int maxLength = PathfinderSettings.instance().queuedLongRangeMaxLength.value();
@@ -757,20 +865,33 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private PathfinderConfiguration configuration(int maxIterations, int maxLength, int maxCalculationTimeMs) {
+        return configuration(maxIterations, maxLength, maxCalculationTimeMs, 1.0);
+    }
+
+    private PathfinderConfiguration configuration(int maxIterations, int maxLength, int maxCalculationTimeMs, double qualityScale) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        double qualityRiskCostWeight = settings.qualityPlanningMode.value().costAware()
+            ? settings.qualityRiskCostWeight.value() * qualityScale
+            : 0.0;
+        double qualityTerrainCostWeight = settings.qualityPlanningMode.value().costAware()
+            ? settings.qualityTerrainCostWeight.value() * qualityScale
+            : 0.0;
         return PathfinderConfiguration.builder()
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .provider(provider)
             .processors(NodeProcessorRegistry.createStandardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
-                PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
+                settings.maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
             .async(true)
             .fallback(true)
-            .earlyFallback(PathfinderSettings.instance().earlyFallbackEnabled.value())
-            .earlyFallbackIterations(PathfinderSettings.instance().earlyFallbackIterations.value())
-            .earlyFallbackMinPathNodes(PathfinderSettings.instance().earlyFallbackMinPathNodes.value())
-            .earlyFallbackMinProgressRatio(PathfinderSettings.instance().earlyFallbackMinProgressRatio.value())
+            .earlyFallback(settings.earlyFallbackEnabled.value())
+            .earlyFallbackIterations(settings.earlyFallbackIterations.value())
+            .earlyFallbackMinPathNodes(settings.earlyFallbackMinPathNodes.value())
+            .earlyFallbackMinProgressRatio(settings.earlyFallbackMinProgressRatio.value())
             .maxCalculationTimeMs(maxCalculationTimeMs)
+            .qualityRiskCostWeight(qualityRiskCostWeight)
+            .qualityTerrainCostWeight(qualityTerrainCostWeight)
             .build();
     }
 
@@ -850,6 +971,15 @@ public final class CommonNavigationBackend implements NavigationService {
         pathfinder = null;
         if (active != null) {
             active.abort();
+        }
+    }
+
+    private void abortDepthSearch() {
+        InspectablePathfinder activeDepth = depthPathfinder;
+        depthPathfinder = null;
+        depthRequestId++;
+        if (activeDepth != null) {
+            activeDepth.abort();
         }
     }
 

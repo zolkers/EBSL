@@ -68,6 +68,22 @@ class PathTrackerContinuationTest {
         assertEquals(5, snapshot.size(), "continuation should start at the attach point, not the stray prefix");
     }
 
+    @Test
+    void verticalBouncingDoesNotResetMovementProgress() throws InterruptedException {
+        PathTracker tracker = new PathTracker();
+        tracker.start(List.of(
+            node(0, 64, 0),
+            node(1, 64, 0)));
+        long started = tracker.getLastProgressTime();
+        Thread.sleep(5L);
+
+        double moved = tracker.noteMovementProgress(new Vec3d(0.0, 65.0, 0.0), 0.2);
+
+        assertEquals(0.0, moved, 1.0e-6);
+        assertEquals(started, tracker.getLastProgressTime(),
+            "vertical-only jumps must not refresh stuck progress");
+    }
+
     private static Node node(int x, int y, int z) {
         return new Node(new PathPosition(x, y, z));
     }

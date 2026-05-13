@@ -58,7 +58,9 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
             return cached;
         }
 
-        if (!checker.world().isLoaded(x, y, z)) {
+        if (!checker.world().isLoaded(x, y - 1, z)
+            || !checker.world().isLoaded(x, y, z)
+            || !checker.world().isLoaded(x, y + 1, z)) {
             return BLOCKED;
         }
         if (checker.isBlacklisted(x, y - 1, z) || checker.isBlacklisted(x, y, z) || checker.isBlacklisted(x, y + 1, z)) {

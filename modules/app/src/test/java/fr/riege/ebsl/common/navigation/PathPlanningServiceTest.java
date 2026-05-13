@@ -53,4 +53,26 @@ final class PathPlanningServiceTest {
         assertEquals(1.5, configuration.qualityRiskCostWeight);
         assertEquals(0.5, configuration.qualityTerrainCostWeight);
     }
+
+    @Test
+    void depthOptionsScaleBudgetsAndQualityWeights() {
+        PathPlannerOptions options = PathPlannerOptions.builder()
+            .maxIterations(100)
+            .maxLength(100)
+            .maxCalculationTimeMs(20)
+            .qualityRiskCostWeight(2.0)
+            .qualityTerrainCostWeight(1.0)
+            .iterativeDepthIterationMultiplier(2.0)
+            .iterativeDepthTimeMultiplier(1.5)
+            .iterativeDepthQualityMultiplier(1.25)
+            .build();
+
+        PathPlannerOptions depthThree = PathPlanningService.depthOptions(options, 3);
+
+        assertEquals(400, depthThree.maxIterations());
+        assertEquals(200, depthThree.maxLength());
+        assertEquals(45, depthThree.maxCalculationTimeMs());
+        assertEquals(3.125, depthThree.qualityRiskCostWeight());
+        assertEquals(1.5625, depthThree.qualityTerrainCostWeight());
+    }
 }

@@ -25,4 +25,25 @@ import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.types.annotation.MovementHandler;
 
 @MovementHandler(Node.MoveType.WALK)
-class WalkMovementEvaluator implements MovementEvaluator {}
+class WalkMovementEvaluator implements MovementEvaluator {
+    @Override
+    public MovementValidationResult validate(MovementValidationContext context) {
+        int x = context.targetX();
+        int y = context.targetY();
+        int z = context.targetZ();
+        if (context.checker() == null || context.navigationPointProvider() == null) {
+            return MovementValidationResult.ok();
+        }
+        if (!context.checker().world().isLoaded(x, y, z)
+            || !context.checker().world().isLoaded(x, y + 1, z)) {
+            return MovementValidationResult.invalid("movement target is not loaded at " + x + ", " + y + ", " + z);
+        }
+        if (context.navigationPointProvider()
+            .getNavigationPoint(context.target().position, null)
+            .isTraversable()) {
+            return MovementValidationResult.ok();
+        }
+        return MovementValidationResult.invalid("movement target is no longer traversable at "
+            + x + ", " + y + ", " + z);
+    }
+}

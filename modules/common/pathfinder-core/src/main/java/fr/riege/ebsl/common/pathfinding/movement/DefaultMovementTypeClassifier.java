@@ -59,12 +59,12 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
         int dz = current.flooredZ() - previous.flooredZ();
         double dy = floorLevel(current, currentPoint, checker) - floorLevel(previous, previousPoint, checker);
 
+        if (isParkourMove(previous, current, checker, dx, dz)) {
+            return Node.MoveType.PARKOUR;
+        }
         if (checker != null && checker.world().requiresJumpForStep(
             current.flooredX(), current.flooredY(), current.flooredZ(), Integer.signum(dx), Integer.signum(dz))) {
             return Node.MoveType.JUMP;
-        }
-        if (isParkourMove(previous, current, checker, dx, dz)) {
-            return Node.MoveType.PARKOUR;
         }
         return classifyGroundMove(dx, dz, dy);
     }

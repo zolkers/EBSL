@@ -33,7 +33,6 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
@@ -76,11 +75,7 @@ public final class PathPlanningService {
         Objects.requireNonNull(start, "start");
         Objects.requireNonNull(target, "target");
         PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
-        return planOnce(start, target, effectiveOptions)
-            .thenCompose(primary -> shouldRetryForQuality(primary, effectiveOptions)
-                ? planOnce(start, target, cautiousOptions(effectiveOptions))
-                    .thenApply(cautious -> selectBestPlan(primary, cautious, effectiveOptions))
-                : CompletableFuture.completedFuture(primary));
+        return planDepth(start, target, effectiveOptions, 1, null);
     }
 
     private CompletionStage<PathPlan> planOnce(PathPosition start, PathPosition target, PathPlannerOptions options) {
@@ -89,6 +84,21 @@ public final class PathPlanningService {
         InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(configuration);
         return pathfinder.findPath(start.floor(), resolveTarget(target))
             .thenApply(result -> toPlan(result, configuration, options));
+    }
+
+    private CompletionStage<PathPlan> planDepth(PathPosition start, PathPosition target,
+                                                PathPlannerOptions baseOptions,
+                                                int depth,
+                                                PathPlan bestPlan) {
+        PathPlannerOptions depthOptions = depthOptions(baseOptions, depth);
+        return planOnce(start, target, depthOptions)
+            .thenCompose(candidate -> {
+                PathPlan selected = selectBestPlan(bestPlan, candidate, baseOptions);
+                if (!shouldContinueDepth(selected, baseOptions, depth)) {
+                    return CompletableFuture.completedFuture(selected);
+                }
+                return planDepth(start, target, baseOptions, depth + 1, selected);
+            });
     }
 
     public PathPosition positionFromEntity(double x, double y, double z) {
@@ -154,26 +164,32 @@ public final class PathPlanningService {
             .build();
     }
 
-    private static boolean shouldRetryForQuality(PathPlan plan, PathPlannerOptions options) {
+    private static boolean shouldContinueDepth(PathPlan plan, PathPlannerOptions options, int depth) {
+        if (!options.iterativeDepthEnabled() || depth >= options.iterativeDepthMax()) {
+            return false;
+        }
+        if (plan == null || !plan.usable()) {
+            return true;
+        }
         return options.qualityPlanningMode().retryPoorPlans()
-            && plan != null
-            && plan.usable()
             && plan.quality().score() < options.qualityRetryMinScore();
     }
 
-    private static PathPlannerOptions cautiousOptions(PathPlannerOptions options) {
-        PathfinderSettings settings = PathfinderSettings.instance();
-        double modeMultiplier = options.qualityPlanningMode() == PathQualityPlanningMode.CAUTIOUS
-            ? 1.35
-            : 1.0;
+    public static PathPlannerOptions depthOptions(PathPlannerOptions options, int depth) {
+        if (depth <= 1) {
+            return options;
+        }
+        double depthScale = Math.pow(options.iterativeDepthIterationMultiplier(), depth - 1);
+        double timeScale = Math.pow(options.iterativeDepthTimeMultiplier(), depth - 1);
+        double qualityScale = Math.pow(options.iterativeDepthQualityMultiplier(), depth - 1);
         return options.toBuilder()
-            .qualityRiskCostWeight(options.qualityRiskCostWeight() * settings.qualityRetryRiskMultiplier.value() * modeMultiplier)
-            .qualityTerrainCostWeight(options.qualityTerrainCostWeight() * settings.qualityRetryTerrainMultiplier.value() * modeMultiplier)
-            .maxIterations((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxIterations() * 1.25)))
-            .maxLength((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxLength() * 1.15)))
+            .qualityRiskCostWeight(options.qualityRiskCostWeight() * qualityScale)
+            .qualityTerrainCostWeight(options.qualityTerrainCostWeight() * qualityScale)
+            .maxIterations((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxIterations() * depthScale)))
+            .maxLength((int) Math.min(Integer.MAX_VALUE, Math.round(options.maxLength() * Math.sqrt(depthScale))))
             .maxCalculationTimeMs(options.maxCalculationTimeMs() <= 0
                 ? 0
-                : (int) Math.min(Integer.MAX_VALUE, Math.round(options.maxCalculationTimeMs() * 1.35)))
+                : (int) Math.min(Integer.MAX_VALUE, Math.round(options.maxCalculationTimeMs() * timeScale)))
             .build();
     }
 
@@ -191,7 +207,8 @@ public final class PathPlanningService {
             return cautious;
         }
         double improvement = cautious.quality().score() - primary.quality().score();
-        if (improvement >= options.qualityRetryImprovement()) {
+        double requiredImprovement = Math.max(options.qualityRetryImprovement(), options.iterativeDepthMinImprovement());
+        if (improvement >= requiredImprovement) {
             return cautious;
         }
         return primary;

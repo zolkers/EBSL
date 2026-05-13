@@ -118,6 +118,18 @@ public final class PathfinderSettings extends Settingable {
         "quality_retry_risk_multiplier", "Quality retry risk multiplier", 1.65, 1.0, 6.0));
     public final DoubleSetting qualityRetryTerrainMultiplier = registerSetting(new DoubleSetting(
         "quality_retry_terrain_multiplier", "Quality retry terrain multiplier", 1.45, 1.0, 6.0));
+    public final BooleanSetting iterativeDepthEnabled = registerSetting(new BooleanSetting(
+        "iterative_depth_enabled", "Iterative depth", true));
+    public final IntSetting iterativeDepthMax = registerSetting(new IntSetting(
+        "iterative_depth_max", "Iterative depth max", 4, 1, 8));
+    public final DoubleSetting iterativeDepthIterationMultiplier = registerSetting(new DoubleSetting(
+        "iterative_depth_iteration_multiplier", "Depth iteration multiplier", 1.75, 1.0, 6.0));
+    public final DoubleSetting iterativeDepthTimeMultiplier = registerSetting(new DoubleSetting(
+        "iterative_depth_time_multiplier", "Depth time multiplier", 1.45, 1.0, 6.0));
+    public final DoubleSetting iterativeDepthQualityMultiplier = registerSetting(new DoubleSetting(
+        "iterative_depth_quality_multiplier", "Depth quality multiplier", 1.25, 1.0, 6.0));
+    public final DoubleSetting iterativeDepthMinImprovement = registerSetting(new DoubleSetting(
+        "iterative_depth_min_improvement", "Depth min improvement", 0.025, 0.0, 0.5));
     public final DoubleSetting cardinalWallCost = registerSetting(new DoubleSetting(
         "cardinal_wall_cost", "Cardinal wall proximity", 0.55, 0.0, 5.0));
     public final DoubleSetting diagonalWallCost = registerSetting(new DoubleSetting(
@@ -430,7 +442,13 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.qualityRetryMinScore,
             INSTANCE.qualityRetryImprovement,
             INSTANCE.qualityRetryRiskMultiplier,
-            INSTANCE.qualityRetryTerrainMultiplier);
+            INSTANCE.qualityRetryTerrainMultiplier,
+            INSTANCE.iterativeDepthEnabled,
+            INSTANCE.iterativeDepthMax,
+            INSTANCE.iterativeDepthIterationMultiplier,
+            INSTANCE.iterativeDepthTimeMultiplier,
+            INSTANCE.iterativeDepthQualityMultiplier,
+            INSTANCE.iterativeDepthMinImprovement);
     }
 
     public static List<Setting<?>> renderingSettings() {
