@@ -13,7 +13,7 @@ import java.util.List;
 @EbslApiSurface(EbslApiSurface.Domain.ANALYTICS)
 public final class AnalyticsApi {
     @EbslApiOperation("Record a UI or module analytics event.")
-    public void record(String source, String message) {
+    public void track(String source, String message) {
         AnalyticsEventLog.recordAnalytics(source, message);
     }
 

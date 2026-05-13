@@ -83,6 +83,7 @@ public final class EbslCommand {
         return CommandResult.ok("Stopped " + stopped + " EBSL script(s).");
     }
 
+    @SuppressWarnings("java:S1172")
     static CommandResult status(CommandContext ctx) {
         List<String> lines = new ArrayList<>();
         lines.add("EBSL: " + EbslScriptTask.INSTANCE.status());

@@ -34,7 +34,7 @@ final class GraphEdgePainter {
             startRouteY = fromY - direction * separation;
             endRouteY = toY + direction * separation;
         }
-        int color = selected ? 0xFFFFD166 : (to.node().depth() > 0 ? 0xAA67B7FF : 0xCC67B7FF);
+        int color = edgeColor(to, selected);
         List<GraphEdgeRouter.EdgePoint> route = GraphEdgeRouter.route(
             new GraphEdgeRouter.EdgePoint(startLaneX, startRouteY),
             new GraphEdgeRouter.EdgePoint(endLaneX, endRouteY),
@@ -53,6 +53,13 @@ final class GraphEdgePainter {
         int portColor = selected ? 0xFFFFD166 : 0xFF67B7FF;
         dl.addCircleFilled(fromX, fromY, 3.5f, portColor);
         dl.addCircleFilled(toX, toY, 3.5f, portColor);
+    }
+
+    private static int edgeColor(ScriptGraphNodeLayout to, boolean selected) {
+        if (selected) {
+            return 0xFFFFD166;
+        }
+        return to.node().depth() > 0 ? 0xAA67B7FF : 0xCC67B7FF;
     }
 
     private static boolean needsSeparatedPortLanes(float startA, float startB, float startY,

@@ -10,7 +10,6 @@ import java.util.Objects;
 
 public final class CommandSpec implements CommandHandler {
     private final CommandMeta meta;
-    private final List<CommandArgument> arguments;
     private final CommandExecutor executor;
     private final CommandCompletion completion;
     private final List<GoalParameter> params;
@@ -23,7 +22,6 @@ public final class CommandSpec implements CommandHandler {
                         List<GoalParameter> params,
                         Map<String, CommandHandler> subcommands) {
         this.meta = meta;
-        this.arguments = List.copyOf(arguments);
         this.executor = Objects.requireNonNull(executor, "command executor required");
         this.completion = completion != null ? completion : CommandCompletion.fromArguments(arguments);
         this.params = List.copyOf(params);

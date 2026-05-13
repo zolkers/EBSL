@@ -51,7 +51,7 @@ final class ScriptGraphConnectionEditor {
         return selected;
     }
 
-    void handlePorts(ScriptGraphNodeLayout layout, float graphZoom, Runnable save, Consumer<String> statusSink) {
+    void handlePorts(ScriptGraphNodeLayout layout, float graphZoom) {
         float hit = Math.max(14.0f, 16.0f * graphZoom);
         float inputX = layout.x() + 10.0f * graphZoom;
         float outputX = layout.right() - 10.0f * graphZoom;
@@ -138,7 +138,7 @@ final class ScriptGraphConnectionEditor {
         }
         ImGui.setNextItemWidth(width);
         if (ImGui.inputText("Label", selectedLabel)) {
-            replaceSelected(selectedConnection().withLabel(selectedLabel.get()));
+            replaceSelected(connection.withLabel(selectedLabel.get()));
             save.run();
             statusSink.accept("updated link label");
         }

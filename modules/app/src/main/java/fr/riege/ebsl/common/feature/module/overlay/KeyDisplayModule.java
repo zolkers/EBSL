@@ -89,7 +89,9 @@ public final class KeyDisplayModule extends Settingable implements PathfinderMod
             case 1 -> dl.addTriangleFilled(cx, cy + a, cx - a, cy - a, cx + a, cy - a, arrow);
             case 2 -> dl.addTriangleFilled(cx - a, cy, cx + a, cy - a, cx + a, cy + a, arrow);
             case 3 -> dl.addTriangleFilled(cx + a, cy, cx - a, cy - a, cx - a, cy + a, arrow);
-            default -> {}
+            default -> {
+                // Spacebar uses dir -1 and has no directional arrow.
+            }
         }
     }
 }

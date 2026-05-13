@@ -311,7 +311,7 @@ final class ImGuiScriptGraphView {
         }
         if (interactive) {
             dragNode(manager, key);
-            connections.handlePorts(layout, graphZoom, () -> saveGraphLayout(manager), statusSink);
+            connections.handlePorts(layout, graphZoom);
         }
         return width;
     }

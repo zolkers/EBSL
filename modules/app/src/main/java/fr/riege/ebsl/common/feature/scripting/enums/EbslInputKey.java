@@ -47,6 +47,7 @@ public enum EbslInputKey {
 
     public abstract void set(IInputLayer input, boolean down);
 
+    @SuppressWarnings("java:S1172")
     public boolean isDown(IInputLayer input) {
         return false;
     }

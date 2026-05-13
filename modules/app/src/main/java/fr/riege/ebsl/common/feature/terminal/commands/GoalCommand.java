@@ -16,7 +16,6 @@ public final class GoalCommand {
     private static final String WALK = "walk";
     private static final String BLOCK = "block";
     private static final String COLUMN = "column";
-    private static final String WALK_XZ = "walkxz";
     private static final String TEST = "test";
     private static final String TEST_XZ = "testxz";
     private static final List<String> LEGACY_GOAL_IDS = List.of(BLOCK, TEST, TEST_XZ);
