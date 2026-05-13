@@ -50,11 +50,6 @@ public record RenderBatch(String id, RenderStage stage, RenderStyle style, int t
             return this;
         }
 
-        public Builder color(RenderColor color) {
-            this.style = style.toBuilder().color(color).build();
-            return this;
-        }
-
         @Override
         public Builder paint(RenderPaint paint) {
             this.style = style.toBuilder().paint(paint).build();
