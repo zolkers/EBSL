@@ -28,14 +28,12 @@ public final class MovementClassifier {
         if (isSwim(previous, current, previousPoint, currentPoint, checker)) {
             return Node.MoveType.SWIM;
         }
-        if ((currentPoint != null && currentPoint.isClimbable()) || (previousPoint != null && previousPoint.isClimbable())) {
+        if (isClimb(previousPoint, currentPoint)) {
             return Node.MoveType.CLIMB;
         }
 
         int dx = current.flooredX() - previous.flooredX();
         int dz = current.flooredZ() - previous.flooredZ();
-        int absDx = Math.abs(dx);
-        int absDz = Math.abs(dz);
         double dy = floorLevel(current, currentPoint, checker) - floorLevel(previous, previousPoint, checker);
 
         if (checker != null && checker.world().requiresJumpForStep(
@@ -45,17 +43,7 @@ public final class MovementClassifier {
         if (isParkourMove(previous, current, checker, dx, dz)) {
             return Node.MoveType.PARKOUR;
         }
-        PathfinderSettings settings = PathfinderSettings.instance();
-        if (dy > settings.partialAscentThreshold.value()) {
-            return Node.MoveType.STEP_UP;
-        }
-        if (dy < settings.descentThreshold.value()) {
-            return dy >= STEP_DOWN_DY_THRESHOLD ? Node.MoveType.STEP_DOWN : Node.MoveType.FALL;
-        }
-        if (absDx + absDz >= 2) {
-            return Node.MoveType.WALK_DIAGONAL;
-        }
-        return Node.MoveType.WALK;
+        return classifyGroundMove(dx, dz, dy);
     }
 
     private static boolean isSwim(PathPosition previous, PathPosition current,
@@ -68,6 +56,29 @@ public final class MovementClassifier {
             return false;
         }
         return isSwimPosition(checker, previous) || isSwimPosition(checker, current);
+    }
+
+    private static boolean isClimb(NavigationPoint previousPoint, NavigationPoint currentPoint) {
+        return isClimbable(previousPoint) || isClimbable(currentPoint);
+    }
+
+    private static boolean isClimbable(NavigationPoint point) {
+        return point != null && point.isClimbable();
+    }
+
+    private static Node.MoveType classifyGroundMove(int dx, int dz, double dy) {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        if (dy > settings.partialAscentThreshold.value()) {
+            return Node.MoveType.STEP_UP;
+        }
+        if (dy < settings.descentThreshold.value()) {
+            return classifyDescent(dy);
+        }
+        return Math.abs(dx) + Math.abs(dz) >= 2 ? Node.MoveType.WALK_DIAGONAL : Node.MoveType.WALK;
+    }
+
+    private static Node.MoveType classifyDescent(double dy) {
+        return dy >= STEP_DOWN_DY_THRESHOLD ? Node.MoveType.STEP_DOWN : Node.MoveType.FALL;
     }
 
     private static boolean isParkourMove(PathPosition previous, PathPosition current,
