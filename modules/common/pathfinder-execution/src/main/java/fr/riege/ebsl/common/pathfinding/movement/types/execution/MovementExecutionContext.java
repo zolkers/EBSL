@@ -3,6 +3,7 @@ package fr.riege.ebsl.common.pathfinding.movement.types.execution;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 
+@SuppressWarnings("java:S107")
 public final class MovementExecutionContext {
     private final Node waypoint;
     private final Vec3d playerPos;

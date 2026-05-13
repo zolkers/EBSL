@@ -23,10 +23,7 @@ public final class EbslTokenizer {
             } else if (String.valueOf(c).equals(EbslSyntax.QUOTE)) {
                 quoted = !quoted;
                 i++;
-            } else if (quoted) {
-                token.append(c);
-                i++;
-            } else if (isSeparator(c)) {
+            } else if (!quoted && isSeparator(c)) {
                 flush(token, tokens);
                 addSeparator(c, tokens);
                 i++;

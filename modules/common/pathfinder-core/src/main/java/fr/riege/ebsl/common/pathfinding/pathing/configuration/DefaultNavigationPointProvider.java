@@ -6,6 +6,7 @@ import fr.riege.ebsl.common.pathfinding.provider.NavigationPointImpl;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
+@SuppressWarnings("java:S6548")
 final class DefaultNavigationPointProvider implements NavigationPointProvider {
     static final DefaultNavigationPointProvider INSTANCE = new DefaultNavigationPointProvider();
     private DefaultNavigationPointProvider() {}
