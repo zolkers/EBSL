@@ -75,14 +75,20 @@ final class IterativeDepthPlanner {
         if (plan == null || !plan.usable()) {
             return true;
         }
-        return options.qualityPlanningMode().retryPoorPlans()
-            && plan.quality().score() < options.qualityRetryMinScore();
+        return options.qualityPlanningMode().retryPoorPlans();
     }
 
     static boolean shouldContinue(PathQualityReport quality, PathfinderSettings settings, int depth) {
         return settings.iterativeDepthEnabled.value()
             && depth < settings.iterativeDepthMax.value()
-            && quality.score() < settings.qualityRetryMinScore.value();
+            && settings.qualityPlanningMode.value().retryPoorPlans();
+    }
+
+    static DepthSearchMode modeForDepth(int depth, PathPlan activePlan) {
+        if (depth > 2 && activePlan != null && activePlan.usable() && depth % 2 == 1) {
+            return DepthSearchMode.REPAIR_WEAKEST_WINDOW;
+        }
+        return DepthSearchMode.GLOBAL;
     }
 
     static double requiredImprovement(PathPlannerOptions options) {

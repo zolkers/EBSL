@@ -39,9 +39,11 @@ import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
+import fr.riege.ebsl.common.pathfinding.quality.MovementRiskScorer;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
+import fr.riege.ebsl.common.pathfinding.quality.TerrainOpportunityScorer;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -503,18 +505,34 @@ public final class CommonNavigationBackend implements NavigationService {
         Vec3d pos = player.position();
         PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
         PathPosition target = new PathPosition(goalX, goalY, goalZ);
+        DepthSearchMode mode = IterativeDepthPlanner.modeForDepth(depth, activePlan);
+        DepthRepairWindow repairWindow = null;
+        if (mode == DepthSearchMode.REPAIR_WEAKEST_WINDOW) {
+            repairWindow = weakestRepairWindow(activeNodes, depth);
+            if (repairWindow == null) {
+                mode = DepthSearchMode.GLOBAL;
+            } else {
+                start = activeNodes.get(repairWindow.startIndex()).position.floor();
+                target = activeNodes.get(repairWindow.endIndex()).position.floor();
+            }
+        }
         IterativeDepthProfile profile = IterativeDepthPlanner.instantProfile(settings, depth);
         PathfinderConfiguration config = depthConfiguration(profile);
         InspectablePathfinder requestedPathfinder = Pathfinders.inspectableAStar(config);
         depthPathfinder = requestedPathfinder;
         int requestId = ++depthRequestId;
+        DepthSearchMode requestedMode = mode;
+        DepthRepairWindow requestedRepairWindow = repairWindow;
         requestedPathfinder.findPath(start, target)
             .whenComplete((result, throwable) -> onGameThread(() ->
-                handleDepthResult(requestId, depth, requestedPathfinder, result, throwable, config)));
+                handleDepthResult(requestId, depth, requestedMode, requestedRepairWindow,
+                    requestedPathfinder, result, throwable, config)));
     }
 
     private void handleDepthResult(int requestId,
                                    int depth,
+                                   DepthSearchMode mode,
+                                   DepthRepairWindow repairWindow,
                                    InspectablePathfinder requestedPathfinder,
                                    PathfinderResult result,
                                    Throwable throwable,
@@ -524,14 +542,15 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         depthPathfinder = null;
         if (throwable == null) {
-            applyDepthResultIfBetter(depth, result, config);
+            applyDepthResultIfBetter(depth, mode, repairWindow, result, config);
         }
         if (shouldContinueDepth(depth)) {
             queueDepthSearch(depth + 1);
         }
     }
 
-    private void applyDepthResultIfBetter(int depth, PathfinderResult result, PathfinderConfiguration config) {
+    private void applyDepthResultIfBetter(int depth, DepthSearchMode mode, DepthRepairWindow repairWindow,
+                                          PathfinderResult result, PathfinderConfiguration config) {
         Collection<PathPosition> positions = result != null && result.getPath() != null
             ? result.getPath().collect()
             : List.of();
@@ -539,7 +558,12 @@ public final class CommonNavigationBackend implements NavigationService {
             return;
         }
         ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
-        PathPlan plan = PathPlan.from(result, config, positions, processed, checker);
+        PathPlan plan = mode == DepthSearchMode.REPAIR_WEAKEST_WINDOW
+            ? repairedPlan(result, config, processed, repairWindow)
+            : PathPlan.from(result, config, positions, processed, checker);
+        if (plan == null || !plan.usable()) {
+            return;
+        }
         boolean selected = isBetterDepthPlan(plan);
         publishDepthPath(depth, plan, selected);
         if (!selected) {
@@ -564,6 +588,62 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private boolean shouldContinueDepth(int depth) {
         return IterativeDepthPlanner.shouldContinue(activeQuality, PathfinderSettings.instance(), depth);
+    }
+
+    private PathPlan repairedPlan(PathfinderResult result, PathfinderConfiguration config,
+                                  ProcessedPath repairPath, DepthRepairWindow repairWindow) {
+        if (repairWindow == null || repairPath == null || repairPath.navigationPath().isEmpty() || activeNodes.isEmpty()) {
+            return null;
+        }
+        ArrayList<Node> merged = new ArrayList<>();
+        appendDistinct(merged, activeNodes.subList(0, Math.min(repairWindow.startIndex() + 1, activeNodes.size())));
+        appendDistinct(merged, repairPath.navigationPath());
+        appendDistinct(merged, activeNodes.subList(Math.min(repairWindow.endIndex() + 1, activeNodes.size()), activeNodes.size()));
+        if (merged.size() < 2) {
+            return null;
+        }
+        List<PathPosition> mergedPositions = merged.stream().map(node -> node.position).toList();
+        PathState state = result.successful() ? PathState.FOUND : result.getPathState();
+        PathfinderResult mergedResult = PathfinderResults.of(
+            state,
+            Paths.of(mergedPositions.getFirst(), mergedPositions.getLast(), mergedPositions));
+        return PathPlan.from(mergedResult, config, mergedPositions, new ProcessedPath(merged, merged, pathLength(merged)), checker);
+    }
+
+    private DepthRepairWindow weakestRepairWindow(List<Node> path, int depth) {
+        if (path == null || path.size() < 5) {
+            return null;
+        }
+        int worstIndex = -1;
+        double worstScore = 0.0;
+        for (int i = 1; i + 1 < path.size(); i++) {
+            Node node = path.get(i);
+            double movementWeakness = MovementRiskScorer.risk(node.moveType());
+            double terrainWeakness = 1.0 - TerrainOpportunityScorer.scorePosition(checker, node.position);
+            double weakness = movementWeakness * 0.72 + terrainWeakness * 0.28;
+            if (weakness > worstScore) {
+                worstScore = weakness;
+                worstIndex = i;
+            }
+        }
+        if (worstIndex < 0 || worstScore < 0.12) {
+            return null;
+        }
+        int radius = Math.clamp(3 + depth * 2, 5, 18);
+        int startIndex = Math.max(0, worstIndex - radius);
+        int endIndex = Math.min(path.size() - 1, worstIndex + radius);
+        if (endIndex - startIndex < 3) {
+            return null;
+        }
+        return new DepthRepairWindow(startIndex, endIndex, worstScore);
+    }
+
+    private static double pathLength(List<Node> path) {
+        double length = 0.0;
+        for (int i = 1; i < path.size(); i++) {
+            length += path.get(i - 1).position.distance(path.get(i).position);
+        }
+        return length;
     }
 
     private void publishDepthPath(int depth, PathPlan plan, boolean selected) {

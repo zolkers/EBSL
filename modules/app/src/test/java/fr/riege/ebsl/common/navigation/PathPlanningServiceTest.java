@@ -126,6 +126,28 @@ final class PathPlanningServiceTest {
         assertSame(complete, DepthPlanSelector.select(complete, fallback, 0.01));
     }
 
+    @Test
+    void iterativeDepthContinuesPastAcceptableFirstPlanWhenRetryModeIsEnabled() {
+        PathPlannerOptions options = PathPlannerOptions.builder()
+            .iterativeDepthEnabled(true)
+            .iterativeDepthMax(4)
+            .qualityPlanningMode(PathQualityPlanningMode.BALANCED)
+            .qualityRetryMinScore(0.40)
+            .build();
+
+        assertEquals(true, IterativeDepthPlanner.shouldContinue(plan(PathState.FOUND, 0.90), options, 1));
+        assertEquals(false, IterativeDepthPlanner.shouldContinue(plan(PathState.FOUND, 0.90), options, 4));
+    }
+
+    @Test
+    void depthPlannerAlternatesIntoWeakestWindowRepairAfterGlobalDepth() {
+        PathPlan active = plan(PathState.FOUND, 0.60);
+
+        assertEquals(DepthSearchMode.GLOBAL, IterativeDepthPlanner.modeForDepth(2, active));
+        assertEquals(DepthSearchMode.REPAIR_WEAKEST_WINDOW, IterativeDepthPlanner.modeForDepth(3, active));
+        assertEquals(DepthSearchMode.GLOBAL, IterativeDepthPlanner.modeForDepth(4, active));
+    }
+
     private static PathPlan plan(PathState state, double score) {
         List<PathPosition> positions = List.of(
             new PathPosition(0, 64, 0),
