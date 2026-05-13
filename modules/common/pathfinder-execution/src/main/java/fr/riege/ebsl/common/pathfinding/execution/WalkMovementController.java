@@ -269,48 +269,61 @@ final class WalkMovementController {
         double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
         boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
         ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
+        ParkourVelocityState state = new ParkourVelocityState(
+            dirX, dirZ, jumpLen, progress, remaining, speedAlong, distance, verticalDelta, profile);
 
         if (player.onGround()) {
-            double trigger = parkourJumpTriggerDistance(distance);
-            double targetSpeed = targetTakeoffSpeed(distance, verticalDelta);
-            boolean shortAscentCarry = profile.shortAscentCarry();
-            if (!shortAscentCarry && remaining <= trigger + 0.35 && speedAlong > targetSpeed + 0.025) {
-                pressParkourBrake();
-                return;
-            }
-            input.setSprintDown(distance >= 3 && verticalDelta >= -1.0);
-            if (shortAscentCarry && speedAlong < PARKOUR_SHORT_ASCENT_CARRY_SPEED) {
-                applyParkourAxisInput(dirX, dirZ, true);
-            }
+            applyGroundParkourVelocityControl(state);
             return;
         }
 
         ParkourAirPrediction prediction = predictParkourLanding(
             playerPos.y(), velocity.y(), waypoint.position.flooredY(), progress, speedAlong);
-        double targetProgress = jumpLen - landingAimOffset(distance, verticalDelta);
+        applyAirParkourVelocityControl(playerPos, waypoint, state, prediction);
+    }
+
+    private void applyGroundParkourVelocityControl(ParkourVelocityState state) {
+        double trigger = parkourJumpTriggerDistance(state.distance());
+        double targetSpeed = targetTakeoffSpeed(state.distance(), state.verticalDelta());
+        boolean shortAscentCarry = state.profile().shortAscentCarry();
+        if (!shortAscentCarry && state.remaining() <= trigger + 0.35 && state.speedAlong() > targetSpeed + 0.025) {
+            pressParkourBrake();
+            return;
+        }
+        input.setSprintDown(state.distance() >= 3 && state.verticalDelta() >= -1.0);
+        if (shortAscentCarry && state.speedAlong() < PARKOUR_SHORT_ASCENT_CARRY_SPEED) {
+            applyParkourAxisInput(state.dirX(), state.dirZ(), true);
+        }
+    }
+
+    private void applyAirParkourVelocityControl(Vec3d playerPos,
+                                                Node waypoint,
+                                                ParkourVelocityState state,
+                                                ParkourAirPrediction prediction) {
+        double targetProgress = state.jumpLen() - landingAimOffset(state.distance(), state.verticalDelta());
         double frontLimit = targetProgress + PARKOUR_LANDING_FRONT_MARGIN;
         double backLimit = targetProgress - PARKOUR_LANDING_BACK_MARGIN;
         boolean inLandingColumn = blockX(playerPos) == waypoint.position.flooredX()
             && blockZ(playerPos) == waypoint.position.flooredZ();
         if (prediction.progress() > frontLimit) {
-            if (profile.shortAscentCarry() && remaining <= 0.55) {
-                applyParkourAxisInput(dirX, dirZ, true);
+            if (state.profile().shortAscentCarry() && state.remaining() <= 0.55) {
+                applyParkourAxisInput(state.dirX(), state.dirZ(), true);
                 return;
             }
-            if (profile.immediateChain() && prediction.progress() <= frontLimit + PARKOUR_CHAIN_OVERSHOOT_MARGIN) {
+            if (state.profile().immediateChain() && prediction.progress() <= frontLimit + PARKOUR_CHAIN_OVERSHOOT_MARGIN) {
                 clearForwardBack();
                 return;
             }
-            applyParkourAxisInput(dirX, dirZ, false);
+            applyParkourAxisInput(state.dirX(), state.dirZ(), false);
             return;
         }
-        if (!inLandingColumn || prediction.progress() < backLimit || speedAlong < targetAirSpeed(distance, verticalDelta)) {
-            applyParkourAxisInput(dirX, dirZ, true);
+        if (!inLandingColumn || prediction.progress() < backLimit || state.speedAlong() < targetAirSpeed(state.distance(), state.verticalDelta())) {
+            applyParkourAxisInput(state.dirX(), state.dirZ(), true);
             input.setSprintDown(false);
             return;
         }
-        if (profile.shortAscentCarry()) {
-            applyParkourAxisInput(dirX, dirZ, true);
+        if (state.profile().shortAscentCarry()) {
+            applyParkourAxisInput(state.dirX(), state.dirZ(), true);
             return;
         }
         clearForwardBack();
@@ -705,6 +718,11 @@ final class WalkMovementController {
     }
 
     private record ParkourAirPrediction(int ticks, double progress) {
+    }
+
+    private record ParkourVelocityState(double dirX, double dirZ, double jumpLen, double progress,
+                                        double remaining, double speedAlong, int distance, double verticalDelta,
+                                        ParkourExecutionProfile profile) {
     }
 
     private record ParkourExecutionProfile(boolean immediateChain, boolean shortAscentCarry, boolean descending,

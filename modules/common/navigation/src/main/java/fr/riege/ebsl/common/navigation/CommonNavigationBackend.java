@@ -215,16 +215,7 @@ public final class CommonNavigationBackend implements NavigationService {
         }
 
         if (executor.getState() == PathExecutor.State.WALKING) {
-            executor.tick();
-            Node.MoveType moveType = executor.getCurrentMoveType();
-            if (moveType != null) currentMoveType = moveType;
-            if (executor.getState() == PathExecutor.State.FINISHED || executor.getState() == PathExecutor.State.FAILED) {
-                if (!handleLongRangeProgress(true)) {
-                    markIdle(false);
-                }
-            } else {
-                handleLongRangeProgress(false);
-            }
+            tickWalkingExecutor();
             return;
         }
 
@@ -403,28 +394,39 @@ public final class CommonNavigationBackend implements NavigationService {
         AStarPathfinder repairPathfinder = new AStarPathfinder(config);
         pathfinder = repairPathfinder;
         repairPathfinder.findPath(start, request.joinNode().position)
-            .whenComplete((result, throwable) -> onGameThread(() -> {
-                if (pathfinder != repairPathfinder) {
-                    return;
-                }
-                pathfinder = null;
-                Collection<PathPosition> positions = result != null && result.getPath() != null
-                    ? result.getPath().collect()
-                    : List.of();
-                if (throwable != null || !PathResultClassifier.hasUsablePath(result, positions)) {
-                    startPathTo(new PathPosition(goalX, goalY, goalZ), onFinished, true, !longRangeSession.isActive());
-                    return;
-                }
-                ProcessedPath repairPath = WalkPathProcessor.process(positions, config, checker);
-                List<Node> merged = mergePathPrefixWithTail(repairPath.navigationPath(), request.remainingPath());
-                if (merged.size() < 2) {
-                    startPathTo(new PathPosition(goalX, goalY, goalZ), onFinished, true, !longRangeSession.isActive());
-                    return;
-                }
-                activeNodes = merged;
-                startExecutor(merged, request.goalX(), request.goalY(), request.goalZ(), true);
-                executor.rememberRecentRepair(request.reason());
-            }));
+            .whenComplete((result, throwable) -> onGameThread(() ->
+                completePathRepair(request, config, repairPathfinder, result, throwable)));
+    }
+
+    private void completePathRepair(PathRepairRequest request,
+                                    PathfinderConfiguration config,
+                                    AStarPathfinder repairPathfinder,
+                                    PathfinderResult result,
+                                    Throwable throwable) {
+        if (pathfinder != repairPathfinder) {
+            return;
+        }
+        pathfinder = null;
+        Collection<PathPosition> positions = result != null && result.getPath() != null
+            ? result.getPath().collect()
+            : List.of();
+        if (throwable != null || !PathResultClassifier.hasUsablePath(result, positions)) {
+            restartFromCurrentGoal();
+            return;
+        }
+        ProcessedPath repairPath = WalkPathProcessor.process(positions, config, checker);
+        List<Node> merged = mergePathPrefixWithTail(repairPath.navigationPath(), request.remainingPath());
+        if (merged.size() < 2) {
+            restartFromCurrentGoal();
+            return;
+        }
+        activeNodes = merged;
+        startExecutor(merged, request.goalX(), request.goalY(), request.goalZ(), true);
+        executor.rememberRecentRepair(request.reason());
+    }
+
+    private void restartFromCurrentGoal() {
+        startPathTo(new PathPosition(goalX, goalY, goalZ), onFinished, true, !longRangeSession.isActive());
     }
 
     private void startExecutor(List<Node> path, int goalX, int goalY, int goalZ, boolean finishAtPathEnd) {
@@ -582,6 +584,21 @@ public final class CommonNavigationBackend implements NavigationService {
         if (!pending.needsContinuation()) {
             longRangeSession.markCompleted();
         }
+    }
+
+    private void tickWalkingExecutor() {
+        executor.tick();
+        Node.MoveType moveType = executor.getCurrentMoveType();
+        if (moveType != null) {
+            currentMoveType = moveType;
+        }
+        if (executor.getState() == PathExecutor.State.FINISHED || executor.getState() == PathExecutor.State.FAILED) {
+            if (!handleLongRangeProgress(true)) {
+                markIdle(false);
+            }
+            return;
+        }
+        handleLongRangeProgress(false);
     }
 
     private boolean isAttachableSegment(List<Node> path,
