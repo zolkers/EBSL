@@ -146,6 +146,10 @@ record PathVisualizerStyle(
         return depthLineColor(depth, selected, selected ? 1.0 : 0.55).withAlpha(selected ? 0.88f : 0.42f);
     }
 
+    RenderColor depthNodeColor(int depth, boolean selected, double qualityScore) {
+        return depthLineColor(depth, selected, qualityScore).withAlpha(selected ? 0.86f : 0.50f);
+    }
+
     float cameraNodeLineWidth() {
         return CAMERA_NODE_LINE_WIDTH;
     }

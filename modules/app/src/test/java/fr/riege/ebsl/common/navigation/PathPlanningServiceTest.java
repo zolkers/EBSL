@@ -147,7 +147,7 @@ final class PathPlanningServiceTest {
         PathPlannerOptions options = PathPlannerOptions.builder()
             .iterativeDepthEnabled(true)
             .iterativeDepthMax(4)
-            .qualityPlanningMode(PathQualityPlanningMode.BALANCED)
+            .qualityPlanningMode(PathQualityPlanningMode.OFF)
             .qualityRetryMinScore(0.40)
             .build();
 

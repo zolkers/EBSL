@@ -94,6 +94,10 @@ final class PathRecoveryController {
         if (!allowReplan) {
             return null;
         }
+        if (shouldReplanFromPlayer(progress, cooldownPassed)) {
+            return RecoveryDecision.replanFromPlayer(String.format(
+                "drifted from path %.2f", progress.proximity().horizontalDistance()));
+        }
         if (player.onGround() && progress.pathStale(recoveryProfile.groundedNoProgressMs())) {
             return RecoveryDecision.repairToSegment("grounded no progress stale=" + progress.pathStaleMs());
         }
@@ -102,7 +106,7 @@ final class PathRecoveryController {
                 "path progress stale drift=%.2f stale=%d", progress.proximity().horizontalDistance(), progress.pathStaleMs()));
         }
         if (progress.movementStale(PathfinderSettings.instance().stuckTimeMs.value()) && drifted && cooldownPassed) {
-            return RecoveryDecision.repairToSegment(String.format(
+            return RecoveryDecision.replanFromPlayer(String.format(
                 "drift stale=%.2f", progress.proximity().horizontalDistance()));
         }
         if (progress.movementStale(recoveryProfile.deadlockMs()) && cooldownPassed) {
@@ -118,6 +122,12 @@ final class PathRecoveryController {
             && cooldownPassed
             && (progress.proximity().horizontalDistance() > PathfinderSettings.instance().pathReplanDriftDistance.value()
             || progress.distanceMoved() >= PathfinderSettings.instance().stuckDistThreshold.value());
+    }
+
+    private static boolean shouldReplanFromPlayer(PathProgressSnapshot progress, boolean cooldownPassed) {
+        return cooldownPassed
+            && progress.pathStale(PathfinderSettings.instance().pathReplanStaleMs.value())
+            && progress.proximity().horizontalDistance() > PathfinderSettings.instance().pathReplanDriftDistance.value();
     }
 
     private void keepSurfaceSwimming(IInputLayer input, boolean inWater) {

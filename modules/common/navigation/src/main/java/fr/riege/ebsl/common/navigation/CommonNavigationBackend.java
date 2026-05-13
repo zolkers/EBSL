@@ -579,7 +579,7 @@ public final class CommonNavigationBackend implements NavigationService {
             return false;
         }
         return DepthPlanSelector.shouldReplace(
-            activePlan,
+            activeSelectionPlan(),
             candidate,
             IterativeDepthPlanner.requiredImprovement(PathfinderSettings.instance()),
             checker);
@@ -587,6 +587,24 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private boolean shouldContinueDepth(int depth) {
         return IterativeDepthPlanner.shouldContinue(activeQuality, PathfinderSettings.instance(), depth);
+    }
+
+    private PathPlan activeSelectionPlan() {
+        List<Node> current = executor.getState() == PathExecutor.State.WALKING
+            ? executor.getPathSnapshot()
+            : activeNodes;
+        if (current == null || current.size() < 2) {
+            return activePlan;
+        }
+        List<PathPosition> positions = current.stream().map(node -> node.position).toList();
+        PathState state = activePlan != null && activePlan.complete() ? PathState.FOUND : PathState.FALLBACK;
+        PathfinderResult result = PathfinderResults.of(state, Paths.of(positions.getFirst(), positions.getLast(), positions));
+        return PathPlan.from(
+            result,
+            activePlan != null ? activePlan.configuration() : fullConfiguration(),
+            positions,
+            new ProcessedPath(current, current, pathLength(current)),
+            checker);
     }
 
     private PathPlan repairedPlan(PathfinderResult result, PathfinderConfiguration config,

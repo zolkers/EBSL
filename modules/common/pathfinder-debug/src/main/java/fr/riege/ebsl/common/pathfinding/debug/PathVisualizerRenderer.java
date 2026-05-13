@@ -35,6 +35,7 @@ final class PathVisualizerRenderer {
     private static final double DEPTH_LINE_Y_OFFSET = 0.66;
     private static final double DEPTH_LINE_STRIDE = 0.08;
     private static final double DEPTH_ENDPOINT_SIZE = 0.11;
+    private static final double DEPTH_NODE_SIZE = 0.07;
     private static final float CAMERA_NODE_SIZE = 0.10f;
     private static final float CAMERA_NODE_ACTIVE_SIZE = 0.18f;
 
@@ -74,8 +75,32 @@ final class PathVisualizerRenderer {
                         b.position.centeredX(), b.position.flooredY() + yOffset, b.position.centeredZ());
                 }
             }
+            renderDepthNodes(handle, depthPath, path, limit, yOffset, style);
             renderDepthEndpoints(handle, depthPath, path, limit, yOffset, style);
         }
+    }
+
+    private static void renderDepthNodes(RenderHandle handle, DepthPathSnapshot depthPath,
+                                         List<Node> path, int limit, double yOffset,
+                                         PathVisualizerStyle style) {
+        int stride = depthPath.selected() ? 1 : Math.max(1, limit / 80);
+        try (WorldRenderSession session = WorldRender.session(handle)
+            .lineWidth(Math.max(0.8f, style.depthLineWidth() * 0.75f))
+            .color(style.depthNodeColor(depthPath.depth(), depthPath.selected(), depthPath.qualityScore()))
+            .throughWalls()) {
+            for (int i = 0; i < limit; i += stride) {
+                renderDepthNode(session, path.get(i), yOffset);
+            }
+        }
+    }
+
+    private static void renderDepthNode(WorldRenderSession session, Node node, double yOffset) {
+        double x = node.position.centeredX();
+        double y = node.position.flooredY() + yOffset;
+        double z = node.position.centeredZ();
+        session.wireBox(
+            x - DEPTH_NODE_SIZE, y - DEPTH_NODE_SIZE, z - DEPTH_NODE_SIZE,
+            x + DEPTH_NODE_SIZE, y + DEPTH_NODE_SIZE, z + DEPTH_NODE_SIZE);
     }
 
     private static void renderDepthEndpoints(RenderHandle handle, DepthPathSnapshot depthPath,

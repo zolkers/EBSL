@@ -75,13 +75,12 @@ final class IterativeDepthPlanner {
         if (plan == null || !plan.usable()) {
             return true;
         }
-        return options.qualityPlanningMode().retryPoorPlans();
+        return true;
     }
 
     static boolean shouldContinue(PathQualityReport quality, PathfinderSettings settings, int depth) {
         return settings.iterativeDepthEnabled.value()
-            && depth < settings.iterativeDepthMax.value()
-            && settings.qualityPlanningMode.value().retryPoorPlans();
+            && depth < settings.iterativeDepthMax.value();
     }
 
     static DepthSearchMode modeForDepth(int depth, PathPlan activePlan) {
