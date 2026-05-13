@@ -44,6 +44,7 @@ replay_*.log
 .worktrees/
 
 # local tool state
+.codex-tmp/
 
 # runtime logs
 logs/
