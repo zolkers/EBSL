@@ -71,10 +71,10 @@ final class WalkMovementController {
             return lastValidationResult;
         }
         int currentIndex = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int targetIndex = Math.clamp(currentIndex + 1, 0, path.size() - 1);
+        int targetIndex = (int) Math.clamp((long) currentIndex + 1L, 0L, (long) path.size() - 1L);
         Node from = path.get(currentIndex);
         Node target = path.get(targetIndex);
-        Node next = path.get(Math.clamp(targetIndex + 1, 0, path.size() - 1));
+        Node next = path.get((int) Math.clamp((long) targetIndex + 1L, 0L, (long) path.size() - 1L));
         MovementValidationContext context = new MovementValidationContext(
             checker,
             navigationPointProvider,
@@ -168,7 +168,7 @@ final class WalkMovementController {
 
     private boolean isParkourTransitionWindow(int pursuitSegment) {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int end = Math.clamp(start + 2, 0, path.size() - 1);
+        int end = (int) Math.clamp((long) start + 2L, 0L, (long) path.size() - 1L);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return true;
@@ -465,7 +465,7 @@ final class WalkMovementController {
             return;
         }
 
-        Node nextWaypoint = path.get(Math.clamp(pursuitSegment + 2, 0, path.size() - 1));
+        Node nextWaypoint = path.get((int) Math.clamp((long) pursuitSegment + 2L, 0L, (long) path.size() - 1L));
         WaterMovementContext waterContext = new WaterMovementContext(
             movementWaypoint,
             nextWaypoint,
@@ -528,7 +528,7 @@ final class WalkMovementController {
     private boolean isInStairSequence(int pursuitSegment) {
         int stairCount = 0;
         int start = Math.clamp(pursuitSegment, 0, path.size());
-        int checkEnd = Math.clamp(start + 3, 0, path.size());
+        int checkEnd = (int) Math.clamp((long) start + 3L, 0L, path.size());
         for (int i = start; i < checkEnd; i++) {
             Node wp = path.get(i);
             if (MovementEvaluatorRegistry.get(wp.moveType).countsAsStairSequence() && isPartialSupportWaypoint(wp)) {
@@ -635,9 +635,12 @@ final class WalkMovementController {
     }
 
     private static double parkourJumpTriggerDistance(int distance) {
-        double margin = distance <= 2
-            ? PARKOUR_SHORT_TAKEOFF_MARGIN
-            : (distance == 3 ? PARKOUR_MEDIUM_TAKEOFF_MARGIN : PARKOUR_LONG_TAKEOFF_MARGIN);
+        double margin = PARKOUR_LONG_TAKEOFF_MARGIN;
+        if (distance <= 2) {
+            margin = PARKOUR_SHORT_TAKEOFF_MARGIN;
+        } else if (distance == 3) {
+            margin = PARKOUR_MEDIUM_TAKEOFF_MARGIN;
+        }
         return Math.max(1.2, distance - margin);
     }
 
@@ -652,7 +655,12 @@ final class WalkMovementController {
     }
 
     private static double targetAirSpeed(int distance, double verticalDelta) {
-        double speed = distance <= 2 ? 0.08 : (distance == 3 ? 0.12 : 0.16);
+        double speed = 0.16;
+        if (distance <= 2) {
+            speed = 0.08;
+        } else if (distance == 3) {
+            speed = 0.12;
+        }
         if (verticalDelta < -1.0) {
             speed += 0.04;
         }
@@ -680,7 +688,12 @@ final class WalkMovementController {
     }
 
     private static double landingAimOffset(int distance, double verticalDelta) {
-        double offset = distance <= 2 ? 0.18 : (distance == 3 ? 0.12 : 0.06);
+        double offset = 0.06;
+        if (distance <= 2) {
+            offset = 0.18;
+        } else if (distance == 3) {
+            offset = 0.12;
+        }
         if (distance <= 2 && verticalDelta > 0.25) {
             offset = 0.04;
         }

@@ -1,7 +1,9 @@
 package fr.riege.ebsl.common.pathfinding.wrapper;
 
 public final class PathPosition {
-    public final double x, y, z;
+    public final double x;
+    public final double y;
+    public final double z;
 
     public PathPosition(double x, double y, double z) {
         this.x = x;

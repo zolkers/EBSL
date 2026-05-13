@@ -4,6 +4,7 @@ import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
 import fr.riege.ebsl.common.world.layer.IEntityLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
@@ -37,10 +38,11 @@ public final class McEntityLayer implements IEntityLayer {
         boolean living = entity instanceof LivingEntity;
         float health = living ? ((LivingEntity) entity).getHealth() : 0.0f;
         var eye = entity.getEyePosition();
+        Component displayName = entity.getDisplayName();
         return new EntitySnapshot(
             entity.getId(),
-            typeId == null ? "" : typeId.toString(),
-            entity.getDisplayName().getString(),
+            typeId.toString(),
+            displayName == null ? "" : displayName.getString(),
             entity.getName().getString(),
             new Vec3d(entity.getX(), entity.getY(), entity.getZ()),
             new Vec3d(eye.x, eye.y, eye.z),

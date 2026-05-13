@@ -1,10 +1,14 @@
 package fr.riege.ebsl.common.pathfinding.wrapper;
 
 public final class PathVector {
-    public final double x, y, z;
+    public final double x;
+    public final double y;
+    public final double z;
 
     public PathVector(double x, double y, double z) {
-        this.x = x; this.y = y; this.z = z;
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
 
     public double dot(PathVector other) { return x*other.x + y*other.y + z*other.z; }
@@ -14,7 +18,9 @@ public final class PathVector {
     }
 
     public double distance(PathVector other) {
-        double dx = x-other.x, dy = y-other.y, dz = z-other.z;
+        double dx = x-other.x;
+        double dy = y-other.y;
+        double dz = z-other.z;
         return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
 

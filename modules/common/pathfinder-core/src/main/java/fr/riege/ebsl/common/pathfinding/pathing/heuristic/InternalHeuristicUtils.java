@@ -8,19 +8,31 @@ final class InternalHeuristicUtils {
     private InternalHeuristicUtils() {}
 
     static double calculatePerpendicularDistanceSq(PathfindingProgress progress) {
-        double sx = progress.start.centeredX(),   sy = progress.start.centeredY(),   sz = progress.start.centeredZ();
-        double cx = progress.current.centeredX(), cy = progress.current.centeredY(), cz = progress.current.centeredZ();
-        double tx = progress.target.centeredX(),  ty = progress.target.centeredY(),  tz = progress.target.centeredZ();
+        double sx = progress.start.centeredX();
+        double sy = progress.start.centeredY();
+        double sz = progress.start.centeredZ();
+        double cx = progress.current.centeredX();
+        double cy = progress.current.centeredY();
+        double cz = progress.current.centeredZ();
+        double tx = progress.target.centeredX();
+        double ty = progress.target.centeredY();
+        double tz = progress.target.centeredZ();
 
-        double lineX = tx - sx, lineY = ty - sy, lineZ = tz - sz;
+        double lineX = tx - sx;
+        double lineY = ty - sy;
+        double lineZ = tz - sz;
         double lineSq = lineX*lineX + lineY*lineY + lineZ*lineZ;
 
         if (lineSq < EPSILON) {
-            double dx = cx - sx, dy = cy - sy, dz = cz - sz;
+            double dx = cx - sx;
+            double dy = cy - sy;
+            double dz = cz - sz;
             return dx*dx + dy*dy + dz*dz;
         }
 
-        double toX = cx - sx, toY = cy - sy, toZ = cz - sz;
+        double toX = cx - sx;
+        double toY = cy - sy;
+        double toZ = cz - sz;
         double crossX = toY*lineZ - toZ*lineY;
         double crossY = toZ*lineX - toX*lineZ;
         double crossZ = toX*lineY - toY*lineX;

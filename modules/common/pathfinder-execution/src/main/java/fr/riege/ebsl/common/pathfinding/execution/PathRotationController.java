@@ -172,11 +172,12 @@ final class PathRotationController {
         }
 
         boolean hardToPrepare = requiresParkourAnticipation(playerPos, path, landingIndex);
-        if (landingIndex > Math.clamp(pursuitSegment, 0, path.size() - 1) + PARKOUR_NORMAL_LOOKAHEAD_NODES && !hardToPrepare) {
+        int clampedPursuitSegment = Math.clamp(pursuitSegment, 0, path.size() - 1);
+        if (landingIndex > clampedPursuitSegment + PARKOUR_NORMAL_LOOKAHEAD_NODES && !hardToPrepare) {
             return Optional.empty();
         }
 
-        Node takeoff = path.get(Math.clamp(landingIndex - 1, 0, path.size() - 1));
+        Node takeoff = path.get((int) Math.clamp((long) landingIndex - 1L, 0L, (long) path.size() - 1L));
         Node landing = path.get(landingIndex);
         if (shouldReleaseParkourLandingTarget(playerPos, takeoff, landing, hardToPrepare)) {
             return Optional.empty();
@@ -273,7 +274,7 @@ final class PathRotationController {
             return -1;
         }
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int end = Math.clamp(start + lookaheadNodes, 0, path.size() - 1);
+        int end = (int) Math.clamp((long) start + lookaheadNodes, 0L, (long) path.size() - 1L);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return i;
@@ -462,10 +463,10 @@ final class PathRotationController {
             return target;
         }
 
-        int fallbackIndex = Math.clamp(
-            pursuitSegment + Math.max(1, PathfinderSettings.instance().cameraLookahead.value() / 4),
-            0,
-            path.size() - 1);
+        int fallbackIndex = (int) Math.clamp(
+            (long) pursuitSegment + Math.max(1, PathfinderSettings.instance().cameraLookahead.value() / 4),
+            0L,
+            (long) path.size() - 1L);
         Node fallback = path.get(fallbackIndex);
         Vec3d position = new Vec3d(
             fallback.position.centeredX(),

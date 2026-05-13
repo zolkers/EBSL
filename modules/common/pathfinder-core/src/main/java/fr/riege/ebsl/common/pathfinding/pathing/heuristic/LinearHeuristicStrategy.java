@@ -20,7 +20,7 @@ public final class LinearHeuristicStrategy implements IHeuristicStrategy {
         int ay = Math.abs(position.flooredY() - target.flooredY());
         int az = Math.abs(position.flooredZ() - target.flooredZ());
 
-        double manhattan = ax + ay + az;
+        double manhattan = (double) ax + ay + az;
 
         int min = Math.min(ax, Math.min(ay, az));
         int max = Math.max(ax, Math.max(ay, az));
@@ -28,7 +28,7 @@ public final class LinearHeuristicStrategy implements IHeuristicStrategy {
         double octile = (D3 - D2) * min + (D2 - D1) * mid + D1 * max;
 
         double perpendicular = InternalHeuristicUtils.calculatePerpendicularDistance(progress);
-        double height = (double) Math.abs(position.flooredY() - target.flooredY());
+        double height = Math.abs(position.flooredY() - target.flooredY());
 
         return manhattan     * weights.manhattanWeight
              + octile        * weights.octileWeight

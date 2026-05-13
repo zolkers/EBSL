@@ -20,9 +20,9 @@ public final class BlockPosUtil {
     private BlockPosUtil() {}
 
     public static long pack(int x, int y, int z) {
-        long lx = (long)(x + X_OFFSET) & X_MASK;
-        long ly = (long)(y + Y_OFFSET) & Y_MASK;
-        long lz = (long)(z + Z_OFFSET) & Z_MASK;
+        long lx = ((long) x + X_OFFSET) & X_MASK;
+        long ly = ((long) y + Y_OFFSET) & Y_MASK;
+        long lz = ((long) z + Z_OFFSET) & Z_MASK;
         return (lx << X_SHIFT) | (ly << Y_SHIFT) | lz;
     }
 
