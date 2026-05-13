@@ -1,6 +1,6 @@
 package fr.riege.ebsl.common.platform.render;
 
-public final class WorldRenderBuilder {
+public final class WorldRenderBuilder implements RenderStyleSink<WorldRenderBuilder> {
     private final RenderHandle handle;
     private RenderPaint paint = RenderPaint.SOLID_WHITE;
     private boolean ignoreDepth;
@@ -13,36 +13,19 @@ public final class WorldRenderBuilder {
         this.handle = handle;
     }
 
+    @Override
     public WorldRenderBuilder paint(RenderPaint paint) {
         this.paint = paint != null ? paint : RenderPaint.SOLID_WHITE;
         return this;
     }
 
-    public WorldRenderBuilder color(RenderColor color) {
-        return paint(RenderPaint.solid(color));
-    }
-
-    public WorldRenderBuilder argb(int argb) {
-        return color(RenderColor.argb(argb));
-    }
-
-    public WorldRenderBuilder gradient(RenderColor from, RenderColor to) {
-        return paint(RenderPaint.gradient(from, to));
-    }
-
-    public WorldRenderBuilder rainbow() {
-        return paint(RenderPaint.rainbow());
-    }
-
-    public WorldRenderBuilder rainbow(float alpha) {
-        return paint(RenderPaint.rainbow(alpha));
-    }
-
+    @Override
     public WorldRenderBuilder lineWidth(float lineWidth) {
         this.lineWidth = Math.max(0.1f, lineWidth);
         return this;
     }
 
+    @Override
     public WorldRenderBuilder ignoreDepth(boolean ignoreDepth) {
         this.ignoreDepth = ignoreDepth;
         return this;

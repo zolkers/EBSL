@@ -29,7 +29,7 @@ public record RenderBatch(String id, RenderStage stage, RenderStyle style, int t
             .addAll(primitives);
     }
 
-    public static final class Builder {
+    public static final class Builder implements RenderStyleSink<Builder> {
         private final String id;
         private RenderStage stage = RenderStage.DEBUG;
         private RenderStyle style = RenderStyle.DEFAULT;
@@ -55,36 +55,19 @@ public record RenderBatch(String id, RenderStage stage, RenderStyle style, int t
             return this;
         }
 
+        @Override
         public Builder paint(RenderPaint paint) {
             this.style = style.toBuilder().paint(paint).build();
             return this;
         }
 
-        public Builder argb(int argb) {
-            return color(RenderColor.argb(argb));
-        }
-
-        public Builder gradient(RenderColor from, RenderColor to) {
-            return paint(RenderPaint.gradient(from, to));
-        }
-
-        public Builder gradientArgb(int from, int to) {
-            return gradient(RenderColor.argb(from), RenderColor.argb(to));
-        }
-
-        public Builder rainbow() {
-            return paint(RenderPaint.rainbow());
-        }
-
-        public Builder rainbow(float alpha) {
-            return paint(RenderPaint.rainbow(alpha));
-        }
-
+        @Override
         public Builder lineWidth(float lineWidth) {
             this.style = style.toBuilder().lineWidth(lineWidth).build();
             return this;
         }
 
+        @Override
         public Builder ignoreDepth(boolean ignoreDepth) {
             this.style = style.toBuilder().ignoreDepth(ignoreDepth).build();
             return this;

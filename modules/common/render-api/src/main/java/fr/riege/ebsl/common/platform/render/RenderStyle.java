@@ -27,7 +27,7 @@ public record RenderStyle(RenderPaint paint, float lineWidth, boolean ignoreDept
             .ignoreDepth(ignoreDepth);
     }
 
-    public static final class Builder {
+    public static final class Builder implements RenderStyleSink<Builder> {
         private RenderPaint paint = RenderPaint.SOLID_WHITE;
         private float lineWidth = 1.0f;
         private boolean ignoreDepth;
@@ -35,44 +35,23 @@ public record RenderStyle(RenderPaint paint, float lineWidth, boolean ignoreDept
         private Builder() {
         }
 
+        @Override
         public Builder paint(RenderPaint paint) {
             this.paint = paint != null ? paint : RenderPaint.SOLID_WHITE;
             return this;
-        }
-
-        public Builder color(RenderColor color) {
-            return paint(RenderPaint.solid(color));
-        }
-
-        public Builder argb(int argb) {
-            return color(RenderColor.argb(argb));
-        }
-
-        public Builder gradient(RenderColor from, RenderColor to) {
-            return paint(RenderPaint.gradient(from, to));
-        }
-
-        public Builder gradientArgb(int from, int to) {
-            return gradient(RenderColor.argb(from), RenderColor.argb(to));
-        }
-
-        public Builder rainbow() {
-            return paint(RenderPaint.rainbow());
-        }
-
-        public Builder rainbow(float alpha) {
-            return paint(RenderPaint.rainbow(alpha));
         }
 
         public Builder rainbow(float alpha, float saturation, float brightness, float cycles, float speed) {
             return paint(RenderPaint.rainbow(alpha, saturation, brightness, cycles, speed));
         }
 
+        @Override
         public Builder lineWidth(float lineWidth) {
             this.lineWidth = lineWidth;
             return this;
         }
 
+        @Override
         public Builder ignoreDepth(boolean ignoreDepth) {
             this.ignoreDepth = ignoreDepth;
             return this;

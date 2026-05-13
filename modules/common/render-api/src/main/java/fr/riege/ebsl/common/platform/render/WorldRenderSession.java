@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.platform.render;
 
 @SuppressWarnings("java:S107")
-public final class WorldRenderSession implements AutoCloseable {
+public final class WorldRenderSession implements AutoCloseable, RenderStyleSink<WorldRenderSession> {
     private final RenderHandle handle;
     private RenderPaint paint = RenderPaint.SOLID_WHITE;
     private boolean ignoreDepth;
@@ -17,36 +17,19 @@ public final class WorldRenderSession implements AutoCloseable {
         this.handle = handle;
     }
 
+    @Override
     public WorldRenderSession paint(RenderPaint paint) {
         this.paint = paint != null ? paint : RenderPaint.SOLID_WHITE;
         return this;
     }
 
-    public WorldRenderSession color(RenderColor color) {
-        return paint(RenderPaint.solid(color));
-    }
-
-    public WorldRenderSession argb(int argb) {
-        return color(RenderColor.argb(argb));
-    }
-
-    public WorldRenderSession gradient(RenderColor from, RenderColor to) {
-        return paint(RenderPaint.gradient(from, to));
-    }
-
-    public WorldRenderSession rainbow() {
-        return paint(RenderPaint.rainbow());
-    }
-
-    public WorldRenderSession rainbow(float alpha) {
-        return paint(RenderPaint.rainbow(alpha));
-    }
-
+    @Override
     public WorldRenderSession lineWidth(float lineWidth) {
         this.lineWidth = Math.max(0.1f, lineWidth);
         return this;
     }
 
+    @Override
     public WorldRenderSession ignoreDepth(boolean ignoreDepth) {
         this.ignoreDepth = ignoreDepth;
         return this;
