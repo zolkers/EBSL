@@ -11,7 +11,7 @@
 		"homepage": "https://github.com/zolkers/EBSL",
 		"sources": "https://github.com/zolkers/EBSL"
 	},
-	"license": "CC0-1.0",
+	"license": "GPL-3.0-or-later",
 	"icon": "assets/ebsl/icon.png",
 	"environment": "client",
 	"entrypoints": {

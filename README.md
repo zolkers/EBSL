@@ -80,4 +80,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-git-hooks.ps1
 
 ## License
 
-EBSL is released under [CC0-1.0](LICENSE).
+EBSL is released under [GPL-3.0-or-later](LICENSE). Distributed forks and modified versions must remain open source under the same license terms.
