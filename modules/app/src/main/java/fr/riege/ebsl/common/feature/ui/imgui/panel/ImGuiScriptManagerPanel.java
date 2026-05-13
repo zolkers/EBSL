@@ -16,38 +16,54 @@ public final class ImGuiScriptManagerPanel {
         EbslScriptManager manager = new EbslScriptManager(platform.storage());
         ImGuiPanelUtil.nextFixedWindow(rect);
         if (ImGui.begin("EBSL scripts##ebsl-left-scripts", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
-            ImGui.text("Scripts");
-            ImGui.separator();
-            if (ImGui.beginChild("##ebsl-script-list", 0.0f, 220.0f, true)) {
-                for (String script : manager.scripts()) {
-                    boolean selected = script.equals(state.selectedScriptFile());
-                    if (ImGui.selectable(script, selected)) {
-                        state.selectScriptFile(script);
-                    }
-                }
-                ImGui.endChild();
-            }
-            ImGui.separator();
-            ImGui.inputText("Name", newFileName);
-            if (ImGui.button("Create", -1.0f, 24.0f)) {
-                String file = EbslScriptManager.normalizeFileName(newFileName.get());
-                manager.create(file);
-                state.selectScriptFile(file);
-                newFileName.set(EbslScriptManager.stripExtension(file));
-            }
-            if (ImGui.button("Delete selected", -1.0f, 24.0f)) {
-                manager.delete(state.selectedScriptFile());
-                List<String> scripts = manager.scripts();
-                if (scripts.isEmpty()) {
-                    manager.create(EbslScriptManager.DEFAULT_FILE);
-                    state.selectScriptFile(EbslScriptManager.DEFAULT_FILE);
-                } else {
-                    state.selectScriptFile(scripts.getFirst());
-                }
-            }
+            renderScriptList(state, manager);
+            renderScriptActions(state, manager);
             ImGui.spacing();
             ImGui.textDisabled("Editing only. Run scripts from Main > Scripts.");
             ImGui.end();
+        }
+    }
+
+    private void renderScriptList(EbslUiState state, EbslScriptManager manager) {
+        ImGui.text("Scripts");
+        ImGui.separator();
+        if (ImGui.beginChild("##ebsl-script-list", 0.0f, 220.0f, true)) {
+            for (String script : manager.scripts()) {
+                boolean selected = script.equals(state.selectedScriptFile());
+                if (ImGui.selectable(script, selected)) {
+                    state.selectScriptFile(script);
+                }
+            }
+            ImGui.endChild();
+        }
+    }
+
+    private void renderScriptActions(EbslUiState state, EbslScriptManager manager) {
+        ImGui.separator();
+        ImGui.inputText("Name", newFileName);
+        if (ImGui.button("Create", -1.0f, 24.0f)) {
+            createScript(state, manager);
+        }
+        if (ImGui.button("Delete selected", -1.0f, 24.0f)) {
+            deleteSelectedScript(state, manager);
+        }
+    }
+
+    private void createScript(EbslUiState state, EbslScriptManager manager) {
+        String file = EbslScriptManager.normalizeFileName(newFileName.get());
+        manager.create(file);
+        state.selectScriptFile(file);
+        newFileName.set(EbslScriptManager.stripExtension(file));
+    }
+
+    private static void deleteSelectedScript(EbslUiState state, EbslScriptManager manager) {
+        manager.delete(state.selectedScriptFile());
+        List<String> scripts = manager.scripts();
+        if (scripts.isEmpty()) {
+            manager.create(EbslScriptManager.DEFAULT_FILE);
+            state.selectScriptFile(EbslScriptManager.DEFAULT_FILE);
+        } else {
+            state.selectScriptFile(scripts.getFirst());
         }
     }
 }

@@ -37,24 +37,36 @@ public final class ImGuiScriptNodePalettePanel {
             ImGui.inputText("##ebsl-node-palette-filter", filter);
             ImGui.separator();
             for (EbslNodeCategory category : EbslNodeCategory.values()) {
-                pushCategoryColors(category);
-                if (ImGui.collapsingHeader(category.id())) {
-                    for (EbslNodeTemplate template : templates()) {
-                        if (template.category() == category && template.matches(filter.get())) {
-                            if (ImGui.selectable(template.title() + "##" + template.command(), false)) {
-                                state.requestScriptInsert(template.sampleLine());
-                            }
-                            String signature = EbslNodeFieldHelp.signature(template.command());
-                            ImGui.textDisabled(signature.isBlank()
-                                ? template.command()
-                                : template.command() + "  " + signature);
-                        }
-                    }
-                }
-                ImGui.popStyleColor(4);
+                renderCategory(state, category);
             }
             ImGui.end();
         }
+    }
+
+    private void renderCategory(EbslUiState state, EbslNodeCategory category) {
+        pushCategoryColors(category);
+        if (ImGui.collapsingHeader(category.id())) {
+            renderCategoryTemplates(state, category);
+        }
+        ImGui.popStyleColor(4);
+    }
+
+    private void renderCategoryTemplates(EbslUiState state, EbslNodeCategory category) {
+        for (EbslNodeTemplate template : templates()) {
+            if (template.category() == category && template.matches(filter.get())) {
+                renderTemplate(state, template);
+            }
+        }
+    }
+
+    private static void renderTemplate(EbslUiState state, EbslNodeTemplate template) {
+        if (ImGui.selectable(template.title() + "##" + template.command(), false)) {
+            state.requestScriptInsert(template.sampleLine());
+        }
+        String signature = EbslNodeFieldHelp.signature(template.command());
+        ImGui.textDisabled(signature.isBlank()
+            ? template.command()
+            : template.command() + "  " + signature);
     }
 
     private List<EbslNodeTemplate> templates() {
