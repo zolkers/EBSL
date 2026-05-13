@@ -8,11 +8,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Describes metadata for {@code EbslNodeDefinition} declarations.
+ * Declares the script node type implemented by an EBSL node class.
+ *
+ * <p>The annotation is consumed by node registration and documentation code to bind runtime classes to language-level node names.</p>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface EbslNodeDefinition {
+    /**
+     * Returns the primary metadata value declared by this annotation.
+ *
+     * @return the value defined by this contract
+     */
     EbslNodeType value();
 
     String[] aliases() default {};

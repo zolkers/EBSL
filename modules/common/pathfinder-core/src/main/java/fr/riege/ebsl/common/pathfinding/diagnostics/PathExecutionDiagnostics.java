@@ -36,18 +36,41 @@ public final class PathExecutionDiagnostics {
     }
 
     /**
-     * Defines the contract for {@code Sink} implementations.
+     * Defines the sink contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on sink behavior.</p>
+
      */
     public interface Sink {
+        /**
+         * Clears any state currently held by the receiver.
+         */
         default void clear() {
         }
 
+        /**
+         * Updates the path snapshot exposed to diagnostics.
+ *
+         * @param path the path or file path to use
+         */
         default void setPath(List<Node> path) {
         }
 
+        /**
+         * Updates the camera path snapshot exposed to diagnostics.
+ *
+         * @param path the path or file path to use
+         */
         default void setCameraPath(List<Vec3d> path) {
         }
 
+        /**
+         * Updates execution diagnostics with the active camera target index.
+ *
+         * @param cameraTargetIndex the camera target index value
+         */
         default void updateExecution(int cameraTargetIndex) {
         }
     }

@@ -87,10 +87,21 @@ public final class EbslSyntaxHighlighter {
     }
 
     /**
-     * Defines the contract for {@code CharPredicate} implementations.
+     * Defines the char predicate contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on char predicate behavior.</p>
+
      */
     @FunctionalInterface
     private interface CharPredicate {
+        /**
+         * Returns whether the supplied character satisfies this predicate.
+ *
+         * @param value the value to apply
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean test(char value);
     }
 }

@@ -6,48 +6,132 @@ import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 
 /**
- * Defines the contract for {@code NavigationService} implementations.
+ * Provides the application-facing navigation control surface.
+ *
+ * <p>Commands, UI panels, and scripts use this service to start goals, stop execution, inspect movement state, and render navigation diagnostics.</p>
  */
 public interface NavigationService {
+    /**
+     * Starts block goal behavior.
+ *
+     * @param x the block x coordinate
+     * @param y the block y coordinate
+     * @param z the block z coordinate
+     */
     void startBlockGoal(int x, int y, int z);
 
+    /**
+     * Starts column goal behavior.
+ *
+     * @param x the block x coordinate
+     * @param z the block z coordinate
+     */
     void startColumnGoal(int x, int z);
 
+    /**
+     * Starts path test behavior.
+ *
+     * @param x the block x coordinate
+     * @param y the block y coordinate
+     * @param z the block z coordinate
+     */
     void startPathTest(int x, int y, int z);
 
+    /**
+     * Starts path test xz behavior.
+ *
+     * @param x the block x coordinate
+     * @param z the block z coordinate
+     */
     void startPathTestXZ(int x, int z);
 
+    /**
+     * Stops the active operation and releases active controls when appropriate.
+ *
+     * @param announce whether the stop should be announced to the user
+     */
     void stop(boolean announce);
 
+    /**
+     * Starts navigation behavior.
+ *
+     * @param request the navigation request to start
+     */
     default void startNavigation(NavigationRequest request) {
     }
 
+    /**
+     * Returns whether navigating is true for the current state.
+ *
+     * @return true when the condition is satisfied; false otherwise
+     */
     boolean isNavigating();
 
+    /**
+     * Returns the movement type currently being executed, or {@code null} when no movement is active.
+ *
+     * @return the value defined by this contract
+     */
     Node.MoveType currentMoveType();
 
+    /**
+     * Returns whether walk sneak latched is true for the current state.
+ *
+     * @return true when the condition is satisfied; false otherwise
+     */
     boolean isWalkSneakLatched();
 
+    /**
+     * Updates whether walking should keep sneak latched during navigation.
+ *
+     * @param value the value to apply
+     */
     void setWalkSneakLatched(boolean value);
 
+    /**
+     * Returns the current high-level navigation status.
+ *
+     * @return the value defined by this contract
+     */
     default NavigationStatus pathStatus() {
         return isNavigating() ? NavigationStatus.EXECUTING : NavigationStatus.IDLE;
     }
 
+    /**
+     * Returns the number of nodes in the last planned path.
+ *
+     * @return the value defined by this contract
+     */
     default int lastPathNodeCount() {
         return 0;
     }
 
+    /**
+     * Advances this component by one runtime tick.
+     */
     default void tick() {
     }
 
+    /**
+     * Renders this component for the active frame using the supplied runtime context.
+     */
     default void renderCameraFrame() {
         renderWorld();
     }
 
+    /**
+     * Renders this component for the active frame using the supplied runtime context.
+     */
     default void renderWorld() {
     }
 
+    /**
+     * Starts greenhouse walk behavior.
+ *
+     * @param target the target path position
+     * @param onFinished the on finished value
+     * @param isFirst the is first value
+     */
     default void startGreenhouseWalk(Vec3d target, Runnable onFinished, boolean isFirst) {
         startBlockGoal((int) Math.floor(target.x()), (int) Math.floor(target.y()), (int) Math.floor(target.z()));
         if (onFinished != null) {

@@ -192,10 +192,21 @@ public enum EasingType {
     }
 
     /**
-     * Defines the contract for {@code Curve} implementations.
+     * Applies an easing curve to normalized progress.
+
+     *
+
+     * <p>Curves are pure mathematical callbacks used by rotation interpolation.</p>
+
      */
     @FunctionalInterface
     private interface Curve {
+        /**
+         * Applies this operation to the supplied value or context.
+ *
+         * @param t the normalized progress value
+         * @return the value defined by this contract
+         */
         float apply(float t);
     }
 }

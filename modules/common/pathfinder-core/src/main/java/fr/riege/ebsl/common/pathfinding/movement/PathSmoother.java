@@ -318,10 +318,23 @@ public final class PathSmoother {
     }
 
     /**
-     * Defines the contract for {@code CellClearance} implementations.
+     * Tests whether a path smoothing cell can be traversed.
+
+     *
+
+     * <p>The smoother uses this callback to keep ray and corridor checks independent from the underlying world lookup.</p>
+
      */
     @FunctionalInterface
     private interface CellClearance {
+        /**
+         * Clears any state currently held by the receiver.
+ *
+         * @param x the block x coordinate
+         * @param y the block y coordinate
+         * @param z the block z coordinate
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean clear(int x, int y, int z);
     }
 

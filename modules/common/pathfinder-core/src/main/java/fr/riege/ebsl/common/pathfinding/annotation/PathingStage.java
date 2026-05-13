@@ -6,11 +6,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Describes metadata for {@code PathingStage} declarations.
+ * Marks the pathfinding stage represented by a component.
+ *
+ * <p>Stage metadata helps diagnostics and code review connect behavior to planning, validation, execution, or recovery phases.</p>
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface PathingStage {
+    /**
+     * Returns the primary metadata value declared by this annotation.
+ *
+     * @return the value defined by this contract
+     */
     Stage value();
 
     enum Stage {

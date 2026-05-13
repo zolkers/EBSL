@@ -53,10 +53,21 @@ public final class CommandSpec implements CommandHandler {
     }
 
     /**
-     * Defines the contract for {@code CommandExecutor} implementations.
+     * Defines the command executor contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on command executor behavior.</p>
+
      */
     @FunctionalInterface
     public interface CommandExecutor {
+        /**
+         * Executes the operation represented by this contract.
+ *
+         * @param ctx the command context
+         * @return the value defined by this contract
+         */
         CommandResult execute(CommandContext ctx);
     }
 

@@ -64,10 +64,21 @@ public final class BlockGroupRegistry {
     }
 
     /**
-     * Defines the contract for {@code BlockMatcher} implementations.
+     * Tests whether a block identifier belongs to a registered block group.
+
+     *
+
+     * <p>Matchers keep group membership logic isolated from selector parsing.</p>
+
      */
     @FunctionalInterface
     private interface BlockMatcher {
+        /**
+         * Returns whether the supplied value satisfies this predicate.
+ *
+         * @param id the block or entity identifier
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean matches(BlockId id);
     }
 }

@@ -134,10 +134,22 @@ public final class EbslSensorRegistry {
     }
 
     /**
-     * Defines the contract for {@code Sensor} implementations.
+     * Defines the sensor contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on sensor behavior.</p>
+
      */
     @FunctionalInterface
     private interface Sensor {
+        /**
+         * Evaluates this contract against the supplied context.
+ *
+         * @param runtime the active script runtime
+         * @param args the command or script arguments
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean evaluate(EbslScriptRuntime runtime, List<String> args);
     }
 

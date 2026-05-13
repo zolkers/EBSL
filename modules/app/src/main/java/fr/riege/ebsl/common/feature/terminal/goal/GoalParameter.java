@@ -8,10 +8,21 @@ public record GoalParameter(String id, String label, DefaultProvider defaultProv
     }
 
     /**
-     * Defines the contract for {@code DefaultProvider} implementations.
+     * Defines the default provider contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on default provider behavior.</p>
+
      */
     @FunctionalInterface
     public interface DefaultProvider {
+        /**
+         * Returns the default value for the current player state.
+ *
+         * @param player the player abstraction used for the calculation
+         * @return the value defined by this contract
+         */
         int value(IPlayerLayer player);
     }
 

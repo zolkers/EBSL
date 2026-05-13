@@ -38,10 +38,21 @@ public final class PathfindingDiagnostics {
     }
 
     /**
-     * Defines the contract for {@code TelemetrySink} implementations.
+     * Accepts pathfinding telemetry messages.
+
+     *
+
+     * <p>Telemetry sinks are lightweight observers used for debug output and profiling traces.</p>
+
      */
     @FunctionalInterface
     public interface TelemetrySink {
+        /**
+         * Accepts the supplied diagnostic or callback payload.
+ *
+         * @param source the diagnostic source name
+         * @param message the message to display or record
+         */
         void accept(String source, String message);
     }
 }

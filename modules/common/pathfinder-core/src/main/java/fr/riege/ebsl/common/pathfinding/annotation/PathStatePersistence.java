@@ -6,11 +6,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Describes metadata for {@code PathStatePersistence} declarations.
+ * Documents how path state should persist across execution events.
+ *
+ * <p>The annotation records whether state survives repairs, restarts, or runtime transitions and why.</p>
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE, ElementType.FIELD})
 public @interface PathStatePersistence {
+    /**
+     * Returns the primary metadata value declared by this annotation.
+ *
+     * @return the value defined by this contract
+     */
     Scope value();
 
     String reason() default "";

@@ -6,20 +6,78 @@ import fr.riege.ebsl.common.platform.EbslPlatform;
 import java.util.List;
 
 /**
- * Defines the contract for {@code BotTask} implementations.
+ * Describes a toggleable automation task hosted by the application layer.
+ *
+ * <p>Tasks expose settings and lifecycle hooks while the registry owns discovery, ticking, rendering, and disable semantics.</p>
  */
 public interface BotTask {
+    /**
+     * Returns the stable identifier used for lookup, persistence, and diagnostics.
+ *
+     * @return the value defined by this contract
+     */
     String id();
+    /**
+     * Returns the human-readable name shown in UI and help surfaces.
+ *
+     * @return the value defined by this contract
+     */
     String displayName();
+    /**
+     * Returns a concise human-readable description of this component.
+ *
+     * @return the value defined by this contract
+     */
     String description();
+    /**
+     * Returns whether this component is currently enabled.
+ *
+     * @return true when the condition is satisfied; false otherwise
+     */
     boolean isEnabled();
+    /**
+     * Updates whether this component is enabled.
+ *
+     * @param enabled whether the component should be enabled
+     */
     void setEnabled(boolean enabled);
+    /**
+     * Returns the mutable settings exposed by this component.
+ *
+     * @return the requested values
+     */
     List<Setting<?>> settings();
+    /**
+     * Restores every setting owned by this component to its default value.
+     */
     void resetSettings();
 
+    /**
+     * Advances this component by one runtime tick.
+ *
+     * @param platform the platform services available to the component
+     */
     default void tick(EbslPlatform platform) {}
+    /**
+     * Renders this component for the active frame using the supplied runtime context.
+ *
+     * @param platform the platform services available to the component
+     */
     default void render(EbslPlatform platform) {}
+    /**
+     * Advances this component by one runtime tick.
+ *
+     * @return true when the condition is satisfied; false otherwise
+     */
     default boolean tickAsync() { return false; }
+    /**
+     * Handles cleanup immediately before or after the component is disabled.
+     */
     default void onDisable() {}
+    /**
+     * Handles notification that one of the component settings changed.
+ *
+     * @param setting the setting being rendered or updated
+     */
     default void onSettingChanged(Setting<?> setting) {}
 }
