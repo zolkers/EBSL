@@ -1,9 +1,9 @@
 package fr.riege.ebsl.common.feature.module.overlay;
 
+import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.NavigationService;
-import fr.riege.ebsl.common.feature.ui.layout.UiRect;
-import fr.riege.ebsl.common.domain.world.BlockId;
 import imgui.ImGui;
 
 @SuppressWarnings("java:S6548")

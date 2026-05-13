@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal;
 
-import fr.riege.ebsl.common.feature.terminal.commands.*;
 import fr.riege.ebsl.common.feature.scripting.command.EbslCommand;
+import fr.riege.ebsl.common.feature.terminal.commands.*;
 
 public final class TerminalCommands {
     private TerminalCommands() {

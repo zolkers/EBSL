@@ -1,8 +1,8 @@
 package fr.riege.ebsl.common.pathfinding.diagnostics;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.LongConsumer;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class PathfindingDiagnostics {
     private static final BooleanSupplier DISABLED = () -> false;

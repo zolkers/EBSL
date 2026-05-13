@@ -1,10 +1,6 @@
 package fr.riege.ebsl.common.feature.ui;
 
-import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
-import fr.riege.ebsl.common.platform.EbslPlatform;
-import fr.riege.ebsl.common.platform.service.NavigationService;
-import fr.riege.ebsl.common.platform.service.UiService;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiViewportRenderer;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
@@ -12,6 +8,10 @@ import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.CenterTab;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
+import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.layer.IImGuiLayer;
+import fr.riege.ebsl.common.platform.service.NavigationService;
+import fr.riege.ebsl.common.platform.service.UiService;
 
 public final class CommonImGuiOverlay {
     private static final EbslUiState STATE = new EbslUiState();

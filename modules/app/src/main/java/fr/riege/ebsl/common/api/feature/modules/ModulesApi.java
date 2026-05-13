@@ -2,11 +2,11 @@ package fr.riege.ebsl.common.api.feature.modules;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
+import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
+import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.platform.service.EbslServices;
-import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
-import fr.riege.ebsl.common.core.settings.Setting;
 
 import java.util.Collection;
 

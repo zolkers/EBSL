@@ -2,8 +2,8 @@ package fr.riege.ebsl.common.pathfinding.debug;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.platform.render.WorldRender;
 import fr.riege.ebsl.common.platform.render.RenderHandle;
+import fr.riege.ebsl.common.platform.render.WorldRender;
 import fr.riege.ebsl.common.platform.render.WorldRenderSession;
 
 import java.util.List;

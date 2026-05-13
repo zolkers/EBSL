@@ -1,16 +1,16 @@
 package fr.riege.ebsl.common.api;
 
-import fr.riege.ebsl.common.api.domain.analytics.AnalyticsApi;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.api.core.events.EventsApi;
+import fr.riege.ebsl.common.api.core.settings.ModSettingsApi;
+import fr.riege.ebsl.common.api.domain.analytics.AnalyticsApi;
 import fr.riege.ebsl.common.api.feature.modules.ModulesApi;
 import fr.riege.ebsl.common.api.navigation.NavigationApi;
+import fr.riege.ebsl.common.api.navigation.runtime.RuntimeApi;
 import fr.riege.ebsl.common.api.pathfinding.PathfindingApi;
 import fr.riege.ebsl.common.api.rendering.RenderingApi;
 import fr.riege.ebsl.common.api.threading.ThreadingApi;
-import fr.riege.ebsl.common.api.navigation.runtime.RuntimeApi;
-import fr.riege.ebsl.common.api.core.settings.ModSettingsApi;
 
 @EbslApiSurface(EbslApiSurface.Domain.CORE)
 public final class EbslApi {

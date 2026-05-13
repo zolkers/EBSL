@@ -1,16 +1,13 @@
 package fr.riege.ebsl.common.navigation;
 
-import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.platform.layer.IInputLayer;
-import fr.riege.ebsl.common.world.layer.IPlayerLayer;
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.*;
 import fr.riege.ebsl.common.pathfinding.execution.ExecutionOptions;
 import fr.riege.ebsl.common.pathfinding.execution.ExecutionPlan;
 import fr.riege.ebsl.common.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.common.pathfinding.execution.PathRepairRequest;
-import fr.riege.ebsl.common.pathfinding.goal.*;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
@@ -24,7 +21,11 @@ import fr.riege.ebsl.common.pathfinding.result.PathImpl;
 import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
 import fr.riege.ebsl.common.platform.service.NavigationService;
+import fr.riege.ebsl.common.world.layer.IPlayerLayer;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.Collection;
 import java.util.List;

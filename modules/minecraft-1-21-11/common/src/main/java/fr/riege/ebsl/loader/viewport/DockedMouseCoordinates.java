@@ -1,9 +1,9 @@
 package fr.riege.ebsl.loader.viewport;
 
 import com.mojang.blaze3d.platform.Window;
-import fr.riege.ebsl.common.platform.service.UiService;
 import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
+import fr.riege.ebsl.common.platform.service.UiService;
 import net.minecraft.client.Minecraft;
 
 public final class DockedMouseCoordinates {

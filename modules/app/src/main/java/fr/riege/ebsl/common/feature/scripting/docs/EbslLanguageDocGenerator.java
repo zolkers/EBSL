@@ -11,11 +11,7 @@ import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public final class EbslLanguageDocGenerator {
     private EbslLanguageDocGenerator() {

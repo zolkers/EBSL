@@ -1,9 +1,9 @@
 package fr.riege.ebsl.common.feature.module.overlay;
 
-import fr.riege.ebsl.common.platform.EbslPlatform;
-import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.core.settings.ColorSetting;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
+import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 import imgui.ImDrawList;
 import imgui.ImGui;
 

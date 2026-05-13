@@ -1,9 +1,9 @@
 package fr.riege.ebsl.common.navigation.runtime.headless;
 
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
+import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
-import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.HashMap;
 import java.util.Map;

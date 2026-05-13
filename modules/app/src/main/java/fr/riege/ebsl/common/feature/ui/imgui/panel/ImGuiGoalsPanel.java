@@ -1,8 +1,5 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
-import fr.riege.ebsl.common.world.layer.IPlayerLayer;
-import fr.riege.ebsl.common.platform.service.EbslServices;
-import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiCatalog;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
@@ -11,6 +8,9 @@ import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.EbslServices;
+import fr.riege.ebsl.common.platform.service.NavigationService;
+import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImString;

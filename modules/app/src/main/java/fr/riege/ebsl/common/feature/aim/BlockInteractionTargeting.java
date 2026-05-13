@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.aim;
 
-import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.domain.world.BlockSelector;
+import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.EbslPlatform;

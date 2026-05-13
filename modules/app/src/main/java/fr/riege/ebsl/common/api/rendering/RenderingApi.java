@@ -2,12 +2,7 @@ package fr.riege.ebsl.common.api.rendering;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
-import fr.riege.ebsl.common.platform.render.RenderBatch;
-import fr.riege.ebsl.common.platform.render.RenderColor;
-import fr.riege.ebsl.common.platform.render.RenderPaint;
-import fr.riege.ebsl.common.platform.render.RenderStage;
-import fr.riege.ebsl.common.platform.render.RenderStyle;
-import fr.riege.ebsl.common.platform.render.RenderingSystem;
+import fr.riege.ebsl.common.platform.render.*;
 
 import java.util.List;
 

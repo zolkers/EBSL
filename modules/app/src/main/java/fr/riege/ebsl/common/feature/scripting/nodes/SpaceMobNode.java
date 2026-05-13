@@ -4,11 +4,11 @@ import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.DoubleSetting;
 import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
-import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
-import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
 import fr.riege.ebsl.common.feature.scripting.EbslDurationUnit;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
+import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.task.MobTargetMode;
 import fr.riege.ebsl.common.feature.task.SpaceMobTask;
 

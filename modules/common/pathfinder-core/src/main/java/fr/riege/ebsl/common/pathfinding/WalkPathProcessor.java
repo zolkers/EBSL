@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding;
 
-import fr.riege.ebsl.common.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;

@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.quality;
 
-import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;

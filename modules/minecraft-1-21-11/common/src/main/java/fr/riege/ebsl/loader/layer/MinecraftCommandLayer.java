@@ -7,9 +7,9 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import fr.riege.ebsl.common.platform.layer.ICommandLayer;
 import fr.riege.ebsl.common.feature.terminal.CommandRegistry;
 import fr.riege.ebsl.common.feature.terminal.CommandSuggestion;
+import fr.riege.ebsl.common.platform.layer.ICommandLayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

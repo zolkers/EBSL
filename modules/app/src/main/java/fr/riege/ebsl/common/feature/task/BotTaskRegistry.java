@@ -1,11 +1,11 @@
 package fr.riege.ebsl.common.feature.task;
 
-import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
-import fr.riege.ebsl.common.core.threading.EbslThreading;
-import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
+import fr.riege.ebsl.common.core.threading.EbslThreading;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 
 import java.util.Collection;
 import java.util.HashMap;

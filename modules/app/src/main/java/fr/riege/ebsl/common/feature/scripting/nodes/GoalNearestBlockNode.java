@@ -9,12 +9,12 @@ import fr.riege.ebsl.common.feature.aim.BlockInteractionTargeting;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
+import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.common.pathfinding.goal.GoalNear;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationModeType;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
-import fr.riege.ebsl.common.math.Vec3d;
 
 @EbslNodeDefinition(value = EbslNodeType.GOAL_NEAREST_BLOCK, aliases = {"nearest_block", "find_block"})
 public final class GoalNearestBlockNode extends NavigationNode {

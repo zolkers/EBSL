@@ -2,13 +2,13 @@ package fr.riege.ebsl.common.core.settings;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
-import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.task.BotTask;
 import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,18 +1,13 @@
 package fr.riege.ebsl.common.feature.scripting;
 
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class EbslScriptEngineTest {
     @Test

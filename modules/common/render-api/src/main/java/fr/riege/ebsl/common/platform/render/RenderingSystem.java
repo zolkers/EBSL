@@ -1,10 +1,6 @@
 package fr.riege.ebsl.common.platform.render;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class RenderingSystem {
     private static final Map<String, ActiveBatch> BATCHES = new LinkedHashMap<>();

@@ -2,11 +2,11 @@ package fr.riege.ebsl.common.feature.scripting.nodes;
 
 import fr.riege.ebsl.common.core.settings.EnumSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
-import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
-import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
+import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslInputKey;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 
 @EbslNodeDefinition(EbslNodeType.WALK)
 public final class WalkNode extends AbstractEbslNode {

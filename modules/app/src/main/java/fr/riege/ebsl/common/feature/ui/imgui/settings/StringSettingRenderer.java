@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.ui.imgui.settings;
 
-import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.core.settings.StringSetting;
 import imgui.ImGui;
 import imgui.type.ImString;
 

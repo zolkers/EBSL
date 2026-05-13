@@ -1,9 +1,9 @@
 package fr.riege.ebsl.common.pathfinding.movement;
 
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
+import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.pathfinding.block.BlockBlacklist;
 import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
-import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;

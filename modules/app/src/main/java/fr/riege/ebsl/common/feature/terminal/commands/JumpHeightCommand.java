@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal.commands;
 
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.feature.terminal.*;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 @Command(name = CommandIds.JUMP_HEIGHT, description = "Set max jump height (1-20)", usage = CommandIds.JUMP_HEIGHT + " <n>", scope = CommandScope.BOTH)
 public final class JumpHeightCommand implements CommandHandler {

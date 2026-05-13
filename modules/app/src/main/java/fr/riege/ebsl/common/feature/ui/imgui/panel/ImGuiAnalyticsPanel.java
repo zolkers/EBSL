@@ -3,12 +3,12 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEvent;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsSnapshot;
-import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 import imgui.ImGui;
 
 public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {

@@ -2,8 +2,8 @@ package fr.riege.ebsl.common.api;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
-import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessBlockState;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

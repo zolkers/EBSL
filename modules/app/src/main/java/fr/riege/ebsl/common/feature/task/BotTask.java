@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.task;
 
-import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.platform.EbslPlatform;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal.commands;
 
-import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.feature.terminal.*;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 
 @Command(name = CommandIds.TEST_XZ, description = "Run A* XZ test (visualizer only)", usage = CommandIds.TEST_XZ + " <x> <z>", scope = CommandScope.MC)
 public final class TestXzCommand implements CommandHandler {

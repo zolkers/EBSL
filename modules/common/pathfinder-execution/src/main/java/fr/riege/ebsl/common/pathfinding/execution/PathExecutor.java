@@ -1,9 +1,5 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
-import fr.riege.ebsl.common.platform.layer.IInputLayer;
-import fr.riege.ebsl.common.world.layer.IPlayerLayer;
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckContext;
@@ -15,6 +11,10 @@ import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.common.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
+import fr.riege.ebsl.common.platform.layer.IPhysicsLayer;
+import fr.riege.ebsl.common.world.layer.IPlayerLayer;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.List;
 

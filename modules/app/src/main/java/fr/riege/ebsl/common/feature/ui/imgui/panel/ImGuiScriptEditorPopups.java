@@ -1,11 +1,7 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDoc;
-import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocEntry;
-import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocGenerator;
-import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocParameter;
-import fr.riege.ebsl.common.feature.scripting.docs.EbslLanguageDocSection;
+import fr.riege.ebsl.common.feature.scripting.docs.*;
 import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;

@@ -1,14 +1,14 @@
 package fr.riege.ebsl.common.feature.module.blacklist;
 
-import fr.riege.ebsl.common.platform.layer.IEventBus;
-import fr.riege.ebsl.common.feature.module.PathfinderModule;
-import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.settings.Settingable;
 import fr.riege.ebsl.common.core.settings.StringListSetting;
 import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.feature.module.PathfinderModule;
+import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 import fr.riege.ebsl.common.pathfinding.block.BlockBlacklist;
+import fr.riege.ebsl.common.platform.layer.IEventBus;
 
 import java.util.HashSet;
 import java.util.List;

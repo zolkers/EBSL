@@ -1,11 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.highlight;
 
-import fr.riege.ebsl.common.core.settings.BooleanSetting;
-import fr.riege.ebsl.common.core.settings.ColorSetting;
-import fr.riege.ebsl.common.core.settings.DoubleSetting;
-import fr.riege.ebsl.common.core.settings.EnumSetting;
-import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.core.settings.Settingable;
+import fr.riege.ebsl.common.core.settings.*;
 
 import java.util.List;
 import java.util.Locale;

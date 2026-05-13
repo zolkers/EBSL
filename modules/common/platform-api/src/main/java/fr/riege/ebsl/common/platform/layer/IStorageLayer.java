@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.platform.layer;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 public interface IStorageLayer {
     void saveJson(String key, String json);

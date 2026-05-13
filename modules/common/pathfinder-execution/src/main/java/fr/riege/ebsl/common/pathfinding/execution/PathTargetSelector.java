@@ -1,9 +1,9 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.List;
 

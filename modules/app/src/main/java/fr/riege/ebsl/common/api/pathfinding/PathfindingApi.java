@@ -4,11 +4,11 @@ import fr.riege.ebsl.common.api.EbslApi;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.api.navigation.NavigationSnapshot;
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.navigation.PathPlan;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.concurrent.CompletionStage;
 

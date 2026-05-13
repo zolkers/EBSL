@@ -1,11 +1,11 @@
 package fr.riege.ebsl.mc;
 
 import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
-import fr.riege.ebsl.common.world.layer.IEntityLayer;
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.world.layer.IEntityLayer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;

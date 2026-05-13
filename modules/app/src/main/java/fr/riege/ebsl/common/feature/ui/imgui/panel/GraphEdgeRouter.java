@@ -1,10 +1,6 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
 @SuppressWarnings({"java:S107", "java:S3776"})
 final class GraphEdgeRouter {

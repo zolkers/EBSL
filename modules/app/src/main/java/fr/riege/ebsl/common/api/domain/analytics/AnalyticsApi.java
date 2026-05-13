@@ -1,10 +1,10 @@
 package fr.riege.ebsl.common.api.domain.analytics;
 
+import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
+import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEvent;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsSnapshot;
-import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
-import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 

@@ -1,16 +1,12 @@
 package fr.riege.ebsl.common.feature.scripting.command;
 
-import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
+import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
-import fr.riege.ebsl.common.feature.terminal.CommandArgument;
-import fr.riege.ebsl.common.feature.terminal.CommandCompletion;
-import fr.riege.ebsl.common.feature.terminal.CommandContext;
-import fr.riege.ebsl.common.feature.terminal.CommandResult;
-import fr.riege.ebsl.common.feature.terminal.CommandSpec;
+import fr.riege.ebsl.common.feature.terminal.*;
 
 import java.util.ArrayList;
 import java.util.List;

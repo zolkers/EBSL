@@ -5,11 +5,8 @@ import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementRegistry;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementResult;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslCommandStatement;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslStatement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+
+import java.util.*;
 
 public final class EbslParser {
     private final List<String> tokens;

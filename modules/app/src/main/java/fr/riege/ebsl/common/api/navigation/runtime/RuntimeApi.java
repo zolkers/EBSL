@@ -2,7 +2,6 @@ package fr.riege.ebsl.common.api.navigation.runtime;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
@@ -14,6 +13,7 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessWorldLayer;
 import fr.riege.ebsl.common.navigation.runtime.server.ServerNavigationRuntime;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;

@@ -1,14 +1,9 @@
 package fr.riege.ebsl.common.feature.scripting.nodes;
 
-import fr.riege.ebsl.common.core.settings.BooleanSetting;
-import fr.riege.ebsl.common.core.settings.DoubleSetting;
-import fr.riege.ebsl.common.core.settings.EnumSetting;
-import fr.riege.ebsl.common.core.settings.IntSetting;
-import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.core.settings.Settingable;
-import fr.riege.ebsl.common.core.settings.StringSetting;
+import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
+
 import java.util.ArrayList;
 import java.util.List;
 

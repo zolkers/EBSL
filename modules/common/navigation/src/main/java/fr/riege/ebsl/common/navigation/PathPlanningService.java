@@ -1,6 +1,5 @@
 package fr.riege.ebsl.common.navigation;
 
-import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import fr.riege.ebsl.common.pathfinding.ProcessedPath;
 import fr.riege.ebsl.common.pathfinding.WalkPathProcessor;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
@@ -13,6 +12,7 @@ import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.Collection;
 import java.util.List;

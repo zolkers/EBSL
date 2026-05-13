@@ -1,10 +1,10 @@
 package fr.riege.ebsl.common.feature.module;
 
-import fr.riege.ebsl.common.platform.layer.IEventBus;
-import fr.riege.ebsl.common.platform.EbslPlatform;
-import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
+import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.layer.IEventBus;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.List;
 

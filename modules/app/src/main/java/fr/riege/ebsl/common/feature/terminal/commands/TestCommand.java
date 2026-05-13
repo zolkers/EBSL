@@ -1,7 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal.commands;
 
-import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.feature.terminal.*;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 
 @Command(name = CommandIds.TEST, description = "Run A* test (visualizer only, no movement)", usage = CommandIds.TEST + " <x> <y> <z>", scope = CommandScope.MC)
 public final class TestCommand implements CommandHandler {

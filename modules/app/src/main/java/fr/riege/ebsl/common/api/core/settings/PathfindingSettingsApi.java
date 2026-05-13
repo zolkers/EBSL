@@ -2,10 +2,10 @@ package fr.riege.ebsl.common.api.core.settings;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
-import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 
 import java.util.List;
 

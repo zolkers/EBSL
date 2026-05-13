@@ -18,13 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
+import java.security.SecureRandom;
 
 public final class EbslScriptRuntime {
     private final EbslPlatform platform;
     private final Map<String, Object> variables = new HashMap<>();
     private final Map<String, List<Object>> lists = new HashMap<>();
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
     private boolean stopped;
 
     EbslScriptRuntime(EbslPlatform platform) {

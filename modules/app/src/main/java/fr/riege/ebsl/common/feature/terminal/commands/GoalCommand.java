@@ -1,16 +1,12 @@
 package fr.riege.ebsl.common.feature.terminal.commands;
 
-import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.feature.terminal.*;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiCatalog;
 import fr.riege.ebsl.common.feature.terminal.goal.GoalUiDefinition;
+import fr.riege.ebsl.common.platform.service.EbslServices;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public final class GoalCommand {
     private static final String WALK = "walk";

@@ -1,12 +1,12 @@
 package fr.riege.ebsl.common.feature.task;
 
+import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
+import fr.riege.ebsl.common.feature.aim.EntityAimProcessor;
 import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
-import fr.riege.ebsl.common.core.settings.*;
-import fr.riege.ebsl.common.feature.aim.EntityAimProcessor;
 
 import java.util.Comparator;
 import java.util.Locale;

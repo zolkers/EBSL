@@ -1,10 +1,10 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
-import fr.riege.ebsl.common.platform.layer.IInputLayer;
-import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
+import fr.riege.ebsl.common.platform.layer.IInputLayer;
+import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 
 final class PathRecoveryController {
     private int backupTicksLeft;

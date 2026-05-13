@@ -1,13 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.manager;
 
-import fr.riege.ebsl.common.core.settings.BooleanSetting;
-import fr.riege.ebsl.common.core.settings.ColorSetting;
-import fr.riege.ebsl.common.core.settings.DoubleSetting;
-import fr.riege.ebsl.common.core.settings.EnumSetting;
-import fr.riege.ebsl.common.core.settings.IntSetting;
-import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.core.settings.StringListSetting;
-import fr.riege.ebsl.common.core.settings.StringSetting;
+import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
