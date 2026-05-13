@@ -183,42 +183,28 @@ final class WalkMovementController {
             return;
         }
 
-        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
-        double startX = takeoff.position.centeredX();
-        double startZ = takeoff.position.centeredZ();
-        double targetX = waypoint.position.centeredX();
-        double targetZ = waypoint.position.centeredZ();
-        double dirX = targetX - startX;
-        double dirZ = targetZ - startZ;
-        double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        if (jumpLen < 1.0e-6) {
+        ParkourJumpGeometry geometry = parkourJumpGeometry(waypoint, pursuitSegment, playerPos);
+        if (geometry == null) {
             return;
         }
 
-        dirX /= jumpLen;
-        dirZ /= jumpLen;
-        double fromStartX = playerPos.x() - startX;
-        double fromStartZ = playerPos.z() - startZ;
-        double progress = fromStartX * dirX + fromStartZ * dirZ;
-        double remaining = jumpLen - progress;
-        double lateral = fromStartX * -dirZ + fromStartZ * dirX;
         Vec3d velocity = player.velocity();
-        double velocityAlong = velocity.x() * dirX + velocity.z() * dirZ;
-        double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
+        double velocityAlong = velocity.x() * geometry.dirX() + velocity.z() * geometry.dirZ();
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
-        boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
-        ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
+        boolean constrainedLanding = isConstrainedParkourLanding(waypoint, geometry.dirX(), geometry.dirZ());
+        ParkourExecutionProfile profile = parkourExecutionProfile(
+            pursuitSegment, distance, geometry.verticalDelta(), constrainedLanding);
         if (!profile.allowLandingBrake()) {
             return;
         }
-        double brakeRemaining = landingBrakeRemaining(distance, verticalDelta, constrainedLanding);
+        double brakeRemaining = landingBrakeRemaining(distance, geometry.verticalDelta(), constrainedLanding);
         boolean inLandingColumn = blockX(playerPos) == waypoint.position.flooredX()
             && blockZ(playerPos) == waypoint.position.flooredZ();
         boolean shouldBrake = false;
-        if (!player.onGround() && remaining <= brakeRemaining && velocityAlong > PARKOUR_MIN_BRAKE_SPEED) {
+        if (!player.onGround() && geometry.remaining() <= brakeRemaining && velocityAlong > PARKOUR_MIN_BRAKE_SPEED) {
             ParkourAirPrediction prediction = predictParkourLanding(
-                playerPos.y(), velocity.y(), waypoint.position.flooredY(), progress, velocityAlong);
-            double targetProgress = jumpLen - landingAimOffset(distance, verticalDelta);
+                playerPos.y(), velocity.y(), waypoint.position.flooredY(), geometry.progress(), velocityAlong);
+            double targetProgress = geometry.jumpLen() - landingAimOffset(distance, geometry.verticalDelta());
             double frontMargin = PARKOUR_LANDING_FRONT_MARGIN;
             if (profile.immediateChain() && !constrainedLanding) {
                 frontMargin += PARKOUR_CHAIN_OVERSHOOT_MARGIN;
@@ -226,7 +212,7 @@ final class WalkMovementController {
             shouldBrake = prediction.progress() > targetProgress + frontMargin;
         }
         boolean shouldHoldLanding = profile.allowLandingHold() && player.onGround()
-            && (inLandingColumn || remaining <= PARKOUR_GROUNDED_BRAKE_OVERSHOOT);
+            && (inLandingColumn || geometry.remaining() <= PARKOUR_GROUNDED_BRAKE_OVERSHOOT);
 
         if (!shouldBrake && !shouldHoldLanding) {
             return;
@@ -235,7 +221,7 @@ final class WalkMovementController {
         input.setForwardDown(false);
         input.setBackwardDown(true);
         input.setSprintDown(false);
-        if (Math.abs(lateral) <= PARKOUR_LATERAL_CORRECTION) {
+        if (Math.abs(geometry.lateral()) <= PARKOUR_LATERAL_CORRECTION) {
             input.setLeftDown(false);
             input.setRightDown(false);
         }
@@ -246,32 +232,20 @@ final class WalkMovementController {
             return;
         }
 
-        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
-        double startX = takeoff.position.centeredX();
-        double startZ = takeoff.position.centeredZ();
-        double targetX = waypoint.position.centeredX();
-        double targetZ = waypoint.position.centeredZ();
-        double dirX = targetX - startX;
-        double dirZ = targetZ - startZ;
-        double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        if (jumpLen < 1.0e-6) {
+        ParkourJumpGeometry geometry = parkourJumpGeometry(waypoint, pursuitSegment, playerPos);
+        if (geometry == null) {
             return;
         }
 
-        dirX /= jumpLen;
-        dirZ /= jumpLen;
-        double fromStartX = playerPos.x() - startX;
-        double fromStartZ = playerPos.z() - startZ;
-        double progress = fromStartX * dirX + fromStartZ * dirZ;
-        double remaining = jumpLen - progress;
         Vec3d velocity = player.velocity();
-        double speedAlong = velocity.x() * dirX + velocity.z() * dirZ;
+        double speedAlong = velocity.x() * geometry.dirX() + velocity.z() * geometry.dirZ();
         int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
-        double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
-        boolean constrainedLanding = isConstrainedParkourLanding(waypoint, dirX, dirZ);
-        ParkourExecutionProfile profile = parkourExecutionProfile(pursuitSegment, distance, verticalDelta, constrainedLanding);
+        boolean constrainedLanding = isConstrainedParkourLanding(waypoint, geometry.dirX(), geometry.dirZ());
+        ParkourExecutionProfile profile = parkourExecutionProfile(
+            pursuitSegment, distance, geometry.verticalDelta(), constrainedLanding);
         ParkourVelocityState state = new ParkourVelocityState(
-            dirX, dirZ, jumpLen, progress, remaining, speedAlong, distance, verticalDelta, profile);
+            geometry.dirX(), geometry.dirZ(), geometry.jumpLen(), geometry.progress(),
+            geometry.remaining(), speedAlong, distance, geometry.verticalDelta(), profile);
 
         if (player.onGround()) {
             applyGroundParkourVelocityControl(state);
@@ -279,7 +253,7 @@ final class WalkMovementController {
         }
 
         ParkourAirPrediction prediction = predictParkourLanding(
-            playerPos.y(), velocity.y(), waypoint.position.flooredY(), progress, speedAlong);
+            playerPos.y(), velocity.y(), waypoint.position.flooredY(), geometry.progress(), speedAlong);
         applyAirParkourVelocityControl(playerPos, waypoint, state, prediction);
     }
 
@@ -434,30 +408,42 @@ final class WalkMovementController {
             return false;
         }
 
-        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
-        double startX = takeoff.position.centeredX();
-        double startZ = takeoff.position.centeredZ();
-        double targetX = waypoint.position.centeredX();
-        double targetZ = waypoint.position.centeredZ();
-        double dirX = targetX - startX;
-        double dirZ = targetZ - startZ;
-        double len = Math.sqrt(dirX * dirX + dirZ * dirZ);
-        if (len < 1.0e-6) {
+        ParkourJumpGeometry geometry = parkourJumpGeometry(waypoint, pursuitSegment, playerPos);
+        if (geometry == null) {
             return false;
         }
 
-        dirX /= len;
-        dirZ /= len;
-        double fromStartX = playerPos.x() - startX;
-        double fromStartZ = playerPos.z() - startZ;
-        double progress = fromStartX * dirX + fromStartZ * dirZ;
-        double lateral = fromStartX * -dirZ + fromStartZ * dirX;
         double landingDx = Math.abs(playerPos.x() - waypoint.position.centeredX());
         double landingDz = Math.abs(playerPos.z() - waypoint.position.centeredZ());
         boolean inLandingBlock = landingDx <= 0.86 && landingDz <= 0.86;
         boolean landingHeight = playerPos.y() >= waypoint.position.flooredY() - 0.20
             && playerPos.y() <= waypoint.position.flooredY() + 0.35;
-        return landingHeight && inLandingBlock && progress >= len - 1.20 && Math.abs(lateral) <= 1.05;
+        return landingHeight
+            && inLandingBlock
+            && geometry.progress() >= geometry.jumpLen() - 1.20
+            && Math.abs(geometry.lateral()) <= 1.05;
+    }
+
+    private ParkourJumpGeometry parkourJumpGeometry(Node waypoint, int pursuitSegment, Vec3d playerPos) {
+        Node takeoff = path.get(clampedSegmentIndex(pursuitSegment));
+        double startX = takeoff.position.centeredX();
+        double startZ = takeoff.position.centeredZ();
+        double dirX = waypoint.position.centeredX() - startX;
+        double dirZ = waypoint.position.centeredZ() - startZ;
+        double jumpLen = Math.sqrt(dirX * dirX + dirZ * dirZ);
+        if (jumpLen < 1.0e-6) {
+            return null;
+        }
+
+        double normalizedDirX = dirX / jumpLen;
+        double normalizedDirZ = dirZ / jumpLen;
+        double fromStartX = playerPos.x() - startX;
+        double fromStartZ = playerPos.z() - startZ;
+        double progress = fromStartX * normalizedDirX + fromStartZ * normalizedDirZ;
+        double lateral = fromStartX * -normalizedDirZ + fromStartZ * normalizedDirX;
+        double verticalDelta = (double) waypoint.position.flooredY() - takeoff.position.flooredY();
+        return new ParkourJumpGeometry(
+            normalizedDirX, normalizedDirZ, jumpLen, progress, jumpLen - progress, lateral, verticalDelta);
     }
 
     private void applyWaterMovement(Node movementWaypoint, Vec3d playerPos,
@@ -737,6 +723,10 @@ final class WalkMovementController {
     private record ParkourVelocityState(double dirX, double dirZ, double jumpLen, double progress,
                                         double remaining, double speedAlong, int distance, double verticalDelta,
                                         ParkourExecutionProfile profile) {
+    }
+
+    private record ParkourJumpGeometry(double dirX, double dirZ, double jumpLen, double progress,
+                                       double remaining, double lateral, double verticalDelta) {
     }
 
     private record ParkourExecutionProfile(boolean immediateChain, boolean shortAscentCarry, boolean descending,
