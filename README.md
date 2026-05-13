@@ -13,6 +13,7 @@
 EBSL is a Fabric client-side Minecraft automation and workflow toolkit focused on pathfinding, movement execution, world interaction, and scriptable in-game workflows.
 
 The project is currently being prepared for public open-source development. APIs and internal modules may still change quickly.
+The `dev` branch is the active integration branch. `master` is reserved for stable public snapshots.
 
 ## Features
 
@@ -107,6 +108,13 @@ sh ./scripts/install-git-hooks.sh
 - `scripts`: local setup helpers.
 
 See [docs/architecture.md](docs/architecture.md) for module boundaries and extension contracts.
+See [docs/architecture/api-surface.md](docs/architecture/api-surface.md) for public API, SPI, and implementation visibility rules.
+
+## Stability
+
+Before the first public release, API names and package boundaries may still change. Public contracts are being stabilized around platform layers, navigation, pathfinding, rendering, and scripting extension points. Implementation classes should not be treated as stable unless they are documented as public API.
+
+Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
