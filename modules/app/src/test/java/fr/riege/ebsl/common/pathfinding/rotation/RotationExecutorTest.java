@@ -10,23 +10,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RotationExecutorTest {
 
-    
-    
+
+
     private static IPlayerLayer fakePlayer(float yaw, float pitch) {
         return new IPlayerLayer() {
             @Override public Vec3d position() { return new Vec3d(0, 0, 0); }
-            @Override public float yaw()      { return yaw; }
-            @Override public float pitch()    { return pitch; }
-            @Override public boolean isInWater()  { return false; }
-            @Override public boolean isInLava()   { return false; }
+            @Override public float yaw() { return yaw; }
+            @Override public float pitch() { return pitch; }
+            @Override public boolean isInWater() { return false; }
+            @Override public boolean isInLava() { return false; }
             @Override public boolean isSprinting() { return false; }
-            @Override public boolean isAlive()    { return true; }
-            @Override public float getHealth()    { return 20f; }
+            @Override public boolean isAlive() { return true; }
+            @Override public float getHealth() { return 20f; }
         };
     }
 
-    
-    
+
+
     private static IPhysicsLayer fakePhysics(float[] capturedYaw, float[] capturedPitch) {
         return new IPhysicsLayer() {
             @Override public void setRotation(float yaw, float pitch) {

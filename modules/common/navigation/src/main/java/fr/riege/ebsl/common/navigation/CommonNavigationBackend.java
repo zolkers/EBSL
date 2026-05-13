@@ -85,7 +85,7 @@ public final class CommonNavigationBackend implements NavigationService {
         int pz = (int) Math.floor(pos.z());
         switch (request.goal().resolve(px, py, pz)) {
             case NavigationTarget.Block(int x, int y, int z) -> startBlockGoalConfigured(x, y, z);
-            case NavigationTarget.Column(int x, int z)       -> startColumnGoalConfigured(x, z);
+            case NavigationTarget.Column(int x, int z) -> startColumnGoalConfigured(x, z);
         }
     }
 

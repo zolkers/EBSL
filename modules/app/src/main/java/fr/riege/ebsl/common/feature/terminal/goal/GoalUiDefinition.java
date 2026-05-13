@@ -20,8 +20,8 @@ public final class GoalUiDefinition {
         this.executor = executor;
     }
 
-    public String id()          { return id; }
-    public String label()       { return label; }
+    public String id() { return id; }
+    public String label() { return label; }
     public String description() { return description; }
     public List<GoalParameter> parameters() { return parameters; }
 
@@ -45,9 +45,9 @@ public final class GoalUiDefinition {
             this.label = label;
         }
 
-        public Builder description(String d)        { description = d; return this; }
-        public Builder parameter(GoalParameter p)   { parameters.add(p); return this; }
-        public Builder executor(GoalUiExecutor e)   { executor = e; return this; }
+        public Builder description(String d) { description = d; return this; }
+        public Builder parameter(GoalParameter p) { parameters.add(p); return this; }
+        public Builder executor(GoalUiExecutor e) { executor = e; return this; }
 
         public Builder currentXYZ() {
             return parameter(GoalParameter.currentX())

@@ -11,7 +11,7 @@ class PathPitchStabilizerTest {
     void convergesFromZeroTowardPositiveCandidate() {
         var s = new PathPitchStabilizer();
         s.reset(0f);
-        
+
         for (int i = 0; i < 80; i++) s.tick(20f, false);
         float settled = s.getStablePitch();
         assertTrue(settled > 15f, "Should settle near 20° after 80 ticks, got " + settled);
@@ -30,7 +30,7 @@ class PathPitchStabilizerTest {
         for (int i = 0; i < 60; i++) {
             result = s.tick(0f, false);
         }
-        
+
         assertTrue(Math.abs(result) < 5f, "Should decay significantly toward 0, got " + result);
     }
 
@@ -40,7 +40,7 @@ class PathPitchStabilizerTest {
         s.reset(0f);
         float result = 0f;
         for (int i = 0; i < 200; i++) result = s.tick(90f, false);
-        
+
         assertTrue(result <= 22.0f, "Should not exceed pitchLandMaxAbsDeg=22, got " + result);
     }
 
@@ -53,9 +53,9 @@ class PathPitchStabilizerTest {
         s.reset(5f);
         assertEquals(5f, s.getStablePitch(), 0.001f, "reset should set stablePitch to initialPitch");
 
-        
+
         float after = s.tick(15f, false);
-        
+
         assertTrue(after < 7f, "Should move slowly right after reset (velocity reset to 0), got " + after);
     }
 
@@ -65,7 +65,7 @@ class PathPitchStabilizerTest {
         s.reset(0f);
         float result = 0f;
         for (int i = 0; i < 200; i++) result = s.tick(90f, true);
-        
+
         assertTrue(result <= 8.0f, "Should not exceed pitchWaterMaxAbsDeg=8, got " + result);
     }
 

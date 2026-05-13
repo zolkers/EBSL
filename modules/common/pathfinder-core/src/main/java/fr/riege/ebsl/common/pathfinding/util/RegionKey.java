@@ -3,10 +3,10 @@ package fr.riege.ebsl.common.pathfinding.util;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 public final class RegionKey {
-    private static final long MASK_Y  = 0xFFFL;       
-    private static final long MASK_XZ = 0x3FFFFFFL;   
-    private static final int  SHIFT_Z = 12;
-    private static final int  SHIFT_X = 38;           
+    private static final long MASK_Y = 0xFFFL;
+    private static final long MASK_XZ = 0x3FFFFFFL;
+    private static final int SHIFT_Z = 12;
+    private static final int SHIFT_X = 38;
 
     private RegionKey() {}
 

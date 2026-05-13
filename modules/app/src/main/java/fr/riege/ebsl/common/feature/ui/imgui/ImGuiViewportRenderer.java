@@ -30,11 +30,11 @@ public final class ImGuiViewportRenderer {
 
     private void drawLayoutLines(ViewportLayout layout) {
         int strong = 0xFF4A90E2;
-        int soft   = 0xAA26313D;
+        int soft = 0xAA26313D;
         ImGuiPanelUtil.drawRectBorder(layout.center(), strong, 2.0f);
-        ImGuiPanelUtil.drawRectBorder(layout.left(),   soft,   1.0f);
-        ImGuiPanelUtil.drawRectBorder(layout.right(),  soft,   1.0f);
-        ImGuiPanelUtil.drawRectBorder(layout.bottom(), soft,   1.0f);
+        ImGuiPanelUtil.drawRectBorder(layout.left(), soft, 1.0f);
+        ImGuiPanelUtil.drawRectBorder(layout.right(), soft, 1.0f);
+        ImGuiPanelUtil.drawRectBorder(layout.bottom(), soft, 1.0f);
         UiRect center = layout.center();
         ImGuiPanelUtil.drawLine(center.x(), center.y(), center.right(), center.y(), strong, 2.0f);
         ImGuiPanelUtil.drawLine(center.x(), center.bottom(), center.right(), center.bottom(), strong, 2.0f);

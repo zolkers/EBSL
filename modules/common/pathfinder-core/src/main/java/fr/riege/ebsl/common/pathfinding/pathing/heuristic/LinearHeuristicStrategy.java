@@ -14,7 +14,7 @@ public final class LinearHeuristicStrategy implements IHeuristicStrategy {
         HeuristicWeights weights = context.heuristicWeights;
 
         PathPosition position = progress.current;
-        PathPosition target   = progress.target;
+        PathPosition target = progress.target;
 
         int ax = Math.abs(position.flooredX() - target.flooredX());
         int ay = Math.abs(position.flooredY() - target.flooredY());
@@ -30,10 +30,10 @@ public final class LinearHeuristicStrategy implements IHeuristicStrategy {
         double perpendicular = InternalHeuristicUtils.calculatePerpendicularDistance(progress);
         double height = Math.abs(position.flooredY() - target.flooredY());
 
-        return manhattan     * weights.manhattanWeight
-             + octile        * weights.octileWeight
+        return manhattan * weights.manhattanWeight
+             + octile * weights.octileWeight
              + perpendicular * weights.perpendicularWeight
-             + height        * weights.heightWeight;
+             + height * weights.heightWeight;
     }
 
     @Override

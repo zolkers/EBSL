@@ -17,7 +17,7 @@ public final class HeuristicContext {
         this(new PathfindingProgress(startPosition, position, targetPosition), heuristicWeights);
     }
 
-    public PathPosition position()      { return pathfindingProgress.current; }
+    public PathPosition position() { return pathfindingProgress.current; }
     public PathPosition startPosition() { return pathfindingProgress.start; }
-    public PathPosition targetPosition(){ return pathfindingProgress.target; }
+    public PathPosition targetPosition() { return pathfindingProgress.target; }
 }

@@ -8,17 +8,17 @@ import java.util.Map;
 public interface CommandHandler {
     CommandResult execute(CommandContext ctx);
 
-    
+
     default List<GoalParameter> params() {
         return List.of();
     }
 
-    
+
     default CommandCompletion completer() {
         return CommandCompletion.EMPTY;
     }
 
-    
+
     default Map<String, CommandHandler> subcommands() {
         return Map.of();
     }

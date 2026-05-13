@@ -50,13 +50,13 @@ public final class PacketCaptureLog {
         }
     }
 
-    public static boolean isEnabled()            { return enabled; }
-    public static void setEnabled(boolean v)     { enabled = v; }
-    public static boolean isCaptureInbound()     { return captureInbound; }
-    public static void setCaptureInbound(boolean v)  { captureInbound = v; }
-    public static boolean isCaptureOutbound()    { return captureOutbound; }
+    public static boolean isEnabled() { return enabled; }
+    public static void setEnabled(boolean v) { enabled = v; }
+    public static boolean isCaptureInbound() { return captureInbound; }
+    public static void setCaptureInbound(boolean v) { captureInbound = v; }
+    public static boolean isCaptureOutbound() { return captureOutbound; }
     public static void setCaptureOutbound(boolean v) { captureOutbound = v; }
 
-    public static long inboundCount()  { synchronized (LOCK) { return inboundCount; } }
+    public static long inboundCount() { synchronized (LOCK) { return inboundCount; } }
     public static long outboundCount() { synchronized (LOCK) { return outboundCount; } }
 }

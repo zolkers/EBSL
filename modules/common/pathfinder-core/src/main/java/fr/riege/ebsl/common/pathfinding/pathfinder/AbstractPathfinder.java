@@ -35,17 +35,17 @@ public abstract class AbstractPathfinder implements Pathfinder {
     private static final double TIE_BREAKER_WEIGHT = 1e-6;
 
     protected final PathfinderConfiguration pathfinderConfiguration;
-    protected final NavigationPointProvider  navigationPointProvider;
-    protected final List<NodeProcessor>      processors;
-    protected final INeighborStrategy        neighborStrategy;
+    protected final NavigationPointProvider navigationPointProvider;
+    protected final List<NodeProcessor> processors;
+    protected final INeighborStrategy neighborStrategy;
 
     private final AtomicBoolean abortRequested = new AtomicBoolean(false);
 
     protected AbstractPathfinder(PathfinderConfiguration configuration) {
         this.pathfinderConfiguration = configuration;
         this.navigationPointProvider = configuration.provider;
-        this.processors              = configuration.processors;
-        this.neighborStrategy        = configuration.neighborStrategy;
+        this.processors = configuration.processors;
+        this.neighborStrategy = configuration.neighborStrategy;
     }
 
     @Override
@@ -62,7 +62,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
 
     private CompletionStage<PathfinderResult> initiatePathing(PathPosition start, PathPosition target,
                                                                EnvironmentContext environmentContext) {
-        PathPosition effectiveStart  = start.floor();
+        PathPosition effectiveStart = start.floor();
         PathPosition effectiveTarget = target.floor();
 
         if (pathfinderConfiguration.async) {
@@ -93,7 +93,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
             for (NodeProcessor p : processors) p.initializeSearch(searchContext);
 
             Node startNode = createStartNode(start, target);
-            var  startCtx  = new EvaluationContextImpl(searchContext, startNode, null,
+            var startCtx = new EvaluationContextImpl(searchContext, startNode, null,
                     pathfinderConfiguration.heuristicStrategy);
 
             boolean startValid = true;
@@ -112,7 +112,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
             double startKey = calculateHeapKey(startNode, startNode.fCost());
             insertStartNode(startNode, startKey, openSet);
 
-            int  currentDepth    = 0;
+            int currentDepth = 0;
             Node bestFallbackNode = startNode;
             int earlyFallbackCheckEvery = earlyFallbackCheckInterval();
 
@@ -177,9 +177,9 @@ public abstract class AbstractPathfinder implements Pathfinder {
     }
 
     protected double calculateHeapKey(Node neighbor, double fCost) {
-        double heuristic  = neighbor.heuristic;
+        double heuristic = neighbor.heuristic;
         double tieBreaker = TIE_BREAKER_WEIGHT * (heuristic / (Math.abs(fCost) + 1));
-        double heapKey    = fCost - tieBreaker;
+        double heapKey = fCost - tieBreaker;
         if (Double.isNaN(heapKey) || Double.isInfinite(heapKey)) heapKey = fCost;
         return heapKey;
     }
@@ -303,7 +303,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
         return positions;
     }
 
-    
+
 
     protected abstract void insertStartNode(Node node, double fCost, PrimitiveMinHeap openSet);
     protected abstract Node extractBestNode(PrimitiveMinHeap openSet);

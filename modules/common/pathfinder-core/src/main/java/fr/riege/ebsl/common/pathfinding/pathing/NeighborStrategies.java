@@ -8,32 +8,32 @@ public final class NeighborStrategies {
     private NeighborStrategies() {}
 
     private static final List<PathVector> VERTICAL_AND_HORIZONTAL_OFFSETS = List.of(
-        new PathVector( 1, 0,  0),
-        new PathVector(-1, 0,  0),
-        new PathVector( 0, 0,  1),
-        new PathVector( 0, 0, -1),
-        new PathVector( 0, 1,  0),
-        new PathVector( 0,-1,  0)
+        new PathVector(1, 0, 0),
+        new PathVector(-1, 0, 0),
+        new PathVector(0, 0, 1),
+        new PathVector(0, 0, -1),
+        new PathVector(0, 1, 0),
+        new PathVector(0,-1, 0)
     );
 
     private static final List<PathVector> HORIZONTAL_DIAGONAL_AND_VERTICAL_OFFSETS = List.of(
-        new PathVector( 1, 0,  0),
-        new PathVector(-1, 0,  0),
-        new PathVector( 0, 0,  1),
-        new PathVector( 0, 0, -1),
-        new PathVector( 1,-1,  0),
-        new PathVector(-1,-1,  0),
-        new PathVector( 0,-1,  1),
-        new PathVector( 0,-1, -1),
-        new PathVector( 0, 1,  0),
-        new PathVector( 0,-1,  0),
-        new PathVector( 1, 1,  0),
-        new PathVector(-1, 1,  0),
-        new PathVector( 0, 1,  1),
-        new PathVector( 0, 1, -1),
-        new PathVector( 1, 0,  1),
-        new PathVector( 1, 0, -1),
-        new PathVector(-1, 0,  1),
+        new PathVector(1, 0, 0),
+        new PathVector(-1, 0, 0),
+        new PathVector(0, 0, 1),
+        new PathVector(0, 0, -1),
+        new PathVector(1,-1, 0),
+        new PathVector(-1,-1, 0),
+        new PathVector(0,-1, 1),
+        new PathVector(0,-1, -1),
+        new PathVector(0, 1, 0),
+        new PathVector(0,-1, 0),
+        new PathVector(1, 1, 0),
+        new PathVector(-1, 1, 0),
+        new PathVector(0, 1, 1),
+        new PathVector(0, 1, -1),
+        new PathVector(1, 0, 1),
+        new PathVector(1, 0, -1),
+        new PathVector(-1, 0, 1),
         new PathVector(-1, 0, -1)
     );
 
@@ -56,29 +56,29 @@ public final class NeighborStrategies {
                                                                   boolean allowWalkDiagonal) {
         List<PathVector> offsets = new ArrayList<>();
 
-        offsets.add(new PathVector( 1, 0,  0));
-        offsets.add(new PathVector(-1, 0,  0));
-        offsets.add(new PathVector( 0, 0,  1));
-        offsets.add(new PathVector( 0, 0, -1));
+        offsets.add(new PathVector(1, 0, 0));
+        offsets.add(new PathVector(-1, 0, 0));
+        offsets.add(new PathVector(0, 0, 1));
+        offsets.add(new PathVector(0, 0, -1));
 
         if (allowFall) {
-            offsets.add(new PathVector( 1,-1,  0));
-            offsets.add(new PathVector(-1,-1,  0));
-            offsets.add(new PathVector( 0,-1,  1));
-            offsets.add(new PathVector( 0,-1, -1));
-            offsets.add(new PathVector( 0,-1,  0));
+            offsets.add(new PathVector(1,-1, 0));
+            offsets.add(new PathVector(-1,-1, 0));
+            offsets.add(new PathVector(0,-1, 1));
+            offsets.add(new PathVector(0,-1, -1));
+            offsets.add(new PathVector(0,-1, 0));
         }
 
-        offsets.add(new PathVector( 0, 1,  0));
-        offsets.add(new PathVector( 1, 1,  0));
-        offsets.add(new PathVector(-1, 1,  0));
-        offsets.add(new PathVector( 0, 1,  1));
-        offsets.add(new PathVector( 0, 1, -1));
+        offsets.add(new PathVector(0, 1, 0));
+        offsets.add(new PathVector(1, 1, 0));
+        offsets.add(new PathVector(-1, 1, 0));
+        offsets.add(new PathVector(0, 1, 1));
+        offsets.add(new PathVector(0, 1, -1));
 
         if (allowWalkDiagonal) {
-            offsets.add(new PathVector( 1, 0,  1));
-            offsets.add(new PathVector( 1, 0, -1));
-            offsets.add(new PathVector(-1, 0,  1));
+            offsets.add(new PathVector(1, 0, 1));
+            offsets.add(new PathVector(1, 0, -1));
+            offsets.add(new PathVector(-1, 0, 1));
             offsets.add(new PathVector(-1, 0, -1));
         }
 
@@ -118,23 +118,23 @@ public final class NeighborStrategies {
     }
 
     private static void addCardinalParkourOffset(List<PathVector> offsets, int distance, int dy) {
-        offsets.add(new PathVector( distance, dy,  0));
-        offsets.add(new PathVector(-distance, dy,  0));
-        offsets.add(new PathVector( 0, dy,  distance));
-        offsets.add(new PathVector( 0, dy, -distance));
+        offsets.add(new PathVector(distance, dy, 0));
+        offsets.add(new PathVector(-distance, dy, 0));
+        offsets.add(new PathVector(0, dy, distance));
+        offsets.add(new PathVector(0, dy, -distance));
     }
 
     private static void addDiagonalParkourOffset(List<PathVector> offsets, int x, int z, int dy) {
-        offsets.add(new PathVector( x, dy,  z));
-        offsets.add(new PathVector( x, dy, -z));
-        offsets.add(new PathVector(-x, dy,  z));
+        offsets.add(new PathVector(x, dy, z));
+        offsets.add(new PathVector(x, dy, -z));
+        offsets.add(new PathVector(-x, dy, z));
         offsets.add(new PathVector(-x, dy, -z));
         if (x == z) {
             return;
         }
-        offsets.add(new PathVector( z, dy,  x));
-        offsets.add(new PathVector( z, dy, -x));
-        offsets.add(new PathVector(-z, dy,  x));
+        offsets.add(new PathVector(z, dy, x));
+        offsets.add(new PathVector(z, dy, -x));
+        offsets.add(new PathVector(-z, dy, x));
         offsets.add(new PathVector(-z, dy, -x));
     }
 }

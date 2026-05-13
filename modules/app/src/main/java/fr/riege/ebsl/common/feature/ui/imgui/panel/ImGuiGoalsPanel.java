@@ -79,9 +79,9 @@ public final class ImGuiGoalsPanel implements ImGuiUiPanel {
         if (ImGui.button("Go", 76.0f, 24.0f)) {
             startSelectedGoal(navigation);
         }
-        ImGui.pushStyleColor(ImGuiCol.Button,        0xFF8A2630);
+        ImGui.pushStyleColor(ImGuiCol.Button, 0xFF8A2630);
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, 0xFFA8323E);
-        ImGui.pushStyleColor(ImGuiCol.ButtonActive,  0xFFC23B49);
+        ImGui.pushStyleColor(ImGuiCol.ButtonActive, 0xFFC23B49);
         if (ImGui.button("Stop##goal-stop", -1.0f, 24.0f)) {
             navigation.stop(false);
         }

@@ -288,10 +288,73 @@ tasks.register('hardcodedQualifierVerification') {
     }
 }
 
+tasks.register('javaAlignmentWhitespaceVerification') {
+    group = 'verification'
+    description = 'Fails when Java source uses manual alignment whitespace in code.'
+
+    inputs.files(javaSourceFiles)
+
+    doLast {
+        def violations = []
+        def alignmentPattern = ~/\S {2,}\S|\)\{/
+
+        javaSourceFiles.get().each { sourceFile ->
+            boolean inBlockComment = false
+            sourceFile.readLines('UTF-8').eachWithIndex { rawLine, index ->
+                String line = rawLine
+                StringBuilder cleaned = new StringBuilder()
+                int cursor = 0
+
+                while (cursor < line.length()) {
+                    if (inBlockComment) {
+                        int end = line.indexOf('*/', cursor)
+                        if (end < 0) {
+                            cursor = line.length()
+                        } else {
+                            cursor = end + 2
+                            inBlockComment = false
+                        }
+                    } else {
+                        int blockStart = line.indexOf('/*', cursor)
+                        int lineComment = line.indexOf('//', cursor)
+                        def commentStarts = [blockStart, lineComment].findAll { it >= 0 }
+                        int nextComment = commentStarts.isEmpty() ? -1 : commentStarts.min()
+                        int end = nextComment < 0 ? line.length() : nextComment
+                        cleaned.append(line, cursor, end)
+                        if (nextComment < 0 || nextComment == lineComment) {
+                            cursor = line.length()
+                        } else {
+                            cursor = blockStart + 2
+                            inBlockComment = true
+                        }
+                    }
+                }
+
+                String code = cleaned.toString()
+                    .replaceAll(/"(?:\\.|[^"\\])*"/, '""')
+                    .replaceAll(/'(?:\\.|[^'\\])'/, "''")
+                    .replaceFirst(/^\s+/, '')
+
+                if ((code =~ alignmentPattern).find()) {
+                    violations << "${rootProject.relativePath(sourceFile)}:${index + 1}: ${rawLine}"
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                'Java source must not use manual alignment whitespace:\n'
+                    + violations.join('\n')
+            )
+        }
+    }
+}
+
 tasks.register('localQuality') {
     group = 'verification'
     description = 'Runs local quality gates: tests, aggregate coverage, and source hygiene checks.'
     dependsOn tasks.named('hardcodedQualifierVerification')
+    dependsOn tasks.named('javaAlignmentWhitespaceVerification')
     dependsOn tasks.named('jacocoCoverageVerification')
     dependsOn tasks.named('sonarCoverageVerification')
 }

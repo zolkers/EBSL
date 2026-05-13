@@ -9,13 +9,13 @@ import java.util.Map;
 
 public interface EvaluationContext {
     PathPosition getCurrentPathPosition();
-    PathPosition getPreviousPathPosition();       
+    PathPosition getPreviousPathPosition();
     int getCurrentNodeDepth();
     double getCurrentNodeHeuristicValue();
     double getPathCostToPreviousPosition();
     double getBaseTransitionCost();
     SearchContext getSearchContext();
-    PathPosition getGrandparentPathPosition();    
+    PathPosition getGrandparentPathPosition();
     default PathPosition getGreatGrandparentPathPosition() { return null; }
     default Node.MoveType getCurrentMoveType() { return null; }
 

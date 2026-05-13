@@ -18,15 +18,15 @@ public final class EbslUiState {
     private String pendingScriptInsert = "";
     private int scriptRevision;
 
-    public MainViewTab mainViewTab()  { return mainViewTab; }
-    public CenterTab centerTab()      { return centerTab; }
+    public MainViewTab mainViewTab() { return mainViewTab; }
+    public CenterTab centerTab() { return centerTab; }
     public RightPanelMode rightPanelMode() { return rightPanelMode; }
     public EbslScriptView scriptView() { return scriptView; }
     public String selectedScriptFile() { return selectedScriptFile; }
     public int scriptRevision() { return scriptRevision; }
 
     public void setMainViewTab(MainViewTab t) { mainViewTab = t; }
-    public void setCenterTab(CenterTab t)     { centerTab = t; }
+    public void setCenterTab(CenterTab t) { centerTab = t; }
     public void setScriptView(EbslScriptView view) { scriptView = view; }
     public void selectScriptFile(String file) {
         selectedScriptFile = EbslScriptManager.normalizeFileName(file);
@@ -40,9 +40,9 @@ public final class EbslUiState {
         return insert;
     }
 
-    public void showModuleList()                  { rightPanelMode = RightPanelMode.MODULE_LIST; }
-    public void showTaskList()                    { rightPanelMode = RightPanelMode.TASK_LIST; }
-    public void showScriptLoader()                { rightPanelMode = RightPanelMode.SCRIPT_LOADER; }
+    public void showModuleList() { rightPanelMode = RightPanelMode.MODULE_LIST; }
+    public void showTaskList() { rightPanelMode = RightPanelMode.TASK_LIST; }
+    public void showScriptLoader() { rightPanelMode = RightPanelMode.SCRIPT_LOADER; }
 
     public void showModuleSettings(PathfinderModule m) {
         selectedModule = m;

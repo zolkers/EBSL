@@ -13,7 +13,7 @@ final class PathPitchStabilizer {
     }
 
     void reset(float initialPitch) {
-        
+
         float max = maxAbsPitch(false);
         stablePitch = Math.clamp(initialPitch, -max, max);
         velocity = 0f;

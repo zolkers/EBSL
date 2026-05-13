@@ -16,19 +16,19 @@ public final class PathfinderResultImpl implements PathfinderResult {
 
     public PathfinderResultImpl(PathState state, Path path, PathQualityReport quality) {
         this.state = state;
-        this.path  = path;
+        this.path = path;
         this.quality = quality == null ? PathQualityReport.UNKNOWN : quality;
     }
 
-    @Override public boolean successful()    { return state == PathState.FOUND; }
-    @Override public boolean hasFailed()     { return state == PathState.FAILED; }
+    @Override public boolean successful() { return state == PathState.FOUND; }
+    @Override public boolean hasFailed() { return state == PathState.FAILED; }
     @Override public boolean hasFallenBack() {
         return state == PathState.FALLBACK
             || state == PathState.MAX_ITERATIONS_REACHED
             || state == PathState.LENGTH_LIMITED;
     }
     @Override public PathState getPathState() { return state; }
-    @Override public Path getPath()           { return path; }
+    @Override public Path getPath() { return path; }
     @Override public PathQualityReport quality() { return quality; }
 
     public PathfinderResultImpl withQuality(PathQualityReport quality) {

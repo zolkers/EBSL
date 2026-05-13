@@ -8,38 +8,38 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 public final class Node implements Comparable<Node> {
 
     public final PathPosition position;
-    public final int          depth;
-    public final double       heuristic;
+    public final int depth;
+    public final double heuristic;
 
     private double gCost = 0.0;
     private Node parent;
-    
+
     private MoveType moveType = MoveType.WALK;
-    
+
     private boolean keynode;
-    
+
     private boolean inOpen;
-    
+
     private boolean inClosed;
-    
+
     private double cachedFCost = Double.NaN;
 
     public enum MoveType {
         WALK, WALK_DIAGONAL, STEP_UP, STEP_DOWN, JUMP, PARKOUR, FALL, SWIM, CLIMB, FLY
     }
 
-    
+
     public Node(PathPosition position) {
-        this.position  = position;
-        this.depth     = 0;
+        this.position = position;
+        this.depth = 0;
         this.heuristic = 0.0;
     }
 
     public Node(PathPosition position, PathPosition start, PathPosition target,
                 HeuristicWeights heuristicWeights, IHeuristicStrategy heuristicStrategy,
                 int depth) {
-        this.position  = position;
-        this.depth     = depth;
+        this.position = position;
+        this.depth = depth;
         this.heuristic = heuristicStrategy.calculate(
                 new HeuristicContext(position, start, target, heuristicWeights));
     }
