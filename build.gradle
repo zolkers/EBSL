@@ -98,8 +98,12 @@ def sonarCoverageExclusions = coverageClassExcludes.collect {
 
 def sonarProjectKey = 'EBSL'
 def sonarHostUrl = providers.systemProperty('sonar.host.url')
+    .orElse(providers.gradleProperty('sonar.host.url'))
     .orElse(providers.environmentVariable('SONAR_HOST_URL'))
     .orElse('http://localhost:9000')
+def sonarToken = providers.systemProperty('sonar.token')
+    .orElse(providers.gradleProperty('sonar.token'))
+    .orElse(providers.environmentVariable('SONAR_TOKEN'))
 
 def javaSourceFiles = providers.provider {
     coverageProjects.get().collectMany { project ->
@@ -289,9 +293,7 @@ tasks.register('sonarQualityGate') {
     description = 'Fails when the SonarQube project quality gate is not green. Requires sonar.token or SONAR_TOKEN.'
 
     doLast {
-        def token = providers.systemProperty('sonar.token')
-            .orElse(providers.environmentVariable('SONAR_TOKEN'))
-            .orNull
+        def token = sonarToken.orNull
         if (!token) {
             throw new GradleException('sonarQualityGate requires -Dsonar.token=... or SONAR_TOKEN.')
         }
@@ -357,6 +359,9 @@ tasks.register('buildMod121Fabric') {
 sonar {
     properties {
         property 'sonar.host.url', sonarHostUrl.get()
+        if (sonarToken.isPresent()) {
+            property 'sonar.token', sonarToken.get()
+        }
         property 'sonar.projectKey', sonarProjectKey
         property 'sonar.projectName', 'EBSL'
         property 'sonar.sourceEncoding', 'UTF-8'
