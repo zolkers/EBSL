@@ -1,8 +1,7 @@
 package fr.riege.ebsl.common.feature.terminal;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
+import fr.riege.ebsl.common.core.log.BoundedDirtyLog;
+
 import java.util.List;
 
 public final class TerminalLog {
@@ -12,8 +11,7 @@ public final class TerminalLog {
     public record LogEntry(String text, EntryType type) {}
 
     private static final int MAX_ENTRIES = 500;
-    private static final Deque<LogEntry> LOG = new ArrayDeque<>();
-    private static volatile boolean dirty = false;
+    private static final BoundedDirtyLog<LogEntry> LOG = new BoundedDirtyLog<>(MAX_ENTRIES);
 
     private TerminalLog() {}
 
@@ -30,31 +28,18 @@ public final class TerminalLog {
     }
 
     public static void clear() {
-        synchronized (LOG) {
-            LOG.clear();
-        }
-        dirty = true;
+        LOG.clear();
     }
 
     public static List<LogEntry> snapshot() {
-        synchronized (LOG) {
-            return new ArrayList<>(LOG);
-        }
+        return LOG.snapshot();
     }
 
     public static boolean consumeDirty() {
-        boolean was = dirty;
-        dirty = false;
-        return was;
+        return LOG.consumeDirty();
     }
 
     private static void add(LogEntry entry) {
-        synchronized (LOG) {
-            if (LOG.size() >= MAX_ENTRIES) {
-                LOG.pollFirst();
-            }
-            LOG.addLast(entry);
-        }
-        dirty = true;
+        LOG.add(entry);
     }
 }
