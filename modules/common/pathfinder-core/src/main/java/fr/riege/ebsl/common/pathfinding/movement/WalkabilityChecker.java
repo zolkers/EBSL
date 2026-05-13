@@ -21,7 +21,7 @@ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-public final class WalkabilityChecker {
+public final class WalkabilityChecker implements MovementTerrain {
     private static final byte FLAG_SOLID = 0x01;
     private static final byte FLAG_PASSABLE = 0x02;
     private static final byte FLAG_DANGEROUS = 0x04;
@@ -41,28 +41,34 @@ public final class WalkabilityChecker {
         this.topYCache.defaultReturnValue(TOP_Y_NOT_CACHED);
     }
 
+    @Override
     public IWorldLayer world() {
         return world;
     }
 
+    @Override
     public void clearCache() {
         flagCache.clear();
         blockCache.clear();
         topYCache.clear();
     }
 
+    @Override
     public boolean isSolid(int x, int y, int z) {
         return (getFlags(x, y, z) & FLAG_SOLID) != 0;
     }
 
+    @Override
     public boolean isPassable(int x, int y, int z) {
         return (getFlags(x, y, z) & FLAG_PASSABLE) != 0;
     }
 
+    @Override
     public boolean isAir(int x, int y, int z) {
         return world.isAir(x, y, z);
     }
 
+    @Override
     public boolean isWalkable(int x, int y, int z) {
         if (isBlacklisted(x, y - 1, z) || isBlacklisted(x, y, z) || isBlacklisted(x, y + 1, z)) {
             return false;
@@ -75,18 +81,22 @@ public final class WalkabilityChecker {
                 && !isDangerous(x, y + 1, z);
     }
 
+    @Override
     public boolean isDangerous(int x, int y, int z) {
         return (getFlags(x, y, z) & FLAG_DANGEROUS) != 0;
     }
 
+    @Override
     public boolean isWater(int x, int y, int z) {
         return (getFlags(x, y, z) & FLAG_WATER) != 0;
     }
 
+    @Override
     public boolean isClimbable(int x, int y, int z) {
         return (getFlags(x, y, z) & FLAG_CLIMBABLE) != 0;
     }
 
+    @Override
     public boolean hasWalkableTop(int x, int y, int z) {
         if (isBlacklisted(x, y, z)) {
             return false;
@@ -94,6 +104,7 @@ public final class WalkabilityChecker {
         return getTopY(x, y, z) >= 0.5;
     }
 
+    @Override
     public boolean isLowPartialSupport(int x, int y, int z) {
         if (isBlacklisted(x, y, z)) {
             return false;
@@ -102,6 +113,7 @@ public final class WalkabilityChecker {
         return topY > 0.0 && topY <= 0.5;
     }
 
+    @Override
     public boolean isFullWallBlock(int x, int y, int z) {
         if (isBlacklisted(x, y, z)) {
             return true;
@@ -109,14 +121,17 @@ public final class WalkabilityChecker {
         return world.isSolid(x, y, z) && world.getBlockHeight(x, y, z) >= 0.95;
     }
 
+    @Override
     public boolean isFullWall(int x, int y, int z) {
         return isSolid(x, y, z) && getTopY(x, y, z) >= 0.95;
     }
 
+    @Override
     public boolean wouldSuffocate(int x, int y, int z) {
         return isSolid(x, y + 1, z) && !isPassable(x, y + 1, z);
     }
 
+    @Override
     public boolean safeToFall(int fromY, int toX, int toY, int toZ) {
         int fallDistance = fromY - toY;
         if (isBlacklisted(toX, toY - 1, toZ) || isBlacklisted(toX, toY, toZ)) return false;
@@ -128,6 +143,7 @@ public final class WalkabilityChecker {
         return false;
     }
 
+    @Override
     public double getTopY(int x, int y, int z) {
         long key = BlockPosUtil.pack(x, y, z);
         double cached = topYCache.get(key);
@@ -137,10 +153,12 @@ public final class WalkabilityChecker {
         return topY;
     }
 
+    @Override
     public boolean canOcclude(int x, int y, int z) {
         return isBlacklisted(x, y, z) || world.isSolid(x, y, z);
     }
 
+    @Override
     public BlockId getBlock(int x, int y, int z) {
         long key = BlockPosUtil.pack(x, y, z);
         BlockId block = blockCache.get(key);
@@ -150,6 +168,7 @@ public final class WalkabilityChecker {
         return block;
     }
 
+    @Override
     public boolean isBlacklisted(int x, int y, int z) {
         return BlockBlacklist.isBlacklisted(getBlock(x, y, z));
     }

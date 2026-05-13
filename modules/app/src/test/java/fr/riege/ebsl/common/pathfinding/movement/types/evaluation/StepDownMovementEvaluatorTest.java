@@ -16,6 +16,7 @@ package fr.riege.ebsl.common.pathfinding.movement.types.evaluation;
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -35,7 +36,7 @@ class StepDownMovementEvaluatorTest {
         world.solid(0, 63, 0);
         world.solid(1, 62, 0);
         world.solid(1, 64, 0);
-        WalkabilityChecker checker = new WalkabilityChecker(world);
+        MovementTerrain checker = new WalkabilityChecker(world);
         StepDownMovementEvaluator evaluator = new StepDownMovementEvaluator();
 
         MovementValidationResult result = evaluator.validate(context(checker, new PathPosition(0, 64, 0), new PathPosition(1, 63, 0)));
@@ -49,7 +50,7 @@ class StepDownMovementEvaluatorTest {
         FakeWorld world = new FakeWorld();
         world.solid(0, 63, 0);
         world.solid(1, 62, 0);
-        WalkabilityChecker checker = new WalkabilityChecker(world);
+        MovementTerrain checker = new WalkabilityChecker(world);
         StepDownMovementEvaluator evaluator = new StepDownMovementEvaluator();
 
         MovementValidationResult result = evaluator.validate(context(checker, new PathPosition(0, 64, 0), new PathPosition(1, 63, 0)));
@@ -57,7 +58,7 @@ class StepDownMovementEvaluatorTest {
         assertTrue(result.valid(), result.reason());
     }
 
-    private static MovementValidationContext context(WalkabilityChecker checker, PathPosition from, PathPosition target) {
+    private static MovementValidationContext context(MovementTerrain checker, PathPosition from, PathPosition target) {
         Node fromNode = new Node(from);
         Node targetNode = new Node(target);
         targetNode.setMoveType(Node.MoveType.STEP_DOWN);

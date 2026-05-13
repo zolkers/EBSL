@@ -13,7 +13,7 @@
  */
 package fr.riege.ebsl.common.pathfinding.quality;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.List;
@@ -26,7 +26,7 @@ final class TerrainOpportunityQualityMetric implements PathQualityMetric {
 
     @Override
     public PathQualityContribution evaluate(PathQualityContext context) {
-        WalkabilityChecker checker = context.checker();
+        MovementTerrain checker = context.checker();
         List<PathPosition> positions = context.positions();
         if (checker == null || positions.isEmpty()) {
             return new PathQualityContribution(id(), 0.75, 0.7, "not sampled");

@@ -13,7 +13,7 @@
  */
 package fr.riege.ebsl.common.pathfinding.provider;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 
 import java.util.Objects;
 
@@ -30,7 +30,7 @@ public final class NavigationPointProviders {
      * @param checker the walkability checker to query
      * @return a world-backed navigation point provider
      */
-    public static WorldNavigationPointProvider worldBacked(WalkabilityChecker checker) {
+    public static WorldNavigationPointProvider worldBacked(MovementTerrain checker) {
         return new LayerNavigationPointProvider(Objects.requireNonNull(checker, "checker"));
     }
 }

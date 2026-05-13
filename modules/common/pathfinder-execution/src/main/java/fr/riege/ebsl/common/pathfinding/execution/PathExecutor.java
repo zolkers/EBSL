@@ -20,6 +20,7 @@ import fr.riege.ebsl.common.pathfinding.check.PathCheckRegistry;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckResult;
 import fr.riege.ebsl.common.pathfinding.check.PathProximitySnapshot;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathExecutionDiagnostics;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.common.pathfinding.rotation.RotationExecutor;
@@ -36,7 +37,7 @@ public final class PathExecutor {
 
     private final IPlayerLayer player;
     private final IInputLayer input;
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final PathTracker pathTracker = new PathTracker();
     private final PathRecoveryController recoveryController = new PathRecoveryController();
     private final RotationExecutor rotationExecutor;

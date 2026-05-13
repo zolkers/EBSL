@@ -15,7 +15,7 @@ package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationContext;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
@@ -54,14 +54,14 @@ final class WalkMovementController {
     private final IWorldLayer world;
     private final IPlayerLayer player;
     private final IInputLayer input;
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final WorldNavigationPointProvider navigationPointProvider;
     private List<Node> path;
     private int lastValidatedSegment = -1;
     private int validationTick;
     private MovementValidationResult lastValidationResult = MovementValidationResult.ok();
 
-    WalkMovementController(IWorldLayer world, IPlayerLayer player, IInputLayer input, WalkabilityChecker checker) {
+    WalkMovementController(IWorldLayer world, IPlayerLayer player, IInputLayer input, MovementTerrain checker) {
         this.world = world;
         this.player = player;
         this.input = input;

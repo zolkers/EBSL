@@ -38,7 +38,7 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
         NavigationPoint currentPoint = context.provider() == null
             ? null
             : context.provider().getNavigationPoint(current, context.environmentContext());
-        WalkabilityChecker checker = context.checker();
+        MovementTerrain checker = context.checker();
 
         if (isSwim(previous, current, previousPoint, currentPoint, checker)) {
             return Node.MoveType.SWIM;
@@ -63,7 +63,7 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
 
     private static boolean isSwim(PathPosition previous, PathPosition current,
                                   NavigationPoint previousPoint, NavigationPoint currentPoint,
-                                  WalkabilityChecker checker) {
+                                  MovementTerrain checker) {
         if ((currentPoint != null && currentPoint.isLiquid()) || (previousPoint != null && previousPoint.isLiquid())) {
             return true;
         }
@@ -97,7 +97,7 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
     }
 
     private static boolean isParkourMove(PathPosition previous, PathPosition current,
-                                         WalkabilityChecker checker, int dx, int dz) {
+                                         MovementTerrain checker, int dx, int dz) {
         if (!ParkourGeometry.isCandidateOffset(dx, dz)) {
             return false;
         }
@@ -120,11 +120,11 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
         return false;
     }
 
-    private static boolean hasWalkableSupport(WalkabilityChecker checker, PathPosition position) {
+    private static boolean hasWalkableSupport(MovementTerrain checker, PathPosition position) {
         return checker.isWalkable(position.flooredX(), position.flooredY(), position.flooredZ());
     }
 
-    private static boolean isSwimPosition(WalkabilityChecker checker, PathPosition position) {
+    private static boolean isSwimPosition(MovementTerrain checker, PathPosition position) {
         int x = position.flooredX();
         int y = position.flooredY();
         int z = position.flooredZ();
@@ -132,7 +132,7 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
             || (checker.isPassable(x, y, z) && checker.isWater(x, y - 1, z));
     }
 
-    private static double floorLevel(PathPosition position, NavigationPoint point, WalkabilityChecker checker) {
+    private static double floorLevel(PathPosition position, NavigationPoint point, MovementTerrain checker) {
         if (point != null) {
             return point.getFloorLevel();
         }

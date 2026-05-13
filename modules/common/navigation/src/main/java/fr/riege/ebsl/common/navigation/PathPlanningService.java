@@ -15,6 +15,7 @@ package fr.riege.ebsl.common.navigation;
 
 import fr.riege.ebsl.common.pathfinding.ProcessedPath;
 import fr.riege.ebsl.common.pathfinding.WalkPathProcessor;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
@@ -37,7 +38,7 @@ import java.util.concurrent.CompletionStage;
 
 public final class PathPlanningService {
     private final IWorldLayer world;
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final WorldNavigationPointProvider provider;
 
     public PathPlanningService(IWorldLayer world) {
@@ -50,7 +51,7 @@ public final class PathPlanningService {
         return world;
     }
 
-    public WalkabilityChecker checker() {
+    public MovementTerrain checker() {
         return checker;
     }
 

@@ -26,7 +26,7 @@ public final class PathSmoother {
 
     private PathSmoother() {}
 
-    public static List<Node> smooth(List<Node> raw, WalkabilityChecker checker) {
+    public static List<Node> smooth(List<Node> raw, MovementTerrain checker) {
         if (raw == null || raw.size() <= 2) {
             return raw;
         }
@@ -69,13 +69,13 @@ public final class PathSmoother {
                                                 Node candidate,
                                                 int anchorIdx,
                                                 int candidateIdx,
-                                                WalkabilityChecker checker) {
+                                                MovementTerrain checker) {
         return previous.position.flooredY() == anchor.position.flooredY()
             && candidate.position.flooredY() == anchor.position.flooredY()
             && !wouldSkipConstrainedCorner(raw, anchorIdx, candidateIdx, checker);
     }
 
-    public static List<Node> smoothFly(List<Node> raw, WalkabilityChecker checker) {
+    public static List<Node> smoothFly(List<Node> raw, MovementTerrain checker) {
         if (raw == null || raw.size() <= 2) {
             return raw;
         }
@@ -104,17 +104,17 @@ public final class PathSmoother {
         return result;
     }
 
-    private static boolean hasLineOfSight(Node from, Node to, WalkabilityChecker checker) {
+    private static boolean hasLineOfSight(Node from, Node to, MovementTerrain checker) {
         return traceGridLine(from, to, checker, true, (x, y, z) -> clearForSmoothing(checker, x, y, z));
     }
 
-    private static boolean hasFlyLineOfSight(Node from, Node to, WalkabilityChecker checker) {
+    private static boolean hasFlyLineOfSight(Node from, Node to, MovementTerrain checker) {
         return traceGridLine(from, to, checker, false, (x, y, z) -> !checker.isSolid(x, y, z));
     }
 
     private static boolean traceGridLine(Node from,
                                          Node to,
-                                         WalkabilityChecker checker,
+                                         MovementTerrain checker,
                                          boolean blockDiagonalCuts,
                                          CellClearance clearance) {
         GridLine line = GridLine.between(from, to);
@@ -128,7 +128,7 @@ public final class PathSmoother {
     }
 
     private static boolean traceDominantX(GridLine line,
-                                          WalkabilityChecker checker,
+                                          MovementTerrain checker,
                                           boolean blockDiagonalCuts,
                                           CellClearance clearance) {
         int x = line.x0;
@@ -161,7 +161,7 @@ public final class PathSmoother {
     }
 
     private static boolean traceDominantY(GridLine line,
-                                          WalkabilityChecker checker,
+                                          MovementTerrain checker,
                                           boolean blockDiagonalCuts,
                                           CellClearance clearance) {
         int x = line.x0;
@@ -194,7 +194,7 @@ public final class PathSmoother {
     }
 
     private static boolean traceDominantZ(GridLine line,
-                                          WalkabilityChecker checker,
+                                          MovementTerrain checker,
                                           boolean blockDiagonalCuts,
                                           CellClearance clearance) {
         int x = line.x0;
@@ -226,7 +226,7 @@ public final class PathSmoother {
         return clearance.clear(line.x1, line.y1, line.z1);
     }
 
-    private static boolean blocksDiagonalCut(WalkabilityChecker checker,
+    private static boolean blocksDiagonalCut(MovementTerrain checker,
                                              boolean blockDiagonalCuts,
                                              int previousX,
                                              int previousZ,
@@ -236,14 +236,14 @@ public final class PathSmoother {
         return blockDiagonalCuts && diagonalStepBlocked(checker, previousX, previousZ, x, y, z);
     }
 
-    private static boolean clearForSmoothing(WalkabilityChecker checker, int x, int y, int z) {
+    private static boolean clearForSmoothing(MovementTerrain checker, int x, int y, int z) {
 
 
 
         return checker.isWalkable(x, y, z);
     }
 
-    private static int computeAdaptiveSkipBudget(Node anchor, WalkabilityChecker checker) {
+    private static int computeAdaptiveSkipBudget(Node anchor, MovementTerrain checker) {
         int wallScore = computeWallScore(anchor, checker);
 
         if (wallScore <= PathfinderSettings.instance().smoothOpenWallScoreMax.value()) {
@@ -255,7 +255,7 @@ public final class PathSmoother {
         return PathfinderSettings.instance().smoothTightSkipBudget.value();
     }
 
-    private static int computeWallScore(Node anchor, WalkabilityChecker checker) {
+    private static int computeWallScore(Node anchor, MovementTerrain checker) {
         if (checker == null) {
             return 0;
         }
@@ -281,7 +281,7 @@ public final class PathSmoother {
     }
 
     private static boolean wouldSkipConstrainedCorner(List<Node> raw, int anchorIdx, int candidateIdx,
-                                                      WalkabilityChecker checker) {
+                                                      MovementTerrain checker) {
         for (int i = anchorIdx + 1; i < candidateIdx; i++) {
             if (isConstrainedCorner(raw, i, checker)) {
                 return true;
@@ -290,7 +290,7 @@ public final class PathSmoother {
         return false;
     }
 
-    private static boolean isConstrainedCorner(List<Node> raw, int idx, WalkabilityChecker checker) {
+    private static boolean isConstrainedCorner(List<Node> raw, int idx, MovementTerrain checker) {
         Node prev = raw.get(idx - 1);
         Node cur = raw.get(idx);
         Node next = raw.get(idx + 1);
@@ -312,7 +312,7 @@ public final class PathSmoother {
             && computeWallScore(cur, checker) > 0;
     }
 
-    private static boolean diagonalStepBlocked(WalkabilityChecker checker,
+    private static boolean diagonalStepBlocked(MovementTerrain checker,
                                                int fromX, int fromZ,
                                                int toX, int toY, int toZ) {
         if (fromX == toX || fromZ == toZ) {
@@ -323,7 +323,7 @@ public final class PathSmoother {
                 || sideCellBlocked(checker, fromX, toY, toZ);
     }
 
-    private static boolean sideCellBlocked(WalkabilityChecker checker, int x, int y, int z) {
+    private static boolean sideCellBlocked(MovementTerrain checker, int x, int y, int z) {
         return !checker.isPassable(x, y, z)
                 || !checker.isPassable(x, y + 1, z)
                 || checker.isFullWall(x, y, z)

@@ -15,7 +15,7 @@ package fr.riege.ebsl.common.pathfinding.pathing.processing.impl;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
@@ -40,7 +40,7 @@ public final class QualityAwarePathProcessor implements NodeProcessor {
             return Cost.ZERO;
         }
 
-        WalkabilityChecker checker = context.getNavigationPointProvider() instanceof WorldNavigationPointProvider provider
+        MovementTerrain checker = context.getNavigationPointProvider() instanceof WorldNavigationPointProvider provider
             ? provider.checker()
             : null;
         Node.MoveType moveType = context.getCurrentMoveType() == null

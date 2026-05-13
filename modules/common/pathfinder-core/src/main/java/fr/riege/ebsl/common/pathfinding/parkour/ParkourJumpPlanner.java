@@ -13,7 +13,7 @@
  */
 package fr.riege.ebsl.common.pathfinding.parkour;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
@@ -29,11 +29,11 @@ public final class ParkourJumpPlanner {
     private static final double SAFETY_MARGIN = 0.12;
     private static final int MAX_APPROACH_SCAN = 4;
 
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final NavigationPointProvider provider;
     private final EnvironmentContext env;
 
-    public ParkourJumpPlanner(WalkabilityChecker checker, NavigationPointProvider provider, EnvironmentContext env) {
+    public ParkourJumpPlanner(MovementTerrain checker, NavigationPointProvider provider, EnvironmentContext env) {
         this.checker = checker;
         this.provider = provider;
         this.env = env;

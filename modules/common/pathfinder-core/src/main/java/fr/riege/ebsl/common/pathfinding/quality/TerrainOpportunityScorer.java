@@ -13,14 +13,14 @@
  */
 package fr.riege.ebsl.common.pathfinding.quality;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 public final class TerrainOpportunityScorer {
     private TerrainOpportunityScorer() {
     }
 
-    public static double scorePosition(WalkabilityChecker checker, PathPosition position) {
+    public static double scorePosition(MovementTerrain checker, PathPosition position) {
         if (checker == null || position == null) {
             return 0.0;
         }
@@ -42,7 +42,7 @@ public final class TerrainOpportunityScorer {
         return Math.clamp(score, 0.0, 1.0);
     }
 
-    private static double openness(WalkabilityChecker checker, int x, int y, int z) {
+    private static double openness(MovementTerrain checker, int x, int y, int z) {
         int blocked = 0;
         blocked += checker.isFullWall(x + 1, y, z) ? 1 : 0;
         blocked += checker.isFullWall(x - 1, y, z) ? 1 : 0;
@@ -51,7 +51,7 @@ public final class TerrainOpportunityScorer {
         return 1.0 - blocked / 4.0;
     }
 
-    private static double supportShape(WalkabilityChecker checker, int x, int y, int z) {
+    private static double supportShape(MovementTerrain checker, int x, int y, int z) {
         double top = checker.getTopY(x, y - 1, z);
         if (top >= 0.95) {
             return 1.0;

@@ -15,6 +15,7 @@ package fr.riege.ebsl.common.feature.aim;
 
 import fr.riege.ebsl.common.domain.world.BlockSelector;
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.EbslPlatform;
@@ -44,7 +45,7 @@ public final class BlockInteractionTargeting {
     }
 
     public static PathPosition bestStandingPosition(IWorldLayer world, Vec3d playerPos, int blockX, int blockY, int blockZ, int reachRadius) {
-        WalkabilityChecker checker = new WalkabilityChecker(world);
+        MovementTerrain checker = new WalkabilityChecker(world);
         int effectiveReachRadius = Math.max(1, reachRadius);
         double reachSquared = (double) effectiveReachRadius * effectiveReachRadius;
         BestStandingPosition best = new BestStandingPosition(null, Double.MAX_VALUE);
@@ -117,7 +118,7 @@ public final class BlockInteractionTargeting {
     }
 
     private static BestStandingPosition scanStandingLayer(IWorldLayer world,
-                                                          WalkabilityChecker checker,
+                                                          MovementTerrain checker,
                                                           Vec3d playerPos,
                                                           int blockX,
                                                           int blockY,
@@ -135,7 +136,7 @@ public final class BlockInteractionTargeting {
     }
 
     private static BestStandingPosition scanStandingRow(IWorldLayer world,
-                                                        WalkabilityChecker checker,
+                                                        MovementTerrain checker,
                                                         Vec3d playerPos,
                                                         int blockX,
                                                         int blockY,
@@ -152,7 +153,7 @@ public final class BlockInteractionTargeting {
     }
 
     private static BestStandingPosition chooseStandingPosition(IWorldLayer world,
-                                                               WalkabilityChecker checker,
+                                                               MovementTerrain checker,
                                                                Vec3d playerPos,
                                                                int blockX,
                                                                int blockY,

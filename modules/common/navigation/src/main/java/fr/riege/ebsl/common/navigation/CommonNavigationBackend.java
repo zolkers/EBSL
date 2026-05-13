@@ -21,6 +21,7 @@ import fr.riege.ebsl.common.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.common.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
@@ -53,7 +54,7 @@ public final class CommonNavigationBackend implements NavigationService {
     private final IWorldLayer world;
     private final IPlayerLayer player;
     private final IInputLayer input;
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final WorldNavigationPointProvider provider;
     private final PathExecutor executor;
     private final LongRangePathSession longRangeSession = new LongRangePathSession();

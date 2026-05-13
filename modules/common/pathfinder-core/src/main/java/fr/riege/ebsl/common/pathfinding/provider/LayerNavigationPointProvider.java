@@ -13,7 +13,7 @@
  */
 package fr.riege.ebsl.common.pathfinding.provider;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.util.BlockPosUtil;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -22,15 +22,15 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 final class LayerNavigationPointProvider implements WorldNavigationPointProvider {
     private static final NavigationPoint BLOCKED = NavigationPoints.blocked();
 
-    private final WalkabilityChecker checker;
+    private final MovementTerrain checker;
     private final Long2ObjectOpenHashMap<NavigationPoint> navPointCache = new Long2ObjectOpenHashMap<>(512);
 
-    LayerNavigationPointProvider(WalkabilityChecker checker) {
+    LayerNavigationPointProvider(MovementTerrain checker) {
         this.checker = checker;
     }
 
     @Override
-    public WalkabilityChecker checker() {
+    public MovementTerrain checker() {
         return checker;
     }
 

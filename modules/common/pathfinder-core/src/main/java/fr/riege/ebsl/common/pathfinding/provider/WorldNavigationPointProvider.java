@@ -13,10 +13,10 @@
  */
 package fr.riege.ebsl.common.pathfinding.provider;
 
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 
 /**
- * Resolves navigation points from a world-backed walkability checker.
+ * Resolves navigation points from a world-backed movement terrain contract.
  *
  * <p>This contract is used by movement processors that need both cached navigation-point lookups
  * and lower-level terrain checks, while still avoiding a dependency on the concrete provider
@@ -24,11 +24,11 @@ import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
  */
 public interface WorldNavigationPointProvider extends NavigationPointProvider {
     /**
-     * Returns the walkability checker backing this provider.
+     * Returns the movement terrain backing this provider.
      *
-     * @return the walkability checker used for terrain queries
+     * @return the movement terrain used for terrain queries
      */
-    WalkabilityChecker checker();
+    MovementTerrain checker();
 
     /**
      * Clears cached navigation-point lookups.

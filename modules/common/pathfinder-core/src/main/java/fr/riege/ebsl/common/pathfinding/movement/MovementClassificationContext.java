@@ -22,6 +22,6 @@ public record MovementClassificationContext(
     PathPosition current,
     NavigationPointProvider provider,
     EnvironmentContext environmentContext,
-    WalkabilityChecker checker
+    MovementTerrain checker
 ) {
 }

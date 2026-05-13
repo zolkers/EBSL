@@ -16,7 +16,7 @@ package fr.riege.ebsl.common.pathfinding.pathfinder;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
 import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
@@ -298,7 +298,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     }
 
     private Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
-        WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof WorldNavigationPointProvider provider
+        MovementTerrain checker = searchContext.getNavigationPointProvider() instanceof WorldNavigationPointProvider provider
             ? provider.checker()
             : null;
         return pathfinderConfiguration.movementClassifier.classify(new MovementClassificationContext(

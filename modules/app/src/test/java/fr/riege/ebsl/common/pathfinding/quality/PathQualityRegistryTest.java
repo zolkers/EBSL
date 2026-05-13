@@ -15,6 +15,7 @@ package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
@@ -130,7 +131,7 @@ final class PathQualityRegistryTest {
 
     @Test
     void qualityAwareProcessorAddsConfiguredRiskCost() {
-        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false, true));
+        MovementTerrain checker = new WalkabilityChecker(new TestWorld(false, true));
         WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(checker);
         QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
         PathPosition previous = new PathPosition(0, 64, 0);
@@ -151,7 +152,7 @@ final class PathQualityRegistryTest {
 
     @Test
     void qualityAwareProcessorUsesConfiguredMovementContracts() {
-        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false));
+        MovementTerrain checker = new WalkabilityChecker(new TestWorld(false));
         WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(checker);
         QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
         PathPosition previous = new PathPosition(0, 64, 0);

@@ -15,7 +15,7 @@ package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
@@ -24,7 +24,7 @@ final class PathSteering {
     private PathSteering() {
     }
 
-    static SteeringVector steer(WalkabilityChecker checker, List<Node> path, Vec3d playerPos,
+    static SteeringVector steer(MovementTerrain checker, List<Node> path, Vec3d playerPos,
                                 Node targetWp, int pursuitSegment) {
         double targetX = targetWp.position.centeredX();
         double targetZ = targetWp.position.centeredZ();
@@ -92,7 +92,7 @@ final class PathSteering {
         return new Vec3d((ax + dx * t) - playerPos.x(), 0.0, (az + dz * t) - playerPos.z());
     }
 
-    private static Vec3d obstacleNudge(WalkabilityChecker checker, Vec3d playerPos, double scanRadius) {
+    private static Vec3d obstacleNudge(MovementTerrain checker, Vec3d playerPos, double scanRadius) {
         if (checker == null) return new Vec3d(0.0, 0.0, 0.0);
         double nudgeX = 0.0;
         double nudgeZ = 0.0;
@@ -120,7 +120,7 @@ final class PathSteering {
         return new Vec3d(nudgeX, 0.0, nudgeZ);
     }
 
-    private static boolean isBodyBlocking(WalkabilityChecker checker, int x, int y, int z) {
+    private static boolean isBodyBlocking(MovementTerrain checker, int x, int y, int z) {
         return checker.isFullWallBlock(x, y, z) || checker.isFullWallBlock(x, y + 1, z);
     }
 
