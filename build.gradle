@@ -1,5 +1,6 @@
 plugins {
     id 'idea'
+    id 'org.sonarqube' version '7.3.0.8198'
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
 
@@ -39,4 +40,12 @@ tasks.register('buildMod121Fabric') {
     group = 'ebsl'
     description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
     dependsOn ':minecraft-1-21-11:fabric:build'
+}
+
+sonar {
+    properties {
+        property 'sonar.projectKey', 'EBSL'
+        property 'sonar.projectName', 'EBSL'
+        property 'sonar.sourceEncoding', 'UTF-8'
+    }
 }
