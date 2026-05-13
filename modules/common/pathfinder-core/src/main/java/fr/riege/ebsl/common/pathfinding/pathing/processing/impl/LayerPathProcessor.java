@@ -510,13 +510,17 @@ public final class LayerPathProcessor implements NodeProcessor {
                 totalW += 0.6;
             }
         }
-        if (totalW <= 0.1) return 0.0;
+        if (totalW <= 0.1) {
+            return 0.0;
+        }
         avgX /= totalW;
         avgZ /= totalW;
         double cdx = current.x - previous.x;
         double cdz = current.z - previous.z;
         double curLen = Math.sqrt(cdx * cdx + cdz * cdz);
-        if (curLen <= 0.1) return 0.0;
+        if (curLen <= 0.1) {
+            return 0.0;
+        }
         double dot = (cdx / curLen) * avgX + (cdz / curLen) * avgZ;
         double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
         return angleDeg < 5.0 ? -0.3 : (angleDeg / 90.0) * 0.8;

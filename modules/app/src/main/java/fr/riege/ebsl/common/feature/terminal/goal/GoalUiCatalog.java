@@ -11,6 +11,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class GoalUiCatalog {
+    private static final String RADIUS_PARAM = "radius";
+
     private static final List<GoalUiDefinition> GOALS = List.of(
         GoalUiDefinition.builder("walk", "Walk")
             .description("Walk to an exact block.")
@@ -31,8 +33,8 @@ public final class GoalUiCatalog {
         GoalUiDefinition.builder("near", "Near")
             .description("Walk near a block within a radius.")
             .currentXYZ()
-            .parameter(GoalParameter.constant("radius", "Radius", 2))
-            .executor((nav, v) -> start(nav, new GoalNear(v.get("x"), v.get("y"), v.get("z"), v.get("radius")), NavigationModeType.WALK))
+            .parameter(GoalParameter.constant(RADIUS_PARAM, "Radius", 2))
+            .executor((nav, v) -> start(nav, new GoalNear(v.get("x"), v.get("y"), v.get("z"), v.get(RADIUS_PARAM)), NavigationModeType.WALK))
             .build(),
         GoalUiDefinition.builder("getto", "Get To Block")
             .description("Get to a reachable adjacent position for a block.")
@@ -65,8 +67,8 @@ public final class GoalUiCatalog {
             .description("Reach an X/Z column.")
             .parameter(GoalParameter.currentX())
             .parameter(GoalParameter.currentZ())
-            .parameter(GoalParameter.constant("radius", "Radius", 1))
-            .executor((nav, v) -> start(nav, new GoalColumn(v.get("x"), v.get("z"), v.get("radius")), NavigationModeType.WALK))
+            .parameter(GoalParameter.constant(RADIUS_PARAM, "Radius", 1))
+            .executor((nav, v) -> start(nav, new GoalColumn(v.get("x"), v.get("z"), v.get(RADIUS_PARAM)), NavigationModeType.WALK))
             .build(),
         GoalUiDefinition.builder("rect", "Rectangle")
             .description("Reach any block inside an X/Z rectangle.")

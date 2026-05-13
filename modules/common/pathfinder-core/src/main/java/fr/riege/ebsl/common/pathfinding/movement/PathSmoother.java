@@ -14,7 +14,9 @@ public final class PathSmoother {
     private PathSmoother() {}
 
     public static List<Node> smooth(List<Node> raw, WalkabilityChecker checker) {
-        if (raw == null || raw.size() <= 2) return raw;
+        if (raw == null || raw.size() <= 2) {
+            return raw;
+        }
 
         List<Node> result = new ArrayList<>();
         result.add(raw.get(0));
@@ -33,8 +35,12 @@ public final class PathSmoother {
                 Node candidate = raw.get(cand);
 
                 if (prevNode.position.flooredY() != anchor.position.flooredY()
-                        || candidate.position.flooredY() != anchor.position.flooredY()) break;
-                if (wouldSkipConstrainedCorner(raw, anchorIdx, cand, checker)) break;
+                        || candidate.position.flooredY() != anchor.position.flooredY()) {
+                    break;
+                }
+                if (wouldSkipConstrainedCorner(raw, anchorIdx, cand, checker)) {
+                    break;
+                }
                 if (hasLineOfSight(anchor, candidate, checker)) {
                     furthest = cand;
                 } else {
@@ -50,7 +56,9 @@ public final class PathSmoother {
     }
 
     public static List<Node> smoothFly(List<Node> raw, WalkabilityChecker checker) {
-        if (raw == null || raw.size() <= 2) return raw;
+        if (raw == null || raw.size() <= 2) {
+            return raw;
+        }
 
         List<Node> result = new ArrayList<>();
         result.add(raw.getFirst());
@@ -77,77 +85,135 @@ public final class PathSmoother {
     }
 
     private static boolean hasLineOfSight(Node from, Node to, WalkabilityChecker checker) {
-        int x0 = from.position.flooredX(), y0 = from.position.flooredY(), z0 = from.position.flooredZ();
-        int x1 = to.position.flooredX(),   y1 = to.position.flooredY(),   z1 = to.position.flooredZ();
-
-        int dx = Math.abs(x1-x0), dy = Math.abs(y1-y0), dz = Math.abs(z1-z0);
-        int sx = x0<x1?1:-1, sy = y0<y1?1:-1, sz = z0<z1?1:-1;
-        int x = x0, y = y0, z = z0;
-
-        if (dx >= dy && dx >= dz) {
-            int e1 = 2*dy-dx, e2 = 2*dz-dx;
-            for (int i = 0; i < dx; i++) {
-                if (!clearForSmoothing(checker, x, y, z)) return false;
-                int prevX = x, prevZ = z;
-                if (e1>0){y+=sy;e1-=2*dx;} if(e2>0){z+=sz;e2-=2*dx;}
-                e1+=2*dy; e2+=2*dz; x+=sx;
-                if (diagonalStepBlocked(checker, prevX, prevZ, x, y, z)) return false;
-            }
-        } else if (dy >= dx && dy >= dz) {
-            int e1 = 2*dx-dy, e2 = 2*dz-dy;
-            for (int i = 0; i < dy; i++) {
-                if (!clearForSmoothing(checker, x, y, z)) return false;
-                int prevX = x, prevZ = z;
-                if (e1>0){x+=sx;e1-=2*dy;} if(e2>0){z+=sz;e2-=2*dy;}
-                e1+=2*dx; e2+=2*dz; y+=sy;
-                if (diagonalStepBlocked(checker, prevX, prevZ, x, y, z)) return false;
-            }
-        } else {
-            int e1 = 2*dx-dz, e2 = 2*dy-dz;
-            for (int i = 0; i < dz; i++) {
-                if (!clearForSmoothing(checker, x, y, z)) return false;
-                int prevX = x, prevZ = z;
-                if (e1>0){x+=sx;e1-=2*dz;} if(e2>0){y+=sy;e2-=2*dz;}
-                e1+=2*dx; e2+=2*dy; z+=sz;
-                if (diagonalStepBlocked(checker, prevX, prevZ, x, y, z)) return false;
-            }
-        }
-
-        return clearForSmoothing(checker, x1, y1, z1);
+        return traceGridLine(from, to, checker, true, (x, y, z) -> clearForSmoothing(checker, x, y, z));
     }
 
     private static boolean hasFlyLineOfSight(Node from, Node to, WalkabilityChecker checker) {
-        int x0 = from.position.flooredX(), y0 = from.position.flooredY(), z0 = from.position.flooredZ();
-        int x1 = to.position.flooredX(),   y1 = to.position.flooredY(),   z1 = to.position.flooredZ();
+        return traceGridLine(from, to, checker, false, (x, y, z) -> !checker.isSolid(x, y, z));
+    }
 
-        int dx = Math.abs(x1-x0), dy = Math.abs(y1-y0), dz = Math.abs(z1-z0);
-        int sx = x0<x1?1:-1, sy = y0<y1?1:-1, sz = z0<z1?1:-1;
-        int x = x0, y = y0, z = z0;
+    private static boolean traceGridLine(Node from,
+                                         Node to,
+                                         WalkabilityChecker checker,
+                                         boolean blockDiagonalCuts,
+                                         CellClearance clearance) {
+        GridLine line = GridLine.between(from, to);
+        if (line.dx >= line.dy && line.dx >= line.dz) {
+            return traceDominantX(line, checker, blockDiagonalCuts, clearance);
+        }
+        if (line.dy >= line.dx && line.dy >= line.dz) {
+            return traceDominantY(line, checker, blockDiagonalCuts, clearance);
+        }
+        return traceDominantZ(line, checker, blockDiagonalCuts, clearance);
+    }
 
-        if (dx >= dy && dx >= dz) {
-            int e1=2*dy-dx, e2=2*dz-dx;
-            for (int i=0;i<dx;i++) {
-                if (checker.isSolid(x,y,z)) return false;
-                if(e1>0){y+=sy;e1-=2*dx;} if(e2>0){z+=sz;e2-=2*dx;}
-                e1+=2*dy; e2+=2*dz; x+=sx;
+    private static boolean traceDominantX(GridLine line,
+                                          WalkabilityChecker checker,
+                                          boolean blockDiagonalCuts,
+                                          CellClearance clearance) {
+        int x = line.x0;
+        int y = line.y0;
+        int z = line.z0;
+        int yError = 2 * line.dy - line.dx;
+        int zError = 2 * line.dz - line.dx;
+        for (int i = 0; i < line.dx; i++) {
+            if (!clearance.clear(x, y, z)) {
+                return false;
             }
-        } else if (dy >= dx && dy >= dz) {
-            int e1=2*dx-dy, e2=2*dz-dy;
-            for (int i=0;i<dy;i++) {
-                if (checker.isSolid(x,y,z)) return false;
-                if(e1>0){x+=sx;e1-=2*dy;} if(e2>0){z+=sz;e2-=2*dy;}
-                e1+=2*dx; e2+=2*dz; y+=sy;
+            int previousX = x;
+            int previousZ = z;
+            if (yError > 0) {
+                y += line.sy;
+                yError -= 2 * line.dx;
             }
-        } else {
-            int e1=2*dx-dz, e2=2*dy-dz;
-            for (int i=0;i<dz;i++) {
-                if (checker.isSolid(x,y,z)) return false;
-                if(e1>0){x+=sx;e1-=2*dz;} if(e2>0){y+=sy;e2-=2*dz;}
-                e1+=2*dx; e2+=2*dy; z+=sz;
+            if (zError > 0) {
+                z += line.sz;
+                zError -= 2 * line.dx;
+            }
+            yError += 2 * line.dy;
+            zError += 2 * line.dz;
+            x += line.sx;
+            if (blocksDiagonalCut(checker, blockDiagonalCuts, previousX, previousZ, x, y, z)) {
+                return false;
             }
         }
+        return clearance.clear(line.x1, line.y1, line.z1);
+    }
 
-        return !checker.isSolid(x1, y1, z1);
+    private static boolean traceDominantY(GridLine line,
+                                          WalkabilityChecker checker,
+                                          boolean blockDiagonalCuts,
+                                          CellClearance clearance) {
+        int x = line.x0;
+        int y = line.y0;
+        int z = line.z0;
+        int xError = 2 * line.dx - line.dy;
+        int zError = 2 * line.dz - line.dy;
+        for (int i = 0; i < line.dy; i++) {
+            if (!clearance.clear(x, y, z)) {
+                return false;
+            }
+            int previousX = x;
+            int previousZ = z;
+            if (xError > 0) {
+                x += line.sx;
+                xError -= 2 * line.dy;
+            }
+            if (zError > 0) {
+                z += line.sz;
+                zError -= 2 * line.dy;
+            }
+            xError += 2 * line.dx;
+            zError += 2 * line.dz;
+            y += line.sy;
+            if (blocksDiagonalCut(checker, blockDiagonalCuts, previousX, previousZ, x, y, z)) {
+                return false;
+            }
+        }
+        return clearance.clear(line.x1, line.y1, line.z1);
+    }
+
+    private static boolean traceDominantZ(GridLine line,
+                                          WalkabilityChecker checker,
+                                          boolean blockDiagonalCuts,
+                                          CellClearance clearance) {
+        int x = line.x0;
+        int y = line.y0;
+        int z = line.z0;
+        int xError = 2 * line.dx - line.dz;
+        int yError = 2 * line.dy - line.dz;
+        for (int i = 0; i < line.dz; i++) {
+            if (!clearance.clear(x, y, z)) {
+                return false;
+            }
+            int previousX = x;
+            int previousZ = z;
+            if (xError > 0) {
+                x += line.sx;
+                xError -= 2 * line.dz;
+            }
+            if (yError > 0) {
+                y += line.sy;
+                yError -= 2 * line.dz;
+            }
+            xError += 2 * line.dx;
+            yError += 2 * line.dy;
+            z += line.sz;
+            if (blocksDiagonalCut(checker, blockDiagonalCuts, previousX, previousZ, x, y, z)) {
+                return false;
+            }
+        }
+        return clearance.clear(line.x1, line.y1, line.z1);
+    }
+
+    private static boolean blocksDiagonalCut(WalkabilityChecker checker,
+                                             boolean blockDiagonalCuts,
+                                             int previousX,
+                                             int previousZ,
+                                             int x,
+                                             int y,
+                                             int z) {
+        return blockDiagonalCuts && diagonalStepBlocked(checker, previousX, previousZ, x, y, z);
     }
 
     private static boolean clearForSmoothing(WalkabilityChecker checker, int x, int y, int z) {
@@ -170,7 +236,9 @@ public final class PathSmoother {
     }
 
     private static int computeWallScore(Node anchor, WalkabilityChecker checker) {
-        if (checker == null) return 0;
+        if (checker == null) {
+            return 0;
+        }
 
         int x = anchor.position.flooredX();
         int y = anchor.position.flooredY();
@@ -182,8 +250,12 @@ public final class PathSmoother {
         for (int i = 0; i < dx.length; i++) {
             int nx = x + dx[i];
             int nz = z + dz[i];
-            if (checker.isFullWall(nx, y, nz)) wallScore++;
-            if (checker.isFullWall(nx, y + 1, nz)) wallScore++;
+            if (checker.isFullWall(nx, y, nz)) {
+                wallScore++;
+            }
+            if (checker.isFullWall(nx, y + 1, nz)) {
+                wallScore++;
+            }
         }
         return wallScore;
     }
@@ -191,7 +263,9 @@ public final class PathSmoother {
     private static boolean wouldSkipConstrainedCorner(List<Node> raw, int anchorIdx, int candidateIdx,
                                                       WalkabilityChecker checker) {
         for (int i = anchorIdx + 1; i < candidateIdx; i++) {
-            if (isConstrainedCorner(raw, i, checker)) return true;
+            if (isConstrainedCorner(raw, i, checker)) {
+                return true;
+            }
         }
         return false;
     }
@@ -208,7 +282,9 @@ public final class PathSmoother {
 
         double inLen = Math.sqrt(inX * inX + inZ * inZ);
         double outLen = Math.sqrt(outX * outX + outZ * outZ);
-        if (inLen < 1.0e-3 || outLen < 1.0e-3) return false;
+        if (inLen < 1.0e-3 || outLen < 1.0e-3) {
+            return false;
+        }
 
         double dot = (inX / inLen) * (outX / outLen) + (inZ / inLen) * (outZ / outLen);
         double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
@@ -219,7 +295,9 @@ public final class PathSmoother {
     private static boolean diagonalStepBlocked(WalkabilityChecker checker,
                                                int fromX, int fromZ,
                                                int toX, int toY, int toZ) {
-        if (fromX == toX || fromZ == toZ) return false;
+        if (fromX == toX || fromZ == toZ) {
+            return false;
+        }
 
         return sideCellBlocked(checker, toX, toY, fromZ)
                 || sideCellBlocked(checker, fromX, toY, toZ);
@@ -230,5 +308,51 @@ public final class PathSmoother {
                 || !checker.isPassable(x, y + 1, z)
                 || checker.isFullWall(x, y, z)
                 || checker.isFullWall(x, y + 1, z);
+    }
+
+    @FunctionalInterface
+    private interface CellClearance {
+        boolean clear(int x, int y, int z);
+    }
+
+    private record GridLine(
+        int x0,
+        int y0,
+        int z0,
+        int x1,
+        int y1,
+        int z1,
+        int dx,
+        int dy,
+        int dz,
+        int sx,
+        int sy,
+        int sz
+    ) {
+        private static GridLine between(Node from, Node to) {
+            int fromX = from.position.flooredX();
+            int fromY = from.position.flooredY();
+            int fromZ = from.position.flooredZ();
+            int toX = to.position.flooredX();
+            int toY = to.position.flooredY();
+            int toZ = to.position.flooredZ();
+            return new GridLine(
+                fromX,
+                fromY,
+                fromZ,
+                toX,
+                toY,
+                toZ,
+                Math.abs(toX - fromX),
+                Math.abs(toY - fromY),
+                Math.abs(toZ - fromZ),
+                stepSign(fromX, toX),
+                stepSign(fromY, toY),
+                stepSign(fromZ, toZ));
+        }
+
+        private static int stepSign(int from, int to) {
+            return from < to ? 1 : -1;
+        }
     }
 }

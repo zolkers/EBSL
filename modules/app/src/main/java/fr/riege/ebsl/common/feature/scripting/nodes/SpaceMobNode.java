@@ -14,6 +14,8 @@ import fr.riege.ebsl.common.feature.task.SpaceMobTask;
 
 @EbslNodeDefinition(EbslNodeType.SPACE_MOB)
 public final class SpaceMobNode extends AbstractEbslNode {
+    private static final String CLOSEST_TARGET = "closest";
+
     private StringSetting target;
     private DoubleSetting distance;
     private DoubleSetting tolerance;
@@ -23,7 +25,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
 
     @Override
     protected void registerSettings() {
-        target = registerSetting(new StringSetting("target", "Target", "closest"));
+        target = registerSetting(new StringSetting("target", "Target", CLOSEST_TARGET));
         distance = registerSetting(new DoubleSetting("distance", "Distance", 3.0, 0.1, 12.0));
         tolerance = registerSetting(new DoubleSetting("tolerance", "Tolerance", 0.35, 0.05, 4.0));
         radius = registerSetting(new IntSetting("radius", "Radius", 32, 1, 128));
@@ -58,7 +60,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
         if (cursor.peek(SpaceMobDirective.ON)) {
             cursor.next();
         }
-        target.setValue(cursor.consume(SpaceMobDirective.NAME) && cursor.hasNext() ? cursor.next() : "closest");
+        target.setValue(cursor.consume(SpaceMobDirective.NAME) && cursor.hasNext() ? cursor.next() : CLOSEST_TARGET);
         cursor.consume(SpaceMobDirective.CLOSEST);
         distance.setValue(cursor.nextRawNumber(3.0));
         tolerance.setValue(cursor.nextRawNumber(0.35));
@@ -71,8 +73,8 @@ public final class SpaceMobNode extends AbstractEbslNode {
     public String argsFromSettings() {
         settings();
         StringBuilder builder = new StringBuilder("on ");
-        if (target.value().isBlank() || "closest".equalsIgnoreCase(target.value())) {
-            builder.append("closest");
+        if (target.value().isBlank() || CLOSEST_TARGET.equalsIgnoreCase(target.value())) {
+            builder.append(CLOSEST_TARGET);
         } else {
             builder.append("name ").append(target.value());
         }
@@ -110,11 +112,11 @@ public final class SpaceMobNode extends AbstractEbslNode {
         if (name.isBlank()) {
             cursor.consume(SpaceMobDirective.CLOSEST);
         }
-        double distance = cursor.nextNumber(3.0);
-        double tolerance = cursor.nextNumber(0.35);
-        int radius = (int) cursor.nextNumber(32.0);
-        boolean track = cursor.consume(SpaceMobDirective.TRACK);
-        SpaceMobTask.INSTANCE.configure(mode, name, distance, tolerance, radius, track);
+        double targetDistance = cursor.nextNumber(3.0);
+        double targetTolerance = cursor.nextNumber(0.35);
+        int searchRadius = (int) cursor.nextNumber(32.0);
+        boolean trackTarget = cursor.consume(SpaceMobDirective.TRACK);
+        SpaceMobTask.INSTANCE.configure(mode, name, targetDistance, targetTolerance, searchRadius, trackTarget);
     }
 
     private int duration(EbslNodeInvocation invocation) {
