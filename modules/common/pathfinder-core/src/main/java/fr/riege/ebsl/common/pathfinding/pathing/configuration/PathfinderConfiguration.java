@@ -1,5 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.pathing.configuration;
 
+import fr.riege.ebsl.common.pathfinding.movement.DefaultMovementTypeClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTypeClassifier;
 import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicWeights;
@@ -7,6 +9,8 @@ import fr.riege.ebsl.common.pathfinding.pathing.heuristic.IHeuristicStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.LinearHeuristicStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.quality.DefaultMovementCostModel;
+import fr.riege.ebsl.common.pathfinding.quality.MovementCostModel;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +34,8 @@ public final class PathfinderConfiguration {
     public final List<NodeProcessor>  processors;
     public final INeighborStrategy    neighborStrategy;
     public final IHeuristicStrategy   heuristicStrategy;
+    public final MovementTypeClassifier movementClassifier;
+    public final MovementCostModel    movementCostModel;
 
     private PathfinderConfiguration(Builder b) {
         this.maxIterations    = b.maxIterations;
@@ -49,6 +55,8 @@ public final class PathfinderConfiguration {
         this.processors       = Collections.unmodifiableList(b.processors);
         this.neighborStrategy = b.neighborStrategy;
         this.heuristicStrategy= b.heuristicStrategy;
+        this.movementClassifier = b.movementClassifier;
+        this.movementCostModel = b.movementCostModel;
     }
 
     public static final PathfinderConfiguration DEFAULT = new Builder().build();
@@ -73,6 +81,8 @@ public final class PathfinderConfiguration {
         private List<NodeProcessor>  processors       = List.of();
         private INeighborStrategy    neighborStrategy = NeighborStrategies.VERTICAL_AND_HORIZONTAL;
         private IHeuristicStrategy   heuristicStrategy= new LinearHeuristicStrategy();
+        private MovementTypeClassifier movementClassifier = DefaultMovementTypeClassifier.INSTANCE;
+        private MovementCostModel    movementCostModel = DefaultMovementCostModel.INSTANCE;
 
         public Builder maxIterations(int v)            { this.maxIterations    = v; return this; }
         public Builder maxLength(int v)                { this.maxLength        = v; return this; }
@@ -94,6 +104,14 @@ public final class PathfinderConfiguration {
         public Builder processors(List<NodeProcessor> v)   { this.processors   = v; return this; }
         public Builder neighborStrategy(INeighborStrategy v){ this.neighborStrategy = v; return this; }
         public Builder heuristicStrategy(IHeuristicStrategy v){ this.heuristicStrategy = v; return this; }
+        public Builder movementClassifier(MovementTypeClassifier v) {
+            this.movementClassifier = v == null ? DefaultMovementTypeClassifier.INSTANCE : v;
+            return this;
+        }
+        public Builder movementCostModel(MovementCostModel v) {
+            this.movementCostModel = v == null ? DefaultMovementCostModel.INSTANCE : v;
+            return this;
+        }
 
         public PathfinderConfiguration build() { return new PathfinderConfiguration(this); }
     }

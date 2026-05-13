@@ -1,6 +1,8 @@
 package fr.riege.ebsl.common.pathfinding;
 
-import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.DefaultMovementTypeClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTypeClassifier;
 import fr.riege.ebsl.common.pathfinding.movement.PathSmoother;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
@@ -21,14 +23,14 @@ public final class WalkPathProcessor {
                                         WalkabilityChecker checker) {
         List<Node> nodes = toNodeList(positions, config, checker);
         List<Node> smoothed = PathSmoother.smooth(nodes, checker);
-        relabelMoveTypes(smoothed, checker);
+        relabelMoveTypes(smoothed, effectiveClassifier(config), checker);
         List<Node> keynodes = collapseAscendingStacks(smoothed);
-        relabelMoveTypes(keynodes, checker);
+        relabelMoveTypes(keynodes, effectiveClassifier(config), checker);
         for (Node node : keynodes) {
             node.setKeynode(true);
         }
         List<Node> navigationPath = insertIntermediates(keynodes, checker);
-        relabelMoveTypes(navigationPath, checker);
+        relabelMoveTypes(navigationPath, effectiveClassifier(config), checker);
         return new ProcessedPath(nodes, navigationPath, computePathLength(nodes));
     }
 
@@ -52,7 +54,12 @@ public final class WalkPathProcessor {
             Node node = new Node(position, start, target,
                 effectiveConfig.heuristicWeights, effectiveConfig.heuristicStrategy, nodes.size());
             if (previous != null) {
-                node.setMoveType(MovementClassifier.classify(previous, position, effectiveConfig.provider, null, checker));
+                node.setMoveType(effectiveConfig.movementClassifier.classify(new MovementClassificationContext(
+                    previous,
+                    position,
+                    effectiveConfig.provider,
+                    null,
+                    checker)));
             }
             nodes.add(node);
             previous = position;
@@ -68,14 +75,23 @@ public final class WalkPathProcessor {
         return total;
     }
 
-    private static void relabelMoveTypes(List<Node> nodes, WalkabilityChecker checker) {
+    private static void relabelMoveTypes(List<Node> nodes, MovementTypeClassifier classifier, WalkabilityChecker checker) {
         if (checker == null || nodes == null || nodes.size() < 2) {
             return;
         }
         for (int i = 1; i < nodes.size(); i++) {
             Node node = nodes.get(i);
-            node.setMoveType(MovementClassifier.classify(nodes.get(i - 1).position, node.position, null, null, checker));
+            node.setMoveType(classifier.classify(new MovementClassificationContext(
+                nodes.get(i - 1).position,
+                node.position,
+                null,
+                null,
+                checker)));
         }
+    }
+
+    private static MovementTypeClassifier effectiveClassifier(PathfinderConfiguration config) {
+        return config == null ? DefaultMovementTypeClassifier.INSTANCE : config.movementClassifier;
     }
 
     private static List<Node> insertIntermediates(List<Node> keynodes, WalkabilityChecker checker) {

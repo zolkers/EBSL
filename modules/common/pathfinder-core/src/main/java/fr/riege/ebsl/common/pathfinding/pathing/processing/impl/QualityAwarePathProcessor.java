@@ -1,14 +1,13 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing.impl;
 
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.quality.MovementRiskScorer;
 import fr.riege.ebsl.common.pathfinding.quality.TerrainOpportunityScorer;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
@@ -32,15 +31,15 @@ public final class QualityAwarePathProcessor implements NodeProcessor {
             ? provider.checker()
             : null;
         Node.MoveType moveType = context.getCurrentMoveType() == null
-            ? MovementClassifier.classify(
+            ? configuration.movementClassifier.classify(new MovementClassificationContext(
                 previous,
                 current,
                 context.getNavigationPointProvider(),
                 context.getEnvironmentContext(),
-                checker)
+                checker))
             : context.getCurrentMoveType();
 
-        double cost = MovementRiskScorer.planningPenalty(moveType) * riskWeight;
+        double cost = configuration.movementCostModel.planningPenalty(moveType) * riskWeight;
         if (checker != null && terrainWeight > 0.0) {
             cost += (1.0 - TerrainOpportunityScorer.scorePosition(checker, current)) * terrainWeight;
         }

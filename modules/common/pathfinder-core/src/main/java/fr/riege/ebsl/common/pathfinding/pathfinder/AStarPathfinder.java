@@ -2,7 +2,7 @@ package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
-import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
@@ -280,16 +280,16 @@ public final class AStarPathfinder extends AbstractPathfinder {
         return s;
     }
 
-    private static Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
+    private Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
         WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof LayerNavigationPointProvider provider
             ? provider.checker()
             : null;
-        return MovementClassifier.classify(
+        return pathfinderConfiguration.movementClassifier.classify(new MovementClassificationContext(
             previous,
             current,
             searchContext.getNavigationPointProvider(),
             searchContext.getEnvironmentContext(),
-            checker);
+            checker));
     }
 
     

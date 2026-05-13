@@ -96,6 +96,8 @@ sh ./scripts/install-git-hooks.sh
 - `docs`: project documentation.
 - `scripts`: local setup helpers.
 
+See [docs/architecture.md](docs/architecture.md) for module boundaries and extension contracts.
+
 ## License
 
 EBSL is released under [GPL-3.0-or-later](LICENSE). Distributed forks and modified versions must remain open source under the same license terms.
