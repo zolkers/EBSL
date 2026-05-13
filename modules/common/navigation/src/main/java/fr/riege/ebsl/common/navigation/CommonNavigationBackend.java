@@ -9,16 +9,18 @@ import fr.riege.ebsl.common.pathfinding.execution.PathRepairRequest;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
-import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
+import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
+import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.Path;
+import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResults;
+import fr.riege.ebsl.common.pathfinding.pathing.result.Paths;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.result.PathImpl;
-import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -39,12 +41,12 @@ public final class CommonNavigationBackend implements NavigationService {
     private final IPlayerLayer player;
     private final IInputLayer input;
     private final WalkabilityChecker checker;
-    private final LayerNavigationPointProvider provider;
+    private final WorldNavigationPointProvider provider;
     private final PathExecutor executor;
     private final LongRangePathSession longRangeSession = new LongRangePathSession();
     private final Consumer<Runnable> gameThread;
 
-    private AStarPathfinder pathfinder;
+    private InspectablePathfinder pathfinder;
     private final AtomicReference<PathfinderResult> lastResult = new AtomicReference<>();
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
@@ -73,7 +75,7 @@ public final class CommonNavigationBackend implements NavigationService {
         this.input = input == null ? new IInputLayer() {} : input;
         this.gameThread = gameThread == null ? Runnable::run : gameThread;
         this.checker = new WalkabilityChecker(world);
-        this.provider = new LayerNavigationPointProvider(checker);
+        this.provider = NavigationPointProviders.worldBacked(checker);
         this.executor = new PathExecutor(world, player, physics, this.input);
     }
 
@@ -299,12 +301,12 @@ public final class CommonNavigationBackend implements NavigationService {
         goalY = effectiveTarget.flooredY();
         goalZ = effectiveTarget.flooredZ();
         if (start.equals(effectiveTarget)) {
-            lastResult.set(new PathfinderResultImpl(PathState.FOUND, new PathImpl(start, effectiveTarget, List.of(start))));
+            lastResult.set(PathfinderResults.of(PathState.FOUND, Paths.of(start, effectiveTarget, List.of(start))));
             markIdle(false);
             return;
         }
         PathfinderConfiguration config = instantConfiguration();
-        AStarPathfinder activePathfinder = new AStarPathfinder(config);
+        InspectablePathfinder activePathfinder = Pathfinders.inspectableAStar(config);
         pathfinder = activePathfinder;
 
         activePathfinder.findPath(start, effectiveTarget)
@@ -332,7 +334,7 @@ public final class CommonNavigationBackend implements NavigationService {
     private void startFullPathTo(PathPosition start, PathPosition effectiveTarget, boolean executePath) {
         abortActiveSearch();
         PathfinderConfiguration config = fullConfiguration();
-        AStarPathfinder activePathfinder = new AStarPathfinder(config);
+        InspectablePathfinder activePathfinder = Pathfinders.inspectableAStar(config);
         pathfinder = activePathfinder;
         activePathfinder.findPath(start, effectiveTarget)
             .whenComplete((result, throwable) -> onGameThread(() -> {
@@ -398,7 +400,7 @@ public final class CommonNavigationBackend implements NavigationService {
         Vec3d pos = player.position();
         PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
         PathfinderConfiguration config = repairConfiguration();
-        AStarPathfinder repairPathfinder = new AStarPathfinder(config);
+        InspectablePathfinder repairPathfinder = Pathfinders.inspectableAStar(config);
         pathfinder = repairPathfinder;
         repairPathfinder.findPath(start, request.joinNode().position)
             .whenComplete((result, throwable) -> onGameThread(() ->
@@ -407,7 +409,7 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private void completePathRepair(PathRepairRequest request,
                                     PathfinderConfiguration config,
-                                    AStarPathfinder repairPathfinder,
+                                    InspectablePathfinder repairPathfinder,
                                     PathfinderResult result,
                                     Throwable throwable) {
         if (pathfinder != repairPathfinder) {
@@ -517,7 +519,7 @@ public final class CommonNavigationBackend implements NavigationService {
         int targetY = target.flooredY();
         int targetZ = target.flooredZ();
         PathfinderConfiguration config = queuedConfiguration(true);
-        AStarPathfinder queuedPathfinder = new AStarPathfinder(config);
+        InspectablePathfinder queuedPathfinder = Pathfinders.inspectableAStar(config);
         int requestId = longRangeSession.markSegmentCalculationStarted(queuedPathfinder);
         LongRangePathSession.SegmentAttachment attachment = startFromPlayer
             ? LongRangePathSession.SegmentAttachment.REPLACE_FROM_PLAYER
@@ -826,7 +828,7 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private void abortActiveSearch() {
-        AStarPathfinder active = pathfinder;
+        InspectablePathfinder active = pathfinder;
         pathfinder = null;
         if (active != null) {
             active.abort();

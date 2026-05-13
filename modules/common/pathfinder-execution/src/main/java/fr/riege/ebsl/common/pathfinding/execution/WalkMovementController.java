@@ -9,7 +9,8 @@ import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValida
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutionContext;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.WaterMovementContext;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
@@ -41,7 +42,7 @@ final class WalkMovementController {
     private final IPlayerLayer player;
     private final IInputLayer input;
     private final WalkabilityChecker checker;
-    private final LayerNavigationPointProvider navigationPointProvider;
+    private final WorldNavigationPointProvider navigationPointProvider;
     private List<Node> path;
     private int lastValidatedSegment = -1;
     private int validationTick;
@@ -52,7 +53,7 @@ final class WalkMovementController {
         this.player = player;
         this.input = input;
         this.checker = checker;
-        this.navigationPointProvider = new LayerNavigationPointProvider(checker);
+        this.navigationPointProvider = NavigationPointProviders.worldBacked(checker);
     }
 
     void setPath(List<Node> path) {

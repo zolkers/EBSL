@@ -23,9 +23,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class McWorldLayer implements IWorldLayer {
+final class McWorldLayer implements IWorldLayer {
     private final Minecraft client;
-    public McWorldLayer(Minecraft client) { this.client = client; }
+    McWorldLayer(Minecraft client) { this.client = client; }
 
     @Override public BlockId getBlock(int x, int y, int z) {
         Level level = level();

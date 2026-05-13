@@ -3,12 +3,14 @@ package fr.riege.ebsl.common.navigation;
 import fr.riege.ebsl.common.pathfinding.ProcessedPath;
 import fr.riege.ebsl.common.pathfinding.WalkPathProcessor;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
-import fr.riege.ebsl.common.pathfinding.pathfinder.AStarPathfinder;
+import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
+import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
+import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -23,12 +25,12 @@ import java.util.concurrent.CompletionStage;
 public final class PathPlanningService {
     private final IWorldLayer world;
     private final WalkabilityChecker checker;
-    private final LayerNavigationPointProvider provider;
+    private final WorldNavigationPointProvider provider;
 
     public PathPlanningService(IWorldLayer world) {
         this.world = Objects.requireNonNull(world, "world");
         this.checker = new WalkabilityChecker(world);
-        this.provider = new LayerNavigationPointProvider(checker);
+        this.provider = NavigationPointProviders.worldBacked(checker);
     }
 
     public IWorldLayer world() {
@@ -62,7 +64,7 @@ public final class PathPlanningService {
     private CompletionStage<PathPlan> planOnce(PathPosition start, PathPosition target, PathPlannerOptions options) {
         clearCaches();
         PathfinderConfiguration configuration = configuration(options);
-        AStarPathfinder pathfinder = new AStarPathfinder(configuration);
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(configuration);
         return pathfinder.findPath(start.floor(), resolveTarget(target))
             .thenApply(result -> toPlan(result, configuration, options));
     }

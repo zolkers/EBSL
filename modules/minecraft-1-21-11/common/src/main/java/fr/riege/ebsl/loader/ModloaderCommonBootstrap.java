@@ -18,7 +18,7 @@ import fr.riege.ebsl.loader.layer.ModloaderEventBus;
 import fr.riege.ebsl.loader.layer.ModloaderNavigationService;
 import fr.riege.ebsl.loader.layer.ModloaderUiService;
 import fr.riege.ebsl.loader.ui.DockingInputHandler;
-import fr.riege.ebsl.mc.*;
+import fr.riege.ebsl.mc.McPlatformLayers;
 import net.minecraft.client.Minecraft;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -54,24 +54,23 @@ public final class ModloaderCommonBootstrap {
                                   ICommandLayer commands,
                                   IImGuiLayer imgui,
                                   IInputLayer input) {
-        McWorldLayer world = new McWorldLayer(client);
-        McPlayerLayer player = new McPlayerLayer(client);
+        McPlatformLayers mcLayers = McPlatformLayers.create(client, configDir);
         events = new ModloaderEventBus();
-        navigation = new ModloaderNavigationService(world, player, physics, input);
+        navigation = new ModloaderNavigationService(mcLayers.world(), mcLayers.player(), physics, input);
         ModloaderCommonBootstrap.imgui = imgui instanceof MinecraftImGuiLayer layer ? layer : null;
         ui = new ModloaderUiService();
 
         EbslPlatform platform = EbslPlatform.builder()
-            .world(world)
-            .player(player)
-            .render(new McRenderLayer())
-            .storage(new McStorageLayer(configDir))
+            .world(mcLayers.world())
+            .player(mcLayers.player())
+            .render(mcLayers.render())
+            .storage(mcLayers.storage())
             .physics(physics)
             .events(events)
             .commands(commands)
             .imgui(imgui)
             .input(input)
-            .entities(new McEntityLayer(client))
+            .entities(mcLayers.entities())
             .build();
 
         bootstrapAppLog();

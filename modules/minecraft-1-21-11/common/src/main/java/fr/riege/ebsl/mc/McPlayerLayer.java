@@ -10,9 +10,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
-public class McPlayerLayer implements IPlayerLayer {
+final class McPlayerLayer implements IPlayerLayer {
     private final Minecraft client;
-    public McPlayerLayer(Minecraft client) { this.client = client; }
+    McPlayerLayer(Minecraft client) { this.client = client; }
 
     @Override public Vec3d position() {
         LocalPlayer player = player();

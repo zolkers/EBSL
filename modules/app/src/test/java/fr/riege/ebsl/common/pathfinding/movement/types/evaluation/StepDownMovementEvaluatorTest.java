@@ -4,7 +4,7 @@ import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
-import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class StepDownMovementEvaluatorTest {
         targetNode.setMoveType(Node.MoveType.STEP_DOWN);
         return new MovementValidationContext(
             checker,
-            new LayerNavigationPointProvider(checker),
+            NavigationPointProviders.worldBacked(checker),
             fromNode,
             targetNode,
             targetNode,

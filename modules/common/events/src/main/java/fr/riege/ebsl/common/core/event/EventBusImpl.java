@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public final class EventBusImpl implements EventBus {
+final class EventBusImpl implements EventBus {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-eventbus");
 
     private final Map<Class<? extends Event>, List<Subscription>> byType = new ConcurrentHashMap<>();
