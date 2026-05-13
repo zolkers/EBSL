@@ -123,39 +123,16 @@ def javaSourceFiles = providers.provider {
     }.findAll { it.exists() }
 }
 
-def javaLicenseHeader = '''/*
- * This file is part of EBSL.
- *
- * EBSL is free software: you can redistribute it and/or modify it under the terms of the
- * GNU General Public License as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * EBSL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
- * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
-'''
-
-def legacyJavaLicenseHeader = '''/*
- * This file is part of EBSL.
- *
- * EBSL is free software: you can redistribute it and/or modify it under the terms of the
- * GNU General Public License as published by the Free Software Foundation, either version 3
- * of the License, or (at your option) any later version.
- *
- * EBSL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
- * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-'''
-
 def normalizeJavaSource = { String text ->
     text.replace('\r\n', '\n').replace('\r', '\n')
+}
+
+def javaLicenseHeaderFile = layout.projectDirectory.file('HEADER')
+def javaLicenseHeader = providers.provider {
+    normalizeJavaSource(javaLicenseHeaderFile.asFile.getText('UTF-8')).stripTrailing() + '\n\n'
+}
+def legacyJavaLicenseHeader = providers.provider {
+    javaLicenseHeader.get().stripTrailing() + '\n'
 }
 
 def leadingJavaLicenseHeaders = ~/(?s)\A(?:\/\*\n \* This file is part of EBSL\.\n \*\n \* EBSL is free software:.*?SPDX-License-Identifier: GPL-3\.0-or-later\n \*\/\n*)+/
@@ -330,11 +307,13 @@ tasks.register('verifyJavaLicenseHeaders') {
     description = 'Fails when Java source files are missing the GPL license header.'
 
     inputs.files(javaSourceFiles)
+    inputs.file(javaLicenseHeaderFile)
 
-      doLast {
-          def missingHeaders = javaSourceFiles.get().findAll { sourceFile ->
-            !normalizeJavaSource(sourceFile.getText('UTF-8')).startsWith(javaLicenseHeader)
-          }
+    doLast {
+        def expectedHeader = javaLicenseHeader.get()
+        def missingHeaders = javaSourceFiles.get().findAll { sourceFile ->
+            !normalizeJavaSource(sourceFile.getText('UTF-8')).startsWith(expectedHeader)
+        }
 
         if (!missingHeaders.isEmpty()) {
             throw new GradleException(
@@ -350,17 +329,20 @@ tasks.register('applyJavaLicenseHeaders') {
     description = 'Adds the GPL license header to Java source files that do not already have it.'
 
     inputs.files(javaSourceFiles)
+    inputs.file(javaLicenseHeaderFile)
     outputs.upToDateWhen { false }
 
-      doLast {
-          javaSourceFiles.get().each { sourceFile ->
+    doLast {
+        def expectedHeader = javaLicenseHeader.get()
+        def legacyHeader = legacyJavaLicenseHeader.get()
+        javaSourceFiles.get().each { sourceFile ->
             def text = normalizeJavaSource(sourceFile.getText('UTF-8'))
             def body = text.replaceFirst(leadingJavaLicenseHeaders, '')
-            def normalized = javaLicenseHeader + body
-            if (text != normalized || text.startsWith(legacyJavaLicenseHeader)) {
+            def normalized = expectedHeader + body
+            if (text != normalized || text.startsWith(legacyHeader)) {
                 sourceFile.setText(normalized, 'UTF-8')
             }
-          }
+        }
       }
 }
 
