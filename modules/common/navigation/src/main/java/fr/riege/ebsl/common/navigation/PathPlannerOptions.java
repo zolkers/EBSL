@@ -40,13 +40,7 @@ public record PathPlannerOptions(
     double qualityRiskCostWeight,
     double qualityTerrainCostWeight,
     double qualityRetryMinScore,
-    double qualityRetryImprovement,
-    boolean iterativeDepthEnabled,
-    int iterativeDepthMax,
-    double iterativeDepthIterationMultiplier,
-    double iterativeDepthTimeMultiplier,
-    double iterativeDepthQualityMultiplier,
-    double iterativeDepthMinImprovement
+    double qualityRetryImprovement
 ) {
     public static PathPlannerOptions defaults() {
         PathfinderSettings settings = PathfinderSettings.instance();
@@ -60,12 +54,6 @@ public record PathPlannerOptions(
             .qualityTerrainCostWeight(settings.qualityTerrainCostWeight.value())
             .qualityRetryMinScore(settings.qualityRetryMinScore.value())
             .qualityRetryImprovement(settings.qualityRetryImprovement.value())
-            .iterativeDepthEnabled(settings.iterativeDepthEnabled.value())
-            .iterativeDepthMax(settings.iterativeDepthMax.value())
-            .iterativeDepthIterationMultiplier(settings.iterativeDepthIterationMultiplier.value())
-            .iterativeDepthTimeMultiplier(settings.iterativeDepthTimeMultiplier.value())
-            .iterativeDepthQualityMultiplier(settings.iterativeDepthQualityMultiplier.value())
-            .iterativeDepthMinImprovement(settings.iterativeDepthMinImprovement.value())
             .build();
     }
 
@@ -95,13 +83,7 @@ public record PathPlannerOptions(
             .qualityRiskCostWeight(qualityRiskCostWeight)
             .qualityTerrainCostWeight(qualityTerrainCostWeight)
             .qualityRetryMinScore(qualityRetryMinScore)
-            .qualityRetryImprovement(qualityRetryImprovement)
-            .iterativeDepthEnabled(iterativeDepthEnabled)
-            .iterativeDepthMax(iterativeDepthMax)
-            .iterativeDepthIterationMultiplier(iterativeDepthIterationMultiplier)
-            .iterativeDepthTimeMultiplier(iterativeDepthTimeMultiplier)
-            .iterativeDepthQualityMultiplier(iterativeDepthQualityMultiplier)
-            .iterativeDepthMinImprovement(iterativeDepthMinImprovement);
+            .qualityRetryImprovement(qualityRetryImprovement);
     }
 
     public static Builder builder() {
@@ -125,12 +107,6 @@ public record PathPlannerOptions(
         private double qualityTerrainCostWeight = 0.0;
         private double qualityRetryMinScore = 0.0;
         private double qualityRetryImprovement = 0.0;
-        private boolean iterativeDepthEnabled = false;
-        private int iterativeDepthMax = 1;
-        private double iterativeDepthIterationMultiplier = 1.0;
-        private double iterativeDepthTimeMultiplier = 1.0;
-        private double iterativeDepthQualityMultiplier = 1.0;
-        private double iterativeDepthMinImprovement = 0.0;
 
         public Builder maxIterations(int value) {
             this.maxIterations = value;
@@ -212,36 +188,6 @@ public record PathPlannerOptions(
             return this;
         }
 
-        public Builder iterativeDepthEnabled(boolean value) {
-            this.iterativeDepthEnabled = value;
-            return this;
-        }
-
-        public Builder iterativeDepthMax(int value) {
-            this.iterativeDepthMax = value;
-            return this;
-        }
-
-        public Builder iterativeDepthIterationMultiplier(double value) {
-            this.iterativeDepthIterationMultiplier = value;
-            return this;
-        }
-
-        public Builder iterativeDepthTimeMultiplier(double value) {
-            this.iterativeDepthTimeMultiplier = value;
-            return this;
-        }
-
-        public Builder iterativeDepthQualityMultiplier(double value) {
-            this.iterativeDepthQualityMultiplier = value;
-            return this;
-        }
-
-        public Builder iterativeDepthMinImprovement(double value) {
-            this.iterativeDepthMinImprovement = value;
-            return this;
-        }
-
         public PathPlannerOptions build() {
             return new PathPlannerOptions(
                 Math.max(1, maxIterations),
@@ -259,13 +205,7 @@ public record PathPlannerOptions(
                 Math.max(0.0, qualityRiskCostWeight),
                 Math.max(0.0, qualityTerrainCostWeight),
                 Math.clamp(qualityRetryMinScore, 0.0, 1.0),
-                Math.clamp(qualityRetryImprovement, 0.0, 1.0),
-                iterativeDepthEnabled,
-                Math.max(1, iterativeDepthMax),
-                Math.max(1.0, iterativeDepthIterationMultiplier),
-                Math.max(1.0, iterativeDepthTimeMultiplier),
-                Math.max(1.0, iterativeDepthQualityMultiplier),
-                Math.clamp(iterativeDepthMinImprovement, 0.0, 1.0));
+                Math.clamp(qualityRetryImprovement, 0.0, 1.0));
         }
     }
 }

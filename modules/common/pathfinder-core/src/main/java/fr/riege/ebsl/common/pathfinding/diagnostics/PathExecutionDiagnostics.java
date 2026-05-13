@@ -52,14 +52,6 @@ public final class PathExecutionDiagnostics {
         sink.get().setCameraPath(path);
     }
 
-    public static void setDepthPaths(List<DepthPathSnapshot> paths) {
-        sink.get().setDepthPaths(paths);
-    }
-
-    public static void clearDepthPaths() {
-        sink.get().setDepthPaths(List.of());
-    }
-
     public static void updateExecution(int cameraTargetIndex) {
         sink.get().updateExecution(cameraTargetIndex);
     }
@@ -93,14 +85,6 @@ public final class PathExecutionDiagnostics {
          * @param path the path or file path to use
          */
         default void setCameraPath(List<Vec3d> path) {
-        }
-
-        /**
-         * Updates the iterative depth path snapshots exposed to diagnostics.
-         *
-         * @param paths the depth path snapshots to expose
-         */
-        default void setDepthPaths(List<DepthPathSnapshot> paths) {
         }
 
         /**

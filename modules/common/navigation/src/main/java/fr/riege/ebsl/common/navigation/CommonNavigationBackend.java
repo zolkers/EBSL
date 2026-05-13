@@ -27,8 +27,6 @@ import fr.riege.ebsl.common.pathfinding.execution.ExecutionOptions;
 import fr.riege.ebsl.common.pathfinding.execution.ExecutionPlan;
 import fr.riege.ebsl.common.pathfinding.execution.PathExecutor;
 import fr.riege.ebsl.common.pathfinding.execution.PathRepairRequest;
-import fr.riege.ebsl.common.pathfinding.diagnostics.DepthPathSnapshot;
-import fr.riege.ebsl.common.pathfinding.diagnostics.PathExecutionDiagnostics;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
 import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
@@ -41,7 +39,6 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
-import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -68,7 +65,6 @@ public final class CommonNavigationBackend implements NavigationService {
     private final Consumer<Runnable> gameThread;
 
     private InspectablePathfinder pathfinder;
-    private InspectablePathfinder depthPathfinder;
     private final AtomicReference<PathfinderResult> lastResult = new AtomicReference<>();
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
@@ -85,10 +81,6 @@ public final class CommonNavigationBackend implements NavigationService {
     private boolean allowJump = true;
     private boolean allowFall = true;
     private boolean allowWalkDiagonal = true;
-    private int depthRequestId;
-    private PathQualityReport activeQuality = PathQualityReport.UNKNOWN;
-    private PathPlan activePlan;
-    private List<DepthPathSnapshot> depthPathSnapshots = List.of();
 
     public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
         this(world, player, physics, input, Runnable::run);
@@ -173,14 +165,9 @@ public final class CommonNavigationBackend implements NavigationService {
         onFailed = null;
         activeNodes = List.of();
         executePath = false;
-        activeQuality = PathQualityReport.UNKNOWN;
-        activePlan = null;
-        depthPathSnapshots = List.of();
         executor.stop();
-        PathExecutionDiagnostics.clearDepthPaths();
         longRangeSession.clear();
         abortActiveSearch();
-        abortDepthSearch();
     }
 
     @Override public boolean isNavigating() {
@@ -318,10 +305,6 @@ public final class CommonNavigationBackend implements NavigationService {
         this.onFinished = onFinished;
         this.activeNodes = List.of();
         this.executePath = executePath;
-        this.activeQuality = PathQualityReport.UNKNOWN;
-        this.activePlan = null;
-        this.depthPathSnapshots = List.of();
-        PathExecutionDiagnostics.clearDepthPaths();
         this.lastResult.set(null);
         navigating = true;
         currentMoveType = Node.MoveType.WALK;
@@ -362,7 +345,7 @@ public final class CommonNavigationBackend implements NavigationService {
                     startFullPathTo(start, effectiveTarget, executePath);
                     return;
                 }
-                handleWalkResult(result, config, executePath, true);
+                handleWalkResult(result, config, executePath);
             }));
     }
 
@@ -384,12 +367,11 @@ public final class CommonNavigationBackend implements NavigationService {
                     if (onFailed != null) onFailed.run();
                     return;
                 }
-                handleWalkResult(result, config, executePath, true);
+                handleWalkResult(result, config, executePath);
             }));
     }
 
-    private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config,
-                                  boolean executePath, boolean allowDepthSearch) {
+    private void handleWalkResult(PathfinderResult result, PathfinderConfiguration config, boolean executePath) {
         lastResult.set(result);
         Collection<PathPosition> positions = result != null && result.getPath() != null
             ? result.getPath().collect()
@@ -404,9 +386,6 @@ public final class CommonNavigationBackend implements NavigationService {
         ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
         PathPlan plan = PathPlan.from(result, config, positions, processed, checker);
         activeNodes = plan.navigationNodes();
-        activeQuality = plan.quality();
-        activePlan = plan;
-        publishDepthPath(1, plan, true);
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, goalX, goalY, goalZ);
         if (partial && !longRangeSession.isActive()) {
             longRangeSession.startBlockGoal(goalX, goalY, goalZ);
@@ -427,9 +406,6 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         if (executePath) {
             startExecutor(activeNodes, goalX, goalY, goalZ, !longRangeSession.shouldKeepNavigationAlive());
-            if (allowDepthSearch) {
-                queueDepthSearch(2);
-            }
         }
     }
 
@@ -488,192 +464,6 @@ public final class CommonNavigationBackend implements NavigationService {
         }
         executor.start(new ExecutionPlan(path, goalX, goalY, goalZ, preciseExecution, null,
             executionOptions, finishAtPathEnd));
-    }
-
-    private void queueDepthSearch(int depth) {
-        PathfinderSettings settings = PathfinderSettings.instance();
-        if (!settings.iterativeDepthEnabled.value()
-            || depth > settings.iterativeDepthMax.value()
-            || longRangeSession.isActive()
-            || !executePath
-            || !navigating) {
-            return;
-        }
-        abortDepthSearch();
-        Vec3d pos = player.position();
-        PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
-        PathPosition target = new PathPosition(goalX, goalY, goalZ);
-        DepthSearchMode mode = IterativeDepthPlanner.modeForDepth(depth, activePlan);
-        DepthRepairWindow repairWindow = null;
-        if (mode == DepthSearchMode.REPAIR_WEAKEST_WINDOW) {
-            repairWindow = weakestRepairWindow(activeNodes, depth);
-            if (repairWindow == null) {
-                mode = DepthSearchMode.GLOBAL;
-            } else {
-                start = activeNodes.get(repairWindow.startIndex()).position.floor();
-                target = activeNodes.get(repairWindow.endIndex()).position.floor();
-            }
-        }
-        IterativeDepthProfile profile = IterativeDepthPlanner.instantProfile(settings, depth);
-        PathfinderConfiguration config = depthConfiguration(profile);
-        InspectablePathfinder requestedPathfinder = Pathfinders.inspectableAStar(config);
-        depthPathfinder = requestedPathfinder;
-        int requestId = ++depthRequestId;
-        DepthSearchMode requestedMode = mode;
-        DepthRepairWindow requestedRepairWindow = repairWindow;
-        requestedPathfinder.findPath(start, target)
-            .whenComplete((result, throwable) -> onGameThread(() ->
-                handleDepthResult(requestId, depth, requestedMode, requestedRepairWindow,
-                    requestedPathfinder, result, throwable, config)));
-    }
-
-    private void handleDepthResult(int requestId,
-                                   int depth,
-                                   DepthSearchMode mode,
-                                   DepthRepairWindow repairWindow,
-                                   InspectablePathfinder requestedPathfinder,
-                                   PathfinderResult result,
-                                   Throwable throwable,
-                                   PathfinderConfiguration config) {
-        if (requestId != depthRequestId || depthPathfinder != requestedPathfinder || !navigating || longRangeSession.isActive()) {
-            return;
-        }
-        depthPathfinder = null;
-        if (throwable == null) {
-            applyDepthResultIfBetter(depth, mode, repairWindow, result, config);
-        }
-        if (shouldContinueDepth(depth)) {
-            queueDepthSearch(depth + 1);
-        }
-    }
-
-    private void applyDepthResultIfBetter(int depth, DepthSearchMode mode, DepthRepairWindow repairWindow,
-                                          PathfinderResult result, PathfinderConfiguration config) {
-        Collection<PathPosition> positions = result != null && result.getPath() != null
-            ? result.getPath().collect()
-            : List.of();
-        if (!PathResultClassifier.hasUsablePath(result, positions)) {
-            return;
-        }
-        ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
-        PathPlan plan = mode == DepthSearchMode.REPAIR_WEAKEST_WINDOW
-            ? repairedPlan(result, config, processed, repairWindow)
-            : PathPlan.from(result, config, positions, processed, checker);
-        if (plan == null || !plan.usable()) {
-            return;
-        }
-        boolean selected = isBetterDepthPlan(plan);
-        publishDepthPath(depth, plan, selected);
-        if (!selected) {
-            return;
-        }
-        lastResult.set(result);
-        activeNodes = plan.navigationNodes();
-        activeQuality = plan.quality();
-        activePlan = plan;
-        startExecutor(activeNodes, goalX, goalY, goalZ, true);
-    }
-
-    private boolean isBetterDepthPlan(PathPlan candidate) {
-        if (candidate == null || !candidate.usable()) {
-            return false;
-        }
-        return DepthPlanSelector.shouldReplace(
-            activeSelectionPlan(),
-            candidate,
-            IterativeDepthPlanner.requiredImprovement(PathfinderSettings.instance()),
-            checker);
-    }
-
-    private boolean shouldContinueDepth(int depth) {
-        return IterativeDepthPlanner.shouldContinue(activeQuality, PathfinderSettings.instance(), depth);
-    }
-
-    private PathPlan activeSelectionPlan() {
-        List<Node> current = executor.getState() == PathExecutor.State.WALKING
-            ? executor.getPathSnapshot()
-            : activeNodes;
-        if (current == null || current.size() < 2) {
-            return activePlan;
-        }
-        List<PathPosition> positions = current.stream().map(node -> node.position).toList();
-        PathState state = activePlan != null && activePlan.complete() ? PathState.FOUND : PathState.FALLBACK;
-        PathfinderResult result = PathfinderResults.of(state, Paths.of(positions.getFirst(), positions.getLast(), positions));
-        return PathPlan.from(
-            result,
-            activePlan != null ? activePlan.configuration() : fullConfiguration(),
-            positions,
-            new ProcessedPath(current, current, pathLength(current)),
-            checker);
-    }
-
-    private PathPlan repairedPlan(PathfinderResult result, PathfinderConfiguration config,
-                                  ProcessedPath repairPath, DepthRepairWindow repairWindow) {
-        if (repairWindow == null || repairPath == null || repairPath.navigationPath().isEmpty() || activeNodes.isEmpty()) {
-            return null;
-        }
-        ArrayList<Node> merged = new ArrayList<>();
-        appendDistinct(merged, activeNodes.subList(0, Math.min(repairWindow.startIndex() + 1, activeNodes.size())));
-        appendDistinct(merged, repairPath.navigationPath());
-        appendDistinct(merged, activeNodes.subList(Math.min(repairWindow.endIndex() + 1, activeNodes.size()), activeNodes.size()));
-        if (merged.size() < 2) {
-            return null;
-        }
-        List<PathPosition> mergedPositions = merged.stream().map(node -> node.position).toList();
-        PathState state = result.successful() ? PathState.FOUND : result.getPathState();
-        PathfinderResult mergedResult = PathfinderResults.of(
-            state,
-            Paths.of(mergedPositions.getFirst(), mergedPositions.getLast(), mergedPositions));
-        return PathPlan.from(mergedResult, config, mergedPositions, new ProcessedPath(merged, merged, pathLength(merged)), checker);
-    }
-
-    private DepthRepairWindow weakestRepairWindow(List<Node> path, int depth) {
-        if (path == null || path.size() < 5) {
-            return null;
-        }
-        int worstIndex = -1;
-        double worstScore = 0.0;
-        for (int i = 1; i + 1 < path.size(); i++) {
-            Node node = path.get(i);
-            double weakness = PathPlanQualityProfiler.weakness(node, checker);
-            if (weakness > worstScore) {
-                worstScore = weakness;
-                worstIndex = i;
-            }
-        }
-        if (worstIndex < 0 || worstScore < 0.12) {
-            return null;
-        }
-        int radius = Math.clamp(3 + depth * 2, 5, 18);
-        int startIndex = Math.max(0, worstIndex - radius);
-        int endIndex = Math.min(path.size() - 1, worstIndex + radius);
-        if (endIndex - startIndex < 3) {
-            return null;
-        }
-        return new DepthRepairWindow(startIndex, endIndex, worstScore);
-    }
-
-    private static double pathLength(List<Node> path) {
-        double length = 0.0;
-        for (int i = 1; i < path.size(); i++) {
-            length += path.get(i - 1).position.distance(path.get(i).position);
-        }
-        return length;
-    }
-
-    private void publishDepthPath(int depth, PathPlan plan, boolean selected) {
-        if (plan == null || plan.navigationNodes().isEmpty()) {
-            return;
-        }
-        ArrayList<DepthPathSnapshot> snapshots = new ArrayList<>();
-        for (DepthPathSnapshot existing : depthPathSnapshots) {
-            if (existing.depth() != depth) {
-                snapshots.add(selected ? existing.withSelected(false) : existing);
-            }
-        }
-        snapshots.add(new DepthPathSnapshot(depth, plan.navigationNodes(), plan.quality().score(), selected));
-        depthPathSnapshots = List.copyOf(snapshots);
-        PathExecutionDiagnostics.setDepthPaths(depthPathSnapshots);
     }
 
     private boolean handleLongRangeProgress(boolean walkExecutionDone) {
@@ -958,14 +748,6 @@ public final class CommonNavigationBackend implements NavigationService {
             PathfinderSettings.instance().repairCalculationTimeMs.value());
     }
 
-    private PathfinderConfiguration depthConfiguration(IterativeDepthProfile profile) {
-        return configuration(
-            profile.maxIterations(),
-            profile.maxLength(),
-            profile.maxCalculationTimeMs(),
-            profile.qualityScale());
-    }
-
     private PathfinderConfiguration queuedConfiguration(boolean speculative) {
         int maxIterations = PathfinderSettings.instance().queuedLongRangeMaxIterations.value();
         int maxLength = PathfinderSettings.instance().queuedLongRangeMaxLength.value();
@@ -1082,15 +864,6 @@ public final class CommonNavigationBackend implements NavigationService {
         pathfinder = null;
         if (active != null) {
             active.abort();
-        }
-    }
-
-    private void abortDepthSearch() {
-        InspectablePathfinder activeDepth = depthPathfinder;
-        depthPathfinder = null;
-        depthRequestId++;
-        if (activeDepth != null) {
-            activeDepth.abort();
         }
     }
 

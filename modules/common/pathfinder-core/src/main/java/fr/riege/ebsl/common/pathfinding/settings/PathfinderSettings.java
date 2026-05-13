@@ -37,20 +37,14 @@ public final class PathfinderSettings extends Settingable {
         "render_path_lines", "Render path lines", true));
     public final BooleanSetting renderCameraRail = registerSetting(new BooleanSetting(
         "render_camera_rail", "Render camera rail", true));
-    public final BooleanSetting renderDepthPaths = registerSetting(new BooleanSetting(
-        "render_depth_paths", "Render iterative depth paths", true));
     public final IntSetting renderMaxPathNodes = registerSetting(new IntSetting(
         "render_max_path_nodes", "Max rendered path nodes", 300, 1, 4000));
     public final IntSetting renderMaxCameraNodes = registerSetting(new IntSetting(
         "render_max_camera_nodes", "Max rendered camera nodes", 480, 1, 4000));
-    public final IntSetting renderMaxDepthPathNodes = registerSetting(new IntSetting(
-        "render_max_depth_path_nodes", "Max rendered depth path nodes", 360, 1, 4000));
     public final DoubleSetting renderPathLineWidth = registerSetting(new DoubleSetting(
         "render_path_line_width", "Path line width", 2.0, 0.25, 8.0));
     public final DoubleSetting renderCameraLineWidth = registerSetting(new DoubleSetting(
         "render_camera_line_width", "Camera rail line width", 1.25, 0.25, 8.0));
-    public final DoubleSetting renderDepthLineWidth = registerSetting(new DoubleSetting(
-        "render_depth_line_width", "Depth path line width", 1.35, 0.25, 8.0));
     public final EnumSetting<PathRenderColorMode> renderPathColorMode = registerSetting(new EnumSetting<>(
         "render_path_color_mode", "Path color mode", PathRenderColorMode.RAINBOW, PathRenderColorMode.class));
     public final ColorSetting renderNodeColor = registerSetting(new ColorSetting(
@@ -124,18 +118,6 @@ public final class PathfinderSettings extends Settingable {
         "quality_retry_risk_multiplier", "Quality retry risk multiplier", 1.65, 1.0, 6.0));
     public final DoubleSetting qualityRetryTerrainMultiplier = registerSetting(new DoubleSetting(
         "quality_retry_terrain_multiplier", "Quality retry terrain multiplier", 1.45, 1.0, 6.0));
-    public final BooleanSetting iterativeDepthEnabled = registerSetting(new BooleanSetting(
-        "iterative_depth_enabled", "Iterative depth", true));
-    public final IntSetting iterativeDepthMax = registerSetting(new IntSetting(
-        "iterative_depth_max", "Iterative depth max", 4, 1, 8));
-    public final DoubleSetting iterativeDepthIterationMultiplier = registerSetting(new DoubleSetting(
-        "iterative_depth_iteration_multiplier", "Depth iteration multiplier", 1.75, 1.0, 6.0));
-    public final DoubleSetting iterativeDepthTimeMultiplier = registerSetting(new DoubleSetting(
-        "iterative_depth_time_multiplier", "Depth time multiplier", 1.45, 1.0, 6.0));
-    public final DoubleSetting iterativeDepthQualityMultiplier = registerSetting(new DoubleSetting(
-        "iterative_depth_quality_multiplier", "Depth quality multiplier", 1.25, 1.0, 6.0));
-    public final DoubleSetting iterativeDepthMinImprovement = registerSetting(new DoubleSetting(
-        "iterative_depth_min_improvement", "Depth min improvement", 0.025, 0.0, 0.5));
     public final DoubleSetting cardinalWallCost = registerSetting(new DoubleSetting(
         "cardinal_wall_cost", "Cardinal wall proximity", 0.55, 0.0, 5.0));
     public final DoubleSetting diagonalWallCost = registerSetting(new DoubleSetting(
@@ -448,13 +430,7 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.qualityRetryMinScore,
             INSTANCE.qualityRetryImprovement,
             INSTANCE.qualityRetryRiskMultiplier,
-            INSTANCE.qualityRetryTerrainMultiplier,
-            INSTANCE.iterativeDepthEnabled,
-            INSTANCE.iterativeDepthMax,
-            INSTANCE.iterativeDepthIterationMultiplier,
-            INSTANCE.iterativeDepthTimeMultiplier,
-            INSTANCE.iterativeDepthQualityMultiplier,
-            INSTANCE.iterativeDepthMinImprovement);
+            INSTANCE.qualityRetryTerrainMultiplier);
     }
 
     public static List<Setting<?>> renderingSettings() {
@@ -462,13 +438,10 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.renderPathNodes,
             INSTANCE.renderPathLines,
             INSTANCE.renderCameraRail,
-            INSTANCE.renderDepthPaths,
             INSTANCE.renderMaxPathNodes,
             INSTANCE.renderMaxCameraNodes,
-            INSTANCE.renderMaxDepthPathNodes,
             INSTANCE.renderPathLineWidth,
             INSTANCE.renderCameraLineWidth,
-            INSTANCE.renderDepthLineWidth,
             INSTANCE.renderPathColorMode,
             INSTANCE.renderNodeColor,
             INSTANCE.renderGradientStartColor,

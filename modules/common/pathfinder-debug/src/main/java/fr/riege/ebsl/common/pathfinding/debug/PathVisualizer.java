@@ -23,7 +23,6 @@ package fr.riege.ebsl.common.pathfinding.debug;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.diagnostics.DepthPathSnapshot;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathExecutionDiagnostics;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
@@ -45,7 +44,6 @@ public final class PathVisualizer {
 
     private static final AtomicReference<List<Node>> currentPath = new AtomicReference<>(Collections.emptyList());
     private static final AtomicReference<List<Vec3d>> cameraPath = new AtomicReference<>(Collections.emptyList());
-    private static final AtomicReference<List<DepthPathSnapshot>> depthPaths = new AtomicReference<>(Collections.emptyList());
     private static volatile int currentCameraRailIndex = -1;
     private static double visualCameraRailProgress = -1.0;
     private static Vec3d visualCameraRailPosition;
@@ -67,10 +65,6 @@ public final class PathVisualizer {
 
             @Override public void setCameraPath(List<Vec3d> path) {
                 PathVisualizer.setCameraPath(path);
-            }
-
-            @Override public void setDepthPaths(List<DepthPathSnapshot> paths) {
-                PathVisualizer.setDepthPaths(paths);
             }
 
             @Override public void updateExecution(int cameraTargetIndex) {
@@ -97,10 +91,6 @@ public final class PathVisualizer {
             ? snapshot.get(currentCameraRailIndex)
             : null;
         lastVisualUpdateNanos = 0L;
-    }
-
-    public static void setDepthPaths(List<DepthPathSnapshot> paths) {
-        depthPaths.set(paths != null ? List.copyOf(paths) : Collections.emptyList());
     }
 
     public static boolean isEnabled() {
@@ -145,7 +135,6 @@ public final class PathVisualizer {
     public static void clear() {
         currentPath.set(Collections.emptyList());
         cameraPath.set(Collections.emptyList());
-        depthPaths.set(Collections.emptyList());
         currentCameraRailIndex = -1;
         visualCameraRailProgress = -1.0;
         visualCameraRailPosition = null;
@@ -169,7 +158,6 @@ public final class PathVisualizer {
         updateVisualCameraRail();
         return new PathVisualizerSnapshot(
             currentPath.get(),
-            depthPaths.get(),
             cameraPath.get(),
             currentCameraRailIndex,
             visualCameraRailProgress,

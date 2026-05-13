@@ -40,7 +40,6 @@ import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public final class PathPlanningService {
@@ -75,7 +74,7 @@ public final class PathPlanningService {
         Objects.requireNonNull(start, "start");
         Objects.requireNonNull(target, "target");
         PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
-        return planDepth(start, target, effectiveOptions, 1, null);
+        return planOnce(start, target, effectiveOptions);
     }
 
     private CompletionStage<PathPlan> planOnce(PathPosition start, PathPosition target, PathPlannerOptions options) {
@@ -84,22 +83,6 @@ public final class PathPlanningService {
         InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(configuration);
         return pathfinder.findPath(start.floor(), resolveTarget(target))
             .thenApply(result -> toPlan(result, configuration, options));
-    }
-
-    private CompletionStage<PathPlan> planDepth(PathPosition start, PathPosition target,
-                                                PathPlannerOptions baseOptions,
-                                                int depth,
-                                                PathPlan bestPlan) {
-        PathPlannerOptions depthOptions = depthOptions(baseOptions, depth);
-        return planOnce(start, target, depthOptions)
-            .thenCompose(candidate -> {
-                PathPlan selected = DepthPlanSelector.select(
-                    bestPlan, candidate, IterativeDepthPlanner.requiredImprovement(baseOptions));
-                if (!IterativeDepthPlanner.shouldContinue(selected, baseOptions, depth)) {
-                    return CompletableFuture.completedFuture(selected);
-                }
-                return planDepth(start, target, baseOptions, depth + 1, selected);
-            });
     }
 
     public PathPosition positionFromEntity(double x, double y, double z) {
@@ -163,10 +146,6 @@ public final class PathPlanningService {
                 ? effectiveOptions.qualityTerrainCostWeight()
                 : 0.0)
             .build();
-    }
-
-    public static PathPlannerOptions depthOptions(PathPlannerOptions options, int depth) {
-        return IterativeDepthPlanner.optionsForDepth(options, depth);
     }
 
     private PathPlan toPlan(PathfinderResult result,

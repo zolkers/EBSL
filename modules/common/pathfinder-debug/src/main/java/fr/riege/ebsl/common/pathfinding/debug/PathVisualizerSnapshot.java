@@ -23,16 +23,13 @@ package fr.riege.ebsl.common.pathfinding.debug;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.diagnostics.DepthPathSnapshot;
 
 import java.util.List;
 
-record PathVisualizerSnapshot(List<Node> path, List<DepthPathSnapshot> depthPaths,
-                              List<Vec3d> cameraPath, int cameraRailIndex,
+record PathVisualizerSnapshot(List<Node> path, List<Vec3d> cameraPath, int cameraRailIndex,
                               double cameraRailVisualProgress, Vec3d cameraRailVisualPosition) {
     PathVisualizerSnapshot {
         path = List.copyOf(path);
-        depthPaths = List.copyOf(depthPaths);
         cameraPath = List.copyOf(cameraPath);
     }
 }

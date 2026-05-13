@@ -25,7 +25,6 @@ import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class PathPlannerOptionsTest {
     @Test
@@ -40,11 +39,6 @@ final class PathPlannerOptionsTest {
             .qualityTerrainCostWeight(-3.0)
             .qualityRetryMinScore(2.0)
             .qualityRetryImprovement(-1.0)
-            .iterativeDepthMax(0)
-            .iterativeDepthIterationMultiplier(0.5)
-            .iterativeDepthTimeMultiplier(0.25)
-            .iterativeDepthQualityMultiplier(0.1)
-            .iterativeDepthMinImprovement(2.0)
             .build();
 
         assertEquals(1, options.maxIterations());
@@ -56,11 +50,6 @@ final class PathPlannerOptionsTest {
         assertEquals(0.0, options.qualityTerrainCostWeight());
         assertEquals(1.0, options.qualityRetryMinScore());
         assertEquals(0.0, options.qualityRetryImprovement());
-        assertEquals(1, options.iterativeDepthMax());
-        assertEquals(1.0, options.iterativeDepthIterationMultiplier());
-        assertEquals(1.0, options.iterativeDepthTimeMultiplier());
-        assertEquals(1.0, options.iterativeDepthQualityMultiplier());
-        assertEquals(1.0, options.iterativeDepthMinImprovement());
     }
 
     @Test
@@ -71,12 +60,6 @@ final class PathPlannerOptionsTest {
             .qualityTerrainCostWeight(0.75)
             .qualityRetryMinScore(0.66)
             .qualityRetryImprovement(0.08)
-            .iterativeDepthEnabled(true)
-            .iterativeDepthMax(5)
-            .iterativeDepthIterationMultiplier(1.8)
-            .iterativeDepthTimeMultiplier(1.4)
-            .iterativeDepthQualityMultiplier(1.2)
-            .iterativeDepthMinImprovement(0.03)
             .build();
 
         PathPlannerOptions copy = original.toBuilder().build();
@@ -86,11 +69,5 @@ final class PathPlannerOptionsTest {
         assertEquals(0.75, copy.qualityTerrainCostWeight());
         assertEquals(0.66, copy.qualityRetryMinScore());
         assertEquals(0.08, copy.qualityRetryImprovement());
-        assertTrue(copy.iterativeDepthEnabled());
-        assertEquals(5, copy.iterativeDepthMax());
-        assertEquals(1.8, copy.iterativeDepthIterationMultiplier());
-        assertEquals(1.4, copy.iterativeDepthTimeMultiplier());
-        assertEquals(1.2, copy.iterativeDepthQualityMultiplier());
-        assertEquals(0.03, copy.iterativeDepthMinImprovement());
     }
 }
