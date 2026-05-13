@@ -23,40 +23,83 @@ public final class BlockAimTargeting {
     public static BlockAimTarget nearest(EbslPlatform platform, String target, int radius, boolean requireLineOfSight) {
         IWorldLayer world = platform.world();
         BlockSelector selector = BlockSelector.parse(target);
-        Vec3d pos = platform.player().position();
-        int px = (int) Math.floor(pos.x());
-        int py = (int) Math.floor(pos.y());
-        int pz = (int) Math.floor(pos.z());
-        int searchRadius = Math.max(1, radius);
-        int radiusSquared = searchRadius * searchRadius;
-        BlockAimTarget best = null;
-        double bestDistance = Double.MAX_VALUE;
+        BlockSearch search = BlockSearch.around(platform.player().position(), radius);
+        BestAimTarget best = new BestAimTarget(null, Double.MAX_VALUE);
 
-        for (int dy = -searchRadius; dy <= searchRadius; dy++) {
-            int y = py + dy;
-            for (int dx = -searchRadius; dx <= searchRadius; dx++) {
-                int x = px + dx;
-                for (int dz = -searchRadius; dz <= searchRadius; dz++) {
-                    int distanceSquared = dx * dx + dy * dy + dz * dz;
-                    if (distanceSquared > radiusSquared) {
-                        continue;
-                    }
-                    int z = pz + dz;
-                    if (!world.isLoaded(x, y, z) || !selector.matches(world.getBlock(x, y, z))) {
-                        continue;
-                    }
-                    Vec3d aimPoint = aimPoint(platform, x, y, z, requireLineOfSight);
-                    if (aimPoint == null) {
-                        continue;
-                    }
-                    if (distanceSquared < bestDistance) {
-                        bestDistance = distanceSquared;
-                        best = new BlockAimTarget(x, y, z, aimPoint);
-                    }
-                }
+        for (int dy = -search.radius; dy <= search.radius; dy++) {
+            best = scanAimLayer(platform, world, selector, requireLineOfSight, search, dy, best);
+        }
+        return best.target;
+    }
+
+    private static BestAimTarget scanAimLayer(EbslPlatform platform,
+                                              IWorldLayer world,
+                                              BlockSelector selector,
+                                              boolean requireLineOfSight,
+                                              BlockSearch search,
+                                              int dy,
+                                              BestAimTarget best) {
+        int y = search.y + dy;
+        for (int dx = -search.radius; dx <= search.radius; dx++) {
+            int x = search.x + dx;
+            best = scanAimRow(platform, world, selector, requireLineOfSight, search, dx, dy, x, y, best);
+        }
+        return best;
+    }
+
+    private static BestAimTarget scanAimRow(EbslPlatform platform,
+                                            IWorldLayer world,
+                                            BlockSelector selector,
+                                            boolean requireLineOfSight,
+                                            BlockSearch search,
+                                            int dx,
+                                            int dy,
+                                            int x,
+                                            int y,
+                                            BestAimTarget best) {
+        for (int dz = -search.radius; dz <= search.radius; dz++) {
+            int distanceSquared = dx * dx + dy * dy + dz * dz;
+            if (distanceSquared <= search.radiusSquared) {
+                best = chooseAimTarget(platform, world, selector, requireLineOfSight, search, x, y, dz, distanceSquared, best);
             }
         }
         return best;
+    }
+
+    private static BestAimTarget chooseAimTarget(EbslPlatform platform,
+                                                 IWorldLayer world,
+                                                 BlockSelector selector,
+                                                 boolean requireLineOfSight,
+                                                 BlockSearch search,
+                                                 int x,
+                                                 int y,
+                                                 int dz,
+                                                 int distanceSquared,
+                                                 BestAimTarget best) {
+        int z = search.z + dz;
+        if (!world.isLoaded(x, y, z) || !selector.matches(world.getBlock(x, y, z))) {
+            return best;
+        }
+        Vec3d aimPoint = aimPoint(platform, x, y, z, requireLineOfSight);
+        if (aimPoint == null || distanceSquared >= best.distanceSquared) {
+            return best;
+        }
+        return new BestAimTarget(new BlockAimTarget(x, y, z, aimPoint), distanceSquared);
+    }
+
+    private record BlockSearch(int x, int y, int z, int radius, int radiusSquared) {
+        private static BlockSearch around(Vec3d pos, int radius) {
+        int searchRadius = Math.max(1, radius);
+            return new BlockSearch(
+                (int) Math.floor(pos.x()),
+                (int) Math.floor(pos.y()),
+                (int) Math.floor(pos.z()),
+                searchRadius,
+                searchRadius * searchRadius);
+        }
+    }
+
+    private record BestAimTarget(BlockAimTarget target, double distanceSquared) {
     }
 
     public static Vec3d aimPoint(EbslPlatform platform, int x, int y, int z, boolean requireLineOfSight) {
