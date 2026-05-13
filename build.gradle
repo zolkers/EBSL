@@ -1,4 +1,5 @@
 plugins {
+    id 'base'
     id 'idea'
     id 'jacoco'
     id 'org.sonarqube' version '7.3.0.8198'
@@ -93,6 +94,17 @@ def sonarCoverageExclusions = coverageClassExcludes.collect {
     'modules/**/src/main/java/' + it
         .replace('*.class', '*.java')
         .replace('.class', '.java')
+}
+
+def sonarProjectKey = 'EBSL'
+def sonarHostUrl = providers.systemProperty('sonar.host.url')
+    .orElse(providers.environmentVariable('SONAR_HOST_URL'))
+    .orElse('http://localhost:9000')
+
+def javaSourceFiles = providers.provider {
+    coverageProjects.get().collectMany { project ->
+        project.extensions.sourceSets.main.allJava.files + project.extensions.sourceSets.test.allJava.files
+    }.findAll { it.exists() }
 }
 
 tasks.register('jacocoRootReport', JacocoReport) {
@@ -198,6 +210,120 @@ tasks.register('sonarCoverageVerification') {
     }
 }
 
+tasks.register('hardcodedQualifierVerification') {
+    group = 'verification'
+    description = 'Fails when Java source uses fully-qualified class names outside package/import declarations.'
+
+    inputs.files(javaSourceFiles)
+
+    doLast {
+        def violations = []
+        def qualifierPattern = ~/\b(?:fr\.riege|java\.|javax\.|org\.|com\.|net\.|io\.)[A-Za-z0-9_$.]*/
+
+        javaSourceFiles.get().each { sourceFile ->
+            boolean inBlockComment = false
+            sourceFile.readLines('UTF-8').eachWithIndex { rawLine, index ->
+                String line = rawLine
+                StringBuilder cleaned = new StringBuilder()
+                int cursor = 0
+
+                while (cursor < line.length()) {
+                    if (inBlockComment) {
+                        int end = line.indexOf('*/', cursor)
+                        if (end < 0) {
+                            cursor = line.length()
+                        } else {
+                            cursor = end + 2
+                            inBlockComment = false
+                        }
+                    } else {
+                        int blockStart = line.indexOf('/*', cursor)
+                        int lineComment = line.indexOf('//', cursor)
+                        def commentStarts = [blockStart, lineComment].findAll { it >= 0 }
+                        int nextComment = commentStarts.isEmpty() ? -1 : commentStarts.min()
+                        int end = nextComment < 0 ? line.length() : nextComment
+                        cleaned.append(line, cursor, end)
+                        if (nextComment < 0 || nextComment == lineComment) {
+                            cursor = line.length()
+                        } else {
+                            cursor = blockStart + 2
+                            inBlockComment = true
+                        }
+                    }
+                }
+
+                String code = cleaned.toString()
+                    .replaceAll(/"(?:\\.|[^"\\])*"/, '""')
+                    .replaceAll(/'(?:\\.|[^'\\])'/, "''")
+
+                if (code ==~ /^\s*(package|import)\b.*/) {
+                    return
+                }
+
+                def matcher = code =~ qualifierPattern
+                if (matcher.find()) {
+                    violations << "${rootProject.relativePath(sourceFile)}:${index + 1}: ${matcher.group()}"
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                'Fully-qualified Java names must be imported instead of hardcoded in code:\n'
+                    + violations.join('\n')
+            )
+        }
+    }
+}
+
+tasks.register('localQuality') {
+    group = 'verification'
+    description = 'Runs local quality gates: tests, aggregate coverage, and source hygiene checks.'
+    dependsOn tasks.named('hardcodedQualifierVerification')
+    dependsOn tasks.named('jacocoCoverageVerification')
+    dependsOn tasks.named('sonarCoverageVerification')
+}
+
+tasks.register('sonarQualityGate') {
+    group = 'verification'
+    description = 'Fails when the SonarQube project quality gate is not green. Requires sonar.token or SONAR_TOKEN.'
+
+    doLast {
+        def token = providers.systemProperty('sonar.token')
+            .orElse(providers.environmentVariable('SONAR_TOKEN'))
+            .orNull
+        if (!token) {
+            throw new GradleException('sonarQualityGate requires -Dsonar.token=... or SONAR_TOKEN.')
+        }
+
+        def baseUrl = sonarHostUrl.get().replaceAll('/+$', '')
+        def endpoint = new URI(
+            "${baseUrl}/api/qualitygates/project_status?projectKey=${URLEncoder.encode(sonarProjectKey, 'UTF-8')}"
+        ).toURL()
+        def connection = endpoint.openConnection()
+        connection.setRequestProperty(
+            'Authorization',
+            'Basic ' + "${token}:".bytes.encodeBase64().toString()
+        )
+
+        if (connection.responseCode != 200) {
+            throw new GradleException("SonarQube quality gate request failed with HTTP ${connection.responseCode}.")
+        }
+
+        def payload = new groovy.json.JsonSlurper().parse(connection.inputStream)
+        def status = payload.projectStatus?.status
+        if (status != 'OK') {
+            def failed = payload.projectStatus?.conditions
+                ?.findAll { it.status != 'OK' }
+                ?.collect { "${it.metricKey}: ${it.actualValue} ${it.comparator ?: ''} ${it.errorThreshold}" }
+                ?.join('\n')
+            throw new GradleException("SonarQube quality gate is ${status}.\n${failed ?: ''}")
+        }
+
+        logger.lifecycle("SonarQube quality gate is OK for ${sonarProjectKey}.")
+    }
+}
+
 allprojects {
     apply plugin: 'idea'
 
@@ -230,7 +356,8 @@ tasks.register('buildMod121Fabric') {
 
 sonar {
     properties {
-        property 'sonar.projectKey', 'EBSL'
+        property 'sonar.host.url', sonarHostUrl.get()
+        property 'sonar.projectKey', sonarProjectKey
         property 'sonar.projectName', 'EBSL'
         property 'sonar.sourceEncoding', 'UTF-8'
         property 'sonar.sources', sonarMainSourceDirs.get()
@@ -247,4 +374,8 @@ sonar {
 
 tasks.named('sonar') {
     dependsOn tasks.named('sonarCoverageVerification')
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('localQuality')
 }
