@@ -39,11 +39,9 @@ import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
-import fr.riege.ebsl.common.pathfinding.quality.MovementRiskScorer;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityReport;
-import fr.riege.ebsl.common.pathfinding.quality.TerrainOpportunityScorer;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -583,7 +581,8 @@ public final class CommonNavigationBackend implements NavigationService {
         return DepthPlanSelector.shouldReplace(
             activePlan,
             candidate,
-            IterativeDepthPlanner.requiredImprovement(PathfinderSettings.instance()));
+            IterativeDepthPlanner.requiredImprovement(PathfinderSettings.instance()),
+            checker);
     }
 
     private boolean shouldContinueDepth(int depth) {
@@ -618,9 +617,7 @@ public final class CommonNavigationBackend implements NavigationService {
         double worstScore = 0.0;
         for (int i = 1; i + 1 < path.size(); i++) {
             Node node = path.get(i);
-            double movementWeakness = MovementRiskScorer.risk(node.moveType());
-            double terrainWeakness = 1.0 - TerrainOpportunityScorer.scorePosition(checker, node.position);
-            double weakness = movementWeakness * 0.72 + terrainWeakness * 0.28;
+            double weakness = PathPlanQualityProfiler.weakness(node, checker);
             if (weakness > worstScore) {
                 worstScore = weakness;
                 worstIndex = i;

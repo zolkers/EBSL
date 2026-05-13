@@ -127,6 +127,22 @@ final class PathPlanningServiceTest {
     }
 
     @Test
+    void depthSelectorAllowsLocalTakeoverWhenWorstSegmentImproves() {
+        PathPlan risky = plan(PathState.FOUND, 0.62, Node.MoveType.PARKOUR);
+        PathPlan safer = plan(PathState.FOUND, 0.62, Node.MoveType.WALK);
+
+        assertSame(safer, DepthPlanSelector.select(risky, safer, 0.08));
+    }
+
+    @Test
+    void depthSelectorRejectsLocalTakeoverWhenOverallRegressionIsTooLarge() {
+        PathPlan risky = plan(PathState.FOUND, 0.90, Node.MoveType.PARKOUR);
+        PathPlan saferButBad = plan(PathState.FOUND, 0.60, Node.MoveType.WALK);
+
+        assertSame(risky, DepthPlanSelector.select(risky, saferButBad, 0.04));
+    }
+
+    @Test
     void iterativeDepthContinuesPastAcceptableFirstPlanWhenRetryModeIsEnabled() {
         PathPlannerOptions options = PathPlannerOptions.builder()
             .iterativeDepthEnabled(true)
@@ -149,12 +165,17 @@ final class PathPlanningServiceTest {
     }
 
     private static PathPlan plan(PathState state, double score) {
+        return plan(state, score, Node.MoveType.WALK);
+    }
+
+    private static PathPlan plan(PathState state, double score, Node.MoveType moveType) {
         List<PathPosition> positions = List.of(
             new PathPosition(0, 64, 0),
             new PathPosition(1, 64, 0)
         );
         PathfinderResult result = PathfinderResults.of(state, Paths.of(positions.getFirst(), positions.getLast(), positions));
         List<Node> nodes = positions.stream().map(Node::new).toList();
+        nodes.getLast().setMoveType(moveType);
         return new PathPlan(
             result,
             PathfinderConfiguration.DEFAULT,

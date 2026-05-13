@@ -21,11 +21,21 @@
 
 package fr.riege.ebsl.common.navigation;
 
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
+
 final class DepthPlanSelector {
+    private static final double MIN_WORST_SEGMENT_IMPROVEMENT = 0.08;
+    private static final double MIN_WEAK_AVERAGE_IMPROVEMENT = 0.05;
+    private static final double MAX_LOCAL_TAKEOVER_SCORE_REGRESSION = 0.08;
+
     private DepthPlanSelector() {
     }
 
     static PathPlan select(PathPlan primary, PathPlan candidate, double requiredImprovement) {
+        return select(primary, candidate, requiredImprovement, null);
+    }
+
+    static PathPlan select(PathPlan primary, PathPlan candidate, double requiredImprovement, MovementTerrain checker) {
         if (!isUsable(candidate)) {
             return primary;
         }
@@ -38,12 +48,38 @@ final class DepthPlanSelector {
         if (!primary.complete() && candidate.complete()) {
             return candidate;
         }
-        double improvement = candidate.quality().score() - primary.quality().score();
-        return improvement >= Math.clamp(requiredImprovement, 0.0, 1.0) ? candidate : primary;
+        PathPlanQualityProfile primaryProfile = PathPlanQualityProfiler.profile(primary, checker);
+        PathPlanQualityProfile candidateProfile = PathPlanQualityProfiler.profile(candidate, checker);
+        return shouldTakeOver(primaryProfile, candidateProfile, requiredImprovement) ? candidate : primary;
     }
 
     static boolean shouldReplace(PathPlan primary, PathPlan candidate, double requiredImprovement) {
-        return select(primary, candidate, requiredImprovement) == candidate;
+        return shouldReplace(primary, candidate, requiredImprovement, null);
+    }
+
+    static boolean shouldReplace(PathPlan primary, PathPlan candidate, double requiredImprovement, MovementTerrain checker) {
+        return select(primary, candidate, requiredImprovement, checker) == candidate;
+    }
+
+    private static boolean shouldTakeOver(PathPlanQualityProfile primary,
+                                          PathPlanQualityProfile candidate,
+                                          double requiredImprovement) {
+        double clampedRequired = Math.clamp(requiredImprovement, 0.0, 1.0);
+        double scoreImprovement = candidate.overallScore() - primary.overallScore();
+        if (scoreImprovement >= clampedRequired) {
+            return true;
+        }
+        double allowedRegression = Math.max(MAX_LOCAL_TAKEOVER_SCORE_REGRESSION, clampedRequired);
+        if (candidate.overallScore() + allowedRegression < primary.overallScore()) {
+            return false;
+        }
+        double worstImprovement = primary.worstWeakness() - candidate.worstWeakness();
+        if (worstImprovement >= MIN_WORST_SEGMENT_IMPROVEMENT) {
+            return true;
+        }
+        double weakAverageImprovement = primary.weakSegmentAverage() - candidate.weakSegmentAverage();
+        return weakAverageImprovement >= MIN_WEAK_AVERAGE_IMPROVEMENT
+            && scoreImprovement >= -allowedRegression * 0.5;
     }
 
     private static boolean isUsable(PathPlan plan) {
