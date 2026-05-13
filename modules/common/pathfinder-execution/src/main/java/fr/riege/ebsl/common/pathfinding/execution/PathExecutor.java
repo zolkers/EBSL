@@ -166,10 +166,7 @@ public final class PathExecutor {
     }
 
     public void tick() {
-        if (state != State.WALKING && state != State.REPLANNING) return;
-        if (state == State.REPLANNING) return;
-        if (!player.isAlive()) {
-            stop();
+        if (!canTickMovement()) {
             return;
         }
         if (pauseForBlockingClientState()) return;
@@ -222,24 +219,12 @@ public final class PathExecutor {
         PathRecoveryController.RecoveryDecision recovery = recoveryController.update(
             player,
             input,
-                progress,
+            progress,
             allowReplan,
             now - lastReplanTime > PathfinderSettings.instance().replanCooldownMs.value(),
             jumpCooldown,
             recoveryMoveType(path, pathTracker.getPursuitSegment()));
-        if (recovery.noteProgress()) pathTracker.noteMovementProgress(playerPos, 0.0);
-        if (recovery.action() == PathRecoveryController.Action.REPLAN_FROM_PLAYER) {
-            triggerReplan(true);
-            return;
-        }
-        if (recovery.action() == PathRecoveryController.Action.REPAIR_TO_SEGMENT) {
-            triggerRepair(chooseLocalRepairSegment(proximity), recovery.reason());
-            return;
-        }
-        if (recovery.action() == PathRecoveryController.Action.TICK_HANDLED) return;
-        if (recovery.action() == PathRecoveryController.Action.ALIGN_TO_PATH) {
-            Vec3d correction = pathTracker.computeCorrectionToPath(playerPos, proximity);
-            InputApplier.applyCornerAlignment(player, input, correction.x(), correction.z());
+        if (handleRecoveryDecision(playerPos, proximity, recovery)) {
             return;
         }
         boolean recoveryJump = recovery.action() == PathRecoveryController.Action.RECOVERY_JUMP;
@@ -264,6 +249,45 @@ public final class PathExecutor {
                 pathTracker.getPursuitSegment(), jumpCooldown, pathTracker.getLastProgressTime());
         }
         input.setSneakDown(allowSneak && sneakLatched && !player.isInWater());
+    }
+
+    private boolean canTickMovement() {
+        if (state != State.WALKING && state != State.REPLANNING) {
+            return false;
+        }
+        if (state == State.REPLANNING) {
+            return false;
+        }
+        if (!player.isAlive()) {
+            stop();
+            return false;
+        }
+        return true;
+    }
+
+    private boolean handleRecoveryDecision(Vec3d playerPos,
+                                           PathProximitySnapshot proximity,
+                                           PathRecoveryController.RecoveryDecision recovery) {
+        if (recovery.noteProgress()) {
+            pathTracker.noteMovementProgress(playerPos, 0.0);
+        }
+        return switch (recovery.action()) {
+            case REPLAN_FROM_PLAYER -> {
+                triggerReplan(true);
+                yield true;
+            }
+            case REPAIR_TO_SEGMENT -> {
+                triggerRepair(chooseLocalRepairSegment(proximity), recovery.reason());
+                yield true;
+            }
+            case TICK_HANDLED -> true;
+            case ALIGN_TO_PATH -> {
+                Vec3d correction = pathTracker.computeCorrectionToPath(playerPos, proximity);
+                InputApplier.applyCornerAlignment(player, input, correction.x(), correction.z());
+                yield true;
+            }
+            default -> false;
+        };
     }
 
     public void stop() {

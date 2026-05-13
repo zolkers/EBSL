@@ -164,28 +164,34 @@ public class McWorldLayer implements IWorldLayer {
 
     private static boolean isPassable(Level level, int x, int y, int z) {
         BlockState state = state(level, x, y, z);
-        if (state.isAir()) return true;
+        if (state.isAir()) {
+            return true;
+        }
         Block block = state.getBlock();
-        if (block instanceof BushBlock) return true;
-        if (block instanceof TallGrassBlock) return true;
-        if (block instanceof FlowerBlock) return true;
-        if (block instanceof DoublePlantBlock) return true;
-        if (block instanceof TorchBlock) return true;
-        if (block instanceof WallTorchBlock) return true;
-        if (block instanceof LiquidBlock) return true;
-        if (block instanceof SignBlock) return true;
-        if (block instanceof BannerBlock) return true;
-        if (block instanceof WallBannerBlock) return true;
-        if (block instanceof CarpetBlock) return true;
-        if (block instanceof BasePressurePlateBlock) return true;
-        if (block instanceof BaseRailBlock) return true;
-        if (block == Blocks.SNOW) return true;
-        if (block instanceof ButtonBlock) return true;
-        if (block instanceof VineBlock) return true;
-        if (block instanceof LadderBlock) return true;
-        if (state.is(BlockTags.TRAPDOORS)) return true;
+        if (isKnownPassableBlock(block) || block == Blocks.SNOW || state.is(BlockTags.TRAPDOORS)) {
+            return true;
+        }
 
         VoxelShape shape = state.getCollisionShape(level, new BlockPos(x, y, z), CollisionContext.empty());
         return shape.isEmpty();
+    }
+
+    private static boolean isKnownPassableBlock(Block block) {
+        return block instanceof BushBlock
+            || block instanceof TallGrassBlock
+            || block instanceof FlowerBlock
+            || block instanceof DoublePlantBlock
+            || block instanceof TorchBlock
+            || block instanceof WallTorchBlock
+            || block instanceof LiquidBlock
+            || block instanceof SignBlock
+            || block instanceof BannerBlock
+            || block instanceof WallBannerBlock
+            || block instanceof CarpetBlock
+            || block instanceof BasePressurePlateBlock
+            || block instanceof BaseRailBlock
+            || block instanceof ButtonBlock
+            || block instanceof VineBlock
+            || block instanceof LadderBlock;
     }
 }
