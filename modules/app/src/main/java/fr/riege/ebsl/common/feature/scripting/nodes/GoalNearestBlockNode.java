@@ -26,6 +26,7 @@ public final class GoalNearestBlockNode extends NavigationNode {
     }
 
     @Override
+    @SuppressWarnings("java:S3516")
     public int start(EbslNodeInvocation invocation) {
         if (invocation.args().isEmpty()) {
             return 0;

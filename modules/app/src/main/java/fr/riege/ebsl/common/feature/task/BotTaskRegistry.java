@@ -78,7 +78,9 @@ public final class BotTaskRegistry {
         task.onSettingChanged(setting);
     }
 
-    public static void saveSettings() {}
+    public static void saveSettings() {
+        // Settings are currently owned by each task instance; registry persistence is intentionally inert.
+    }
 
     public static void notifySettingChanged(BotTask task, Setting<?> setting) {
         onSettingChanged(task, setting);

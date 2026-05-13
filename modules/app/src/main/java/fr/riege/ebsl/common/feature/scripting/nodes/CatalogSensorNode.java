@@ -21,6 +21,7 @@ public final class CatalogSensorNode extends AbstractEbslNode {
     }
 
     @Override
+    @SuppressWarnings("java:S3516")
     public int start(EbslNodeInvocation invocation) {
         if (invocation.args().isEmpty()) {
             return 0;

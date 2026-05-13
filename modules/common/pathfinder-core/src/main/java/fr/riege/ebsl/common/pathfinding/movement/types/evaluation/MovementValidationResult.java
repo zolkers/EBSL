@@ -1,10 +1,10 @@
 package fr.riege.ebsl.common.pathfinding.movement.types.evaluation;
 
 public record MovementValidationResult(boolean valid, String reason) {
-    private static final MovementValidationResult VALID = new MovementValidationResult(true, "");
+    private static final MovementValidationResult OK_RESULT = new MovementValidationResult(true, "");
 
     public static MovementValidationResult ok() {
-        return VALID;
+        return OK_RESULT;
     }
 
     public static MovementValidationResult invalid(String reason) {

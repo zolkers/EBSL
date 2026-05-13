@@ -20,9 +20,6 @@ import java.util.function.Consumer;
 
 @EbslApiSurface(EbslApiSurface.Domain.RUNTIME)
 public final class RuntimeApi {
-    public RuntimeApi() {
-    }
-
     @EbslApiOperation("Create a mutable headless world.")
     public HeadlessWorldLayer headlessWorld() {
         return new HeadlessWorldLayer();

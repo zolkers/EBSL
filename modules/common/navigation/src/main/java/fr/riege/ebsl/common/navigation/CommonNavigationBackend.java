@@ -199,6 +199,7 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     @Override public void renderWorld() {
+        // World rendering is supplied by platform integrations when available.
     }
 
     @Override public void tick() {

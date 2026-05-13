@@ -10,9 +10,6 @@ import fr.riege.ebsl.common.platform.service.NavigationService;
 
 @EbslApiSurface(EbslApiSurface.Domain.NAVIGATION)
 public final class NavigationApi {
-    public NavigationApi() {
-    }
-
     @EbslApiOperation("Read the current navigation service.")
     public NavigationService service() {
         return EbslServices.navigation();

@@ -12,9 +12,6 @@ import java.util.Collection;
 
 @EbslApiSurface(EbslApiSurface.Domain.MODULES)
 public final class ModulesApi {
-    public ModulesApi() {
-    }
-
     @EbslApiOperation("Read all registered pathfinder modules.")
     public Collection<PathfinderModule> all() {
         return BotModuleRegistry.modules();

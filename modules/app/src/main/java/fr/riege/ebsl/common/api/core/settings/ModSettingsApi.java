@@ -7,9 +7,6 @@ import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 public final class ModSettingsApi {
     private final PathfindingSettingsApi pathfinding = new PathfindingSettingsApi();
 
-    public ModSettingsApi() {
-    }
-
     @EbslApiOperation("Access pathfinding settings.")
     public PathfindingSettingsApi pathfinding() {
         return pathfinding;

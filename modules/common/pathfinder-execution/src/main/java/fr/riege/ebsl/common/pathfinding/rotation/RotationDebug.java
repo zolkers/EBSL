@@ -5,5 +5,6 @@ public final class RotationDebug {
     }
 
     public static void log(String tag, String message, Object... args) {
+        // Rotation debug logging is disabled in the shared execution module.
     }
 }

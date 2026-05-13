@@ -21,6 +21,9 @@ public final class EbslScriptManager {
         start
         message "EBSL ready"
         """;
+    private static final String JSON_CONNECTIONS = "connections";
+    private static final String JSON_LABEL = "label";
+    private static final String JSON_POSITIONS = "positions";
 
     private final IStorageLayer storage;
 
@@ -109,7 +112,7 @@ public final class EbslScriptManager {
             node.addProperty("y", entry.getValue().y());
             positions.add(entry.getKey(), node);
         }
-        root.add("positions", positions);
+        root.add(JSON_POSITIONS, positions);
         JsonArray connections = new JsonArray();
         for (EbslGraphConnection connection : document.connections()) {
             JsonObject edge = new JsonObject();
@@ -118,19 +121,19 @@ public final class EbslScriptManager {
             edge.addProperty("to", connection.toKey());
             edge.addProperty("mode", connection.mode().id());
             if (!connection.label().isBlank()) {
-                edge.addProperty("label", connection.label());
+                edge.addProperty(JSON_LABEL, connection.label());
             }
             connections.add(edge);
         }
-        root.add("connections", connections);
+        root.add(JSON_CONNECTIONS, connections);
         storage.saveText(graphLayoutPath(fileName), root.toString());
     }
 
     private EbslGraphDocument parseGraphDocument(String json) {
         try {
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-            JsonObject positionRoot = root.has("positions") && root.get("positions").isJsonObject()
-                ? root.getAsJsonObject("positions")
+            JsonObject positionRoot = root.has(JSON_POSITIONS) && root.get(JSON_POSITIONS).isJsonObject()
+                ? root.getAsJsonObject(JSON_POSITIONS)
                 : root;
             return new EbslGraphDocument(parseGraphPositions(positionRoot), parseGraphConnections(root));
         } catch (RuntimeException exception) {
@@ -160,11 +163,11 @@ public final class EbslScriptManager {
     }
 
     private List<EbslGraphConnection> parseGraphConnections(JsonObject root) {
-        if (!root.has("connections") || !root.get("connections").isJsonArray()) {
+        if (!root.has(JSON_CONNECTIONS) || !root.get(JSON_CONNECTIONS).isJsonArray()) {
             return List.of();
         }
         List<EbslGraphConnection> connections = new ArrayList<>();
-        for (JsonElement element : root.getAsJsonArray("connections")) {
+        for (JsonElement element : root.getAsJsonArray(JSON_CONNECTIONS)) {
             if (!element.isJsonObject()) {
                 continue;
             }
@@ -178,7 +181,7 @@ public final class EbslScriptManager {
             EbslGraphConnectionMode mode = edge.has("mode")
                 ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
                 : EbslGraphConnectionMode.FLOW;
-            String label = edge.has("label") ? edge.get("label").getAsString() : "";
+            String label = edge.has(JSON_LABEL) ? edge.get(JSON_LABEL).getAsString() : "";
             if (!from.isBlank() && !to.isBlank() && !from.equals(to)) {
                 connections.add(new EbslGraphConnection(id, from, to, mode, label));
             }

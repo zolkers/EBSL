@@ -14,9 +14,6 @@ import java.util.concurrent.CompletionStage;
 
 @EbslApiSurface(EbslApiSurface.Domain.PATHFINDING)
 public final class PathfindingApi {
-    public PathfindingApi() {
-    }
-
     @EbslApiOperation("Read a pathfinding snapshot from the active navigation service.")
     public PathfindingSnapshot snapshot() {
         NavigationSnapshot snapshot = EbslApi.navigation().snapshot();

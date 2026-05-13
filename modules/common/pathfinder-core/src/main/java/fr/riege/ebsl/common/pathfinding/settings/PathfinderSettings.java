@@ -606,6 +606,6 @@ public final class PathfinderSettings extends Settingable {
     }
 
     public static void save() {
-        
+        // Settings persistence is handled by the hosting application layer.
     }
 }

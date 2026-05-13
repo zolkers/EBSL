@@ -12,9 +12,6 @@ import java.util.List;
 
 @EbslApiSurface(EbslApiSurface.Domain.THREADING)
 public final class ThreadingApi {
-    public ThreadingApi() {
-    }
-
     @EbslApiOperation("Read supported EBSL thread domains.")
     public EbslThreadDomain[] domains() {
         return EbslThreadDomain.values();

@@ -16,6 +16,11 @@ public record EbslNodeTemplate(
     String argsHint,
     String sampleArgs
 ) {
+    private static final String GOAL_PREFIX = "goal_";
+    private static final String SENSOR_PREFIX = "sensor_";
+    private static final String DURATION_ARG = "duration";
+    private static final String ITEMS_SAMPLE = "items";
+
     public String sampleLine() {
         return sampleArgs.isBlank() ? command() : command() + " " + sampleArgs;
     }
@@ -41,7 +46,7 @@ public record EbslNodeTemplate(
     }
 
     public static EbslNodeTemplate of(EbslNode node) {
-        if (node.id().startsWith("sensor_")) {
+        if (node.id().startsWith(SENSOR_PREFIX)) {
             return dynamic(node);
         }
         EbslNodeType type = typeOrNull(node.id());
@@ -66,7 +71,7 @@ public record EbslNodeTemplate(
             case START_CHAIN -> template(type, "Start Chain", "Entry point for a script branch.", "", "");
             case EVENT_FUNCTION -> template(type, "Function", "Define a reusable script block.", "name block", "main {\n}");
             case EVENT_CALL -> template(type, "Call Function", "Call a reusable script block.", "function", "main");
-            case WAIT -> template(type, "Wait", "Pause the chain for a duration.", "duration", "1s");
+            case WAIT -> template(type, "Wait", "Pause the chain for a duration.", DURATION_ARG, "1s");
             case CONTROL_IF -> template(type, "If", "Run a block when a condition is true.", "condition block", "true {\n}");
             case CONTROL_IF_ELSE -> template(type, "If Else", "Run one of two blocks from a condition.", "condition then else", "true {\n} else {\n}");
             case CONTROL_REPEAT -> template(type, "Repeat", "Run a block a fixed number of times.", "count block", "3 {\n}");
@@ -80,13 +85,13 @@ public record EbslNodeTemplate(
             case TRAVEL -> template(type, "Travel", "Travel toward a world target.", "x y z", "0 64 0");
             case COME -> template(type, "Come", "Ask the bot to come to the player.", "", "");
             case SPACE_MOB -> template(type, "Space Mob", "Use the SpaceMob task from a script node.", "on|off [name] [distance] [tolerance] [radius] [track]", "on closest 3 0.35 32 track");
-            case AIM_AT -> template(type, "Aim At", "Smoothly aim at world coordinates.", "x y z [duration]", "0 64 0 8t");
-            case AIM_AT_BLOCK -> template(type, "Aim At Block", "Find and aim at the nearest matching loaded block.", "block_id [search_radius] [duration]", "minecraft:oak_leaves 32 10t");
-            case WALK -> template(type, "Walk", "Hold movement forward for a duration.", "duration", "1s");
-            case JUMP -> template(type, "Jump", "Press jump for a duration.", "duration", "2t");
-            case CRAWL -> template(type, "Crawl", "Hold crawl/sneak-style movement.", "duration", "1s");
-            case CROUCH -> template(type, "Crouch", "Hold crouch for a duration.", "duration", "1s");
-            case SPRINT -> template(type, "Sprint", "Hold sprint for a duration.", "duration", "1s");
+            case AIM_AT -> template(type, "Aim At", "Smoothly aim at world coordinates.", "x y z [" + DURATION_ARG + "]", "0 64 0 8t");
+            case AIM_AT_BLOCK -> template(type, "Aim At Block", "Find and aim at the nearest matching loaded block.", "block_id [search_radius] [" + DURATION_ARG + "]", "minecraft:oak_leaves 32 10t");
+            case WALK -> template(type, "Walk", "Hold movement forward for a duration.", DURATION_ARG, "1s");
+            case JUMP -> template(type, "Jump", "Press jump for a duration.", DURATION_ARG, "2t");
+            case CRAWL -> template(type, "Crawl", "Hold crawl/sneak-style movement.", DURATION_ARG, "1s");
+            case CROUCH -> template(type, "Crouch", "Hold crouch for a duration.", DURATION_ARG, "1s");
+            case SPRINT -> template(type, "Sprint", "Hold sprint for a duration.", DURATION_ARG, "1s");
             case PRESS_KEY -> template(type, "Press Key", "Press a named input key.", "key duration", "jump 2t");
             case LOOK -> template(type, "Look", "Rotate view toward a direction/target.", "args", "");
             case BREAK -> template(type, "Break", "Hold attack/break input.", "duration", "2t");
@@ -97,13 +102,13 @@ public record EbslNodeTemplate(
             case PLACE_HAND -> template(type, "Place Hand", "Place using current hand.", "duration", "2t");
             case SET_VARIABLE -> template(type, "Set Variable", "Assign a variable.", "name value", "wood minecraft:oak_log");
             case CHANGE_VARIABLE -> template(type, "Change Variable", "Add a delta to a variable.", "name delta", "value 1");
-            case CREATE_LIST -> template(type, "Create List", "Create an empty list variable.", "name", "items");
-            case ADD_TO_LIST -> template(type, "Add To List", "Append a value to a list.", "list value", "items stone");
-            case REMOVE_FIRST_FROM_LIST -> template(type, "Remove First", "Remove the first list value.", "list", "items");
-            case REMOVE_LAST_FROM_LIST -> template(type, "Remove Last", "Remove the last list value.", "list", "items");
-            case REMOVE_LIST_ITEM -> template(type, "Remove Item", "Remove an indexed list value.", "list index", "items 0");
-            case LIST_ITEM -> template(type, "List Item", "Read an indexed list item.", "variable list index", "item items 0");
-            case LIST_LENGTH -> template(type, "List Length", "Read a list length.", "variable list", "length items");
+            case CREATE_LIST -> template(type, "Create List", "Create an empty list variable.", "name", ITEMS_SAMPLE);
+            case ADD_TO_LIST -> template(type, "Add To List", "Append a value to a list.", "list value", ITEMS_SAMPLE + " stone");
+            case REMOVE_FIRST_FROM_LIST -> template(type, "Remove First", "Remove the first list value.", "list", ITEMS_SAMPLE);
+            case REMOVE_LAST_FROM_LIST -> template(type, "Remove Last", "Remove the last list value.", "list", ITEMS_SAMPLE);
+            case REMOVE_LIST_ITEM -> template(type, "Remove Item", "Remove an indexed list value.", "list index", ITEMS_SAMPLE + " 0");
+            case LIST_ITEM -> template(type, "List Item", "Read an indexed list item.", "variable list index", "item " + ITEMS_SAMPLE + " 0");
+            case LIST_LENGTH -> template(type, "List Length", "Read a list length.", "variable list", "length " + ITEMS_SAMPLE);
             case OPERATOR_RANDOM -> template(type, "Random", "Generate a random numeric value.", "variable min max", "random 0 10");
             case OPERATOR_MOD -> template(type, "Modulo", "Compute modulo.", "variable left right", "result 10 2");
             case STOP -> template(type, "Stop", "Stop player/path action.", "", "");
@@ -151,30 +156,30 @@ public record EbslNodeTemplate(
     }
 
     private static EbslNodeCategory dynamicCategory(String command) {
-        if (command.startsWith("goal_")) {
+        if (command.startsWith(GOAL_PREFIX)) {
             return EbslNodeCategory.WORLD;
         }
-        if (command.startsWith("sensor_")) {
+        if (command.startsWith(SENSOR_PREFIX)) {
             return EbslNodeCategory.SENSOR;
         }
         return EbslNodeCategory.UTILITY;
     }
 
     private static String dynamicTitle(String command) {
-        if (command.startsWith("goal_")) {
-            return prettify(command.substring("goal_".length()));
+        if (command.startsWith(GOAL_PREFIX)) {
+            return prettify(command.substring(GOAL_PREFIX.length()));
         }
-        if (command.startsWith("sensor_")) {
-            return prettify(command.substring("sensor_".length()));
+        if (command.startsWith(SENSOR_PREFIX)) {
+            return prettify(command.substring(SENSOR_PREFIX.length()));
         }
         return prettify(command);
     }
 
     private static String dynamicDescription(String command, EbslNodeCategory category) {
-        if (command.startsWith("goal_")) {
+        if (command.startsWith(GOAL_PREFIX)) {
             return "Registered pathfinding goal.";
         }
-        if (command.startsWith("sensor_")) {
+        if (command.startsWith(SENSOR_PREFIX)) {
             return "Read a sensor into a script variable.";
         }
         return category.id() + " node.";

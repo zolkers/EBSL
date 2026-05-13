@@ -13,12 +13,6 @@ public record HeadlessBlockState(
 ) {
     public static final HeadlessBlockState AIR = new HeadlessBlockState(BlockId.AIR, false, false, false, false, false, 0.0);
     public static final HeadlessBlockState STONE = solid(BlockId.of("minecraft:stone"));
-    public static final HeadlessBlockState WATER = new HeadlessBlockState(BlockId.of("minecraft:water"), false, true, false, false, false, 0.0);
-    public static final HeadlessBlockState LAVA = new HeadlessBlockState(BlockId.of("minecraft:lava"), false, false, true, true, false, 0.0);
-
-    public static HeadlessBlockState air() {
-        return AIR;
-    }
 
     public static HeadlessBlockState solid(BlockId id) {
         return new HeadlessBlockState(id, true, false, false, false, false, 1.0);

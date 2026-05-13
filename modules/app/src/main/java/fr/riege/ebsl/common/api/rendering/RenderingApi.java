@@ -13,9 +13,6 @@ import java.util.List;
 
 @EbslApiSurface(EbslApiSurface.Domain.RENDERING)
 public final class RenderingApi {
-    public RenderingApi() {
-    }
-
     @EbslApiOperation("Create a render batch builder for world-space debug rendering.")
     public RenderBatch.Builder batch(String id) {
         return RenderBatch.builder(id);

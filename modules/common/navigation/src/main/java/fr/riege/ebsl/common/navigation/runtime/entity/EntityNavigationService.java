@@ -100,6 +100,7 @@ public class EntityNavigationService implements NavigationService {
     }
 
     @Override public void setWalkSneakLatched(boolean value) {
+        // Entity navigation has no physical sneak key to latch.
     }
 
     @Override public NavigationStatus pathStatus() {

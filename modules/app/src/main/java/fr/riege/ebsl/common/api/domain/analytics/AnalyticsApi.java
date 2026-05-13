@@ -12,9 +12,6 @@ import java.util.List;
 
 @EbslApiSurface(EbslApiSurface.Domain.ANALYTICS)
 public final class AnalyticsApi {
-    public AnalyticsApi() {
-    }
-
     @EbslApiOperation("Record a UI or module analytics event.")
     public void record(String source, String message) {
         AnalyticsEventLog.recordAnalytics(source, message);

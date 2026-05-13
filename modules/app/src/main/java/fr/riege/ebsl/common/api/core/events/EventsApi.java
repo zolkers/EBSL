@@ -11,9 +11,6 @@ import java.util.List;
 
 @EbslApiSurface(EbslApiSurface.Domain.EVENTS)
 public final class EventsApi {
-    public EventsApi() {
-    }
-
     @EbslApiOperation("Read the active platform event bus.")
     public IEventBus bus() {
         return EbslServices.platform().events();
