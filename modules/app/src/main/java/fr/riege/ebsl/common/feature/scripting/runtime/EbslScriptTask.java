@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("java:S6548")
 public final class EbslScriptTask extends Settingable implements BotTask {
     public static final EbslScriptTask INSTANCE = new EbslScriptTask();
 

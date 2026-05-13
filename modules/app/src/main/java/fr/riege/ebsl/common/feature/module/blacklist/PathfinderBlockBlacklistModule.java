@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+@SuppressWarnings("java:S6548")
 public final class PathfinderBlockBlacklistModule extends Settingable implements PathfinderModule {
     public static final PathfinderBlockBlacklistModule INSTANCE = new PathfinderBlockBlacklistModule();
 

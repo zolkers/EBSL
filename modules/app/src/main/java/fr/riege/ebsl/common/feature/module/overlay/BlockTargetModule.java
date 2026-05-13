@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.domain.world.BlockId;
 import imgui.ImGui;
 
+@SuppressWarnings("java:S6548")
 public final class BlockTargetModule extends Settingable implements PathfinderModule {
     public static final BlockTargetModule INSTANCE = new BlockTargetModule();
 

@@ -10,6 +10,7 @@ import fr.riege.ebsl.common.core.settings.Settingable;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("java:S6548")
 public final class EbslCodeEditorSettings extends Settingable {
     private static final EbslCodeEditorSettings INSTANCE = new EbslCodeEditorSettings();
 

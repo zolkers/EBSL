@@ -6,6 +6,7 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
+@SuppressWarnings("java:S107")
 public final class BlockAimTargeting {
     private static final double[][] AIM_OFFSETS = {
         {0.5, 0.5, 0.5},

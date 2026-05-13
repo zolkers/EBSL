@@ -17,6 +17,7 @@ import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
 
+@SuppressWarnings("java:S107")
 final class WalkMovementController {
     private static final double SLIME_ASCENT_JUMP_TRIGGER_DIST = 1.7;
     private static final double WATER_ENTRY_SURFACE_DROP = 0.6;

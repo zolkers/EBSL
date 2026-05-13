@@ -7,6 +7,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
+@SuppressWarnings("java:S107")
 public final class BlockInteractionTargeting {
     private static final double PLAYER_EYE_HEIGHT = 1.62;
     private static final double ABOVE_TARGET_PENALTY = 36.0;

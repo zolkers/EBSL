@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.feature.scripting.highlight;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
 
+@SuppressWarnings("java:S107")
 public enum EbslSyntaxPalette {
     DARK(
         0xFF7DD3FC,

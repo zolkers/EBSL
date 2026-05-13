@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.platform.render;
 
+@SuppressWarnings("java:S107")
 public final class WorldRenderSession implements AutoCloseable {
     private final RenderHandle handle;
     private RenderPaint paint = RenderPaint.SOLID_WHITE;

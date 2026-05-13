@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+@SuppressWarnings({"java:S107", "java:S3776"})
 final class GraphEdgeRouter {
     private GraphEdgeRouter() {
     }

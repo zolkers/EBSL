@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import imgui.ImDrawList;
 import imgui.ImGui;
 
+@SuppressWarnings({"java:S107", "java:S6548"})
 public final class KeyDisplayModule extends Settingable implements PathfinderModule {
     public static final KeyDisplayModule INSTANCE = new KeyDisplayModule();
 

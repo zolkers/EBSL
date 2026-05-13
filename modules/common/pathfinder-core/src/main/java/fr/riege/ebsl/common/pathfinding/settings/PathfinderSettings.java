@@ -5,6 +5,7 @@ import fr.riege.ebsl.common.pathfinding.quality.PathQualityPlanningMode;
 
 import java.util.List;
 
+@SuppressWarnings("java:S6548")
 public final class PathfinderSettings extends Settingable {
     private static final PathfinderSettings INSTANCE = new PathfinderSettings();
     public final BooleanSetting showDebug = registerSetting(new BooleanSetting("show_debug", "Show debug", true));

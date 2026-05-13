@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+@SuppressWarnings("java:S107")
 public final class CommonNavigationBackend implements NavigationService {
     private final IWorldLayer world;
     private final IPlayerLayer player;

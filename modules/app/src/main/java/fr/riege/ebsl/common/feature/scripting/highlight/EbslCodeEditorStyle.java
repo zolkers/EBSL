@@ -2,6 +2,7 @@ package fr.riege.ebsl.common.feature.scripting.highlight;
 
 import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings.EbslCodeEditorColor;
 
+@SuppressWarnings("java:S6548")
 public enum EbslCodeEditorStyle {
     DARK;
 

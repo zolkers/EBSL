@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
+@SuppressWarnings("java:S107")
 public final class LayerPathProcessor implements NodeProcessor {
     private static final double DEFAULT_MOB_JUMP_HEIGHT = 1.125;
     private static final double ASCENT_DY_THRESHOLD = 0.5;

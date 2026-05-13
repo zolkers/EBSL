@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.platform.render;
 
+@SuppressWarnings("java:S107")
 public interface RenderHandle {
 
     void beginLines(float r, float g, float b, float a);

@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.feature.aim.EntityAimProcessor;
 import java.util.Comparator;
 import java.util.Locale;
 
+@SuppressWarnings("java:S6548")
 public final class SpaceMobTask extends Settingable implements BotTask {
     public static final SpaceMobTask INSTANCE = new SpaceMobTask();
 

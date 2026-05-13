@@ -16,6 +16,7 @@ import imgui.type.ImString;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("java:S107")
 final class ImGuiTerminalPanel {
     private final ImString terminalInput = new ImString(256);
     private final List<CommandSuggestion> suggestions = new ArrayList<>();

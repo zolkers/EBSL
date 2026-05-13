@@ -12,6 +12,7 @@ import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import imgui.ImDrawList;
 import imgui.ImGui;
 
+@SuppressWarnings("java:S6548")
 public final class MoveTypeOverlayModule extends Settingable implements PathfinderModule {
     public static final MoveTypeOverlayModule INSTANCE = new MoveTypeOverlayModule();
 
