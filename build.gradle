@@ -136,7 +136,29 @@ def javaLicenseHeader = '''/*
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 '''
+
+def legacyJavaLicenseHeader = '''/*
+ * This file is part of EBSL.
+ *
+ * EBSL is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * EBSL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+'''
+
+def normalizeJavaSource = { String text ->
+    text.replace('\r\n', '\n').replace('\r', '\n')
+}
+
+def leadingJavaLicenseHeaders = ~/(?s)\A(?:\/\*\n \* This file is part of EBSL\.\n \*\n \* EBSL is free software:.*?SPDX-License-Identifier: GPL-3\.0-or-later\n \*\/\n*)+/
 
 tasks.register('jacocoRootReport', JacocoReport) {
     group = 'verification'
@@ -309,10 +331,10 @@ tasks.register('verifyJavaLicenseHeaders') {
 
     inputs.files(javaSourceFiles)
 
-    doLast {
-        def missingHeaders = javaSourceFiles.get().findAll { sourceFile ->
-            !sourceFile.getText('UTF-8').startsWith(javaLicenseHeader)
-        }
+      doLast {
+          def missingHeaders = javaSourceFiles.get().findAll { sourceFile ->
+            !normalizeJavaSource(sourceFile.getText('UTF-8')).startsWith(javaLicenseHeader)
+          }
 
         if (!missingHeaders.isEmpty()) {
             throw new GradleException(
@@ -330,14 +352,16 @@ tasks.register('applyJavaLicenseHeaders') {
     inputs.files(javaSourceFiles)
     outputs.upToDateWhen { false }
 
-    doLast {
-        javaSourceFiles.get().each { sourceFile ->
-            def text = sourceFile.getText('UTF-8')
-            if (!text.startsWith(javaLicenseHeader)) {
-                sourceFile.setText(javaLicenseHeader + text, 'UTF-8')
+      doLast {
+          javaSourceFiles.get().each { sourceFile ->
+            def text = normalizeJavaSource(sourceFile.getText('UTF-8'))
+            def body = text.replaceFirst(leadingJavaLicenseHeaders, '')
+            def normalized = javaLicenseHeader + body
+            if (text != normalized || text.startsWith(legacyJavaLicenseHeader)) {
+                sourceFile.setText(normalized, 'UTF-8')
             }
-        }
-    }
+          }
+      }
 }
 
 tasks.register('javaAlignmentWhitespaceVerification') {

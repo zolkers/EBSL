@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.mc;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;

@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.pathfinding.goal;
 
 public record GoalNear(int x, int y, int z, double radius) implements Goal {

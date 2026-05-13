@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.mc;
 
 import fr.riege.ebsl.common.platform.layer.IStorageLayer;

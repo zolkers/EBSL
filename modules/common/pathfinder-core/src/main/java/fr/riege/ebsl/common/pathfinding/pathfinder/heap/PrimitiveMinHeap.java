@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.pathfinding.pathfinder.heap;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;

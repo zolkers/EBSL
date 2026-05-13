@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.feature.terminal;
 
 public record CommandSuggestion(String fill, String hint) {

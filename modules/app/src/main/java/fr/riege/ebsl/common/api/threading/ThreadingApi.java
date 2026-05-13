@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.api.threading;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;

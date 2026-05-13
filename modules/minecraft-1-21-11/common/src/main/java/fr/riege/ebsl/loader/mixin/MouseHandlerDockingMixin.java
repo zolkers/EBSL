@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.loader.mixin;
 
 import com.mojang.blaze3d.platform.Window;

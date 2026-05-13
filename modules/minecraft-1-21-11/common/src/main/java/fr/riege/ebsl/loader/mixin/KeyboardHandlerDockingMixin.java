@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.loader.mixin;
 
 import fr.riege.ebsl.loader.ModloaderCommonBootstrap;

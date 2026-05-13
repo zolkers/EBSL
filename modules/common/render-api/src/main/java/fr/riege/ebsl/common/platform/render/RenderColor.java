@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.platform.render;
 
 public record RenderColor(float r, float g, float b, float a) {

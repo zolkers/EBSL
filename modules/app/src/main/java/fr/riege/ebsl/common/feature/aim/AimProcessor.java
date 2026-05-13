@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.feature.aim;
 
 import fr.riege.ebsl.common.math.Vec3d;

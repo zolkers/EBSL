@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.feature.ui.layout;
 
 public record ViewportLayout(UiRect header, UiRect left, UiRect center, UiRect right, UiRect bottom) {

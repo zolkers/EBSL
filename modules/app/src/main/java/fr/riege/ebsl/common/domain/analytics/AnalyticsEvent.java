@@ -11,6 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 package fr.riege.ebsl.common.domain.analytics;
 
 public record AnalyticsEvent(long timestampMs, String source, String message) {
