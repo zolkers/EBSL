@@ -10,6 +10,22 @@ Thanks for helping make EBSL better. The project is still moving quickly, so sma
 4. Open the pull request into `dev`.
 5. Keep `master` reserved for stable public snapshots.
 
+## Quality Checks
+
+Run the local quality gate before submitting changes:
+
+```powershell
+.\gradlew.bat clean check
+```
+
+If you have a local SonarQube instance configured, also run:
+
+```powershell
+.\gradlew.bat sonar
+```
+
+Local SonarQube setup is documented in [docs/sonarqube-local.md](docs/sonarqube-local.md). Sonar is recommended for contributors and expected before merging larger code changes.
+
 ## Branch Names
 
 Use short lowercase branch names:
