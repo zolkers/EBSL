@@ -14,14 +14,30 @@ Thanks for helping make EBSL better. The project is still moving quickly, so sma
 
 Run the local quality gate before submitting changes:
 
+On Windows:
+
 ```powershell
 .\gradlew.bat clean check
 ```
 
+On macOS/Linux:
+
+```bash
+./gradlew clean check
+```
+
 If you have a local SonarQube instance configured, also run:
+
+On Windows:
 
 ```powershell
 .\gradlew.bat sonar
+```
+
+On macOS/Linux:
+
+```bash
+./gradlew sonar
 ```
 
 Local SonarQube setup is documented in [docs/sonarqube-local.md](docs/sonarqube-local.md). Sonar is recommended for contributors and expected before merging larger code changes.
@@ -90,8 +106,16 @@ Every pull request should include:
 
 Install hooks once per clone:
 
+On Windows:
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install-git-hooks.ps1
+```
+
+On macOS/Linux:
+
+```bash
+sh ./scripts/install-git-hooks.sh
 ```
 
 The hook checks commit message format locally. CI and review still remain the source of truth.

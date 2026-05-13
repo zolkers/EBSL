@@ -26,12 +26,14 @@ You are responsible for ensuring that your use of this project does not violate 
 
 ## Build
 
+On Windows:
+
 ```powershell
 .\gradlew.bat check
 .\gradlew.bat buildMod121Fabric
 ```
 
-On Linux/macOS:
+On macOS/Linux:
 
 ```bash
 ./gradlew check
@@ -42,8 +44,16 @@ Build artifacts are written under `build/`.
 
 ## Run Locally
 
+On Windows:
+
 ```powershell
 .\gradlew.bat runClient121Fabric
+```
+
+On macOS/Linux:
+
+```bash
+./gradlew runClient121Fabric
 ```
 
 The development run directory is `run/`, which is intentionally ignored by Git.
@@ -65,8 +75,16 @@ This repository uses Conventional Commits. See [CONTRIBUTING.md](CONTRIBUTING.md
 
 Install the local Git hooks after cloning:
 
+On Windows:
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install-git-hooks.ps1
+```
+
+On macOS/Linux:
+
+```bash
+sh ./scripts/install-git-hooks.sh
 ```
 
 ## Repository Layout
