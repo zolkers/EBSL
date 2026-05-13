@@ -4,6 +4,7 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,7 +18,7 @@ class HeadlessNavigationApiTest {
 
         var plan = planner.plan(
             planner.positionFromEntity(0.5, 64.0, 0.5),
-            planner.resolveTarget(new fr.riege.ebsl.common.pathfinding.wrapper.PathPosition(4, 64, 0)),
+            planner.resolveTarget(new PathPosition(4, 64, 0)),
             PathPlannerOptions.defaults().toBuilder().async(false).build()
         ).toCompletableFuture().join();
 

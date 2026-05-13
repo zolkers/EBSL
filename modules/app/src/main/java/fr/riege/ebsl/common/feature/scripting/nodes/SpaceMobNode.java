@@ -12,6 +12,8 @@ import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.task.MobTargetMode;
 import fr.riege.ebsl.common.feature.task.SpaceMobTask;
 
+import java.util.List;
+
 @EbslNodeDefinition(EbslNodeType.SPACE_MOB)
 public final class SpaceMobNode extends AbstractEbslNode {
     private static final String CLOSEST_TARGET = "closest";
@@ -54,7 +56,7 @@ public final class SpaceMobNode extends AbstractEbslNode {
     }
 
     @Override
-    public void loadArgs(java.util.List<String> args) {
+    public void loadArgs(List<String> args) {
         settings();
         Cursor cursor = new Cursor(new EbslNodeInvocation(args, null, null));
         if (cursor.peek(SpaceMobDirective.ON)) {

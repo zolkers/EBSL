@@ -1,13 +1,14 @@
 package fr.riege.ebsl.common.pathfinding.goal;
 
 import java.util.List;
+import java.util.Objects;
 
 public record GoalCompositeAny(List<Goal> goals) implements Goal {
     public GoalCompositeAny {
         if (goals == null || goals.isEmpty()) {
             throw new IllegalArgumentException("GoalCompositeAny requires at least one goal");
         }
-        if (goals.stream().anyMatch(java.util.Objects::isNull)) {
+        if (goals.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("GoalCompositeAny cannot contain null goals");
         }
         goals = List.copyOf(goals);

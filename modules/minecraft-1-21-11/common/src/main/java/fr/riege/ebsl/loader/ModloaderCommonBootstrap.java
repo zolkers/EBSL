@@ -4,6 +4,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import fr.riege.ebsl.common.EbslCore;
 import fr.riege.ebsl.common.core.event.*;
+import fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent;
 import fr.riege.ebsl.common.core.log.AppLog;
 import fr.riege.ebsl.common.core.log.AppLogLevel;
 import fr.riege.ebsl.common.platform.EbslPlatform;
@@ -19,11 +20,20 @@ import fr.riege.ebsl.loader.layer.ModloaderUiService;
 import fr.riege.ebsl.loader.ui.DockingInputHandler;
 import fr.riege.ebsl.mc.*;
 import net.minecraft.client.Minecraft;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public final class ModloaderCommonBootstrap {
     private static final Logger LOGGER = LoggerFactory.getLogger("ebsl-bootstrap");
@@ -103,7 +113,7 @@ public final class ModloaderCommonBootstrap {
     }
 
     public static boolean onGrabMouse() {
-        return events != null && events.post(new fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent()).isCancelled();
+        return events != null && events.post(new GrabMouseEvent()).isCancelled();
     }
 
     public static boolean onMouseButton(long windowHandle, int button, int action) {
@@ -112,15 +122,15 @@ public final class ModloaderCommonBootstrap {
 
     public static double remapScaledX(Window window, double rawX, double scaledX) {
         if (events == null || window == null) return scaledX;
-        fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
-            events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawX, scaledX, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.X));
+        ScaledMousePosEvent event =
+            events.post(new ScaledMousePosEvent(rawX, scaledX, ScaledMousePosEvent.Axis.X));
         return event.scaledPos();
     }
 
     public static double remapScaledY(Window window, double rawY, double scaledY) {
         if (events == null || window == null) return scaledY;
-        fr.riege.ebsl.common.core.event.ScaledMousePosEvent event =
-            events.post(new fr.riege.ebsl.common.core.event.ScaledMousePosEvent(rawY, scaledY, fr.riege.ebsl.common.core.event.ScaledMousePosEvent.Axis.Y));
+        ScaledMousePosEvent event =
+            events.post(new ScaledMousePosEvent(rawY, scaledY, ScaledMousePosEvent.Axis.Y));
         return event.scaledPos();
     }
 
@@ -139,17 +149,17 @@ public final class ModloaderCommonBootstrap {
     private static void bootstrapAppLog() {
         AppLog.setAppender(receiver -> {
             try {
-                org.apache.logging.log4j.core.LoggerContext ctx =
-                    (org.apache.logging.log4j.core.LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+                LoggerContext ctx =
+                    (LoggerContext) LogManager.getContext(false);
                 var config = ctx.getConfiguration();
-                var appender = new org.apache.logging.log4j.core.appender.AbstractAppender(
+                var appender = new AbstractAppender(
                     "EbslUiAppender", null, null, true,
-                    org.apache.logging.log4j.core.config.Property.EMPTY_ARRAY) {
-                    @Override public void append(org.apache.logging.log4j.core.LogEvent event) {
-                        String time = java.time.format.DateTimeFormatter
+                    Property.EMPTY_ARRAY) {
+                    @Override public void append(LogEvent event) {
+                        String time = DateTimeFormatter
                             .ofPattern("HH:mm:ss")
-                            .withZone(java.time.ZoneId.systemDefault())
-                            .format(java.time.Instant.ofEpochMilli(event.getTimeMillis()));
+                            .withZone(ZoneId.systemDefault())
+                            .format(Instant.ofEpochMilli(event.getTimeMillis()));
                         String loggerName = event.getLoggerName();
                         int dot = loggerName.lastIndexOf('.');
                         String shortLogger = dot >= 0 ? loggerName.substring(dot + 1) : loggerName;
@@ -158,7 +168,7 @@ public final class ModloaderCommonBootstrap {
                     }
                 };
                 appender.start();
-                config.getRootLogger().addAppender(appender, org.apache.logging.log4j.Level.INFO, null);
+                config.getRootLogger().addAppender(appender, Level.INFO, null);
                 ctx.updateLoggers();
             } catch (Exception exception) {
                 LOGGER.debug("Could not attach EBSL UI log appender.", exception);

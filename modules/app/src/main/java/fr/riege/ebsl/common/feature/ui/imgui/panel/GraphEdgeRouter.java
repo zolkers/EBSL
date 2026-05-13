@@ -44,9 +44,9 @@ final class GraphEdgeRouter {
         int[][] prevX = new int[xs.size()][ys.size()];
         int[][] prevY = new int[xs.size()][ys.size()];
         for (int x = 0; x < xs.size(); x++) {
-            java.util.Arrays.fill(dist[x], Double.POSITIVE_INFINITY);
-            java.util.Arrays.fill(prevX[x], -1);
-            java.util.Arrays.fill(prevY[x], -1);
+            Arrays.fill(dist[x], Double.POSITIVE_INFINITY);
+            Arrays.fill(prevX[x], -1);
+            Arrays.fill(prevY[x], -1);
         }
         PriorityQueue<RouteNode> queue = new PriorityQueue<>(Comparator.comparingDouble(RouteNode::cost));
         dist[sx][sy] = 0.0;

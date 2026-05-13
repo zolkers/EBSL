@@ -7,6 +7,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
+import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -53,7 +54,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     @Override
     public void initializeSearch(SearchContext context) {
         captureSettings();
-        if (context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+        if (context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider) {
             parkourPlanner.set(new ParkourJumpPlanner(layerProvider.checker(), context.getNavigationPointProvider(), context.getEnvironmentContext()));
         }
     }
@@ -282,7 +283,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     }
 
     private static boolean requiresJumpForStep(EvaluationContext context, PathPosition pos, int dx, int dz) {
-        if (context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+        if (context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider) {
             return layerProvider.checker().world().requiresJumpForStep(pos.flooredX(), pos.flooredY(), pos.flooredZ(), dx, dz);
         }
         return false;
@@ -291,7 +292,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     private boolean isValidParkourMove(EvaluationContext context, PathPosition from, PathPosition to,
                                        NavigationPoint fromPoint, NavigationPoint toPoint) {
         ParkourJumpPlanner planner = parkourPlanner.get();
-        if (planner == null && context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider) {
+        if (planner == null && context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider) {
             planner = new ParkourJumpPlanner(layerProvider.checker(), context.getNavigationPointProvider(), context.getEnvironmentContext());
         }
         if (planner == null) {
@@ -308,7 +309,7 @@ public final class LayerPathProcessor implements NodeProcessor {
 
     private static boolean hasPartialSupportCornerClip(EvaluationContext context, PathPosition previous,
                                                        PathPosition current, int dx, int dz) {
-        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+        if (!(context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider)) {
             return false;
         }
         var checker = layerProvider.checker();
@@ -330,7 +331,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     }
 
     private static boolean isBlockingPlayerSpace(EvaluationContext context, int x, int y, int z) {
-        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+        if (!(context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider)) {
             return false;
         }
         var checker = layerProvider.checker();
@@ -380,22 +381,22 @@ public final class LayerPathProcessor implements NodeProcessor {
     }
 
     private static boolean isFullStepSupport(EvaluationContext context, int x, int y, int z) {
-        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+        return context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider
             && layerProvider.checker().isFullWall(x, y, z);
     }
 
     private static boolean isFullWallBlock(EvaluationContext context, int x, int y, int z) {
-        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+        return context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider
             && layerProvider.checker().isFullWallBlock(x, y, z);
     }
 
     private static boolean canOcclude(EvaluationContext context, int x, int y, int z) {
-        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+        return context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider
             && layerProvider.checker().canOcclude(x, y, z);
     }
 
     private static boolean isPassable(EvaluationContext context, int x, int y, int z) {
-        return context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider
+        return context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider
             && layerProvider.checker().isPassable(x, y, z);
     }
 
@@ -478,7 +479,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         if (moveDx == 0 && moveDz == 0) return 0;
         int stepX = Integer.signum(moveDx);
         int stepZ = Integer.signum(moveDz);
-        if (!(context.getNavigationPointProvider() instanceof fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider layerProvider)) {
+        if (!(context.getNavigationPointProvider() instanceof LayerNavigationPointProvider layerProvider)) {
             return 0;
         }
         var checker = layerProvider.checker();

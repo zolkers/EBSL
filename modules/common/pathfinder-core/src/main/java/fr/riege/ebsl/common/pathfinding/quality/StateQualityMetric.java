@@ -2,6 +2,8 @@ package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 
+import java.util.Locale;
+
 final class StateQualityMetric implements PathQualityMetric {
     @Override
     public String id() {
@@ -17,6 +19,6 @@ final class StateQualityMetric implements PathQualityMetric {
             case MAX_ITERATIONS_REACHED -> 0.45;
             case ABORTED, FAILED -> 0.0;
         };
-        return new PathQualityContribution(id(), score, 3.0, state.name().toLowerCase(java.util.Locale.ROOT));
+        return new PathQualityContribution(id(), score, 3.0, state.name().toLowerCase(Locale.ROOT));
     }
 }

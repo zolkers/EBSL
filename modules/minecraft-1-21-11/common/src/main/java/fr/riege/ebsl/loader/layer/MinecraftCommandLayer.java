@@ -1,9 +1,11 @@
 package fr.riege.ebsl.loader.layer;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -53,7 +55,7 @@ public class MinecraftCommandLayer<S> implements ICommandLayer {
         LiteralArgumentBuilder<S> root = LiteralArgumentBuilder.<S>literal("ebsl")
             .executes(context -> {
                 print("§eEBSL commands: " + String.join(", ", commands.keySet()));
-                return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                return Command.SINGLE_SUCCESS;
             });
 
         for (RegisteredCommand command : commands.values()) {
@@ -66,7 +68,7 @@ public class MinecraftCommandLayer<S> implements ICommandLayer {
     private LiteralArgumentBuilder<S> commandNode(RegisteredCommand command) {
         return LiteralArgumentBuilder.<S>literal(command.name())
             .executes(context -> execute(command.handler(), new String[0]))
-            .then(com.mojang.brigadier.builder.RequiredArgumentBuilder.<S, String>argument("args", StringArgumentType.greedyString())
+            .then(RequiredArgumentBuilder.<S, String>argument("args", StringArgumentType.greedyString())
                 .suggests(suggestionsFor(command.name()))
                 .executes(context -> execute(command.handler(), splitArgs(StringArgumentType.getString(context, "args")))));
     }
@@ -93,7 +95,7 @@ public class MinecraftCommandLayer<S> implements ICommandLayer {
 
     private int execute(CommandHandler handler, String[] args) {
         handler.execute(args, this::print);
-        return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+        return Command.SINGLE_SUCCESS;
     }
 
     private static String[] splitArgs(String input) {

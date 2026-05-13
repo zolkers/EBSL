@@ -99,7 +99,7 @@ public final class GoalUiCatalog {
         return def;
     }
 
-    private static int start(NavigationService nav, fr.riege.ebsl.common.pathfinding.goal.Goal goal, NavigationModeType mode) {
+    private static int start(NavigationService nav, Goal goal, NavigationModeType mode) {
         nav.startNavigation(NavigationRequest.builder(goal).mode(mode).build());
         return 1;
     }

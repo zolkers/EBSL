@@ -27,6 +27,7 @@ import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -805,7 +806,7 @@ public final class CommonNavigationBackend implements NavigationService {
     }
 
     private static List<Node> mergePathPrefixWithTail(List<Node> prefix, List<Node> tail) {
-        java.util.ArrayList<Node> merged = new java.util.ArrayList<>();
+        ArrayList<Node> merged = new ArrayList<>();
         appendDistinct(merged, prefix);
         appendDistinct(merged, tail);
         return merged;

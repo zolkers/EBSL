@@ -24,6 +24,7 @@ import imgui.type.ImString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -416,7 +417,7 @@ final class ImGuiScriptGraphView {
     }
 
     private void replaceNodeLine(EbslScriptGraphNode node, String command, String args) {
-        String normalizedCommand = command == null ? "" : command.trim().toLowerCase(java.util.Locale.ROOT).replace('-', '_');
+        String normalizedCommand = command == null ? "" : command.trim().toLowerCase(Locale.ROOT).replace('-', '_');
         if (normalizedCommand.isBlank()) {
             statusSink.accept("empty command");
             return;

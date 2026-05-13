@@ -11,6 +11,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -84,7 +85,7 @@ class AStarPathfinderTest {
             .fallback(true)
             .maxIterations(10000)
             .maxCalculationTimeMs(1)
-            .processors(java.util.List.of(new SlowProcessor()))
+            .processors(List.of(new SlowProcessor()))
             .build());
 
         PathfinderResult result = pathfinder.findPath(

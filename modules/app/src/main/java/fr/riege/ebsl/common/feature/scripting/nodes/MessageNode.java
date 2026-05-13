@@ -5,6 +5,8 @@ import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 
+import java.util.List;
+
 @EbslNodeDefinition(EbslNodeType.MESSAGE)
 public final class MessageNode extends AbstractEbslNode {
     private StringSetting text;
@@ -21,7 +23,7 @@ public final class MessageNode extends AbstractEbslNode {
     }
 
     @Override
-    public void loadArgs(java.util.List<String> args) {
+    public void loadArgs(List<String> args) {
         settings();
         text.setValue(String.join(" ", args));
     }

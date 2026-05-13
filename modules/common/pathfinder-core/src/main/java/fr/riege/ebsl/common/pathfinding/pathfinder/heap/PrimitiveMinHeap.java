@@ -1,6 +1,7 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder.heap;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 public final class PrimitiveMinHeap {
@@ -86,8 +87,8 @@ public final class PrimitiveMinHeap {
     private void ensureCapacity() {
         if (size >= nodes.length - 1) {
             int newCap = nodes.length * 2;
-            nodes = java.util.Arrays.copyOf(nodes, newCap);
-            costs = java.util.Arrays.copyOf(costs, newCap);
+            nodes = Arrays.copyOf(nodes, newCap);
+            costs = Arrays.copyOf(costs, newCap);
         }
     }
 
