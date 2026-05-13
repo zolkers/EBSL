@@ -2,7 +2,7 @@ package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
-import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
@@ -24,18 +24,18 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
     private final ThreadLocal<PathfindingSession> currentSession = new ThreadLocal<>();
 
-    
-    private LongSet lastClosedSet = new LongOpenHashSet();
-    private long    exploredCount = 0;
 
-    
-    private long profNeighborCount     = 0;
-    private long profIsValidNanos      = 0;
-    private long profCostCalcNanos     = 0;
-    private long profNodeCreateNanos   = 0;
-    private long profHeapNanos         = 0;
-    private long profIsValidRejects    = 0;
-    private long profGCostRejects      = 0;
+    private LongSet lastClosedSet = new LongOpenHashSet();
+    private long exploredCount = 0;
+
+
+    private long profNeighborCount = 0;
+    private long profIsValidNanos = 0;
+    private long profCostCalcNanos = 0;
+    private long profNodeCreateNanos = 0;
+    private long profHeapNanos = 0;
+    private long profIsValidRejects = 0;
+    private long profGCostRejects = 0;
     private boolean profiling;
     private boolean captureClosedSet;
 
@@ -220,8 +220,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
     private double calculateGCost(EvaluationContext context) {
-        double baseCost       = context.getBaseTransitionCost();
-        
+        double baseCost = context.getBaseTransitionCost();
+
         double additionalCost = 0.0;
         for (var p : processors) {
             additionalCost += p.calculateCostContribution(context).value;
@@ -256,11 +256,11 @@ public final class AStarPathfinder extends AbstractPathfinder {
         currentSession.remove();
     }
 
-    
-    public LongSet getClosedSet()    { return lastClosedSet; }
-    public long    getExploredCount(){ return exploredCount; }
 
-    
+    public LongSet getClosedSet() { return lastClosedSet; }
+    public long getExploredCount() { return exploredCount; }
+
+
     public String getProfilingReport() {
         if (!profiling) return "profiling disabled";
         return String.format(
@@ -280,34 +280,34 @@ public final class AStarPathfinder extends AbstractPathfinder {
         return s;
     }
 
-    private static Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
+    private Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
         WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof LayerNavigationPointProvider provider
             ? provider.checker()
             : null;
-        return MovementClassifier.classify(
+        return pathfinderConfiguration.movementClassifier.classify(new MovementClassificationContext(
             previous,
             current,
             searchContext.getNavigationPointProvider(),
             searchContext.getEnvironmentContext(),
-            checker);
+            checker));
     }
 
-    
+
 
 
 
 
 
     private static final class PathfindingSession {
-        final Long2ObjectOpenHashMap<Node> nodes      = new Long2ObjectOpenHashMap<>();
-        final LongSet                      closedSet  = new LongOpenHashSet();
-        final EvaluationContextImpl        reusableContext;
-        final Node[]                       bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
-        final double[]                     bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
-        int                                expandedCount = 0;
+        final Long2ObjectOpenHashMap<Node> nodes = new Long2ObjectOpenHashMap<>();
+        final LongSet closedSet = new LongOpenHashSet();
+        final EvaluationContextImpl reusableContext;
+        final Node[] bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
+        final double[] bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
+        int expandedCount = 0;
 
         PathfindingSession() {
-            
+
             reusableContext = new EvaluationContextImpl(null, null, null, null);
         }
 

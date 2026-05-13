@@ -24,15 +24,15 @@ public final class PathSmoother {
         int anchorIdx = 0;
 
         while (anchorIdx < raw.size() - 1) {
-            Node anchor   = raw.get(anchorIdx);
-            int  furthest = anchorIdx + 1;
+            Node anchor = raw.get(anchorIdx);
+            int furthest = anchorIdx + 1;
 
             int budget = computeAdaptiveSkipBudget(anchor, checker);
             int maxCand = (int) Math.clamp(anchorIdx + (long) budget, 0L, raw.size() - 1L);
 
             boolean scanning = true;
             for (int cand = anchorIdx + 2; cand <= maxCand && scanning; cand++) {
-                Node prevNode  = raw.get(cand - 1);
+                Node prevNode = raw.get(cand - 1);
                 Node candidate = raw.get(cand);
 
                 if (canSmoothToCandidate(raw, anchor, prevNode, candidate, anchorIdx, cand, checker)
@@ -72,8 +72,8 @@ public final class PathSmoother {
 
         int anchorIdx = 0;
         while (anchorIdx < raw.size() - 1) {
-            Node anchor   = raw.get(anchorIdx);
-            int  furthest = anchorIdx + 1;
+            Node anchor = raw.get(anchorIdx);
+            int furthest = anchorIdx + 1;
 
             for (int cand = anchorIdx + 2; cand < raw.size(); cand++) {
                 Node candidate = raw.get(cand);
@@ -224,9 +224,9 @@ public final class PathSmoother {
     }
 
     private static boolean clearForSmoothing(WalkabilityChecker checker, int x, int y, int z) {
-        
-        
-        
+
+
+
         return checker.isWalkable(x, y, z);
     }
 
@@ -317,8 +317,24 @@ public final class PathSmoother {
                 || checker.isFullWall(x, y + 1, z);
     }
 
+    /**
+     * Tests whether a path smoothing cell can be traversed.
+
+     *
+
+     * <p>The smoother uses this callback to keep ray and corridor checks independent from the underlying world lookup.</p>
+
+     */
     @FunctionalInterface
     private interface CellClearance {
+        /**
+         * Clears any state currently held by the receiver.
+ *
+         * @param x the block x coordinate
+         * @param y the block y coordinate
+         * @param z the block z coordinate
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean clear(int x, int y, int z);
     }
 

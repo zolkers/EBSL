@@ -2,29 +2,31 @@ package fr.riege.ebsl.common.pathfinding.movement;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.parkour.ParkourGeometry;
-import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
-import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
-public final class MovementClassifier {
+public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
+    INSTANCE;
+
     private static final double STEP_DOWN_DY_THRESHOLD = -1.1;
 
-    private MovementClassifier() {
-    }
-
-    public static Node.MoveType classify(PathPosition previous,
-                                         PathPosition current,
-                                         NavigationPointProvider provider,
-                                         EnvironmentContext environmentContext,
-                                         WalkabilityChecker checker) {
-        if (previous == null || current == null) {
+    @Override
+    public Node.MoveType classify(MovementClassificationContext context) {
+        if (context == null || context.previous() == null || context.current() == null) {
             return Node.MoveType.WALK;
         }
 
-        NavigationPoint previousPoint = provider == null ? null : provider.getNavigationPoint(previous, environmentContext);
-        NavigationPoint currentPoint = provider == null ? null : provider.getNavigationPoint(current, environmentContext);
+        PathPosition previous = context.previous();
+        PathPosition current = context.current();
+        NavigationPoint previousPoint = context.provider() == null
+            ? null
+            : context.provider().getNavigationPoint(previous, context.environmentContext());
+        NavigationPoint currentPoint = context.provider() == null
+            ? null
+            : context.provider().getNavigationPoint(current, context.environmentContext());
+        WalkabilityChecker checker = context.checker();
+
         if (isSwim(previous, current, previousPoint, currentPoint, checker)) {
             return Node.MoveType.SWIM;
         }

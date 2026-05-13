@@ -134,6 +134,24 @@ final class PathQualityRegistryTest {
             new TestEvaluationContext(enabled, provider, previous, current)).value, 0.0001);
     }
 
+    @Test
+    void qualityAwareProcessorUsesConfiguredMovementContracts() {
+        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false));
+        LayerNavigationPointProvider provider = new LayerNavigationPointProvider(checker);
+        QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
+        PathPosition previous = new PathPosition(0, 64, 0);
+        PathPosition current = new PathPosition(1, 64, 0);
+        PathfinderConfiguration configuration = PathfinderConfiguration.builder()
+            .provider(provider)
+            .qualityRiskCostWeight(3.0)
+            .movementClassifier(context -> Node.MoveType.PARKOUR)
+            .movementCostModel(new FixedMovementCostModel())
+            .build();
+
+        assertEquals(21.0, processor.calculateCostContribution(
+            new TestEvaluationContext(configuration, provider, previous, current)).value, 0.0001);
+    }
+
     private static double contribution(PathQualityReport report, String metricId) {
         return report.contributions().stream()
             .filter(contribution -> contribution.metricId().equals(metricId))
@@ -170,6 +188,18 @@ final class PathQualityRegistryTest {
         @Override public NavigationPointProvider getNavigationPointProvider() { return provider; }
         @Override public Map<String, Object> getSharedData() { return Map.of(); }
         @Override public EnvironmentContext getEnvironmentContext() { return null; }
+    }
+
+    private static final class FixedMovementCostModel implements MovementCostModel {
+        @Override
+        public double risk(Node.MoveType type) {
+            return type == Node.MoveType.PARKOUR ? 2.0 : 0.0;
+        }
+
+        @Override
+        public double planningPenalty(Node.MoveType type) {
+            return type == Node.MoveType.PARKOUR ? 7.0 : 0.0;
+        }
     }
 
     private record TestWorld(boolean boxed, boolean gap) implements IWorldLayer {

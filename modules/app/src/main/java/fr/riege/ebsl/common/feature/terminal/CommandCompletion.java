@@ -71,12 +71,40 @@ public final class CommandCompletion {
         }
     }
 
+    /**
+     * Defines the contextual suggestion source contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on contextual suggestion source behavior.</p>
+
+     */
     @FunctionalInterface
     public interface ContextualSuggestionSource {
+        /**
+         * Returns suggestions for the supplied completion context.
+ *
+         * @param context the context describing the operation being performed
+         * @return the requested values
+         */
         List<String> suggest(Context context);
     }
 
+    /**
+     * Defines the suggestion source contract.
+
+     *
+
+     * <p>Implementations provide the stable boundary used by EBSL components that depend on suggestion source behavior.</p>
+
+     */
     private interface SuggestionSource {
+        /**
+         * Returns suggestions for the supplied completion context.
+ *
+         * @param context the context describing the operation being performed
+         * @return the requested values
+         */
         List<String> suggest(Context context);
     }
 

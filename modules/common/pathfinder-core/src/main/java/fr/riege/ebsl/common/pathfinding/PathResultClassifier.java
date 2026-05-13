@@ -45,7 +45,7 @@ public final class PathResultClassifier {
             return true;
         }
         PathState state = result.getPathState();
-        
+
         if (state == PathState.ABORTED || state == PathState.FAILED) {
             return true;
         }

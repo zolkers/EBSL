@@ -8,35 +8,35 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 public final class EvaluationContextImpl implements EvaluationContext {
 
-    private SearchContext      searchContext;
-    private Node               engineNode;
-    private Node               parentEngineNode;   
+    private SearchContext searchContext;
+    private Node engineNode;
+    private Node parentEngineNode;
     private IHeuristicStrategy heuristicStrategy;
 
     public EvaluationContextImpl(SearchContext searchContext, Node engineNode,
                                   Node parentEngineNode, IHeuristicStrategy heuristicStrategy) {
-        this.searchContext      = searchContext;
-        this.engineNode         = engineNode;
-        this.parentEngineNode   = parentEngineNode;
-        this.heuristicStrategy  = heuristicStrategy;
-    }
-
-    
-    public void update(SearchContext searchContext, Node engineNode,
-                       Node parentEngineNode, IHeuristicStrategy heuristicStrategy) {
-        this.searchContext     = searchContext;
-        this.engineNode        = engineNode;
-        this.parentEngineNode  = parentEngineNode;
+        this.searchContext = searchContext;
+        this.engineNode = engineNode;
+        this.parentEngineNode = parentEngineNode;
         this.heuristicStrategy = heuristicStrategy;
     }
 
-    @Override public PathPosition getCurrentPathPosition()       { return engineNode.position; }
-    @Override public PathPosition getPreviousPathPosition()      { return parentEngineNode == null ? null : parentEngineNode.position; }
-    @Override public int          getCurrentNodeDepth()          { return engineNode.depth; }
-    @Override public double       getCurrentNodeHeuristicValue() { return engineNode.heuristic; }
-    @Override public double       getPathCostToPreviousPosition(){ return parentEngineNode == null ? 0.0 : parentEngineNode.gCost(); }
-    @Override public SearchContext getSearchContext()            { return searchContext; }
-    @Override public Node.MoveType getCurrentMoveType()          { return engineNode.moveType(); }
+
+    public void update(SearchContext searchContext, Node engineNode,
+                       Node parentEngineNode, IHeuristicStrategy heuristicStrategy) {
+        this.searchContext = searchContext;
+        this.engineNode = engineNode;
+        this.parentEngineNode = parentEngineNode;
+        this.heuristicStrategy = heuristicStrategy;
+    }
+
+    @Override public PathPosition getCurrentPathPosition() { return engineNode.position; }
+    @Override public PathPosition getPreviousPathPosition() { return parentEngineNode == null ? null : parentEngineNode.position; }
+    @Override public int getCurrentNodeDepth() { return engineNode.depth; }
+    @Override public double getCurrentNodeHeuristicValue() { return engineNode.heuristic; }
+    @Override public double getPathCostToPreviousPosition() { return parentEngineNode == null ? 0.0 : parentEngineNode.gCost(); }
+    @Override public SearchContext getSearchContext() { return searchContext; }
+    @Override public Node.MoveType getCurrentMoveType() { return engineNode.moveType(); }
 
     @Override
     public PathPosition getGrandparentPathPosition() {

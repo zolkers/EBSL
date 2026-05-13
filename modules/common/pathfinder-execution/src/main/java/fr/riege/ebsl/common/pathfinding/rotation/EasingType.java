@@ -191,8 +191,22 @@ public enum EasingType {
         return (x * x * ((BACK_C2 + 1.0f) * x + BACK_C2) + 2.0f) / 2.0f;
     }
 
+    /**
+     * Applies an easing curve to normalized progress.
+
+     *
+
+     * <p>Curves are pure mathematical callbacks used by rotation interpolation.</p>
+
+     */
     @FunctionalInterface
     private interface Curve {
+        /**
+         * Applies this operation to the supplied value or context.
+ *
+         * @param t the normalized progress value
+         * @return the value defined by this contract
+         */
         float apply(float t);
     }
 }

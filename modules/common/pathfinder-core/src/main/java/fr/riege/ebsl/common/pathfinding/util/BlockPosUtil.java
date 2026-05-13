@@ -6,16 +6,16 @@ package fr.riege.ebsl.common.pathfinding.util;
 
 public final class BlockPosUtil {
 
-    private static final int X_OFFSET = 33554432; 
+    private static final int X_OFFSET = 33554432;
     private static final int Z_OFFSET = 33554432;
-    private static final int Y_OFFSET = 2048;      
+    private static final int Y_OFFSET = 2048;
 
-    private static final long X_MASK = 0x3FFFFFFL; 
-    private static final long Y_MASK = 0xFFFL;      
+    private static final long X_MASK = 0x3FFFFFFL;
+    private static final long Y_MASK = 0xFFFL;
     private static final long Z_MASK = 0x3FFFFFFL;
 
     private static final int Y_SHIFT = 26;
-    private static final int X_SHIFT = 38; 
+    private static final int X_SHIFT = 38;
 
     private BlockPosUtil() {}
 

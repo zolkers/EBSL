@@ -1,10 +1,33 @@
 package fr.riege.ebsl.common.platform.render;
 
+/**
+ * Represents a renderable world primitive.
+ *
+ * <p>Primitives know how to draw themselves through immediate render handles or retained world-render sessions while resolving fallback styles.</p>
+ */
 public sealed interface RenderPrimitive permits RenderPrimitive.Line, RenderPrimitive.FilledBox, RenderPrimitive.WireBox {
+    /**
+     * Renders this component for the active frame using the supplied runtime context.
+ *
+     * @param handle the immediate render handle
+     * @param fallbackStyle the style used when this primitive does not define one
+     */
     void render(RenderHandle handle, RenderStyle fallbackStyle);
 
+    /**
+     * Renders this component for the active frame using the supplied runtime context.
+ *
+     * @param session the retained render session
+     * @param fallbackStyle the style used when this primitive does not define one
+     */
     void render(WorldRenderSession session, RenderStyle fallbackStyle);
 
+    /**
+     * Returns the style that should be used for rendering after applying the fallback.
+ *
+     * @param fallbackStyle the style used when this primitive does not define one
+     * @return the value defined by this contract
+     */
     RenderStyle effectiveStyle(RenderStyle fallbackStyle);
 
     record Line(double x1, double y1, double z1,

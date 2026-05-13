@@ -17,7 +17,21 @@ public final class BlockSelector {
         return id != null && expression.matches(id);
     }
 
+    /**
+     * Evaluates one parsed block selector expression.
+
+     *
+
+     * <p>Expressions compose predicates for block identifiers without exposing parser internals.</p>
+
+     */
     private interface Expression {
+        /**
+         * Returns whether the supplied value satisfies this predicate.
+ *
+         * @param id the block or entity identifier
+         * @return true when the condition is satisfied; false otherwise
+         */
         boolean matches(BlockId id);
     }
 

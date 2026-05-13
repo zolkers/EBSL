@@ -143,18 +143,18 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private static void pushModuleButtonColor(PathfinderModule module) {
-        int base  = module.isEnabled() ? 0xFF1B7F46 : 0xFF8A2630;
+        int base = module.isEnabled() ? 0xFF1B7F46 : 0xFF8A2630;
         int hover = module.isEnabled() ? 0xFF239D58 : 0xFFA8323E;
-        int act   = module.isEnabled() ? 0xFF28B565 : 0xFFC23B49;
+        int act = module.isEnabled() ? 0xFF28B565 : 0xFFC23B49;
         ImGui.pushStyleColor(ImGuiCol.Button, base);
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, hover);
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, act);
     }
 
     private static void pushTaskButtonColor(BotTask task) {
-        int base  = task.isEnabled() ? 0xFF1B6F7F : 0xFF5C6570;
+        int base = task.isEnabled() ? 0xFF1B6F7F : 0xFF5C6570;
         int hover = task.isEnabled() ? 0xFF23889D : 0xFF747F8C;
-        int act   = task.isEnabled() ? 0xFF28A0B5 : 0xFF8A96A5;
+        int act = task.isEnabled() ? 0xFF28A0B5 : 0xFF8A96A5;
         ImGui.pushStyleColor(ImGuiCol.Button, base);
         ImGui.pushStyleColor(ImGuiCol.ButtonHovered, hover);
         ImGui.pushStyleColor(ImGuiCol.ButtonActive, act);

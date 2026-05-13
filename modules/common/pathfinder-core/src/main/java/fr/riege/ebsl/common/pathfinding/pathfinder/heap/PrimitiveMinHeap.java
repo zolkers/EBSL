@@ -8,19 +8,19 @@ public final class PrimitiveMinHeap {
 
     private final Long2IntOpenHashMap nodeToIndexMap;
 
-    private long[]   nodes;
+    private long[] nodes;
     private double[] costs;
-    private int      size = 0;
+    private int size = 0;
 
     public PrimitiveMinHeap(int initialCapacity) {
         nodeToIndexMap = new Long2IntOpenHashMap(initialCapacity);
         nodeToIndexMap.defaultReturnValue(-1);
-        nodes = new long  [initialCapacity + 1];
+        nodes = new long [initialCapacity + 1];
         costs = new double[initialCapacity + 1];
     }
 
     public boolean isEmpty() { return size == 0; }
-    public int     size()    { return size; }
+    public int size() { return size; }
 
     public void clear() {
         size = 0;
@@ -70,7 +70,7 @@ public final class PrimitiveMinHeap {
         long minNode = nodes[1];
         nodeToIndexMap.remove(minNode);
 
-        long   lastNode = nodes[size];
+        long lastNode = nodes[size];
         double lastCost = costs[size];
         nodes[1] = lastNode;
         costs[1] = lastCost;
@@ -93,13 +93,13 @@ public final class PrimitiveMinHeap {
     }
 
     private void siftUp(int index) {
-        int    current     = index;
-        long   nodeToMove  = nodes[current];
-        double costToMove  = costs[current];
+        int current = index;
+        long nodeToMove = nodes[current];
+        double costToMove = costs[current];
 
         while (current > 1) {
-            int    parentIndex = current >> 1;
-            double parentCost  = costs[parentIndex];
+            int parentIndex = current >> 1;
+            double parentCost = costs[parentIndex];
             if (costToMove < parentCost) {
                 nodes[current] = nodes[parentIndex];
                 costs[current] = parentCost;
@@ -116,19 +116,19 @@ public final class PrimitiveMinHeap {
     }
 
     private void siftDown(int index) {
-        int    current    = index;
-        long   nodeToMove = nodes[current];
+        int current = index;
+        long nodeToMove = nodes[current];
         double costToMove = costs[current];
-        int    half       = size >> 1;
+        int half = size >> 1;
 
         while (current <= half) {
-            int    childIndex = current << 1;
-            double childCost  = costs[childIndex];
-            int    rightIndex = childIndex + 1;
+            int childIndex = current << 1;
+            double childCost = costs[childIndex];
+            int rightIndex = childIndex + 1;
 
             if (rightIndex <= size && costs[rightIndex] < childCost) {
                 childIndex = rightIndex;
-                childCost  = costs[rightIndex];
+                childCost = costs[rightIndex];
             }
 
             if (costToMove > childCost) {
