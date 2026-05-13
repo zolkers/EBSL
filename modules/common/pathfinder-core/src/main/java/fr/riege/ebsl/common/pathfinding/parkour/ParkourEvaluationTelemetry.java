@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.pathfinding.parkour;
 
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
+import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.Locale;
@@ -34,7 +35,7 @@ public final class ParkourEvaluationTelemetry {
     }
 
     public static void recordEvaluation(PathPosition from, PathPosition to, ParkourJumpPlan plan) {
-        if (plan == null || plan.feasible()) {
+        if ((plan == null || plan.feasible()) && !PathfinderSettings.instance().showDebug.value()) {
             return;
         }
         long now = System.currentTimeMillis();
