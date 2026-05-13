@@ -83,63 +83,114 @@ public final class AStarPathfinder extends AbstractPathfinder {
         Iterable<PathVector> offsets = neighborStrategy.getOffsets(currentNode.position);
 
         for (PathVector offset : offsets) {
-            if (profiling) profNeighborCount++;
-            PathPosition neighborPos = currentNode.position.add(offset);
-            long          packedPos  = RegionKey.pack(neighborPos);
-
-            Node candidate = session.nodes.get(packedPos);
-            if (candidate == null) {
-                long t0 = profiling ? System.nanoTime() : 0L;
-                candidate = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
-                
-                candidate.gCost = Double.POSITIVE_INFINITY;
-                session.nodes.put(packedPos, candidate);
-                if (profiling) profNodeCreateNanos += System.nanoTime() - t0;
+            Node reachedTarget = processOffset(requestStart, requestTarget, currentNode, openSet, searchContext, session, offset);
+            if (reachedTarget != null) {
+                return reachedTarget;
             }
-
-            
-            if (candidate.inClosed) continue;
-
-            
-            session.reusableContext.update(searchContext, candidate, currentNode,
-                    pathfinderConfiguration.heuristicStrategy);
-            candidate.moveType = classifyMove(currentNode.position, candidate.position, searchContext);
-
-            long t1 = profiling ? System.nanoTime() : 0L;
-            boolean valid = isValidByProcessors(session.reusableContext);
-            if (profiling) profIsValidNanos += System.nanoTime() - t1;
-            if (!valid) {
-                if (profiling) profIsValidRejects++;
-                continue;
-            }
-
-            long t2 = profiling ? System.nanoTime() : 0L;
-            double gCost = calculateGCost(session.reusableContext);
-            if (profiling) profCostCalcNanos += System.nanoTime() - t2;
-
-            
-            if (Double.isFinite(candidate.gCost)
-                    && gCost + gTolerance(gCost, candidate.gCost) >= candidate.gCost) {
-                if (profiling) profGCostRejects++;
-                continue;
-            }
-
-            candidate.parent = currentNode;
-            candidate.gCost = gCost;
-            session.recordFallbackCandidate(candidate);
-            if (candidate.isTarget(requestTarget)) {
-                return candidate;
-            }
-            double fCost   = candidate.fCost();
-            candidate.cachedFCost = fCost;
-            double heapKey = calculateHeapKey(candidate, fCost);
-
-            long t3 = profiling ? System.nanoTime() : 0L;
-            openSet.insertOrUpdate(packedPos, heapKey);
-            candidate.inOpen = true;
-            if (profiling) profHeapNanos += System.nanoTime() - t3;
         }
         return null;
+    }
+
+    private Node processOffset(PathPosition requestStart,
+                               PathPosition requestTarget,
+                               Node currentNode,
+                               PrimitiveMinHeap openSet,
+                               SearchContext searchContext,
+                               PathfindingSession session,
+                               PathVector offset) {
+        if (profiling) {
+            profNeighborCount++;
+        }
+        PathPosition neighborPos = currentNode.position.add(offset);
+        long packedPos = RegionKey.pack(neighborPos);
+        Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, requestTarget, currentNode);
+        if (candidate.inClosed) {
+            return null;
+        }
+
+        session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy);
+        candidate.moveType = classifyMove(currentNode.position, candidate.position, searchContext);
+        if (!isValidCandidate(session.reusableContext)) {
+            return null;
+        }
+        double gCost = timedGCost(session.reusableContext);
+        if (rejectsByGCost(candidate, gCost)) {
+            return null;
+        }
+        updateCandidate(candidate, currentNode, gCost, session);
+        if (candidate.isTarget(requestTarget)) {
+            return candidate;
+        }
+        enqueueCandidate(openSet, packedPos, candidate);
+        return null;
+    }
+
+    private Node candidateNode(PathfindingSession session,
+                               long packedPos,
+                               PathPosition neighborPos,
+                               PathPosition requestStart,
+                               PathPosition requestTarget,
+                               Node currentNode) {
+        Node candidate = session.nodes.get(packedPos);
+        if (candidate != null) {
+            return candidate;
+        }
+        long startedAt = profiling ? System.nanoTime() : 0L;
+        Node created = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
+        created.gCost = Double.POSITIVE_INFINITY;
+        session.nodes.put(packedPos, created);
+        if (profiling) {
+            profNodeCreateNanos += System.nanoTime() - startedAt;
+        }
+        return created;
+    }
+
+    private boolean isValidCandidate(EvaluationContext context) {
+        long startedAt = profiling ? System.nanoTime() : 0L;
+        boolean valid = isValidByProcessors(context);
+        if (profiling) {
+            profIsValidNanos += System.nanoTime() - startedAt;
+        }
+        if (!valid && profiling) {
+            profIsValidRejects++;
+        }
+        return valid;
+    }
+
+    private double timedGCost(EvaluationContext context) {
+        long startedAt = profiling ? System.nanoTime() : 0L;
+        double gCost = calculateGCost(context);
+        if (profiling) {
+            profCostCalcNanos += System.nanoTime() - startedAt;
+        }
+        return gCost;
+    }
+
+    private boolean rejectsByGCost(Node candidate, double gCost) {
+        boolean rejected = Double.isFinite(candidate.gCost)
+            && gCost + gTolerance(gCost, candidate.gCost) >= candidate.gCost;
+        if (rejected && profiling) {
+            profGCostRejects++;
+        }
+        return rejected;
+    }
+
+    private void updateCandidate(Node candidate, Node currentNode, double gCost, PathfindingSession session) {
+        candidate.parent = currentNode;
+        candidate.gCost = gCost;
+        session.recordFallbackCandidate(candidate);
+    }
+
+    private void enqueueCandidate(PrimitiveMinHeap openSet, long packedPos, Node candidate) {
+        double fCost = candidate.fCost();
+        candidate.cachedFCost = fCost;
+        double heapKey = calculateHeapKey(candidate, fCost);
+        long startedAt = profiling ? System.nanoTime() : 0L;
+        openSet.insertOrUpdate(packedPos, heapKey);
+        candidate.inOpen = true;
+        if (profiling) {
+            profHeapNanos += System.nanoTime() - startedAt;
+        }
     }
 
     @Override

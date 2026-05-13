@@ -24,6 +24,7 @@ public abstract class Settingable {
         return Collections.unmodifiableList(settings);
     }
 
+    @SuppressWarnings("java:S1452")
     public Setting<?> settingById(String id) {
         ensureSettingsRegistered();
         return findSetting(id);

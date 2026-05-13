@@ -22,6 +22,7 @@ public final class Subscription {
         return eventType;
     }
 
+    @SuppressWarnings("java:S1452")
     public EventHandler<?> getHandler() {
         return handler;
     }

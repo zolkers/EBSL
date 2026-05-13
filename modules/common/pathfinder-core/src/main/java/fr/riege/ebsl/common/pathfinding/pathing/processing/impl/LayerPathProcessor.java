@@ -71,18 +71,16 @@ public final class LayerPathProcessor implements NodeProcessor {
         NavigationPoint currentPoint = context.getNavigationPointProvider()
             .getNavigationPoint(current, context.getEnvironmentContext());
 
-        if (previous != null) {
-            if (previous != lastCheckedPrev) {
-                lastCheckedPrev = previous;
-                lastPrevInsideSolid = isInsideSolidSpace(context, previous);
-            }
-            if (lastPrevInsideSolid || isInsideSolidSpace(context, current)) {
-                return false;
-            }
+        if (previous != null && transitionStartsOrEndsInsideSolid(context, previous, current)) {
+            return false;
         }
 
-        if (!currentPoint.isTraversable()) return false;
-        if (previous == null) return true;
+        if (!currentPoint.isTraversable()) {
+            return false;
+        }
+        if (previous == null) {
+            return true;
+        }
 
         NavigationPoint previousPoint = context.getNavigationPointProvider()
             .getNavigationPoint(previous, context.getEnvironmentContext());
@@ -91,26 +89,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         int dx = current.flooredX() - previous.flooredX();
         int dz = current.flooredZ() - previous.flooredZ();
 
-        if (dy > maxJumpHeight) {
-            return false;
-        }
-        if (dy > DEFAULT_MOB_JUMP_HEIGHT && (previousPoint.isLiquid() || currentPoint.isLiquid())) {
-            return false;
-        }
-        if (dy > ASCENT_DY_THRESHOLD && hasJumpSupport(previousPoint) && !hasJumpHeadroom(context, previous)) {
-            return false;
-        }
-        if (isParkourOffset(dx, dz) && !isValidParkourMove(context, previous, current, previousPoint, currentPoint)) {
-            return false;
-        }
-        if (Math.abs(dx) == 1 && Math.abs(dz) == 1 && !hasOpenDiagonalCorners(context, previous, dx, dz)) {
-            return false;
-        }
-        if (Math.abs(dx) == 1 && Math.abs(dz) == 1 && hasPartialSupportCornerClip(context, previous, current, dx, dz)) {
-            return false;
-        }
-
-        if (dy >= -0.5 && requiresJumpForStep(context, current, dx, dz) && (!hasJumpSupport(previousPoint) || !hasJumpHeadroom(context, previous))) {
+        if (!hasValidElevationTransition(context, previous, current, previousPoint, currentPoint, dx, dz, dy)) {
             return false;
         }
 
@@ -124,6 +103,55 @@ public final class LayerPathProcessor implements NodeProcessor {
             || previousPoint.hasFloor()
             || currentPoint.isClimbable()
             || previousPoint.isClimbable();
+    }
+
+    private boolean transitionStartsOrEndsInsideSolid(EvaluationContext context, PathPosition previous, PathPosition current) {
+        if (previous != lastCheckedPrev) {
+            lastCheckedPrev = previous;
+            lastPrevInsideSolid = isInsideSolidSpace(context, previous);
+        }
+        return lastPrevInsideSolid || isInsideSolidSpace(context, current);
+    }
+
+    private boolean hasValidElevationTransition(EvaluationContext context,
+                                                PathPosition previous,
+                                                PathPosition current,
+                                                NavigationPoint previousPoint,
+                                                NavigationPoint currentPoint,
+                                                int dx,
+                                                int dz,
+                                                double dy) {
+        if (dy > maxJumpHeight || isLiquidAscentTooHigh(previousPoint, currentPoint, dy)) {
+            return false;
+        }
+        if (dy > ASCENT_DY_THRESHOLD && hasJumpSupport(previousPoint) && !hasJumpHeadroom(context, previous)) {
+            return false;
+        }
+        if (isParkourOffset(dx, dz) && !isValidParkourMove(context, previous, current, previousPoint, currentPoint)) {
+            return false;
+        }
+        if (isBlockedDiagonalTransition(context, previous, current, dx, dz)) {
+            return false;
+        }
+        return dy < -0.5
+            || !requiresJumpForStep(context, current, dx, dz)
+            || hasJumpSupport(previousPoint) && hasJumpHeadroom(context, previous);
+    }
+
+    private static boolean isLiquidAscentTooHigh(NavigationPoint previousPoint, NavigationPoint currentPoint, double dy) {
+        return dy > DEFAULT_MOB_JUMP_HEIGHT && (previousPoint.isLiquid() || currentPoint.isLiquid());
+    }
+
+    private boolean isBlockedDiagonalTransition(EvaluationContext context,
+                                                PathPosition previous,
+                                                PathPosition current,
+                                                int dx,
+                                                int dz) {
+        if (Math.abs(dx) != 1 || Math.abs(dz) != 1) {
+            return false;
+        }
+        return !hasOpenDiagonalCorners(context, previous, dx, dz)
+            || hasPartialSupportCornerClip(context, previous, current, dx, dz);
     }
 
     @Override
