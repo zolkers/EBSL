@@ -1,14 +1,15 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.Node.MoveType;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
-import fr.riege.ebsl.common.pathfinding.parkour.ParkourGeometry;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
+import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
+import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.util.RegionKey;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
@@ -90,7 +91,6 @@ public final class AStarPathfinder extends AbstractPathfinder {
             if (candidate == null) {
                 long t0 = profiling ? System.nanoTime() : 0L;
                 candidate = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
-                candidate.moveType = inferMoveType(offset);
                 
                 candidate.gCost = Double.POSITIVE_INFINITY;
                 session.nodes.put(packedPos, candidate);
@@ -103,6 +103,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
             
             session.reusableContext.update(searchContext, candidate, currentNode,
                     pathfinderConfiguration.heuristicStrategy);
+            candidate.moveType = classifyMove(currentNode.position, candidate.position, searchContext);
 
             long t1 = profiling ? System.nanoTime() : 0L;
             boolean valid = isValidByProcessors(session.reusableContext);
@@ -125,7 +126,6 @@ public final class AStarPathfinder extends AbstractPathfinder {
 
             candidate.parent = currentNode;
             candidate.gCost = gCost;
-            candidate.moveType = inferMoveType(offset);
             session.recordFallbackCandidate(candidate);
             if (candidate.isTarget(requestTarget)) {
                 return candidate;
@@ -229,18 +229,16 @@ public final class AStarPathfinder extends AbstractPathfinder {
         return s;
     }
 
-    
-    private static MoveType inferMoveType(PathVector offset) {
-        int dy = (int) offset.y;
-        int dx = Math.abs((int) offset.x);
-        int dz = Math.abs((int) offset.z);
-
-        if (ParkourGeometry.isCandidateOffset((int) offset.x, (int) offset.z)) return MoveType.PARKOUR;
-        if (dy > 0)           return MoveType.STEP_UP;
-        if (dy < -1)          return MoveType.FALL;
-        if (dy < 0)           return MoveType.FALL;
-        if (dx + dz >= 2)     return MoveType.WALK_DIAGONAL;
-        return MoveType.WALK;
+    private static Node.MoveType classifyMove(PathPosition previous, PathPosition current, SearchContext searchContext) {
+        WalkabilityChecker checker = searchContext.getNavigationPointProvider() instanceof LayerNavigationPointProvider provider
+            ? provider.checker()
+            : null;
+        return MovementClassifier.classify(
+            previous,
+            current,
+            searchContext.getNavigationPointProvider(),
+            searchContext.getEnvironmentContext(),
+            checker);
     }
 
     

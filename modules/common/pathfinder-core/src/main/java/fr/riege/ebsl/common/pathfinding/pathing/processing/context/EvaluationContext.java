@@ -1,5 +1,6 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing.context;
 
+import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
@@ -16,6 +17,7 @@ public interface EvaluationContext {
     SearchContext getSearchContext();
     PathPosition getGrandparentPathPosition();    
     default PathPosition getGreatGrandparentPathPosition() { return null; }
+    default Node.MoveType getCurrentMoveType() { return null; }
 
     default PathfinderConfiguration getPathfinderConfiguration() {
         return getSearchContext().getPathfinderConfiguration();

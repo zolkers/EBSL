@@ -116,7 +116,7 @@ final class PathQualityRegistryTest {
 
     @Test
     void qualityAwareProcessorAddsConfiguredRiskCost() {
-        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false));
+        WalkabilityChecker checker = new WalkabilityChecker(new TestWorld(false, true));
         LayerNavigationPointProvider provider = new LayerNavigationPointProvider(checker);
         QualityAwarePathProcessor processor = new QualityAwarePathProcessor();
         PathPosition previous = new PathPosition(0, 64, 0);
@@ -131,7 +131,7 @@ final class PathQualityRegistryTest {
 
         assertEquals(0.0, processor.calculateCostContribution(
             new TestEvaluationContext(disabled, provider, previous, current)).value, 0.0001);
-        assertEquals(PathfinderSettings.instance().qualityParkourRisk.value() * 2.0, processor.calculateCostContribution(
+        assertEquals(MovementRiskScorer.planningPenalty(Node.MoveType.PARKOUR) * 2.0, processor.calculateCostContribution(
             new TestEvaluationContext(enabled, provider, previous, current)).value, 0.0001);
     }
 
@@ -173,7 +173,11 @@ final class PathQualityRegistryTest {
         @Override public EnvironmentContext getEnvironmentContext() { return null; }
     }
 
-    private record TestWorld(boolean boxed) implements IWorldLayer {
+    private record TestWorld(boolean boxed, boolean gap) implements IWorldLayer {
+        TestWorld(boolean boxed) {
+            this(boxed, false);
+        }
+
         @Override
         public BlockId getBlock(int x, int y, int z) {
             return isAir(x, y, z) ? BlockId.AIR : BlockId.of("minecraft:stone");
@@ -186,6 +190,9 @@ final class PathQualityRegistryTest {
 
         @Override
         public boolean isSolid(int x, int y, int z) {
+            if (gap && y == 63 && x == 1 && z == 0) {
+                return false;
+            }
             if (y == 63) {
                 return true;
             }

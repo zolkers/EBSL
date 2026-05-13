@@ -18,11 +18,15 @@ final class MovementRiskQualityMetric implements PathQualityMetric {
             return new PathQualityContribution(id(), hasPositionPath || !nodes.isEmpty() ? 1.0 : 0.0, 1.4, "no typed moves");
         }
         double risk = 0.0;
+        double maxRisk = 0.0;
         for (int i = 1; i < nodes.size(); i++) {
-            risk += MovementRiskScorer.risk(nodes.get(i).moveType);
+            double moveRisk = MovementRiskScorer.risk(nodes.get(i).moveType);
+            risk += moveRisk;
+            maxRisk = Math.max(maxRisk, moveRisk);
         }
         double averageRisk = risk / (nodes.size() - 1);
-        double score = Math.clamp(1.0 - averageRisk, 0.0, 1.0);
-        return new PathQualityContribution(id(), score, 1.4, String.format("risk %.2f", averageRisk));
+        double humanRisk = averageRisk * 0.55 + maxRisk * 0.45;
+        double score = Math.clamp(1.0 - humanRisk, 0.0, 1.0);
+        return new PathQualityContribution(id(), score, 1.8, String.format("risk %.2f max %.2f", averageRisk, maxRisk));
     }
 }

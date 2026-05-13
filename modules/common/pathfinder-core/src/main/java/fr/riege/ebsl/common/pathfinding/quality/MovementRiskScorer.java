@@ -22,4 +22,12 @@ public final class MovementRiskScorer {
             case FLY -> settings.qualityFlyRisk.value();
         };
     }
+
+    public static double planningPenalty(Node.MoveType type) {
+        double risk = risk(type);
+        if (risk <= 0.0) {
+            return 0.0;
+        }
+        return risk + risk * risk * 2.0;
+    }
 }

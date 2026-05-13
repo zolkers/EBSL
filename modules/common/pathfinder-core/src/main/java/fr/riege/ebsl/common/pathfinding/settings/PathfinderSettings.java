@@ -85,9 +85,9 @@ public final class PathfinderSettings extends Settingable {
     public final EnumSetting<PathQualityPlanningMode> qualityPlanningMode = registerSetting(new EnumSetting<>(
         "quality_planning_mode", "Quality planning", PathQualityPlanningMode.BALANCED, PathQualityPlanningMode.class));
     public final DoubleSetting qualityRiskCostWeight = registerSetting(new DoubleSetting(
-        "quality_risk_cost_weight", "Quality risk cost weight", 0.75, 0.0, 8.0));
+        "quality_risk_cost_weight", "Quality risk cost weight", 1.25, 0.0, 8.0));
     public final DoubleSetting qualityTerrainCostWeight = registerSetting(new DoubleSetting(
-        "quality_terrain_cost_weight", "Quality terrain cost weight", 0.45, 0.0, 8.0));
+        "quality_terrain_cost_weight", "Quality terrain cost weight", 0.70, 0.0, 8.0));
     public final DoubleSetting qualityRetryMinScore = registerSetting(new DoubleSetting(
         "quality_retry_min_score", "Quality retry min score", 0.62, 0.0, 1.0));
     public final DoubleSetting qualityRetryImprovement = registerSetting(new DoubleSetting(

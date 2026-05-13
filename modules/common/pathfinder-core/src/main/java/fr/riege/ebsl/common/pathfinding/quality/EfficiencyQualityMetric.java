@@ -18,6 +18,6 @@ final class EfficiencyQualityMetric implements PathQualityMetric {
         double direct = Math.max(0.0001, start.distance(end));
         double ratio = context.pathLength() / direct;
         double score = Math.clamp(1.0 / ratio, 0.0, 1.0);
-        return new PathQualityContribution(id(), score, 1.2, String.format("x%.2f", ratio));
+        return new PathQualityContribution(id(), score, 0.8, String.format("x%.2f", ratio));
     }
 }

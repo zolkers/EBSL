@@ -1,8 +1,8 @@
 package fr.riege.ebsl.common.pathfinding;
 
 import fr.riege.ebsl.common.pathfinding.movement.PathSmoother;
+import fr.riege.ebsl.common.pathfinding.movement.MovementClassifier;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
-import fr.riege.ebsl.common.pathfinding.parkour.ParkourGeometry;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -52,90 +52,12 @@ public final class WalkPathProcessor {
             Node node = new Node(position, start, target,
                 effectiveConfig.heuristicWeights, effectiveConfig.heuristicStrategy, nodes.size());
             if (previous != null) {
-                node.moveType = inferMoveType(previous, position, checker);
-                if (checker != null && isSwimPosition(checker, position)) {
-                    node.moveType = Node.MoveType.SWIM;
-                }
+                node.moveType = MovementClassifier.classify(previous, position, effectiveConfig.provider, null, checker);
             }
             nodes.add(node);
             previous = position;
         }
         return nodes;
-    }
-
-    private static final double STEP_DOWN_DY_THRESHOLD = -1.1;
-
-    private static Node.MoveType inferMoveType(PathPosition previous, PathPosition current,
-                                               WalkabilityChecker checker) {
-        double dy = checker == null
-            ? current.flooredY() - previous.flooredY()
-            : floorLevel(checker, current) - floorLevel(checker, previous);
-        int dx = current.flooredX() - previous.flooredX();
-        int dz = current.flooredZ() - previous.flooredZ();
-        int absDx = Math.abs(dx);
-        int absDz = Math.abs(dz);
-        if (checker != null && checker.world().requiresJumpForStep(
-            current.flooredX(), current.flooredY(), current.flooredZ(),
-            Integer.compare(current.flooredX(), previous.flooredX()),
-            Integer.compare(current.flooredZ(), previous.flooredZ()))) {
-            return Node.MoveType.JUMP;
-        }
-        if (checker != null && isParkourMove(previous, current, checker, absDx, absDz)) {
-            return Node.MoveType.PARKOUR;
-        }
-        if (dy > PathfinderSettings.instance().partialAscentThreshold.value()) {
-            return Node.MoveType.STEP_UP;
-        }
-        if (dy < PathfinderSettings.instance().descentThreshold.value()) {
-            return dy >= STEP_DOWN_DY_THRESHOLD ? Node.MoveType.STEP_DOWN : Node.MoveType.FALL;
-        }
-        if (absDx + absDz >= 2) {
-            return Node.MoveType.WALK_DIAGONAL;
-        }
-        return Node.MoveType.WALK;
-    }
-
-    private static boolean isParkourMove(PathPosition previous, PathPosition current,
-                                         WalkabilityChecker checker, int absDx, int absDz) {
-        if (!ParkourGeometry.isCandidateOffset(
-            current.flooredX() - previous.flooredX(),
-            current.flooredZ() - previous.flooredZ())) {
-            return false;
-        }
-        int distance = ParkourGeometry.distanceBlocks(
-            current.flooredX() - previous.flooredX(),
-            current.flooredZ() - previous.flooredZ());
-        if (distance <= 1 || !hasWalkableSupport(checker, previous) || !hasWalkableSupport(checker, current)) {
-            return false;
-        }
-        int checks = Math.max(2, distance * 2);
-        for (int step = 1; step < checks; step++) {
-            double t = (double) step / checks;
-            int x = (int) Math.floor(previous.centeredX() + (current.centeredX() - previous.centeredX()) * t);
-            int z = (int) Math.floor(previous.centeredZ() + (current.centeredZ() - previous.centeredZ()) * t);
-            if (!checker.isWalkable(x, Math.min(previous.flooredY(), current.flooredY()), z)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasWalkableSupport(WalkabilityChecker checker, PathPosition position) {
-        return checker.isWalkable(position.flooredX(), position.flooredY(), position.flooredZ());
-    }
-
-    private static double floorLevel(WalkabilityChecker checker, PathPosition position) {
-        int x = position.flooredX();
-        int y = position.flooredY();
-        int z = position.flooredZ();
-        if (checker.isWater(x, y, z)) {
-            return y + 0.5;
-        }
-        if (checker.isLowPartialSupport(x, y, z)) {
-            return y + 0.5;
-        }
-        double topY = checker.getTopY(x, y - 1, z);
-        return topY <= 0.0 ? y - 1 : y - 1 + topY;
     }
 
     private static double computePathLength(List<Node> path) {
@@ -152,10 +74,7 @@ public final class WalkPathProcessor {
         }
         for (int i = 1; i < nodes.size(); i++) {
             Node node = nodes.get(i);
-            node.moveType = inferMoveType(nodes.get(i - 1).position, node.position, checker);
-            if (isSwimPosition(checker, node.position)) {
-                node.moveType = Node.MoveType.SWIM;
-            }
+            node.moveType = MovementClassifier.classify(nodes.get(i - 1).position, node.position, null, null, checker);
         }
     }
 
@@ -192,9 +111,6 @@ public final class WalkPathProcessor {
                 }
                 Node intermediate = new Node(new PathPosition(ix, y, iz));
                 intermediate.moveType = from.moveType;
-                if (checker != null && isSwimPosition(checker, intermediate.position)) {
-                    intermediate.moveType = Node.MoveType.SWIM;
-                }
                 appendDistinct(result, intermediate);
             }
         }
@@ -248,11 +164,5 @@ public final class WalkPathProcessor {
         return a == Node.MoveType.STEP_UP || b == Node.MoveType.STEP_UP
             || a == Node.MoveType.JUMP || b == Node.MoveType.JUMP
             || a == Node.MoveType.PARKOUR || b == Node.MoveType.PARKOUR;
-    }
-
-    private static boolean isSwimPosition(WalkabilityChecker checker, PathPosition pos) {
-        int x = pos.flooredX(), y = pos.flooredY(), z = pos.flooredZ();
-        return checker.isWater(x, y, z)
-            || (checker.isPassable(x, y, z) && checker.isWater(x, y - 1, z));
     }
 }
