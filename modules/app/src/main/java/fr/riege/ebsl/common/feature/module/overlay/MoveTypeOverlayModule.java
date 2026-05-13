@@ -12,12 +12,12 @@ public final class MoveTypeOverlayModule extends AbstractAnchoredOverlayModule {
     public static final MoveTypeOverlayModule INSTANCE = new MoveTypeOverlayModule();
 
     private MoveTypeOverlayModule() {
-        super(KeyDisplayAnchor.TOP_LEFT);
+        super(
+            "move_type_overlay",
+            "Move Type Overlay",
+            "Shows the current pathfinder movement type while navigating.",
+            KeyDisplayAnchor.TOP_LEFT);
     }
-
-    @Override public String id() { return "move_type_overlay"; }
-    @Override public String displayName() { return "Move Type Overlay"; }
-    @Override public String description() { return "Shows the current pathfinder movement type while navigating."; }
 
     @Override
     public void renderGameViewport(EbslPlatform platform, NavigationService navigation, UiRect viewport) {

@@ -17,12 +17,12 @@ public final class KeyDisplayModule extends AbstractAnchoredOverlayModule {
         new ColorSetting("released_color", "Released color", 0xCC131A24));
 
     private KeyDisplayModule() {
-        super(KeyDisplayAnchor.BOTTOM_LEFT);
+        super(
+            "key_display",
+            "Key Display",
+            "Shows which movement keys the bot is pressing over the game viewport.",
+            KeyDisplayAnchor.BOTTOM_LEFT);
     }
-
-    @Override public String id() { return "key_display"; }
-    @Override public String displayName() { return "Key Display"; }
-    @Override public String description() { return "Shows which movement keys the bot is pressing over the game viewport."; }
 
     @Override
     public void renderGameViewport(EbslPlatform platform, NavigationService navigation, UiRect viewport) {

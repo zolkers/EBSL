@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.Locale;
 
 @SuppressWarnings("java:S6548")
-public final class SpaceMobTask extends Settingable implements BotTask {
+public final class SpaceMobTask extends AbstractBotTask {
     public static final SpaceMobTask INSTANCE = new SpaceMobTask();
 
     private static final int MIN_REPLAN_TICKS = 12;
@@ -21,7 +21,6 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     private static final double HARD_ERROR_MULTIPLIER = 3.0;
 
     private final EntityAimProcessor aimProcessor = new EntityAimProcessor();
-    private final BooleanSetting enabledSetting = registerSetting(new BooleanSetting("enabled", "Enabled", false));
     private final EnumSetting<MobTargetMode> targetMode = registerSetting(
         new EnumSetting<>("target_mode", "Target mode", MobTargetMode.CLOSEST_MOB, MobTargetMode.class));
     private final StringSetting targetName = registerSetting(new StringSetting("target_name", "Entity name", ""));
@@ -36,13 +35,8 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     private int stableDistanceTicks;
 
     private SpaceMobTask() {
+        super("space_mob", "Space Mob", "Keeps a configured distance from a mob while aiming at it.");
     }
-
-    @Override public String id() { return "space_mob"; }
-    @Override public String displayName() { return "Space Mob"; }
-    @Override public String description() { return "Keeps a configured distance from a mob while aiming at it."; }
-    @Override public boolean isEnabled() { return enabledSetting.value(); }
-    @Override public void setEnabled(boolean enabled) { enabledSetting.setValue(enabled); }
 
     public void configure(MobTargetMode mode, String name, double wantedDistance, double wantedTolerance,
                           int wantedSearchRadius, boolean shouldTrackUntilDeath) {

@@ -1,23 +1,18 @@
-package fr.riege.ebsl.common.feature.module.overlay;
+package fr.riege.ebsl.common.feature.task;
 
 import fr.riege.ebsl.common.core.settings.BooleanSetting;
-import fr.riege.ebsl.common.core.settings.EnumSetting;
 import fr.riege.ebsl.common.core.settings.Settingable;
-import fr.riege.ebsl.common.feature.module.PathfinderModule;
-import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 
-abstract class AbstractAnchoredOverlayModule extends Settingable implements PathfinderModule {
+public abstract class AbstractBotTask extends Settingable implements BotTask {
     private final String id;
     private final String displayName;
     private final String description;
     private final BooleanSetting enabledSetting = registerSetting(new BooleanSetting("enabled", "Enabled", false));
-    private final EnumSetting<KeyDisplayAnchor> anchorSetting;
 
-    AbstractAnchoredOverlayModule(String id, String displayName, String description, KeyDisplayAnchor defaultAnchor) {
+    protected AbstractBotTask(String id, String displayName, String description) {
         this.id = id;
         this.displayName = displayName;
         this.description = description;
-        anchorSetting = registerSetting(new EnumSetting<>("anchor", "Position", defaultAnchor, KeyDisplayAnchor.class));
     }
 
     @Override
@@ -36,11 +31,6 @@ abstract class AbstractAnchoredOverlayModule extends Settingable implements Path
     }
 
     @Override
-    public final PathfinderModuleCategory category() {
-        return PathfinderModuleCategory.RENDER;
-    }
-
-    @Override
     public final boolean isEnabled() {
         return enabledSetting.value();
     }
@@ -48,9 +38,5 @@ abstract class AbstractAnchoredOverlayModule extends Settingable implements Path
     @Override
     public final void setEnabled(boolean enabled) {
         enabledSetting.setValue(enabled);
-    }
-
-    final KeyDisplayAnchor anchor() {
-        return anchorSetting.value();
     }
 }

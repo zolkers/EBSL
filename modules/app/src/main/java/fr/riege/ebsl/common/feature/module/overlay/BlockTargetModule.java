@@ -11,12 +11,12 @@ public final class BlockTargetModule extends AbstractAnchoredOverlayModule {
     public static final BlockTargetModule INSTANCE = new BlockTargetModule();
 
     private BlockTargetModule() {
-        super(KeyDisplayAnchor.TOP_RIGHT);
+        super(
+            "block_target",
+            "Block Target",
+            "Shows the resource ID of the block currently looked at.",
+            KeyDisplayAnchor.TOP_RIGHT);
     }
-
-    @Override public String id() { return "block_target"; }
-    @Override public String displayName() { return "Block Target"; }
-    @Override public String description() { return "Shows the resource ID of the block currently looked at."; }
 
     @Override
     public void renderGameViewport(EbslPlatform platform, NavigationService navigation, UiRect viewport) {

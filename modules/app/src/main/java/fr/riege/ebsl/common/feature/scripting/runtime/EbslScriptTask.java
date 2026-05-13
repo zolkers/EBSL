@@ -2,10 +2,9 @@ package fr.riege.ebsl.common.feature.scripting.runtime;
 
 import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
-import fr.riege.ebsl.common.core.settings.Settingable;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
-import fr.riege.ebsl.common.feature.task.BotTask;
+import fr.riege.ebsl.common.feature.task.AbstractBotTask;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 
@@ -15,13 +14,13 @@ import java.util.List;
 import java.util.Locale;
 
 @SuppressWarnings("java:S6548")
-public final class EbslScriptTask extends Settingable implements BotTask {
+public final class EbslScriptTask extends AbstractBotTask {
     public static final EbslScriptTask INSTANCE = new EbslScriptTask();
 
     private static final String INLINE_LABEL = "inline";
 
-    private final BooleanSetting enabled = registerSetting(new BooleanSetting("enabled", "Enabled", false));
-    private final BooleanSetting restartOnChange = registerSetting(new BooleanSetting("restart_on_change", "Restart on change", true));
+    private final BooleanSetting restartOnChange = registerSetting(
+        new BooleanSetting("restart_on_change", "Restart on change", true));
     private final StringSetting scriptFile = registerSetting(new StringSetting("script_file", "Script file", EbslScriptManager.DEFAULT_FILE));
     private final StringSetting inlineScript = registerSetting(new StringSetting("inline_script", "Inline script", EbslScriptManager.DEFAULT_SOURCE));
 
@@ -31,13 +30,8 @@ public final class EbslScriptTask extends Settingable implements BotTask {
     private String statusDetail = "";
 
     private EbslScriptTask() {
+        super("ebsl_script", "EBSL Script", "Runs .ebsl task scripts inspired by Pathmind node workflows.");
     }
-
-    @Override public String id() { return "ebsl_script"; }
-    @Override public String displayName() { return "EBSL Script"; }
-    @Override public String description() { return "Runs .ebsl task scripts inspired by Pathmind node workflows."; }
-    @Override public boolean isEnabled() { return enabled.value(); }
-    @Override public void setEnabled(boolean enabled) { this.enabled.setValue(enabled); }
 
     @Override
     public void tick(EbslPlatform platform) {
