@@ -8,6 +8,10 @@ plugins {
 apply from: rootProject.file('gradle/ebsl-modules.gradle')
 
 subprojects {
+    sonar {
+        skipProject = true
+    }
+
     def subPath = project.path.replace(':', '/').replaceFirst('^/', '')
     layout.buildDirectory = rootProject.layout.buildDirectory.dir(subPath)
 
@@ -20,6 +24,22 @@ subprojects {
 
 def coverageProjects = providers.provider {
     subprojects.findAll { it.plugins.hasPlugin('java') && it.extensions.findByName('sourceSets') != null }
+}
+
+def sonarMainSourceDirs = providers.provider {
+    coverageProjects.get().collectMany { it.extensions.sourceSets.main.allJava.srcDirs }.findAll { it.exists() }
+}
+
+def sonarTestSourceDirs = providers.provider {
+    coverageProjects.get().collectMany { it.extensions.sourceSets.test.allJava.srcDirs }.findAll { it.exists() }
+}
+
+def sonarMainBinaryDirs = providers.provider {
+    coverageProjects.get().collectMany { it.extensions.sourceSets.main.output.classesDirs.files }.findAll { it.exists() }
+}
+
+def sonarTestBinaryDirs = providers.provider {
+    coverageProjects.get().collectMany { it.extensions.sourceSets.test.output.classesDirs.files }.findAll { it.exists() }
 }
 
 def coverageClassExcludes = [
@@ -213,6 +233,12 @@ sonar {
         property 'sonar.projectKey', 'EBSL'
         property 'sonar.projectName', 'EBSL'
         property 'sonar.sourceEncoding', 'UTF-8'
+        property 'sonar.sources', sonarMainSourceDirs.get()
+        property 'sonar.tests', sonarTestSourceDirs.get()
+        property 'sonar.java.binaries', sonarMainBinaryDirs.get()
+        property 'sonar.java.test.binaries', sonarTestBinaryDirs.get()
+        property 'sonar.java.libraries', sonarMainBinaryDirs.get()
+        property 'sonar.java.test.libraries', sonarMainBinaryDirs.get()
         property 'sonar.coverage.jacoco.xmlReportPaths',
             layout.buildDirectory.file('reports/jacoco/jacocoRootReport/jacocoRootReport.xml').get().asFile.path
         property 'sonar.coverage.exclusions', sonarCoverageExclusions.join(',')
