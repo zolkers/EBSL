@@ -17,6 +17,9 @@ public final class BlockSelector {
         return id != null && expression.matches(id);
     }
 
+    /**
+     * Defines the contract for {@code Expression} implementations.
+     */
     private interface Expression {
         boolean matches(BlockId id);
     }

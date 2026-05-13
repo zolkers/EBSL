@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.render;
 
+/**
+ * Defines the contract for {@code RenderStyleSink} implementations.
+ */
 public interface RenderStyleSink<T extends RenderStyleSink<T>> {
     T paint(RenderPaint paint);
 

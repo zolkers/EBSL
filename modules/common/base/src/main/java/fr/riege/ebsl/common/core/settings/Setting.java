@@ -2,6 +2,9 @@ package fr.riege.ebsl.common.core.settings;
 
 import com.google.gson.JsonElement;
 
+/**
+ * Defines the contract for {@code Setting} implementations.
+ */
 public interface Setting<T> {
     String id();
 

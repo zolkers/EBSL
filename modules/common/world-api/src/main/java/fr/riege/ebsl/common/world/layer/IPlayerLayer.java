@@ -4,6 +4,9 @@ import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.domain.world.TargetedBlock;
 import fr.riege.ebsl.common.math.Vec3d;
 
+/**
+ * Defines the contract for {@code IPlayerLayer} implementations.
+ */
 public interface IPlayerLayer {
     Vec3d position();
     default Vec3d velocity() { return new Vec3d(0.0, 0.0, 0.0); }

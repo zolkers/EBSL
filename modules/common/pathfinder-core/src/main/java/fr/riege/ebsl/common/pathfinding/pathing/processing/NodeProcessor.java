@@ -2,6 +2,9 @@ package fr.riege.ebsl.common.pathfinding.pathing.processing;
 
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 
+/**
+ * Defines the contract for {@code NodeProcessor} implementations.
+ */
 public interface NodeProcessor extends Processor {
     default boolean isValid(EvaluationContext context) {
         return true;

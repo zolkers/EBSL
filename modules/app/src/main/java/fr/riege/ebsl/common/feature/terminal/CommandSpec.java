@@ -52,6 +52,9 @@ public final class CommandSpec implements CommandHandler {
         return subcommands;
     }
 
+    /**
+     * Defines the contract for {@code CommandExecutor} implementations.
+     */
     @FunctionalInterface
     public interface CommandExecutor {
         CommandResult execute(CommandContext ctx);

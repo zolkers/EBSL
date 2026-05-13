@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.render;
 
+/**
+ * Defines the contract for {@code RenderPaint} implementations.
+ */
 public sealed interface RenderPaint permits RenderPaint.Solid, RenderPaint.Gradient, RenderPaint.Rainbow {
     RenderPaint SOLID_WHITE = solid(RenderColor.WHITE);
 

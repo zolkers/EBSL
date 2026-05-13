@@ -8,6 +8,9 @@ import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.List;
 
+/**
+ * Defines the contract for {@code PathfinderModule} implementations.
+ */
 public interface PathfinderModule {
     String id();
     String displayName();

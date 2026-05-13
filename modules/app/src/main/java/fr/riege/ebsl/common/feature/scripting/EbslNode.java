@@ -4,6 +4,9 @@ import fr.riege.ebsl.common.core.settings.Setting;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/**
+ * Defines the contract for {@code EbslNode} implementations.
+ */
 public interface EbslNode {
     String id();
 

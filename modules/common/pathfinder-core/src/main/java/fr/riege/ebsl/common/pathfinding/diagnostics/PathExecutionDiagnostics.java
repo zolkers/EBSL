@@ -35,6 +35,9 @@ public final class PathExecutionDiagnostics {
         sink.get().updateExecution(cameraTargetIndex);
     }
 
+    /**
+     * Defines the contract for {@code Sink} implementations.
+     */
     public interface Sink {
         default void clear() {
         }

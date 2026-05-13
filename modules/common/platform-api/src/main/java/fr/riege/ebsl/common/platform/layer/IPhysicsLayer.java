@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.layer;
 
+/**
+ * Defines the contract for {@code IPhysicsLayer} implementations.
+ */
 public interface IPhysicsLayer {
     default void setRotation(float yaw, float pitch) {
     }

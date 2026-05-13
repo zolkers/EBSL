@@ -6,6 +6,9 @@ import fr.riege.ebsl.common.pathfinding.rotation.EasingType;
 
 import java.util.List;
 
+/**
+ * Defines the contract for {@code MovementSmoothing} implementations.
+ */
 interface MovementSmoothing {
     boolean applies(List<Node> path, int pursuitSegment);
 

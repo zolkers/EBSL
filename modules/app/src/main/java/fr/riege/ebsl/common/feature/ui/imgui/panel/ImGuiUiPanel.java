@@ -5,6 +5,9 @@ import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 
+/**
+ * Defines the contract for {@code ImGuiUiPanel} implementations.
+ */
 public interface ImGuiUiPanel {
     void render(EbslUiState state, ViewportLayout layout, NavigationService navigation, EbslPlatform platform);
 }

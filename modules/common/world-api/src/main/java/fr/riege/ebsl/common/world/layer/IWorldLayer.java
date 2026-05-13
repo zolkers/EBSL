@@ -3,6 +3,9 @@ package fr.riege.ebsl.common.world.layer;
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 
+/**
+ * Defines the contract for {@code IWorldLayer} implementations.
+ */
 public interface IWorldLayer {
     BlockId getBlock(int x, int y, int z);
     boolean isAir(int x, int y, int z);

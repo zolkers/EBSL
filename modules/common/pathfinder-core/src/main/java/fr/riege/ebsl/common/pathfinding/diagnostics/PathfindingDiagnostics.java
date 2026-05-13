@@ -37,6 +37,9 @@ public final class PathfindingDiagnostics {
         telemetrySink.get().accept(source, message);
     }
 
+    /**
+     * Defines the contract for {@code TelemetrySink} implementations.
+     */
     @FunctionalInterface
     public interface TelemetrySink {
         void accept(String source, String message);

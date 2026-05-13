@@ -7,6 +7,9 @@ import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import java.util.Map;
 
+/**
+ * Defines the contract for {@code EvaluationContext} implementations.
+ */
 public interface EvaluationContext {
     PathPosition getCurrentPathPosition();
     PathPosition getPreviousPathPosition();

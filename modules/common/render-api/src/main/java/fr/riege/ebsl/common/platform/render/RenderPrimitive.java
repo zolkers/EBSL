@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.render;
 
+/**
+ * Defines the contract for {@code RenderPrimitive} implementations.
+ */
 public sealed interface RenderPrimitive permits RenderPrimitive.Line, RenderPrimitive.FilledBox, RenderPrimitive.WireBox {
     void render(RenderHandle handle, RenderStyle fallbackStyle);
 

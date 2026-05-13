@@ -7,6 +7,9 @@ public record GoalParameter(String id, String label, DefaultProvider defaultProv
         return defaultProvider.value(player);
     }
 
+    /**
+     * Defines the contract for {@code DefaultProvider} implementations.
+     */
     @FunctionalInterface
     public interface DefaultProvider {
         int value(IPlayerLayer player);

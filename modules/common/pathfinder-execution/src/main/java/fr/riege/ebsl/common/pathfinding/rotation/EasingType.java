@@ -191,6 +191,9 @@ public enum EasingType {
         return (x * x * ((BACK_C2 + 1.0f) * x + BACK_C2) + 2.0f) / 2.0f;
     }
 
+    /**
+     * Defines the contract for {@code Curve} implementations.
+     */
     @FunctionalInterface
     private interface Curve {
         float apply(float t);

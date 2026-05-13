@@ -317,6 +317,9 @@ public final class PathSmoother {
                 || checker.isFullWall(x, y + 1, z);
     }
 
+    /**
+     * Defines the contract for {@code CellClearance} implementations.
+     */
     @FunctionalInterface
     private interface CellClearance {
         boolean clear(int x, int y, int z);

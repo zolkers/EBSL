@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.core.event;
 
+/**
+ * Defines the contract for {@code EventBus} implementations.
+ */
 public interface EventBus {
     <T extends Event> void post(T event);
 

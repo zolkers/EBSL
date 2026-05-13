@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.layer;
 
+/**
+ * Defines the contract for {@code IInputLayer} implementations.
+ */
 public interface IInputLayer {
     default void registerUnfocusKeybind(Runnable action) {
     }

@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.platform.render;
 
+/**
+ * Defines the contract for {@code RenderHandle} implementations.
+ */
 @SuppressWarnings("java:S107")
 public interface RenderHandle {
 

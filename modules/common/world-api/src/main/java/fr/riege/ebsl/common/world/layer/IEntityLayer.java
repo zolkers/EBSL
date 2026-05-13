@@ -4,6 +4,9 @@ import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
 
 import java.util.List;
 
+/**
+ * Defines the contract for {@code IEntityLayer} implementations.
+ */
 public interface IEntityLayer {
     default List<EntitySnapshot> entitiesForRendering() {
         return List.of();

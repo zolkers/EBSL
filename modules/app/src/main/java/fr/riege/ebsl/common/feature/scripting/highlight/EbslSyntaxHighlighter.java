@@ -86,6 +86,9 @@ public final class EbslSyntaxHighlighter {
         return index;
     }
 
+    /**
+     * Defines the contract for {@code CharPredicate} implementations.
+     */
     @FunctionalInterface
     private interface CharPredicate {
         boolean test(char value);

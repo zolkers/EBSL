@@ -11,11 +11,17 @@ public final class AppLog {
 
     public record LogEntry(String time, AppLogLevel level, String logger, String text) {}
 
+    /**
+     * Defines the contract for {@code Appender} implementations.
+     */
     @FunctionalInterface
     public interface Appender {
         void bootstrap(Receiver receiver);
     }
 
+    /**
+     * Defines the contract for {@code Receiver} implementations.
+     */
     @FunctionalInterface
     public interface Receiver {
         void receive(LogEntry entry);

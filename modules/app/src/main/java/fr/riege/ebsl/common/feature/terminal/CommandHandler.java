@@ -5,6 +5,9 @@ import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Defines the contract for {@code CommandHandler} implementations.
+ */
 public interface CommandHandler {
     CommandResult execute(CommandContext ctx);
 

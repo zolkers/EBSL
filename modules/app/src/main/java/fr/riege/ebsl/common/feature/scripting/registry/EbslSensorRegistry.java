@@ -133,6 +133,9 @@ public final class EbslSensorRegistry {
         return inputKey != null && inputKey.isDown(runtime.platform().input());
     }
 
+    /**
+     * Defines the contract for {@code Sensor} implementations.
+     */
     @FunctionalInterface
     private interface Sensor {
         boolean evaluate(EbslScriptRuntime runtime, List<String> args);

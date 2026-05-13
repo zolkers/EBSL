@@ -2,6 +2,9 @@ package fr.riege.ebsl.common.navigation.runtime.entity;
 
 import fr.riege.ebsl.common.math.Vec3d;
 
+/**
+ * Defines the contract for {@code NavigationActor} implementations.
+ */
 public interface NavigationActor {
     Vec3d position();
 

@@ -5,6 +5,9 @@ import fr.riege.ebsl.common.platform.EbslPlatform;
 
 import java.util.List;
 
+/**
+ * Defines the contract for {@code BotTask} implementations.
+ */
 public interface BotTask {
     String id();
     String displayName();

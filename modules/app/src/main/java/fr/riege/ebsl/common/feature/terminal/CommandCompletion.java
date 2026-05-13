@@ -71,11 +71,17 @@ public final class CommandCompletion {
         }
     }
 
+    /**
+     * Defines the contract for {@code ContextualSuggestionSource} implementations.
+     */
     @FunctionalInterface
     public interface ContextualSuggestionSource {
         List<String> suggest(Context context);
     }
 
+    /**
+     * Defines the contract for {@code SuggestionSource} implementations.
+     */
     private interface SuggestionSource {
         List<String> suggest(Context context);
     }

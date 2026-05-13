@@ -1,5 +1,8 @@
 package fr.riege.ebsl.common.pathfinding.movement.types.evaluation;
 
+/**
+ * Defines the contract for {@code MovementEvaluator} implementations.
+ */
 public interface MovementEvaluator {
     default boolean reducesSprintNearWaypoint() {
         return false;

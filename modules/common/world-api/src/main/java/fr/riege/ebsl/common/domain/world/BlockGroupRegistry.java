@@ -63,6 +63,9 @@ public final class BlockGroupRegistry {
         return token == null ? "" : token.trim().toLowerCase(Locale.ROOT).replace('-', '_');
     }
 
+    /**
+     * Defines the contract for {@code BlockMatcher} implementations.
+     */
     @FunctionalInterface
     private interface BlockMatcher {
         boolean matches(BlockId id);

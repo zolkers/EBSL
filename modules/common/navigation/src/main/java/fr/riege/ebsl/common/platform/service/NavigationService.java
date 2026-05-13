@@ -5,6 +5,9 @@ import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 
+/**
+ * Defines the contract for {@code NavigationService} implementations.
+ */
 public interface NavigationService {
     void startBlockGoal(int x, int y, int z);
 

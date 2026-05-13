@@ -3,6 +3,9 @@ package fr.riege.ebsl.common.platform.layer;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Defines the contract for {@code IStorageLayer} implementations.
+ */
 public interface IStorageLayer {
     void saveJson(String key, String json);
     Optional<String> loadJson(String key);

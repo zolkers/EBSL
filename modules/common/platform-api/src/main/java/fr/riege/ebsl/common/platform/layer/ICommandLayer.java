@@ -3,7 +3,13 @@ package fr.riege.ebsl.common.platform.layer;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Defines the contract for {@code ICommandLayer} implementations.
+ */
 public interface ICommandLayer {
+    /**
+     * Defines the contract for {@code CommandHandler} implementations.
+     */
     @FunctionalInterface
     interface CommandHandler {
         void execute(String[] args, Consumer<String> output);

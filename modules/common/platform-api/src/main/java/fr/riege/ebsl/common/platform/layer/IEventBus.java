@@ -4,6 +4,9 @@ import fr.riege.ebsl.common.core.event.*;
 
 import java.util.function.Consumer;
 
+/**
+ * Defines the contract for {@code IEventBus} implementations.
+ */
 public interface IEventBus {
     void onTick(Consumer<TickEvent> handler);
     void onRenderWorld(Consumer<RenderWorldEvent> handler);
