@@ -34,11 +34,7 @@ public final class PathSmoother {
                 Node prevNode  = raw.get(cand - 1);
                 Node candidate = raw.get(cand);
 
-                if (prevNode.position.flooredY() != anchor.position.flooredY()
-                        || candidate.position.flooredY() != anchor.position.flooredY()) {
-                    break;
-                }
-                if (wouldSkipConstrainedCorner(raw, anchorIdx, cand, checker)) {
+                if (!canSmoothToCandidate(raw, anchor, prevNode, candidate, anchorIdx, cand, checker)) {
                     break;
                 }
                 if (hasLineOfSight(anchor, candidate, checker)) {
@@ -53,6 +49,18 @@ public final class PathSmoother {
         }
 
         return result;
+    }
+
+    private static boolean canSmoothToCandidate(List<Node> raw,
+                                                Node anchor,
+                                                Node previous,
+                                                Node candidate,
+                                                int anchorIdx,
+                                                int candidateIdx,
+                                                WalkabilityChecker checker) {
+        return previous.position.flooredY() == anchor.position.flooredY()
+            && candidate.position.flooredY() == anchor.position.flooredY()
+            && !wouldSkipConstrainedCorner(raw, anchorIdx, candidateIdx, checker);
     }
 
     public static List<Node> smoothFly(List<Node> raw, WalkabilityChecker checker) {

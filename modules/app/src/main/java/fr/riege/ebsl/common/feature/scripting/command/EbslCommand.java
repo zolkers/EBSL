@@ -94,31 +94,36 @@ public final class EbslCommand {
         List<String> lines = new ArrayList<>();
         lines.add("EBSL executable nodes: " + EbslNodeRegistry.canonicalNodes().size());
         for (EbslNodeCategory category : EbslNodeCategory.values()) {
-            boolean header = false;
-            for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
-                EbslNodeTemplate template = EbslNodeTemplate.of(node);
-                if (template.category() != category) {
-                    continue;
-                }
-                if (!header) {
-                    lines.add("[" + category.id() + "]");
-                    header = true;
-                }
-                lines.add("  " + template.command());
-            }
-            for (EbslNodeType block : SCRIPT_BLOCKS) {
-                EbslNodeTemplate template = EbslNodeTemplate.of(block);
-                if (template.category() != category) {
-                    continue;
-                }
-                if (!header) {
-                    lines.add("[" + category.id() + "]");
-                    header = true;
-                }
-                lines.add("  " + template.command());
-            }
+            boolean header = appendRegisteredNodes(lines, category, false);
+            appendScriptBlocks(lines, category, header);
         }
         return lines;
+    }
+
+    private static boolean appendRegisteredNodes(List<String> lines, EbslNodeCategory category, boolean header) {
+        boolean hasHeader = header;
+        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
+            hasHeader = appendTaskLine(lines, category, EbslNodeTemplate.of(node), hasHeader);
+        }
+        return hasHeader;
+    }
+
+    private static void appendScriptBlocks(List<String> lines, EbslNodeCategory category, boolean header) {
+        boolean hasHeader = header;
+        for (EbslNodeType block : SCRIPT_BLOCKS) {
+            hasHeader = appendTaskLine(lines, category, EbslNodeTemplate.of(block), hasHeader);
+        }
+    }
+
+    private static boolean appendTaskLine(List<String> lines, EbslNodeCategory category, EbslNodeTemplate template, boolean header) {
+        if (template.category() != category) {
+            return header;
+        }
+        if (!header) {
+            lines.add("[" + category.id() + "]");
+        }
+        lines.add("  " + template.command());
+        return true;
     }
 
     private static List<String> suggest(CommandCompletion.Context context) {

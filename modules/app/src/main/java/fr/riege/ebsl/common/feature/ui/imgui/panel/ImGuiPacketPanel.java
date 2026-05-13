@@ -52,9 +52,13 @@ final class ImGuiPacketPanel {
         float listH = Math.max(80.0f, viewport.height() - 112.0f);
         if (ImGui.beginChild("##packet-log", viewport.width() - 28.0f, listH, true)) {
             int rendered = 0;
-            for (int i = events.size() - 1; i >= 0 && rendered < 350; i--) {
-                PacketCaptureEvent event = events.get(i);
-                if (!matchesFilter(event, filter)) continue;
+            int index = events.size() - 1;
+            while (index >= 0 && rendered < 350) {
+                PacketCaptureEvent event = events.get(index);
+                index--;
+                if (!matchesFilter(event, filter)) {
+                    continue;
+                }
                 ImGui.textDisabled(formatPacket(event));
                 rendered++;
             }

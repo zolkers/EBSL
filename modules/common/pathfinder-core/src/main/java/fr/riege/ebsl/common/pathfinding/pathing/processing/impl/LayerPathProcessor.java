@@ -513,8 +513,9 @@ public final class LayerPathProcessor implements NodeProcessor {
         if (totalW <= 0.1) {
             return 0.0;
         }
-        avgX /= totalW;
-        avgZ /= totalW;
+        double denominator = totalW;
+        avgX /= denominator;
+        avgZ /= denominator;
         double cdx = current.x - previous.x;
         double cdz = current.z - previous.z;
         double curLen = Math.sqrt(cdx * cdx + cdz * cdz);

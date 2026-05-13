@@ -34,32 +34,13 @@ public final class ParkourJumpPlanner {
         double verticalDelta = toPoint.getFloorLevel() - fromPoint.getFloorLevel();
 
         ParkourJumpRules.RuleResult rule = ParkourJumpRules.evaluate(dx, dz, verticalDelta);
-        if (!rule.accepted()) {
-            return ParkourJumpPlan.rejected(rule.reason());
-        }
-        if (!hasJumpSupport(fromPoint)) {
-            return ParkourJumpPlan.rejected("missing takeoff support");
-        }
-        if (!hasLandingSupport(to, toPoint)) {
-            return ParkourJumpPlan.rejected("missing landing support", landingSupportDetail(to));
-        }
-        if (fromPoint.isLiquid() || toPoint.isLiquid()) {
-            return ParkourJumpPlan.rejected("parkour cannot start or land in liquid");
+        ParkourJumpPlan rejection = validateJumpShape(from, to, fromPoint, toPoint, distanceBlocks, verticalDelta, rule);
+        if (rejection != null) {
+            return rejection;
         }
 
         int stepX = Integer.signum(dx);
         int stepZ = Integer.signum(dz);
-        if (!hasColumnHeadroom(from.flooredX(), from.flooredY(), from.flooredZ())
-            || !hasColumnHeadroom(to.flooredX(), to.flooredY(), to.flooredZ())) {
-            return ParkourJumpPlan.rejected("missing takeoff or landing headroom");
-        }
-        if (!hasArcClearance(from, to, distanceBlocks, verticalDelta)) {
-            return ParkourJumpPlan.rejected("jump arc is blocked");
-        }
-        if (!hasActualGap(from, to, distanceBlocks)) {
-            return ParkourJumpPlan.rejected("no gap - all intermediates are walkable");
-        }
-
         int approachBlocks = countApproachBlocks(from, -stepX, -stepZ);
         double horizontalSpan = Math.sqrt(
             Math.pow(to.centeredX() - from.centeredX(), 2.0)
@@ -80,6 +61,42 @@ public final class ParkourJumpPlanner {
             verticalDelta,
             feasible ? "ok" : (rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum"),
             "");
+    }
+
+    private ParkourJumpPlan validateJumpShape(PathPosition from,
+                                              PathPosition to,
+                                              NavigationPoint fromPoint,
+                                              NavigationPoint toPoint,
+                                              int distanceBlocks,
+                                              double verticalDelta,
+                                              ParkourJumpRules.RuleResult rule) {
+        if (!rule.accepted()) {
+            return ParkourJumpPlan.rejected(rule.reason());
+        }
+        if (!hasJumpSupport(fromPoint)) {
+            return ParkourJumpPlan.rejected("missing takeoff support");
+        }
+        if (!hasLandingSupport(to, toPoint)) {
+            return ParkourJumpPlan.rejected("missing landing support", landingSupportDetail(to));
+        }
+        if (fromPoint.isLiquid() || toPoint.isLiquid()) {
+            return ParkourJumpPlan.rejected("parkour cannot start or land in liquid");
+        }
+        return validateJumpSpace(from, to, distanceBlocks, verticalDelta);
+    }
+
+    private ParkourJumpPlan validateJumpSpace(PathPosition from, PathPosition to, int distanceBlocks, double verticalDelta) {
+        if (!hasColumnHeadroom(from.flooredX(), from.flooredY(), from.flooredZ())
+            || !hasColumnHeadroom(to.flooredX(), to.flooredY(), to.flooredZ())) {
+            return ParkourJumpPlan.rejected("missing takeoff or landing headroom");
+        }
+        if (!hasArcClearance(from, to, distanceBlocks, verticalDelta)) {
+            return ParkourJumpPlan.rejected("jump arc is blocked");
+        }
+        if (!hasActualGap(from, to, distanceBlocks)) {
+            return ParkourJumpPlan.rejected("no gap - all intermediates are walkable");
+        }
+        return null;
     }
 
     private int countApproachBlocks(PathPosition from, int backX, int backZ) {

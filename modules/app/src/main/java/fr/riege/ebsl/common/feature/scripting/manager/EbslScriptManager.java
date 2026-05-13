@@ -168,25 +168,33 @@ public final class EbslScriptManager {
         }
         List<EbslGraphConnection> connections = new ArrayList<>();
         for (JsonElement element : root.getAsJsonArray(JSON_CONNECTIONS)) {
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            JsonObject edge = element.getAsJsonObject();
-            if (!edge.has("from") || !edge.has("to")) {
-                continue;
-            }
-            String from = edge.get("from").getAsString();
-            String to = edge.get("to").getAsString();
-            String id = edge.has("id") ? edge.get("id").getAsString() : "";
-            EbslGraphConnectionMode mode = edge.has("mode")
-                ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
-                : EbslGraphConnectionMode.FLOW;
-            String label = edge.has(JSON_LABEL) ? edge.get(JSON_LABEL).getAsString() : "";
-            if (!from.isBlank() && !to.isBlank() && !from.equals(to)) {
-                connections.add(new EbslGraphConnection(id, from, to, mode, label));
+            EbslGraphConnection connection = parseGraphConnection(element);
+            if (connection != null) {
+                connections.add(connection);
             }
         }
         return connections;
+    }
+
+    private EbslGraphConnection parseGraphConnection(JsonElement element) {
+        if (!element.isJsonObject()) {
+            return null;
+        }
+        JsonObject edge = element.getAsJsonObject();
+        if (!edge.has("from") || !edge.has("to")) {
+            return null;
+        }
+        String from = edge.get("from").getAsString();
+        String to = edge.get("to").getAsString();
+        if (from.isBlank() || to.isBlank() || from.equals(to)) {
+            return null;
+        }
+        String id = edge.has("id") ? edge.get("id").getAsString() : "";
+        EbslGraphConnectionMode mode = edge.has("mode")
+            ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
+            : EbslGraphConnectionMode.FLOW;
+        String label = edge.has(JSON_LABEL) ? edge.get(JSON_LABEL).getAsString() : "";
+        return new EbslGraphConnection(id, from, to, mode, label);
     }
 
     private static String graphLayoutPath(String fileName) {
