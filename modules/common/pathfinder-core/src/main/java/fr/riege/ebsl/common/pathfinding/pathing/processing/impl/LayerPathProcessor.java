@@ -166,8 +166,6 @@ public final class LayerPathProcessor implements NodeProcessor {
         NavigationPoint previousPoint = context.getNavigationPointProvider()
             .getNavigationPoint(previous, context.getEnvironmentContext());
 
-        int dx = current.flooredX() - previous.flooredX();
-        int dz = current.flooredZ() - previous.flooredZ();
         double dy = currentPoint.getFloorLevel() - previousPoint.getFloorLevel();
         int cx = current.flooredX();
         int cy = current.flooredY();

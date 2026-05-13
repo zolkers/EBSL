@@ -71,10 +71,10 @@ final class WalkMovementController {
             return lastValidationResult;
         }
         int currentIndex = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int targetIndex = (int) Math.clamp((long) currentIndex + 1L, 0L, (long) path.size() - 1L);
+        int targetIndex = (int) Math.clamp(currentIndex + 1L, 0L, path.size() - 1L);
         Node from = path.get(currentIndex);
         Node target = path.get(targetIndex);
-        Node next = path.get((int) Math.clamp((long) targetIndex + 1L, 0L, (long) path.size() - 1L));
+        Node next = path.get((int) Math.clamp(targetIndex + 1L, 0L, path.size() - 1L));
         MovementValidationContext context = new MovementValidationContext(
             checker,
             navigationPointProvider,
@@ -168,7 +168,7 @@ final class WalkMovementController {
 
     private boolean isParkourTransitionWindow(int pursuitSegment) {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int end = (int) Math.clamp((long) start + 2L, 0L, (long) path.size() - 1L);
+        int end = (int) Math.clamp(start + 2L, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return true;
@@ -465,7 +465,7 @@ final class WalkMovementController {
             return;
         }
 
-        Node nextWaypoint = path.get((int) Math.clamp((long) pursuitSegment + 2L, 0L, (long) path.size() - 1L));
+        Node nextWaypoint = path.get((int) Math.clamp(pursuitSegment + 2L, 0L, path.size() - 1L));
         WaterMovementContext waterContext = new WaterMovementContext(
             movementWaypoint,
             nextWaypoint,
@@ -528,7 +528,7 @@ final class WalkMovementController {
     private boolean isInStairSequence(int pursuitSegment) {
         int stairCount = 0;
         int start = Math.clamp(pursuitSegment, 0, path.size());
-        int checkEnd = (int) Math.clamp((long) start + 3L, 0L, path.size());
+        int checkEnd = (int) Math.clamp(start + 3L, 0L, path.size());
         for (int i = start; i < checkEnd; i++) {
             Node wp = path.get(i);
             if (MovementEvaluatorRegistry.get(wp.moveType).countsAsStairSequence() && isPartialSupportWaypoint(wp)) {

@@ -15,8 +15,8 @@ public final class RegionKey {
     }
 
     public static long pack(int x, int y, int z) {
-        return ((long) x & MASK_XZ) << SHIFT_X
-             | ((long) z & MASK_XZ) << SHIFT_Z
-             | ((long) y & MASK_Y);
+        return (x & MASK_XZ) << SHIFT_X
+             | (z & MASK_XZ) << SHIFT_Z
+             | (y & MASK_Y);
     }
 }

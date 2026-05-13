@@ -465,7 +465,7 @@ final class ImGuiScriptGraphView {
 
     private void mutateSourceLine(int lineNumber, String value, LineMutation mutation) {
         String[] lines = source.get().split("\\R", -1);
-        int index = Math.clamp(lineNumber - 1, 0, lines.length - 1);
+        int index = (int) Math.clamp(lineNumber - 1L, 0L, lines.length - 1L);
         List<String> rewritten = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
             if (i == index && mutation == LineMutation.DELETE) {

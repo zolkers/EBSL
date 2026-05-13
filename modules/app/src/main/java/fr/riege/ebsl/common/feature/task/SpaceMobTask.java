@@ -112,7 +112,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     }
 
     private EntitySnapshot findClosestMob(EbslPlatform platform) {
-        double maxDistanceSq = searchRadius.value() * searchRadius.value();
+        double maxDistanceSq = (double) searchRadius.value() * searchRadius.value();
         return platform.entities().mobsForTargeting().stream()
             .filter(entity -> isUsableTarget(platform, entity))
             .filter(entity -> entity.distanceToSq(platform.player().position()) <= maxDistanceSq)
@@ -123,7 +123,7 @@ public final class SpaceMobTask extends Settingable implements BotTask {
     private EntitySnapshot findByName(EbslPlatform platform) {
         String query = normalize(targetName.value());
         if (query.isEmpty()) return null;
-        double maxDistanceSq = searchRadius.value() * searchRadius.value();
+        double maxDistanceSq = (double) searchRadius.value() * searchRadius.value();
         return platform.entities().mobsForTargeting().stream()
             .filter(entity -> isUsableTarget(platform, entity))
             .filter(entity -> entity.distanceToSq(platform.player().position()) <= maxDistanceSq)
@@ -227,8 +227,8 @@ public final class SpaceMobTask extends Settingable implements BotTask {
 
     private record GoalKey(int x, int y, int z) {
         double horizontalDistanceSq(GoalKey other) {
-            double dx = x - other.x;
-            double dz = z - other.z;
+            double dx = (double) x - other.x;
+            double dz = (double) z - other.z;
             return dx * dx + dz * dz;
         }
     }

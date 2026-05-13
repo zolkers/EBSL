@@ -143,15 +143,15 @@ final class PathTracker {
             return new PathProximitySnapshot(0, 0, 0.0, hDist, Math.abs(dy), Math.sqrt(hDist * hDist + dy * dy), 0.0);
         }
 
-        int start = (int) Math.clamp((long) pursuitSegment - 3L, 0L, (long) path.size() - 2L);
-        int end = (int) Math.clamp((long) pursuitSegment + 24L, 0L, (long) path.size() - 2L);
+        int start = (int) Math.clamp(pursuitSegment - 3L, 0L, path.size() - 2L);
+        int end = (int) Math.clamp(pursuitSegment + 24L, 0L, path.size() - 2L);
         double bestDist3d = Double.MAX_VALUE;
         double bestHorizontal = Double.MAX_VALUE;
         double bestVertical = Double.MAX_VALUE;
         double bestProgress = pursuitSegment;
         double bestT = 0.0;
         int bestSegment = pursuitSegment;
-        int bestNode = Math.clamp(pursuitSegment + 1, 0, path.size() - 1);
+        int bestNode = (int) Math.clamp(pursuitSegment + 1L, 0L, path.size() - 1L);
 
         for (int i = start; i <= end; i++) {
             double ax = pathCache.x(i);
@@ -228,14 +228,14 @@ final class PathTracker {
 
     double getRemainingDistance(Vec3d playerPos) {
         if (path.isEmpty()) return 0.0;
-        int nextIndex = (int) Math.clamp((long) pursuitSegment + 1L, 0L, (long) path.size() - 1L);
+        int nextIndex = (int) Math.clamp(pursuitSegment + 1L, 0L, path.size() - 1L);
         double distance = distanceToNode(playerPos, path.get(nextIndex));
         return distance + pathCache.remainingFromNode(nextIndex);
     }
 
     Node getMovementWaypoint() {
         if (path.isEmpty()) return null;
-        int targetIdx = (int) Math.clamp((long) pursuitSegment + 1L, 0L, (long) path.size() - 1L);
+        int targetIdx = (int) Math.clamp(pursuitSegment + 1L, 0L, path.size() - 1L);
         return path.get(targetIdx);
     }
 
@@ -262,7 +262,7 @@ final class PathTracker {
 
     private double computePathProgress(Vec3d playerPos) {
         if (path.isEmpty()) return 0.0;
-        if (pursuitSegment + 1 >= path.size()) return path.size() - 1;
+        if (pursuitSegment + 1L >= path.size()) return path.size() - 1;
         double dx = pathCache.segmentDx(pursuitSegment);
         double dy = pathCache.segmentDy(pursuitSegment);
         double dz = pathCache.segmentDz(pursuitSegment);

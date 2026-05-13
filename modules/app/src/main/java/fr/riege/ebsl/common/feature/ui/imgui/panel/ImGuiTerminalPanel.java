@@ -183,10 +183,10 @@ final class ImGuiTerminalPanel {
 
         private void navigateSuggestions(ImGuiInputTextCallbackData data) {
             if (data.getEventKey() == ImGuiKey.UpArrow) {
-                suggestionIdx = Math.clamp(suggestionIdx - 1, 0, suggestions.size() - 1);
+                suggestionIdx = (int) Math.clamp(suggestionIdx - 1L, 0L, suggestions.size() - 1L);
                 scrollSuggestToSelected = true;
             } else if (data.getEventKey() == ImGuiKey.DownArrow) {
-                suggestionIdx = Math.clamp(suggestionIdx + 1, 0, suggestions.size() - 1);
+                suggestionIdx = (int) Math.clamp(suggestionIdx + 1L, 0L, suggestions.size() - 1L);
                 scrollSuggestToSelected = true;
             }
         }

@@ -28,7 +28,7 @@ public final class PathSmoother {
             int  furthest = anchorIdx + 1;
 
             int budget = computeAdaptiveSkipBudget(anchor, checker);
-            int maxCand = Math.clamp(anchorIdx + budget, 0, raw.size() - 1);
+            int maxCand = (int) Math.clamp(anchorIdx + (long) budget, 0L, raw.size() - 1L);
 
             for (int cand = anchorIdx + 2; cand <= maxCand; cand++) {
                 Node prevNode  = raw.get(cand - 1);

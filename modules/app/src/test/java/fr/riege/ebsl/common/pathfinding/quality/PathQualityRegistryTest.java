@@ -13,7 +13,6 @@ import fr.riege.ebsl.common.pathfinding.provider.LayerNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.result.PathImpl;
 import fr.riege.ebsl.common.pathfinding.result.PathfinderResultImpl;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;

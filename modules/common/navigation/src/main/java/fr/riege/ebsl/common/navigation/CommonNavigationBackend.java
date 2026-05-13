@@ -656,7 +656,7 @@ public final class CommonNavigationBackend implements NavigationService {
         int y = target.flooredY();
         int z = target.flooredZ();
         if (checker.isSolid(x, y, z)) {
-            return new PathPosition(x, y + 1, z);
+            return new PathPosition(x, (double) y + 1.0, z);
         }
         return target;
     }

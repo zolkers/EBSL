@@ -48,9 +48,9 @@ public final class EbslNodeCategoryColors {
 
     private static int brighten(int argb, int amount) {
         int a = (argb >>> 24) & 0xFF;
-        int r = Math.clamp(((argb >>> 16) & 0xFF) + amount, 0, 255);
-        int g = Math.clamp(((argb >>> 8) & 0xFF) + amount, 0, 255);
-        int b = Math.clamp((argb & 0xFF) + amount, 0, 255);
+        int r = (int) Math.clamp(((argb >>> 16) & 0xFF) + (long) amount, 0L, 255L);
+        int g = (int) Math.clamp(((argb >>> 8) & 0xFF) + (long) amount, 0L, 255L);
+        int b = (int) Math.clamp((argb & 0xFF) + (long) amount, 0L, 255L);
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 }

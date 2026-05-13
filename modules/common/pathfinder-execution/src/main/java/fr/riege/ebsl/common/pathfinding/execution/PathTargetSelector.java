@@ -14,7 +14,7 @@ final class PathTargetSelector {
         int lookahead = isParkourWindow(path, pursuitSegment)
             ? 1
             : PathfinderSettings.instance().cameraLookahead.value();
-        int camScanEnd = Math.clamp(start + lookahead, 0, path.size() - 1);
+        int camScanEnd = (int) Math.clamp(start + (long) lookahead, 0L, path.size() - 1L);
         for (int i = camScanEnd; i >= start; i--) {
             if (!isWaypointVisible(world, eyePos, path.get(i))) {
                 continue;
@@ -36,7 +36,7 @@ final class PathTargetSelector {
 
     private static boolean isParkourWindow(List<Node> path, int pursuitSegment) {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int end = Math.clamp(start + 1, 0, path.size() - 1);
+        int end = (int) Math.clamp(start + 1L, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return true;

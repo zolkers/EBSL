@@ -2,8 +2,6 @@ package fr.riege.ebsl.common.feature.scripting;
 
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslRunner;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
-import fr.riege.ebsl.common.feature.scripting.runtime.EbslRunner;
-import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 
 import java.util.List;
 

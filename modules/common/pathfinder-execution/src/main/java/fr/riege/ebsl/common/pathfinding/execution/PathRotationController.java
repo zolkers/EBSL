@@ -165,7 +165,10 @@ final class PathRotationController {
     }
 
     private Optional<RotationTarget> selectParkourLandingTarget(Vec3d playerPos, List<Node> path, int pursuitSegment,
-                                                               boolean alreadyRotating) {
+                                                                boolean alreadyRotating) {
+        if (path == null || path.isEmpty()) {
+            return Optional.empty();
+        }
         int landingIndex = findParkourLandingIndex(path, pursuitSegment, PARKOUR_HARD_LOOKAHEAD_NODES);
         if (landingIndex < 0) {
             return Optional.empty();
@@ -177,7 +180,7 @@ final class PathRotationController {
             return Optional.empty();
         }
 
-        Node takeoff = path.get((int) Math.clamp((long) landingIndex - 1L, 0L, (long) path.size() - 1L));
+        Node takeoff = path.get((int) Math.clamp(landingIndex - 1L, 0L, path.size() - 1L));
         Node landing = path.get(landingIndex);
         if (shouldReleaseParkourLandingTarget(playerPos, takeoff, landing, hardToPrepare)) {
             return Optional.empty();
@@ -274,7 +277,7 @@ final class PathRotationController {
             return -1;
         }
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        int end = (int) Math.clamp((long) start + lookaheadNodes, 0L, (long) path.size() - 1L);
+        int end = (int) Math.clamp(start + (long) lookaheadNodes, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
             if (path.get(i).moveType == Node.MoveType.PARKOUR) {
                 return i;
@@ -464,9 +467,9 @@ final class PathRotationController {
         }
 
         int fallbackIndex = (int) Math.clamp(
-            (long) pursuitSegment + Math.max(1, PathfinderSettings.instance().cameraLookahead.value() / 4),
+            pursuitSegment + (long) Math.max(1, PathfinderSettings.instance().cameraLookahead.value() / 4),
             0L,
-            (long) path.size() - 1L);
+            path.size() - 1L);
         Node fallback = path.get(fallbackIndex);
         Vec3d position = new Vec3d(
             fallback.position.centeredX(),

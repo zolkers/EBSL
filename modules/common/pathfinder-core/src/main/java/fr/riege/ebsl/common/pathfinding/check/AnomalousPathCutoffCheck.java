@@ -35,7 +35,7 @@ final class AnomalousPathCutoffCheck implements PathCheck {
             return false;
         }
 
-        Node next = context.path().get(Math.clamp(context.pursuitSegment() + 1, 0, context.path().size() - 1));
+        Node next = context.path().get((int) Math.clamp(context.pursuitSegment() + 1L, 0L, context.path().size() - 1L));
         double nextDistance = distanceToNode(context, next);
         return proximity.distance3d() + PathfinderSettings.instance().anomalousMinNearestAdvantage.value() < nextDistance;
     }

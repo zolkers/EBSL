@@ -21,9 +21,12 @@ final class ParkourMovementExecutor implements MovementExecutor {
 
     private double jumpTriggerDistance(MovementExecutionContext context) {
         int distance = context.parkourDistanceBlocks();
-        double margin = distance <= 2
-            ? SHORT_GAP_TAKEOFF_MARGIN
-            : (distance == 3 ? MEDIUM_GAP_TAKEOFF_MARGIN : LONG_GAP_TAKEOFF_MARGIN);
+        double margin = LONG_GAP_TAKEOFF_MARGIN;
+        if (distance <= 2) {
+            margin = SHORT_GAP_TAKEOFF_MARGIN;
+        } else if (distance == 3) {
+            margin = MEDIUM_GAP_TAKEOFF_MARGIN;
+        }
         return Math.max(context.parkourTriggerDistance(), distance - margin);
     }
 }

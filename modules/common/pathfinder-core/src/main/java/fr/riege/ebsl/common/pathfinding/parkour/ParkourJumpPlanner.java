@@ -59,7 +59,7 @@ public final class ParkourJumpPlanner {
             requiredReach,
             estimatedReach,
             verticalDelta,
-            feasible ? "ok" : (rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum"),
+            feasibilityReason(feasible, rule, approachBlocks),
             "");
     }
 
@@ -102,7 +102,7 @@ public final class ParkourJumpPlanner {
     private int countApproachBlocks(PathPosition from, int backX, int backZ) {
         int approach = 0;
         for (int i = 1; i <= MAX_APPROACH_SCAN; i++) {
-            PathPosition approachPos = from.add(backX * i, 0.0, backZ * i);
+            PathPosition approachPos = from.add((double) backX * i, 0.0, (double) backZ * i);
             NavigationPoint point = provider.getNavigationPoint(approachPos, env);
             if (!point.isTraversable() || !hasJumpSupport(point)) {
                 break;
@@ -125,6 +125,13 @@ public final class ParkourJumpPlanner {
             reach += Math.min(0.45, -verticalDelta * DOWNWARD_REACH_BONUS);
         }
         return reach;
+    }
+
+    private static String feasibilityReason(boolean feasible, ParkourJumpRules.RuleResult rule, int approachBlocks) {
+        if (feasible) {
+            return "ok";
+        }
+        return rule.requiresApproach() && approachBlocks == 0 ? "approach required" : "not enough momentum";
     }
 
     private boolean hasArcClearance(PathPosition from, PathPosition to, int distanceBlocks, double verticalDelta) {

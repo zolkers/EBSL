@@ -1,7 +1,6 @@
 package fr.riege.ebsl.common.feature.scripting.command;
 
 import fr.riege.ebsl.common.core.registry.MapRegistry;
-import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.terminal.CommandContext;
 import fr.riege.ebsl.common.feature.terminal.CommandResult;
 import java.util.Locale;

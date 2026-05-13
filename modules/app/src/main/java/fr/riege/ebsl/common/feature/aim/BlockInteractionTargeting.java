@@ -32,7 +32,7 @@ public final class BlockInteractionTargeting {
     public static PathPosition bestStandingPosition(IWorldLayer world, Vec3d playerPos, int blockX, int blockY, int blockZ, int reachRadius) {
         WalkabilityChecker checker = new WalkabilityChecker(world);
         int effectiveReachRadius = Math.max(1, reachRadius);
-        double reachSquared = effectiveReachRadius * effectiveReachRadius;
+        double reachSquared = (double) effectiveReachRadius * effectiveReachRadius;
         BestStandingPosition best = new BestStandingPosition(null, Double.MAX_VALUE);
 
         for (int dy = -effectiveReachRadius; dy <= effectiveReachRadius; dy++) {
