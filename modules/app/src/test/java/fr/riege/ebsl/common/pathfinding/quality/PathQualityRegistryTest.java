@@ -55,9 +55,9 @@ final class PathQualityRegistryTest {
         );
         Node start = new Node(positions.get(0));
         Node risky = new Node(positions.get(1));
-        risky.moveType = Node.MoveType.PARKOUR;
+        risky.setMoveType(Node.MoveType.PARKOUR);
         Node turn = new Node(positions.get(2));
-        turn.moveType = Node.MoveType.WALK;
+        turn.setMoveType(Node.MoveType.WALK);
         PathfinderResultImpl result = new PathfinderResultImpl(
             PathState.FALLBACK,
             new PathImpl(positions.getFirst(), new PathPosition(8, 64, 0), positions)

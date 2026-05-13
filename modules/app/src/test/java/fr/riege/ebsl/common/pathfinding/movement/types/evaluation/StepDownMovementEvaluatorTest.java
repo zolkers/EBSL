@@ -46,7 +46,7 @@ class StepDownMovementEvaluatorTest {
     private static MovementValidationContext context(WalkabilityChecker checker, PathPosition from, PathPosition target) {
         Node fromNode = new Node(from);
         Node targetNode = new Node(target);
-        targetNode.moveType = Node.MoveType.STEP_DOWN;
+        targetNode.setMoveType(Node.MoveType.STEP_DOWN);
         return new MovementValidationContext(
             checker,
             new LayerNavigationPointProvider(checker),

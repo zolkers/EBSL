@@ -37,7 +37,7 @@ final class PathTargetSelector {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int end = (int) Math.clamp(start + 1L, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
-            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+            if (path.get(i).moveType() == Node.MoveType.PARKOUR) {
                 return true;
             }
         }

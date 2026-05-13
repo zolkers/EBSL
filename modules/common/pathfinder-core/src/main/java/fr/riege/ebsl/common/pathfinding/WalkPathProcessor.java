@@ -25,7 +25,7 @@ public final class WalkPathProcessor {
         List<Node> keynodes = collapseAscendingStacks(smoothed);
         relabelMoveTypes(keynodes, checker);
         for (Node node : keynodes) {
-            node.isKeynode = true;
+            node.setKeynode(true);
         }
         List<Node> navigationPath = insertIntermediates(keynodes, checker);
         relabelMoveTypes(navigationPath, checker);
@@ -52,7 +52,7 @@ public final class WalkPathProcessor {
             Node node = new Node(position, start, target,
                 effectiveConfig.heuristicWeights, effectiveConfig.heuristicStrategy, nodes.size());
             if (previous != null) {
-                node.moveType = MovementClassifier.classify(previous, position, effectiveConfig.provider, null, checker);
+                node.setMoveType(MovementClassifier.classify(previous, position, effectiveConfig.provider, null, checker));
             }
             nodes.add(node);
             previous = position;
@@ -74,7 +74,7 @@ public final class WalkPathProcessor {
         }
         for (int i = 1; i < nodes.size(); i++) {
             Node node = nodes.get(i);
-            node.moveType = MovementClassifier.classify(nodes.get(i - 1).position, node.position, null, null, checker);
+            node.setMoveType(MovementClassifier.classify(nodes.get(i - 1).position, node.position, null, null, checker));
         }
     }
 
@@ -108,7 +108,7 @@ public final class WalkPathProcessor {
             Node last = result.getLast();
             if (sameXZ(last, current)
                 && current.position.flooredY() >= last.position.flooredY()
-                && isAscendingMove(last.moveType, current.moveType)) {
+                && isAscendingMove(last.moveType(), current.moveType())) {
                 result.set(result.size() - 1, current);
                 continue;
             }
@@ -145,7 +145,7 @@ public final class WalkPathProcessor {
     }
 
     private static boolean canInsertIntermediates(Node from, Node to) {
-        return to.moveType != Node.MoveType.PARKOUR
+        return to.moveType() != Node.MoveType.PARKOUR
             && from.position.flooredY() == to.position.flooredY()
             && horizontalDistance(from, to) > PathfinderSettings.instance().intermediateSpacing.value();
     }
@@ -162,7 +162,7 @@ public final class WalkPathProcessor {
             int iz = (int) Math.floor(from.position.centeredZ() + dz * t);
             if (checker == null || checker.isWalkable(ix, y, iz)) {
                 Node intermediate = new Node(new PathPosition(ix, y, iz));
-                intermediate.moveType = from.moveType;
+                intermediate.setMoveType(from.moveType());
                 appendDistinct(result, intermediate);
             }
         }

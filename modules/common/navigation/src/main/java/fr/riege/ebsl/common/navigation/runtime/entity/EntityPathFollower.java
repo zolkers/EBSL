@@ -73,7 +73,7 @@ public final class EntityPathFollower {
         }
 
         Node waypoint = path.get(waypointIndex);
-        currentMoveType = waypoint.moveType == null ? Node.MoveType.WALK : waypoint.moveType;
+        currentMoveType = waypoint.moveType() == null ? Node.MoveType.WALK : waypoint.moveType();
         Vec3d target = targetCenter(waypoint);
         double dx = target.x() - position.x();
         double dy = target.y() - position.y();

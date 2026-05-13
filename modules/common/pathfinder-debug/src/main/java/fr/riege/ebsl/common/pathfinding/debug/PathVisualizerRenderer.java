@@ -63,7 +63,7 @@ final class PathVisualizerRenderer {
             for (int i = 0; i + 1 < limit; i++) {
                 Node a = path.get(i);
                 Node b = path.get(i + 1);
-                session.paint(style.pathPaint(b.moveType, i, limit))
+                session.paint(style.pathPaint(b.moveType(), i, limit))
                     .line(
                         a.position.centeredX(), a.position.flooredY() + PATH_LINE_Y_OFFSET, a.position.centeredZ(),
                         b.position.centeredX(), b.position.flooredY() + PATH_LINE_Y_OFFSET, b.position.centeredZ());

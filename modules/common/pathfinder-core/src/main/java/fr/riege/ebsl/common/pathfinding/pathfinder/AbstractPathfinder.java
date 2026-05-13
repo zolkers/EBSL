@@ -281,7 +281,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
     }
 
     protected Path reconstructPath(PathPosition start, PathPosition target, Node endNode) {
-        if (endNode.parent == null && endNode.depth == 0) {
+        if (endNode.parent() == null && endNode.depth == 0) {
             return new PathImpl(start, target, List.of(endNode.position));
         }
         List<PathPosition> positions = tracePathPositions(endNode);
@@ -297,7 +297,7 @@ public abstract class AbstractPathfinder implements Pathfinder {
         Node current = leafNode;
         while (current != null) {
             positions.add(current.position);
-            current = current.parent;
+            current = current.parent();
         }
         Collections.reverse(positions);
         return positions;

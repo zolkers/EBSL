@@ -20,7 +20,7 @@ final class MovementRiskQualityMetric implements PathQualityMetric {
         double risk = 0.0;
         double maxRisk = 0.0;
         for (int i = 1; i < nodes.size(); i++) {
-            double moveRisk = MovementRiskScorer.risk(nodes.get(i).moveType);
+            double moveRisk = MovementRiskScorer.risk(nodes.get(i).moveType());
             risk += moveRisk;
             maxRisk = Math.max(maxRisk, moveRisk);
         }

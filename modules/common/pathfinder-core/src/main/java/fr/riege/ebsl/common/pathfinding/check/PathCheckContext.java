@@ -20,7 +20,7 @@ public record PathCheckContext(
             return Node.MoveType.WALK;
         }
         int index = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        return path.get(index).moveType;
+        return path.get(index).moveType();
     }
 
     public boolean hasMoveTypeInWindow(Node.MoveType moveType, int lookahead) {
@@ -30,7 +30,7 @@ public record PathCheckContext(
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int end = (int) Math.clamp(start + (long) Math.max(0, lookahead), 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
-            if (path.get(i).moveType == moveType) {
+            if (path.get(i).moveType() == moveType) {
                 return true;
             }
         }

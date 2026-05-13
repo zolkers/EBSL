@@ -47,8 +47,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
     protected void insertStartNode(Node node, double fCost, PrimitiveMinHeap openSet) {
         PathfindingSession session = sessionOrThrow();
         long packedPos = RegionKey.pack(node.position);
-        node.inOpen = true;
-        node.cachedFCost = fCost;
+        node.setInOpen(true);
+        node.setCachedFCost(fCost);
         session.nodes.put(packedPos, node);
         session.initializeFallback(node);
         openSet.insertOrUpdate(packedPos, fCost);
@@ -104,12 +104,12 @@ public final class AStarPathfinder extends AbstractPathfinder {
         PathPosition neighborPos = currentNode.position.add(offset);
         long packedPos = RegionKey.pack(neighborPos);
         Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, requestTarget, currentNode);
-        if (candidate.inClosed) {
+        if (candidate.inClosed()) {
             return null;
         }
 
         session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy);
-        candidate.moveType = classifyMove(currentNode.position, candidate.position, searchContext);
+        candidate.setMoveType(classifyMove(currentNode.position, candidate.position, searchContext));
         if (!isValidCandidate(session.reusableContext)) {
             return null;
         }
@@ -137,7 +137,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         }
         long startedAt = profiling ? System.nanoTime() : 0L;
         Node created = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
-        created.gCost = Double.POSITIVE_INFINITY;
+        created.setGCost(Double.POSITIVE_INFINITY);
         session.nodes.put(packedPos, created);
         if (profiling) {
             profNodeCreateNanos += System.nanoTime() - startedAt;
@@ -167,8 +167,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
     private boolean rejectsByGCost(Node candidate, double gCost) {
-        boolean rejected = Double.isFinite(candidate.gCost)
-            && gCost + gTolerance(gCost, candidate.gCost) >= candidate.gCost;
+        boolean rejected = Double.isFinite(candidate.gCost())
+            && gCost + gTolerance(gCost, candidate.gCost()) >= candidate.gCost();
         if (rejected && profiling) {
             profGCostRejects++;
         }
@@ -176,18 +176,18 @@ public final class AStarPathfinder extends AbstractPathfinder {
     }
 
     private void updateCandidate(Node candidate, Node currentNode, double gCost, PathfindingSession session) {
-        candidate.parent = currentNode;
-        candidate.gCost = gCost;
+        candidate.setParent(currentNode);
+        candidate.setGCost(gCost);
         session.recordFallbackCandidate(candidate);
     }
 
     private void enqueueCandidate(PrimitiveMinHeap openSet, long packedPos, Node candidate) {
         double fCost = candidate.fCost();
-        candidate.cachedFCost = fCost;
+        candidate.setCachedFCost(fCost);
         double heapKey = calculateHeapKey(candidate, fCost);
         long startedAt = profiling ? System.nanoTime() : 0L;
         openSet.insertOrUpdate(packedPos, heapKey);
-        candidate.inOpen = true;
+        candidate.setInOpen(true);
         if (profiling) {
             profHeapNanos += System.nanoTime() - startedAt;
         }
@@ -233,8 +233,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
     @Override
     protected void markNodeAsExpanded(Node node) {
         PathfindingSession session = sessionOrThrow();
-        node.inOpen   = false;
-        node.inClosed = true;
+        node.setInOpen(false);
+        node.setInClosed(true);
         session.expandedCount++;
         if (captureClosedSet) {
             session.closedSet.add(RegionKey.pack(node.position));
@@ -319,7 +319,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         }
 
         void recordFallbackCandidate(Node node) {
-            if (node == null || !Double.isFinite(node.gCost)) {
+            if (node == null || !Double.isFinite(node.gCost())) {
                 return;
             }
             for (int i = 0; i < BEST_PATH_COEFFICIENTS.length; i++) {
@@ -349,7 +349,7 @@ public final class AStarPathfinder extends AbstractPathfinder {
         }
 
         private static double fallbackScore(Node node, double coefficient) {
-            return node.heuristic + node.gCost / coefficient;
+            return node.heuristic + node.gCost() / coefficient;
         }
 
         private static double distanceFromRootSquared(Node node) {
@@ -357,8 +357,8 @@ public final class AStarPathfinder extends AbstractPathfinder {
                 return 0.0;
             }
             Node root = node;
-            while (root.parent != null) {
-                root = root.parent;
+            while (root.parent() != null) {
+                root = root.parent();
             }
             double dx = node.position.x - root.position.x;
             double dy = node.position.y - root.position.y;

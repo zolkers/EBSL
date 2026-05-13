@@ -11,18 +11,18 @@ public final class Node implements Comparable<Node> {
     public final int          depth;
     public final double       heuristic;
 
-    public double   gCost       = 0.0;
-    public Node     parent      = null;
+    private double gCost = 0.0;
+    private Node parent;
     
-    public MoveType moveType    = MoveType.WALK;
+    private MoveType moveType = MoveType.WALK;
     
-    public boolean  isKeynode   = false;
+    private boolean keynode;
     
-    public boolean  inOpen      = false;
+    private boolean inOpen;
     
-    public boolean  inClosed    = false;
+    private boolean inClosed;
     
-    public double   cachedFCost = Double.NaN;
+    private double cachedFCost = Double.NaN;
 
     public enum MoveType {
         WALK, WALK_DIAGONAL, STEP_UP, STEP_DOWN, JUMP, PARKOUR, FALL, SWIM, CLIMB, FLY
@@ -43,6 +43,34 @@ public final class Node implements Comparable<Node> {
         this.heuristic = heuristicStrategy.calculate(
                 new HeuristicContext(position, start, target, heuristicWeights));
     }
+
+    public double gCost() { return gCost; }
+
+    public void setGCost(double gCost) { this.gCost = gCost; }
+
+    public Node parent() { return parent; }
+
+    public void setParent(Node parent) { this.parent = parent; }
+
+    public MoveType moveType() { return moveType; }
+
+    public void setMoveType(MoveType moveType) { this.moveType = moveType == null ? MoveType.WALK : moveType; }
+
+    public boolean isKeynode() { return keynode; }
+
+    public void setKeynode(boolean keynode) { this.keynode = keynode; }
+
+    public boolean inOpen() { return inOpen; }
+
+    public void setInOpen(boolean inOpen) { this.inOpen = inOpen; }
+
+    public boolean inClosed() { return inClosed; }
+
+    public void setInClosed(boolean inClosed) { this.inClosed = inClosed; }
+
+    public double cachedFCost() { return cachedFCost; }
+
+    public void setCachedFCost(double cachedFCost) { this.cachedFCost = cachedFCost; }
 
     public double fCost() { return gCost + heuristic; }
 

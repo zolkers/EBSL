@@ -103,8 +103,8 @@ public final class PathExecutor {
         if (state == State.REPLANNING) return lastKnownMoveType;
         if (state != State.WALKING) return null;
         Node waypoint = pathTracker.getMovementWaypoint();
-        if (waypoint != null && waypoint.moveType != null) {
-            lastKnownMoveType = waypoint.moveType;
+        if (waypoint != null && waypoint.moveType() != null) {
+            lastKnownMoveType = waypoint.moveType();
         }
         return lastKnownMoveType;
     }
@@ -412,7 +412,7 @@ public final class PathExecutor {
             return Node.MoveType.WALK;
         }
         int idx = Math.clamp(pursuitSegment, 0, path.size() - 1);
-        Node.MoveType type = path.get(idx).moveType;
+        Node.MoveType type = path.get(idx).moveType();
         return type == null ? Node.MoveType.WALK : type;
     }
 
@@ -423,7 +423,7 @@ public final class PathExecutor {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int end = (int) Math.clamp(start + 2L, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
-            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+            if (path.get(i).moveType() == Node.MoveType.PARKOUR) {
                 return true;
             }
         }

@@ -281,7 +281,7 @@ final class PathRotationController {
         int start = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int end = (int) Math.clamp(start + (long) lookaheadNodes, 0L, path.size() - 1L);
         for (int i = start; i <= end; i++) {
-            if (path.get(i).moveType == Node.MoveType.PARKOUR) {
+            if (path.get(i).moveType() == Node.MoveType.PARKOUR) {
                 return i;
             }
         }
@@ -359,7 +359,7 @@ final class PathRotationController {
         }
         float tightness = walls / 8.0f;
         boolean ascending = pursuitSegment < path.size()
-            && MovementEvaluatorRegistry.get(path.get(pursuitSegment).moveType).countsAsAscendingDifficulty();
+            && MovementEvaluatorRegistry.get(path.get(pursuitSegment).moveType()).countsAsAscendingDifficulty();
         return Math.clamp(tightness + (ascending ? 0.4f : 0.0f), Float.NEGATIVE_INFINITY, 1.0f);
     }
 
