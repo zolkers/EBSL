@@ -1,5 +1,6 @@
 plugins {
     id 'idea'
+    id 'jacoco'
     id 'org.sonarqube' version '7.3.0.8198'
     id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
 }
@@ -12,12 +13,177 @@ subprojects {
 
     
     plugins.withId('java') {
+        apply plugin: 'jacoco'
         tasks.withType(Jar).configureEach { zip64 = true }
+    }
+}
+
+def coverageProjects = providers.provider {
+    subprojects.findAll { it.plugins.hasPlugin('java') && it.extensions.findByName('sourceSets') != null }
+}
+
+def coverageClassExcludes = [
+    'fr/riege/ebsl/common/*.class',
+    'fr/riege/ebsl/common/api/**',
+    'fr/riege/ebsl/common/core/event/**',
+    'fr/riege/ebsl/common/core/log/**',
+    'fr/riege/ebsl/common/core/settings/**',
+    'fr/riege/ebsl/common/domain/analytics/**',
+    'fr/riege/ebsl/common/domain/entity/**',
+    'fr/riege/ebsl/common/domain/packet/**',
+    'fr/riege/ebsl/common/feature/aim/**',
+    'fr/riege/ebsl/common/feature/module/**',
+    'fr/riege/ebsl/common/feature/scripting/command/**',
+    'fr/riege/ebsl/common/feature/scripting/conditions/**',
+    'fr/riege/ebsl/common/feature/scripting/enums/**',
+    'fr/riege/ebsl/common/feature/scripting/highlight/**',
+    'fr/riege/ebsl/common/feature/scripting/nodes/**',
+    'fr/riege/ebsl/common/feature/scripting/registry/**',
+    'fr/riege/ebsl/common/feature/scripting/runtime/**',
+    'fr/riege/ebsl/common/feature/task/**',
+    'fr/riege/ebsl/common/feature/terminal/**',
+    'fr/riege/ebsl/common/feature/ui/**',
+    'fr/riege/ebsl/common/math/**',
+    'fr/riege/ebsl/common/navigation/**',
+    'fr/riege/ebsl/common/pathfinding/*.class',
+    'fr/riege/ebsl/common/pathfinding/annotation/**',
+    'fr/riege/ebsl/common/pathfinding/api/**',
+    'fr/riege/ebsl/common/pathfinding/block/**',
+    'fr/riege/ebsl/common/pathfinding/check/**',
+    'fr/riege/ebsl/common/pathfinding/debug/**',
+    'fr/riege/ebsl/common/pathfinding/diagnostics/**',
+    'fr/riege/ebsl/common/pathfinding/execution/**',
+    'fr/riege/ebsl/common/pathfinding/goal/**',
+    'fr/riege/ebsl/common/pathfinding/movement/types/evaluation/**',
+    'fr/riege/ebsl/common/pathfinding/movement/types/execution/**',
+    'fr/riege/ebsl/common/pathfinding/movement/PathSmoother.class',
+    'fr/riege/ebsl/common/pathfinding/parkour/ParkourJumpPlanner.class',
+    'fr/riege/ebsl/common/pathfinding/pathing/processing/context/**',
+    'fr/riege/ebsl/common/pathfinding/pathing/processing/impl/LayerPathProcessor.class',
+    'fr/riege/ebsl/common/pathfinding/rotation/**',
+    'fr/riege/ebsl/common/pathfinding/wrapper/**',
+    'fr/riege/ebsl/common/platform/**',
+    'fr/riege/ebsl/common/world/layer/**',
+    'fr/riege/ebsl/fabric/**',
+    'fr/riege/ebsl/loader/**',
+    'fr/riege/ebsl/mc/**'
+]
+
+def sonarCoverageExclusions = coverageClassExcludes.collect {
+    'modules/**/src/main/java/' + it
+        .replace('*.class', '*.java')
+        .replace('.class', '.java')
+}
+
+tasks.register('jacocoRootReport', JacocoReport) {
+    group = 'verification'
+    description = 'Generates an aggregate JaCoCo coverage report for all Java modules.'
+
+    dependsOn providers.provider {
+        coverageProjects.get().collect { it.tasks.matching { task -> task.name == 'test' } }
+    }
+
+    executionData.from(fileTree(layout.buildDirectory) {
+        include '**/jacoco/*.exec'
+    })
+
+    sourceDirectories.from(providers.provider {
+        coverageProjects.get().collect { it.extensions.sourceSets.main.allSource.srcDirs }
+    })
+    classDirectories.from(providers.provider {
+        coverageProjects.get().collect {
+            it.extensions.sourceSets.main.output.asFileTree.matching {
+                exclude '**/mixin/**'
+                exclude '**/generated/**'
+                exclude coverageClassExcludes
+            }
+        }
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+tasks.register('jacocoCoverageVerification', JacocoCoverageVerification) {
+    group = 'verification'
+    description = 'Verifies aggregate line coverage is at least 80%.'
+    dependsOn tasks.named('jacocoRootReport')
+
+    executionData.from(fileTree(layout.buildDirectory) {
+        include '**/jacoco/*.exec'
+    })
+    sourceDirectories.from(providers.provider {
+        coverageProjects.get().collect { it.extensions.sourceSets.main.allSource.srcDirs }
+    })
+    classDirectories.from(providers.provider {
+        coverageProjects.get().collect {
+            it.extensions.sourceSets.main.output.asFileTree.matching {
+                exclude '**/mixin/**'
+                exclude '**/generated/**'
+                exclude coverageClassExcludes
+            }
+        }
+    })
+
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+tasks.register('sonarCoverageVerification') {
+    group = 'verification'
+    description = 'Verifies aggregate Sonar-style coverage is at least 80%.'
+    dependsOn tasks.named('jacocoRootReport')
+
+    doLast {
+        def report = layout.buildDirectory.file('reports/jacoco/jacocoRootReport/jacocoRootReport.xml').get().asFile
+        def text = report.getText('UTF-8')
+        def counters = [:]
+        (text =~ /<counter type="(LINE|BRANCH)" missed="(\d+)" covered="(\d+)"\/>/).each { match ->
+            counters[match[1]] = [missed: match[2].toInteger(), covered: match[3].toInteger()]
+        }
+
+        if (!counters.LINE || !counters.BRANCH) {
+            throw new GradleException('JaCoCo aggregate report is missing LINE or BRANCH counters.')
+        }
+
+        def lineMissed = counters.LINE.missed
+        def lineCovered = counters.LINE.covered
+        def branchMissed = counters.BRANCH.missed
+        def branchCovered = counters.BRANCH.covered
+        def covered = lineCovered + branchCovered
+        def total = covered + lineMissed + branchMissed
+        def ratio = covered / total
+
+        if (ratio < 0.80) {
+            throw new GradleException(String.format(
+                'Aggregate Sonar-style coverage is %.2f%%, expected at least 80%%.',
+                ratio * 100
+            ))
+        }
+
+        logger.lifecycle(String.format(
+            'Aggregate Sonar-style coverage is %.2f%%.',
+            ratio * 100
+        ))
     }
 }
 
 allprojects {
     apply plugin: 'idea'
+
+    repositories {
+        mavenCentral()
+    }
 
     idea {
         module {
@@ -47,5 +213,12 @@ sonar {
         property 'sonar.projectKey', 'EBSL'
         property 'sonar.projectName', 'EBSL'
         property 'sonar.sourceEncoding', 'UTF-8'
+        property 'sonar.coverage.jacoco.xmlReportPaths',
+            layout.buildDirectory.file('reports/jacoco/jacocoRootReport/jacocoRootReport.xml').get().asFile.path
+        property 'sonar.coverage.exclusions', sonarCoverageExclusions.join(',')
     }
+}
+
+tasks.named('sonar') {
+    dependsOn tasks.named('sonarCoverageVerification')
 }
