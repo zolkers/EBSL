@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
@@ -33,6 +34,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -41,10 +43,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AStarPathfinderTest {
     @Test
-    void returnsAsSoonAsAValidSuccessorReachesTarget() throws Exception {
+    void canReturnFirstReachWhenGoalRefinementIsDisabled() throws Exception {
         InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
             .async(false)
             .fallback(false)
+            .goalRefinement(false)
             .build());
 
         PathfinderResult result = pathfinder.findPath(
@@ -56,6 +59,33 @@ class AStarPathfinderTest {
         assertEquals(PathState.FOUND, result.getPathState());
         assertEquals(2, result.getPath().length());
         assertEquals(1, pathfinder.getExploredCount());
+    }
+
+    @Test
+    void refinesPastFirstReachWhenCheaperGoalPathExists() throws Exception {
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .maxIterations(128)
+            .goalRefinement(true)
+            .goalRefinementMinIterations(0)
+            .goalRefinementMaxIterations(128)
+            .goalRefinementMaxTimeMs(0)
+            .processors(List.of(new ExpensiveDirectGoalStep()))
+            .build());
+
+        PathPosition start = new PathPosition(0, 64, 0);
+        PathPosition target = new PathPosition(1, 64, 0);
+        PathfinderResult result = pathfinder.findPath(start, target, null)
+            .toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
+
+        List<PathPosition> positions = new ArrayList<>(result.getPath().collect());
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertTrue(pathfinder.getExploredCount() > 1);
+        assertTrue(positions.size() > 2);
+        assertEquals(start, positions.getFirst());
+        assertEquals(target, positions.getLast());
     }
 
     @Test
@@ -135,6 +165,15 @@ class AStarPathfinderTest {
         public boolean isValid(EvaluationContext context) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
             return true;
+        }
+    }
+
+    private static final class ExpensiveDirectGoalStep implements NodeProcessor {
+        @Override
+        public Cost calculateCostContribution(EvaluationContext context) {
+            boolean startsAtRoot = context.getPreviousPathPosition().equals(context.getStartPathPosition());
+            boolean reachesTarget = context.getCurrentPathPosition().equals(context.getTargetPathPosition());
+            return startsAtRoot && reachesTarget ? Cost.of(100.0) : Cost.ZERO;
         }
     }
 }

@@ -47,6 +47,11 @@ public final class PathfinderConfiguration {
     public final int earlyFallbackIterations;
     public final int earlyFallbackMinPathNodes;
     public final double earlyFallbackMinProgressRatio;
+    public final boolean goalRefinement;
+    public final int goalRefinementMinIterations;
+    public final int goalRefinementMaxIterations;
+    public final long goalRefinementMaxTimeMs;
+    public final double goalRefinementCostMargin;
     public final long maxCalculationTimeMs;
     public final double qualityRiskCostWeight;
     public final double qualityTerrainCostWeight;
@@ -68,6 +73,11 @@ public final class PathfinderConfiguration {
         this.earlyFallbackIterations = b.earlyFallbackIterations;
         this.earlyFallbackMinPathNodes = b.earlyFallbackMinPathNodes;
         this.earlyFallbackMinProgressRatio = b.earlyFallbackMinProgressRatio;
+        this.goalRefinement = b.goalRefinement;
+        this.goalRefinementMinIterations = b.goalRefinementMinIterations;
+        this.goalRefinementMaxIterations = b.goalRefinementMaxIterations;
+        this.goalRefinementMaxTimeMs = b.goalRefinementMaxTimeMs;
+        this.goalRefinementCostMargin = b.goalRefinementCostMargin;
         this.maxCalculationTimeMs = b.maxCalculationTimeMs;
         this.qualityRiskCostWeight = b.qualityRiskCostWeight;
         this.qualityTerrainCostWeight = b.qualityTerrainCostWeight;
@@ -94,6 +104,11 @@ public final class PathfinderConfiguration {
         private int earlyFallbackIterations = 0;
         private int earlyFallbackMinPathNodes = 8;
         private double earlyFallbackMinProgressRatio = 0.08;
+        private boolean goalRefinement = true;
+        private int goalRefinementMinIterations = 48;
+        private int goalRefinementMaxIterations = 1600;
+        private long goalRefinementMaxTimeMs = 18L;
+        private double goalRefinementCostMargin = 1.0e-3;
         private long maxCalculationTimeMs = 0L;
         private double qualityRiskCostWeight = 0.0;
         private double qualityTerrainCostWeight = 0.0;
@@ -115,6 +130,23 @@ public final class PathfinderConfiguration {
         public Builder earlyFallbackMinPathNodes(int v) { this.earlyFallbackMinPathNodes = v; return this; }
         public Builder earlyFallbackMinProgressRatio(double v) {
             this.earlyFallbackMinProgressRatio = v;
+            return this;
+        }
+        public Builder goalRefinement(boolean v) { this.goalRefinement = v; return this; }
+        public Builder goalRefinementMinIterations(int v) {
+            this.goalRefinementMinIterations = Math.max(0, v);
+            return this;
+        }
+        public Builder goalRefinementMaxIterations(int v) {
+            this.goalRefinementMaxIterations = Math.max(0, v);
+            return this;
+        }
+        public Builder goalRefinementMaxTimeMs(long v) {
+            this.goalRefinementMaxTimeMs = Math.max(0L, v);
+            return this;
+        }
+        public Builder goalRefinementCostMargin(double v) {
+            this.goalRefinementCostMargin = Math.max(0.0, v);
             return this;
         }
         public Builder maxCalculationTimeMs(long v) { this.maxCalculationTimeMs = v; return this; }

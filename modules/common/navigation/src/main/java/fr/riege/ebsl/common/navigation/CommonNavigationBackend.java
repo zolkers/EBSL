@@ -782,6 +782,11 @@ public final class CommonNavigationBackend implements NavigationService {
             .earlyFallbackIterations(settings.earlyFallbackIterations.value())
             .earlyFallbackMinPathNodes(settings.earlyFallbackMinPathNodes.value())
             .earlyFallbackMinProgressRatio(settings.earlyFallbackMinProgressRatio.value())
+            .goalRefinement(settings.goalRefinementEnabled.value())
+            .goalRefinementMinIterations(settings.goalRefinementMinIterations.value())
+            .goalRefinementMaxIterations(settings.goalRefinementMaxIterations.value())
+            .goalRefinementMaxTimeMs(settings.goalRefinementMaxTimeMs.value())
+            .goalRefinementCostMargin(settings.goalRefinementCostMargin.value())
             .maxCalculationTimeMs(maxCalculationTimeMs)
             .qualityRiskCostWeight(qualityRiskCostWeight)
             .qualityTerrainCostWeight(qualityTerrainCostWeight)
@@ -802,6 +807,11 @@ public final class CommonNavigationBackend implements NavigationService {
             .earlyFallbackIterations(PathfinderSettings.instance().speculativeLongRangeFallbackIterations.value())
             .earlyFallbackMinPathNodes(PathfinderSettings.instance().speculativeLongRangeFallbackMinNodes.value())
             .earlyFallbackMinProgressRatio(PathfinderSettings.instance().speculativeLongRangeFallbackProgress.value())
+            .goalRefinement(PathfinderSettings.instance().goalRefinementEnabled.value())
+            .goalRefinementMinIterations(PathfinderSettings.instance().goalRefinementMinIterations.value())
+            .goalRefinementMaxIterations(PathfinderSettings.instance().goalRefinementMaxIterations.value())
+            .goalRefinementMaxTimeMs(PathfinderSettings.instance().goalRefinementMaxTimeMs.value())
+            .goalRefinementCostMargin(PathfinderSettings.instance().goalRefinementCostMargin.value())
             .maxCalculationTimeMs(maxCalculationTimeMs)
             .build();
     }

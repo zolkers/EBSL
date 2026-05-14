@@ -103,14 +103,22 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
                                      SearchContext searchContext) {
         PathfindingSession session = sessionOrThrow();
         Iterable<PathVector> offsets = neighborStrategy.getOffsets(currentNode.position);
+        Node bestReachedTarget = null;
 
         for (PathVector offset : offsets) {
             Node reachedTarget = processOffset(requestStart, requestTarget, currentNode, openSet, searchContext, session, offset);
             if (reachedTarget != null) {
-                return reachedTarget;
+                bestReachedTarget = cheaperGoal(bestReachedTarget, reachedTarget);
             }
         }
-        return null;
+        return bestReachedTarget;
+    }
+
+    private static Node cheaperGoal(Node currentBest, Node candidate) {
+        if (currentBest == null) {
+            return candidate;
+        }
+        return candidate.gCost() < currentBest.gCost() ? candidate : currentBest;
     }
 
     private Node processOffset(PathPosition requestStart,

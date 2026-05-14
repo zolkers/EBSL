@@ -132,12 +132,13 @@ abstract class AbstractPathfinder implements Pathfinder {
             int currentDepth = 0;
             Node bestFallbackNode = startNode;
             int earlyFallbackCheckEvery = earlyFallbackCheckInterval();
+            GoalRefinement goalRefinement = new GoalRefinement();
 
             while (!openSet.isEmpty() && currentDepth < pathfinderConfiguration.maxIterations) {
                 currentDepth++;
 
                 if (abortRequested.get()) {
-                    return createAbortedResult(start, target, bestFallbackNode);
+                    return createAbortedResult(start, target, goalRefinement.bestOr(bestFallbackNode));
                 }
 
                 Node currentNode = extractBestNode(openSet);
@@ -148,33 +149,52 @@ abstract class AbstractPathfinder implements Pathfinder {
                 }
 
                 if (hasReachedPathLengthLimit(currentNode)) {
+                    if (goalRefinement.hasIncumbent()) {
+                        if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
+                            return foundResult(start, target, goalRefinement.best());
+                        }
+                        continue;
+                    }
                     return quality(PathfinderResults.of(PathState.LENGTH_LIMITED,
                             reconstructPath(start, target, currentNode)));
                 }
 
                 if (currentNode.isTarget(target)) {
-                    return quality(PathfinderResults.of(PathState.FOUND,
-                            reconstructPath(start, target, currentNode)));
+                    goalRefinement.record(currentNode, currentDepth);
+                    if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
+                        return foundResult(start, target, goalRefinement.best());
+                    }
+                    continue;
                 }
 
                 Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
                 if (reachedTarget != null) {
-                    return quality(PathfinderResults.of(PathState.FOUND,
-                            reconstructPath(start, target, reachedTarget)));
+                    goalRefinement.record(reachedTarget, currentDepth);
+                    if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
+                        return foundResult(start, target, goalRefinement.best());
+                    }
                 }
 
                 Node earlyFallbackNode = bestFallbackNode(bestFallbackNode);
-                if (shouldReturnEarlyFallback(currentDepth, earlyFallbackCheckEvery, startedAtNanos, startNode,
+                if (!goalRefinement.hasIncumbent()
+                        && shouldReturnEarlyFallback(currentDepth, earlyFallbackCheckEvery, startedAtNanos, startNode,
                         earlyFallbackNode)) {
                     return quality(PathfinderResults.of(PathState.FALLBACK,
                             reconstructPath(start, target, earlyFallbackNode)));
                 }
-                if (shouldReturnTimeBudgetFallback(startedAtNanos, startNode, earlyFallbackNode)) {
+                if (goalRefinement.hasIncumbent() && hasExceededCalculationTime(startedAtNanos)) {
+                    return foundResult(start, target, goalRefinement.best());
+                }
+                if (!goalRefinement.hasIncumbent()
+                        && shouldReturnTimeBudgetFallback(startedAtNanos, startNode, earlyFallbackNode)) {
                     return quality(PathfinderResults.of(PathState.FALLBACK,
                             reconstructPath(start, target, earlyFallbackNode)));
                 }
             }
 
+            if (goalRefinement.hasIncumbent()) {
+                return foundResult(start, target, goalRefinement.best());
+            }
             return determinePostLoopResult(currentDepth, start, target, bestFallbackNode(bestFallbackNode));
 
         } catch (Exception e) {
@@ -204,6 +224,10 @@ abstract class AbstractPathfinder implements Pathfinder {
     private PathfinderResult createAbortedResult(PathPosition start, PathPosition target, Node fallbackNode) {
         abortRequested.set(false);
         return quality(PathfinderResults.of(PathState.ABORTED, reconstructPath(start, target, fallbackNode)));
+    }
+
+    private PathfinderResult foundResult(PathPosition start, PathPosition target, Node goalNode) {
+        return quality(PathfinderResults.of(PathState.FOUND, reconstructPath(start, target, goalNode)));
     }
 
     private PathfinderResult handlePathingException(PathPosition start, PathPosition target,
@@ -274,6 +298,33 @@ abstract class AbstractPathfinder implements Pathfinder {
         return progressRatio >= pathfinderConfiguration.earlyFallbackMinProgressRatio;
     }
 
+    private boolean shouldAcceptGoalRefinement(GoalRefinement refinement, PrimitiveMinHeap openSet,
+                                               int currentDepth) {
+        if (!refinement.hasIncumbent()) {
+            return false;
+        }
+        if (!pathfinderConfiguration.goalRefinement || openSet.isEmpty()) {
+            return true;
+        }
+        int exploredAfterBest = currentDepth - refinement.bestIteration();
+        if (hasExceededGoalRefinementBudget(refinement, exploredAfterBest)) {
+            return true;
+        }
+        if (exploredAfterBest < pathfinderConfiguration.goalRefinementMinIterations) {
+            return false;
+        }
+        return openSet.peekMinCost() + pathfinderConfiguration.goalRefinementCostMargin >= refinement.best().gCost();
+    }
+
+    private boolean hasExceededGoalRefinementBudget(GoalRefinement refinement, int exploredAfterBest) {
+        int maxIterations = pathfinderConfiguration.goalRefinementMaxIterations;
+        if (maxIterations > 0 && exploredAfterBest >= maxIterations) {
+            return true;
+        }
+        long maxTimeMs = pathfinderConfiguration.goalRefinementMaxTimeMs;
+        return maxTimeMs > 0L && System.nanoTime() - refinement.bestFoundAtNanos() >= maxTimeMs * 1_000_000L;
+    }
+
     private PathfinderResult determinePostLoopResult(int depthReached, PathPosition start,
                                                       PathPosition target, Node fallbackNode) {
         if (depthReached >= pathfinderConfiguration.maxIterations) {
@@ -318,6 +369,43 @@ abstract class AbstractPathfinder implements Pathfinder {
         }
         Collections.reverse(positions);
         return positions;
+    }
+
+    private static final class GoalRefinement {
+        private Node best;
+        private int bestIteration;
+        private long bestFoundAtNanos;
+
+        void record(Node candidate, int iteration) {
+            if (candidate == null || !Double.isFinite(candidate.gCost())) {
+                return;
+            }
+            if (best == null || candidate.gCost() < best.gCost()) {
+                best = candidate;
+                bestIteration = iteration;
+                bestFoundAtNanos = System.nanoTime();
+            }
+        }
+
+        boolean hasIncumbent() {
+            return best != null;
+        }
+
+        Node best() {
+            return best;
+        }
+
+        Node bestOr(Node fallback) {
+            return best == null ? fallback : best;
+        }
+
+        int bestIteration() {
+            return bestIteration;
+        }
+
+        long bestFoundAtNanos() {
+            return bestFoundAtNanos;
+        }
     }
 
 
