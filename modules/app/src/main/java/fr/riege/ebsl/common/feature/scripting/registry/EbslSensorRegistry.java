@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.registry;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslCardinalDirection;
@@ -33,7 +34,7 @@ import java.util.Collection;
 import java.util.List;
 
 public final class EbslSensorRegistry {
-    private static final MapRegistry<String, RegisteredSensor> SENSORS = new MapRegistry<>(null);
+    private static final IRegistry<String, RegisteredSensor> SENSORS = new MapRegistry<>(null);
 
     static {
         register("sensor_health_below", List.of(parameter("threshold", "Threshold", "10")),

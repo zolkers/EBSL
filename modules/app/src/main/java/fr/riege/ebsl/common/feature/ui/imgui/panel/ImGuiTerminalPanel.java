@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
-import fr.riege.ebsl.common.feature.terminal.CommandRegistry;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.terminal.CommandResult;
 import fr.riege.ebsl.common.feature.terminal.CommandSuggestion;
 import fr.riege.ebsl.common.feature.terminal.TerminalLog;
@@ -165,14 +165,14 @@ final class ImGuiTerminalPanel {
     private void refreshSuggestions(String input) {
         lastSuggestInput = input;
         suggestions.clear();
-        suggestions.addAll(CommandRegistry.suggest(input));
+        suggestions.addAll(FeatureRegistries.commands().suggest(input));
         if (suggestionIdx >= suggestions.size()) suggestionIdx = 0;
         scrollSuggestToSelected = true;
     }
 
     private static void dispatchTerminal(String input) {
         TerminalLog.addInput("> " + input);
-        CommandResult result = CommandRegistry.dispatch(input);
+        CommandResult result = FeatureRegistries.commands().dispatch(input);
         for (String line : result.lines()) {
             if (result.success()) TerminalLog.addOutput(line);
             else TerminalLog.addError(line);

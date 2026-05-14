@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.ui;
 
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiViewportRenderer;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
@@ -63,7 +63,7 @@ public final class CommonImGuiOverlay {
         ViewportLayout layout = ViewportLayout.create(imgui.getViewportWidth(), imgui.getViewportHeight());
         RENDERER.render(STATE, layout, navigation, platform);
         if (STATE.mainViewTab() == MainViewTab.MAIN && STATE.centerTab() == CenterTab.GAME) {
-            BotModuleRegistry.renderGameViewport(platform, navigation, gameViewportRect(imgui.getViewportWidth(), imgui.getViewportHeight()));
+            FeatureRegistries.modules().renderGameViewport(platform, navigation, gameViewportRect(imgui.getViewportWidth(), imgui.getViewportHeight()));
         }
     }
 }

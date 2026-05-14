@@ -22,8 +22,8 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
-import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
@@ -56,7 +56,7 @@ final class ImGuiSettingControls {
     }
 
     private static void render(Setting<?> setting) {
-        ImGuiSettingRendererRegistry.render(
+        FeatureRegistries.ui().renderSetting(
             setting,
             new ImGuiSettingRenderContext("pathfinder-setting", -1.0f, PathfinderSettings::save, TEXT_VALUES)
         );

@@ -67,7 +67,7 @@ public final class BlockSelector {
             if (exact.equals(normalized)) {
                 return true;
             }
-            if (!normalized.contains(":") && BlockSelectorPredicateRegistry.matches(id, normalized)) {
+            if (!normalized.contains(":") && WorldRegistries.blockSelectors().matches(id, normalized)) {
                 return true;
             }
             String path = id.path().toLowerCase(Locale.ROOT);

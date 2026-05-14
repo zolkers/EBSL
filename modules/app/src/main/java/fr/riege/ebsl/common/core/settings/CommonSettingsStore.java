@@ -23,11 +23,10 @@ package fr.riege.ebsl.common.core.settings;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.task.BotTask;
-import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import org.slf4j.Logger;
@@ -87,20 +86,20 @@ public final class CommonSettingsStore {
 
     private static void loadModuleSettings(String json) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : FeatureRegistries.modules().all()) {
             if (root.has(module.id()) && root.get(module.id()).isJsonObject()) {
                 loadSettings(module.settings(), root.getAsJsonObject(module.id()).toString());
-                BotModuleRegistry.syncLifecycle(module);
+                FeatureRegistries.modules().syncLifecycle(module);
             }
         }
     }
 
     private static void loadTaskSettings(String json) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        for (BotTask task : BotTaskRegistry.tasks()) {
+        for (BotTask task : FeatureRegistries.tasks().all()) {
             if (root.has(task.id()) && root.get(task.id()).isJsonObject()) {
                 loadSettings(task.settings(), root.getAsJsonObject(task.id()).toString());
-                BotTaskRegistry.syncLifecycle(task);
+                FeatureRegistries.tasks().syncLifecycle(task);
             }
         }
     }
@@ -115,7 +114,7 @@ public final class CommonSettingsStore {
 
     private static JsonObject saveModuleSettings() {
         JsonObject root = new JsonObject();
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : FeatureRegistries.modules().all()) {
             root.add(module.id(), saveSettings(module.settings()));
         }
         return root;
@@ -123,7 +122,7 @@ public final class CommonSettingsStore {
 
     private static JsonObject saveTaskSettings() {
         JsonObject root = new JsonObject();
-        for (BotTask task : BotTaskRegistry.tasks()) {
+        for (BotTask task : FeatureRegistries.tasks().all()) {
             root.add(task.id(), saveSettings(task.settings()));
         }
         return root;

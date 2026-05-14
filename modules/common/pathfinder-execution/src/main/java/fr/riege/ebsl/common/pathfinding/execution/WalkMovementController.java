@@ -24,14 +24,13 @@ package fr.riege.ebsl.common.pathfinding.execution;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
-import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationContext;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutionContext;
-import fr.riege.ebsl.common.pathfinding.movement.types.execution.MovementExecutorRegistry;
 import fr.riege.ebsl.common.pathfinding.movement.types.execution.WaterMovementContext;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
@@ -107,7 +106,7 @@ final class WalkMovementController {
             playerPos,
             pursuitSegment);
         lastValidatedSegment = pursuitSegment;
-        lastValidationResult = MovementEvaluatorRegistry.get(target.moveType()).validate(context);
+        lastValidationResult = PathfindingRegistries.movementEvaluators().get(target.moveType()).validate(context);
         return lastValidationResult;
     }
 
@@ -118,7 +117,7 @@ final class WalkMovementController {
         double dzWp = movementWaypoint.position.centeredZ() - playerPos.z();
         boolean partialSupportWaypoint = isPartialSupportWaypoint(movementWaypoint);
         boolean nearWaypoint = Math.sqrt(dxWp * dxWp + dzWp * dzWp) < 2.0;
-        boolean nearStepUp = MovementEvaluatorRegistry.get(movementWaypoint.moveType()).reducesSprintNearWaypoint()
+        boolean nearStepUp = PathfindingRegistries.movementEvaluators().get(movementWaypoint.moveType()).reducesSprintNearWaypoint()
             && nearWaypoint;
         boolean nearPartialSupportJump = movementWaypoint.moveType() == Node.MoveType.JUMP
             && partialSupportWaypoint
@@ -406,7 +405,7 @@ final class WalkMovementController {
             parkourDistanceBlocks(waypoint, pursuitSegment),
             settings.jumpCooldownTicks.value(),
             settings.stallJumpProgressMs.value());
-        MovementExecutorRegistry.get(waypoint.moveType()).handleJump(context);
+        ExecutionRegistries.executors().get(waypoint.moveType()).handleJump(context);
         input.setJumpDown(context.jumpPressed());
         if (shouldAssistSlimeAscent(waypoint, hDist, jumpCooldown)) {
             input.setJumpDown(true);
@@ -482,7 +481,7 @@ final class WalkMovementController {
             distToFinal,
             player.isInWater(),
             world.isHeadUnderWater(player.eyePosition()));
-        MovementExecutorRegistry.get(movementWaypoint.moveType()).handleWaterMovement(waterContext);
+        ExecutionRegistries.executors().get(movementWaypoint.moveType()).handleWaterMovement(waterContext);
         if (waterContext.handled()) {
             input.setJumpDown(waterContext.jumpPressed());
             if (!sneakLatched) {
@@ -540,7 +539,7 @@ final class WalkMovementController {
         int checkEnd = (int) Math.clamp(start + 3L, 0L, path.size());
         for (int i = start; i < checkEnd; i++) {
             Node wp = path.get(i);
-            if (MovementEvaluatorRegistry.get(wp.moveType()).countsAsStairSequence() && isPartialSupportWaypoint(wp)) {
+            if (PathfindingRegistries.movementEvaluators().get(wp.moveType()).countsAsStairSequence() && isPartialSupportWaypoint(wp)) {
                 stairCount++;
             }
             if (i > 0

@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.feature.scripting.highlight;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 
 @SuppressWarnings("java:S107")
 public enum EbslSyntaxPalette {
@@ -68,7 +69,7 @@ public enum EbslSyntaxPalette {
         0x00000000
     );
 
-    private final EnumRegistry<EbslTokenKind, EbslTokenStyle> styles =
+    private final IRegistry<EbslTokenKind, EbslTokenStyle> styles =
         new EnumRegistry<>(EbslTokenKind.class, new EbslTokenStyle(0xFFE6EDF3));
 
     EbslSyntaxPalette(

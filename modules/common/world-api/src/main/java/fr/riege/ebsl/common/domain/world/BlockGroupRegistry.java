@@ -21,12 +21,13 @@
 
 package fr.riege.ebsl.common.domain.world;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 import java.util.Locale;
 
 public final class BlockGroupRegistry {
-    private static final MapRegistry<String, BlockMatcher> GROUPS = new MapRegistry<>(null);
+    private static final IRegistry<String, BlockMatcher> GROUPS = new MapRegistry<>(null);
 
     static {
         register(BlockGroupType.LEAF, BlockGroupRegistry::isLeaf);
@@ -38,7 +39,7 @@ public final class BlockGroupRegistry {
     }
 
     public static boolean matches(BlockId id, String token) {
-        return BlockSelectorPredicateRegistry.matches(id, token);
+        return WorldRegistries.blockSelectors().matches(id, token);
     }
 
     private static void register(BlockGroupType type, BlockMatcher matcher) {

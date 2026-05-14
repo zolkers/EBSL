@@ -24,6 +24,7 @@ package fr.riege.ebsl.common.pathfinding.execution;
 final class ExecutionRegistries {
     private static final MovementRecoveryCatalog RECOVERY = new MovementRecoveryCatalog();
     private static final MovementSmoothingCatalog SMOOTHING = new MovementSmoothingCatalog();
+    private static final MovementExecutorCatalog EXECUTORS = new MovementExecutorCatalog();
 
     private ExecutionRegistries() {
     }
@@ -34,5 +35,9 @@ final class ExecutionRegistries {
 
     static MovementSmoothingCatalog smoothing() {
         return SMOOTHING;
+    }
+
+    static MovementExecutorCatalog executors() {
+        return EXECUTORS;
     }
 }

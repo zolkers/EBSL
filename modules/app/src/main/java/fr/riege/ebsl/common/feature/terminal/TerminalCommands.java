@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.feature.terminal;
 
 import fr.riege.ebsl.common.feature.scripting.command.EbslCommand;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.terminal.commands.*;
 
 public final class TerminalCommands {
@@ -29,16 +30,16 @@ public final class TerminalCommands {
     }
 
     public static void bootstrap() {
-        CommandRegistry.register(new HelpCommand());
-        CommandRegistry.register(new StopCommand());
-        CommandRegistry.register(new PosCommand());
-        CommandRegistry.register(new StatusCommand());
-        CommandRegistry.register(new DebugCommand());
-        CommandRegistry.register(new JumpHeightCommand());
-        CommandRegistry.register(new UiCommand());
-        CommandRegistry.register(EbslCommand.spec());
-        CommandRegistry.register(new TestCommand());
-        CommandRegistry.register(new TestXzCommand());
-        CommandRegistry.register(GoalCommand.spec());
+        FeatureRegistries.commands().register(new HelpCommand());
+        FeatureRegistries.commands().register(new StopCommand());
+        FeatureRegistries.commands().register(new PosCommand());
+        FeatureRegistries.commands().register(new StatusCommand());
+        FeatureRegistries.commands().register(new DebugCommand());
+        FeatureRegistries.commands().register(new JumpHeightCommand());
+        FeatureRegistries.commands().register(new UiCommand());
+        FeatureRegistries.commands().register(EbslCommand.spec());
+        FeatureRegistries.commands().register(new TestCommand());
+        FeatureRegistries.commands().register(new TestXzCommand());
+        FeatureRegistries.commands().register(GoalCommand.spec());
     }
 }

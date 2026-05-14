@@ -21,12 +21,13 @@
 
 package fr.riege.ebsl.common.domain.world;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 import java.util.Locale;
 
 public final class BlockSelectorPredicateRegistry {
-    private static final MapRegistry<String, BlockSelectorPredicate> PREDICATES = new MapRegistry<>(null);
+    private static final IRegistry<String, BlockSelectorPredicate> PREDICATES = new MapRegistry<>(null);
 
     static {
         register(BlockGroupType.LEAF, BlockGroupRegistry::isLeaf);

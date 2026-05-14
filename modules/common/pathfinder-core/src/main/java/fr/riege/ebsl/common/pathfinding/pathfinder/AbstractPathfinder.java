@@ -35,7 +35,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.quality.PathQualityContext;
-import fr.riege.ebsl.common.pathfinding.quality.PathQualityRegistry;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -341,7 +341,7 @@ abstract class AbstractPathfinder implements Pathfinder {
 
     private PathfinderResult quality(PathfinderResult result) {
         Collection<PathPosition> positions = result.getPath() == null ? List.of() : result.getPath().collect();
-        return PathfinderResults.of(result.getPathState(), result.getPath(), PathQualityRegistry.evaluate(PathQualityContext.of(
+        return PathfinderResults.of(result.getPathState(), result.getPath(), PathfindingRegistries.pathQuality().evaluate(PathQualityContext.of(
             result,
             pathfinderConfiguration,
             positions

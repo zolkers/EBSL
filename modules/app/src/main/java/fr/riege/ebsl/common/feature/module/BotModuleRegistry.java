@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.module;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
@@ -41,7 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class BotModuleRegistry {
-    private static final MapRegistry<String, PathfinderModule> MODULES = new MapRegistry<>(null);
+    private static final IRegistry<String, PathfinderModule> MODULES = new MapRegistry<>(null);
     private static final Map<String, Boolean> lastEnabled = new HashMap<>();
     private static final Set<String> runningAsyncRenders = ConcurrentHashMap.newKeySet();
     private static IEventBus bus;

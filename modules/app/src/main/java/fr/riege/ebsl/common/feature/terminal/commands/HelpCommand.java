@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.terminal.commands;
 
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.terminal.*;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public final class HelpCommand implements CommandHandler {
     @Override
     public CommandResult execute(CommandContext ctx) {
         List<String> lines = new ArrayList<>();
-        for (CommandMeta meta : CommandRegistry.allMeta()) {
+        for (CommandMeta meta : FeatureRegistries.commands().allMeta()) {
             String args = meta.usage().startsWith(meta.name())
                 ? meta.usage().substring(meta.name().length()).trim()
                 : meta.usage();

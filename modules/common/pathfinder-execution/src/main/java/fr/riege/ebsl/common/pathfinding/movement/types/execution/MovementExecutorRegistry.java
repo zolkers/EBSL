@@ -22,10 +22,11 @@
 package fr.riege.ebsl.common.pathfinding.movement.types.execution;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.pathfinding.Node;
 
 public final class MovementExecutorRegistry {
-    private static final EnumRegistry<Node.MoveType, MovementExecutor> EXECUTORS =
+    private static final IRegistry<Node.MoveType, MovementExecutor> EXECUTORS =
         new EnumRegistry<>(Node.MoveType.class, new WalkMovementExecutor());
 
     static {

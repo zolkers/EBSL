@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.pathfinding.pathing.processing;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
 
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public final class NodeProcessorRegistry {
-    private static final EnumRegistry<NodeProcessorType, Supplier<NodeProcessor>> PROCESSORS =
+    private static final IRegistry<NodeProcessorType, Supplier<NodeProcessor>> PROCESSORS =
         new EnumRegistry<>(NodeProcessorType.class, null);
 
     static {

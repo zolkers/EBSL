@@ -21,13 +21,14 @@
 
 package fr.riege.ebsl.common.feature.scripting.command;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.terminal.CommandContext;
 import fr.riege.ebsl.common.feature.terminal.CommandResult;
 import java.util.Locale;
 
 final class EbslCommandActionRegistry {
-    private static final MapRegistry<String, EbslCommandActionHandler> HANDLERS = new MapRegistry<>(null);
+    private static final IRegistry<String, EbslCommandActionHandler> HANDLERS = new MapRegistry<>(null);
 
     static {
         register(EbslCommandAction.RUN, EbslCommand::runFile);

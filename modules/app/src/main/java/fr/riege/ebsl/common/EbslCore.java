@@ -24,8 +24,7 @@ package fr.riege.ebsl.common;
 import fr.riege.ebsl.common.core.event.CommonEventTypes;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
-import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.terminal.*;
 import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
 import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
@@ -50,8 +49,8 @@ public class EbslCore {
         PathfindingDiagnostics.setTelemetrySink(AnalyticsEventLog::recordAnalytics);
         CommonSettingsStore.load(platform.storage());
         TerminalCommands.bootstrap();
-        BotTaskRegistry.bootstrap();
-        BotModuleRegistry.bootstrap(platform.events());
+        FeatureRegistries.tasks().bootstrap();
+        FeatureRegistries.modules().bootstrap(platform.events());
         CommonSettingsStore.loadBotSettings(platform.storage());
         registerCommands(platform);
         platform.input().registerUnfocusKeybind(() -> {
@@ -61,11 +60,11 @@ public class EbslCore {
             }
         });
         platform.events().onTick(event -> navigationService.tick());
-        platform.events().onTick(event -> BotTaskRegistry.update(platform));
+        platform.events().onTick(event -> FeatureRegistries.tasks().update(platform));
         platform.events().onTick(event -> RenderingSystem.tick());
         platform.events().onRenderWorld(event -> {
             if (RenderingSystem.enabled()) {
-                BotTaskRegistry.render(platform);
+                FeatureRegistries.tasks().render(platform);
             }
         });
         platform.events().onTick(event -> {
@@ -95,12 +94,12 @@ public class EbslCore {
     }
 
     private static void registerCommands(EbslPlatform platform) {
-        for (CommandMeta meta : CommandRegistry.allMeta()) {
+        for (CommandMeta meta : FeatureRegistries.commands().allMeta()) {
             if (meta.scope() == CommandScope.TERMINAL) {
                 continue;
             }
             platform.commands().register(meta.name(), meta.description(), (args, output) -> {
-                CommandResult result = CommandRegistry.dispatch(commandLine(meta.name(), args));
+                CommandResult result = FeatureRegistries.commands().dispatch(commandLine(meta.name(), args));
                 for (String line : result.lines()) {
                     if (result.success()) {
                         platform.commands().printSuccess(line);

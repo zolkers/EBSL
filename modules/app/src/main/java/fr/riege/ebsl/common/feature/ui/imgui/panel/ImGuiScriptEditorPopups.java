@@ -22,10 +22,10 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.docs.*;
 import fr.riege.ebsl.common.feature.scripting.highlight.EbslCodeEditorSettings;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
-import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import imgui.ImGui;
 import imgui.flag.ImGuiCond;
@@ -105,7 +105,7 @@ final class ImGuiScriptEditorPopups {
         ImGui.text(title);
         ImGui.separator();
         for (Setting<?> setting : settings) {
-            ImGuiSettingRendererRegistry.render(setting, context);
+            FeatureRegistries.ui().renderSetting(setting, context);
         }
     }
 

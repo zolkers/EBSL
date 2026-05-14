@@ -26,7 +26,7 @@ import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
-import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
@@ -92,7 +92,7 @@ public final class ImGuiScriptNodePalettePanel {
 
     private List<EbslNodeTemplate> templates() {
         List<EbslNodeTemplate> templates = new ArrayList<>();
-        for (EbslNode node : EbslNodeRegistry.canonicalNodes()) {
+        for (EbslNode node : FeatureRegistries.scripting().nodes().canonical()) {
             templates.add(EbslNodeTemplate.of(node));
         }
         for (EbslNodeType block : SCRIPT_BLOCKS) {

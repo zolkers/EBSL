@@ -22,12 +22,13 @@
 package fr.riege.ebsl.common.pathfinding.check;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.pathfinding.Node;
 
 import java.util.List;
 
 final class MovementPathCheckRegistry {
-    private static final EnumRegistry<Node.MoveType, List<PathCheck>> CHECKS =
+    private static final IRegistry<Node.MoveType, List<PathCheck>> CHECKS =
         new EnumRegistry<>(Node.MoveType.class, List.of());
 
     static {

@@ -21,12 +21,13 @@
 
 package fr.riege.ebsl.common.feature.scripting.conditions;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 import java.util.Locale;
 
 public final class EbslConditionOperatorRegistry {
-    private static final MapRegistry<String, EbslConditionOperator> OPERATORS = new MapRegistry<>(null);
+    private static final IRegistry<String, EbslConditionOperator> OPERATORS = new MapRegistry<>(null);
 
     static {
         register(EbslConditionOperatorType.EQUALS, (runtime, left, right) -> String.valueOf(left).equalsIgnoreCase(String.valueOf(right)));

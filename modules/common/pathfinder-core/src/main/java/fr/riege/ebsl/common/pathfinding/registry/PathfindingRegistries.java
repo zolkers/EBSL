@@ -24,6 +24,8 @@ package fr.riege.ebsl.common.pathfinding.registry;
 public final class PathfindingRegistries {
     private static final NodeProcessorCatalog NODE_PROCESSORS = new NodeProcessorCatalog();
     private static final PathCheckCatalog PATH_CHECKS = new PathCheckCatalog();
+    private static final MovementEvaluatorCatalog MOVEMENT_EVALUATORS = new MovementEvaluatorCatalog();
+    private static final PathQualityCatalog PATH_QUALITY = new PathQualityCatalog();
 
     private PathfindingRegistries() {
     }
@@ -34,5 +36,13 @@ public final class PathfindingRegistries {
 
     public static PathCheckCatalog pathChecks() {
         return PATH_CHECKS;
+    }
+
+    public static MovementEvaluatorCatalog movementEvaluators() {
+        return MOVEMENT_EVALUATORS;
+    }
+
+    public static PathQualityCatalog pathQuality() {
+        return PATH_QUALITY;
     }
 }

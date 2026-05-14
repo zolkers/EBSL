@@ -22,8 +22,8 @@
 package fr.riege.ebsl.common.feature.scripting.parser;
 
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementInvocation;
-import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementRegistry;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementResult;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslCommandStatement;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslStatement;
 
@@ -70,7 +70,7 @@ public final class EbslParser {
     }
 
     private void addBlockStatement(List<EbslStatement> statements, String command, List<String> args, List<EbslStatement> body) {
-        EbslBlockStatementResult result = EbslBlockStatementRegistry.parse(new EbslBlockStatementInvocation(command, args, body, this));
+        EbslBlockStatementResult result = FeatureRegistries.scripting().blocks().parse(new EbslBlockStatementInvocation(command, args, body, this));
         if (result.handled()) {
             result.optionalStatement().ifPresent(statements::add);
             return;

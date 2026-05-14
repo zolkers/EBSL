@@ -21,26 +21,32 @@
 
 package fr.riege.ebsl.common.feature.ui.imgui.settings;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
+import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
 
-import java.util.List;
-
 public final class ImGuiSettingRendererRegistry {
-    private static final List<ImGuiSettingRenderer> RENDERERS = List.of(
-        new BooleanSettingRenderer(),
-        new IntSettingRenderer(),
-        new DoubleSettingRenderer(),
-        new StringSettingRenderer(),
-        new ColorSettingRenderer(),
-        new EnumSettingRenderer(),
-        new StringListSettingRenderer()
-    );
+    private static final IRegistry<Class<?>, ImGuiSettingRenderer> RENDERERS = new MapRegistry<>(null);
+
+    static {
+        register(new BooleanSettingRenderer());
+        register(new IntSettingRenderer());
+        register(new DoubleSettingRenderer());
+        register(new StringSettingRenderer());
+        register(new ColorSettingRenderer());
+        register(new EnumSettingRenderer());
+        register(new StringListSettingRenderer());
+    }
 
     private ImGuiSettingRendererRegistry() {
     }
 
+    public static void register(ImGuiSettingRenderer renderer) {
+        RENDERERS.register(renderer.settingType(), renderer);
+    }
+
     public static boolean render(Setting<?> setting, ImGuiSettingRenderContext context) {
-        for (ImGuiSettingRenderer renderer : RENDERERS) {
+        for (ImGuiSettingRenderer renderer : RENDERERS.values()) {
             if (renderer.settingType().isInstance(setting)) {
                 renderer.render(setting, context);
                 return true;

@@ -23,14 +23,12 @@ package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.task.BotTask;
-import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
-import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;
 import fr.riege.ebsl.common.feature.ui.state.EbslUiState;
 import fr.riege.ebsl.common.feature.ui.state.MainViewTab;
@@ -90,7 +88,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     private void renderModuleList(EbslUiState state) {
         ImGui.text("Pathfinder modules");
         ImGui.separator();
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : FeatureRegistries.modules().all()) {
             pushModuleButtonColor(module);
             if (ImGui.button(module.displayName(), -1.0f, 24.0f)) {
                 state.showModuleSettings(module);
@@ -100,7 +98,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
         ImGui.separator();
         Map<PathfinderModuleCategory, Integer> counts = new EnumMap<>(PathfinderModuleCategory.class);
-        for (PathfinderModule module : BotModuleRegistry.modules()) {
+        for (PathfinderModule module : FeatureRegistries.modules().all()) {
             counts.merge(module.category(), 1, Integer::sum);
         }
         ImGui.text("Categories");
@@ -112,7 +110,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     private void renderTaskList(EbslUiState state) {
         ImGui.text("Task manager");
         ImGui.separator();
-        for (BotTask task : BotTaskRegistry.tasks()) {
+        for (BotTask task : FeatureRegistries.tasks().all()) {
             pushTaskButtonColor(task);
             if (ImGui.button(task.displayName(), -1.0f, 24.0f)) {
                 state.showTaskSettings(task);
@@ -122,7 +120,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         }
         ImGui.separator();
         ImGui.text("Registered tasks");
-        ImGui.textDisabled("Tasks: " + BotTaskRegistry.tasks().size());
+        ImGui.textDisabled("Tasks: " + FeatureRegistries.tasks().all().size());
     }
 
     private void renderModuleSettings(EbslUiState state) {
@@ -130,7 +128,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         if (ImGui.button("Back", 72.0f, 24.0f)) state.showModuleList();
         ImGui.sameLine();
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
-            BotModuleRegistry.resetToDefaultsAndSave(module);
+            FeatureRegistries.modules().resetToDefaultsAndSave(module);
             AnalyticsEventLog.recordAnalytics("module", "Reset " + module.displayName());
         }
         ImGui.separator();
@@ -147,7 +145,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
         if (ImGui.button("Back", 72.0f, 24.0f)) state.showTaskList();
         ImGui.sameLine();
         if (ImGui.button("Reset to default", 130.0f, 24.0f)) {
-            BotTaskRegistry.resetToDefaultsAndSave(task);
+            FeatureRegistries.tasks().resetToDefaultsAndSave(task);
             AnalyticsEventLog.recordAnalytics("task", "Reset " + task.displayName());
         }
         ImGui.separator();
@@ -160,7 +158,7 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void renderSetting(String ownerId, Setting<?> setting, Runnable save) {
-        ImGuiSettingRendererRegistry.render(setting, new ImGuiSettingRenderContext(ownerId, -1.0f, save, stringValues));
+        FeatureRegistries.ui().renderSetting(setting, new ImGuiSettingRenderContext(ownerId, -1.0f, save, stringValues));
     }
 
     private static void pushModuleButtonColor(PathfinderModule module) {
@@ -182,12 +180,12 @@ public final class ImGuiModulesPanel implements ImGuiUiPanel {
     }
 
     private void saveSetting(PathfinderModule module, Setting<?> setting) {
-        BotModuleRegistry.notifySettingChanged(module, setting);
+        FeatureRegistries.modules().notifySettingChanged(module, setting);
         AnalyticsEventLog.recordAnalytics("setting", module.displayName() + "." + setting.id() + "=" + setting.value());
     }
 
     private void saveSetting(BotTask task, Setting<?> setting) {
-        BotTaskRegistry.notifySettingChanged(task, setting);
+        FeatureRegistries.tasks().notifySettingChanged(task, setting);
         AnalyticsEventLog.recordAnalytics("setting", task.displayName() + "." + setting.id() + "=" + setting.value());
     }
 

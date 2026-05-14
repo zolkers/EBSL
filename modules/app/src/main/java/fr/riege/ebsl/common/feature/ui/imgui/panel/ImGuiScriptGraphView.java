@@ -22,19 +22,18 @@
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.manager.*;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
-import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.ui.imgui.EbslNodeCategoryColors;
 import fr.riege.ebsl.common.feature.ui.imgui.graph.EbslGraphAutoLayout;
 import fr.riege.ebsl.common.feature.ui.imgui.graph.EbslScriptGraphNode;
 import fr.riege.ebsl.common.feature.ui.imgui.graph.EbslScriptGraphParser;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
-import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRendererRegistry;
 import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.feature.ui.layout.UiTheme;
 import fr.riege.ebsl.common.platform.EbslPlatform;
@@ -190,7 +189,7 @@ final class ImGuiScriptGraphView {
         }
 
         EbslScriptGraphNode node = nodes.get(selectedGraphNode);
-        EbslNode ebslNode = EbslNodeRegistry.get(node.command());
+        EbslNode ebslNode = FeatureRegistries.scripting().nodes().get(node.command());
         EbslNodeTemplate template = EbslNodeTemplate.of(node.command());
         syncSelectedEditor(node, ebslNode);
         boolean settingBacked = hasSettings(ebslNode);
@@ -427,7 +426,7 @@ final class ImGuiScriptGraphView {
         for (EbslNodeField field : node.fields()) {
             Setting<?> setting = field.setting();
             ImGui.textWrapped(field.description());
-            ImGuiSettingRendererRegistry.render(setting, context);
+            FeatureRegistries.ui().renderSetting(setting, context);
             ImGui.textDisabled(EbslNodeFieldHelp.meta(setting));
             ImGui.spacing();
         }

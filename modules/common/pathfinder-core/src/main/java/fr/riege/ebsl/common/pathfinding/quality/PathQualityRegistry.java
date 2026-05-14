@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.pathfinding.quality;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class PathQualityRegistry {
-    private static final MapRegistry<String, PathQualityMetric> METRICS = new MapRegistry<>(null);
+    private static final IRegistry<String, PathQualityMetric> METRICS = new MapRegistry<>(null);
 
     static {
         register(new StateQualityMetric());

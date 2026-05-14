@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.task;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
@@ -35,7 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class BotTaskRegistry {
-    private static final MapRegistry<String, BotTask> TASKS = new MapRegistry<>(null);
+    private static final IRegistry<String, BotTask> TASKS = new MapRegistry<>(null);
     private static final Map<String, Boolean> lastEnabled = new HashMap<>();
     private static final Set<String> runningAsyncTicks = ConcurrentHashMap.newKeySet();
 

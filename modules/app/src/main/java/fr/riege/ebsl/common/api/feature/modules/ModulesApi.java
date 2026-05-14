@@ -25,8 +25,8 @@ import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.core.settings.Setting;
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 
 import java.util.Collection;
@@ -35,12 +35,12 @@ import java.util.Collection;
 public final class ModulesApi {
     @EbslApiOperation("Read all registered pathfinder modules.")
     public Collection<PathfinderModule> all() {
-        return BotModuleRegistry.modules();
+        return FeatureRegistries.modules().all();
     }
 
     @EbslApiOperation("Find a pathfinder module by id.")
     public PathfinderModule get(String id) {
-        return BotModuleRegistry.get(id);
+        return FeatureRegistries.modules().get(id);
     }
 
     @EbslApiOperation("Persist module settings through the installed storage layer.")
@@ -50,12 +50,12 @@ public final class ModulesApi {
 
     @EbslApiOperation("Notify module lifecycle after a setting change.")
     public void notifySettingChanged(PathfinderModule module, Setting<?> setting) {
-        BotModuleRegistry.onSettingChanged(module, setting);
+        FeatureRegistries.modules().settingChanged(module, setting);
     }
 
     @EbslApiOperation("Reset a module and persist settings.")
     public void resetToDefaultsAndSave(PathfinderModule module) {
-        BotModuleRegistry.resetToDefaultsAndSave(module);
+        FeatureRegistries.modules().resetToDefaultsAndSave(module);
         saveSettings();
         for (Setting<?> setting : module.settings()) {
             notifySettingChanged(module, setting);

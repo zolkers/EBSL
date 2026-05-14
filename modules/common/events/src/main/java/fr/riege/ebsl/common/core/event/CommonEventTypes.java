@@ -35,15 +35,15 @@ public final class CommonEventTypes {
             return;
         }
         registered = true;
-        EventRegistry.register(TickEvent.class);
-        EventRegistry.register(RenderWorldEvent.class);
-        EventRegistry.register(RenderHudEvent.class);
-        EventRegistry.register(KeyPressEvent.class);
-        EventRegistry.register(MouseButtonEvent.class);
-        EventRegistry.register(CharTypedEvent.class);
-        EventRegistry.register(ScaledMousePosEvent.class);
-        EventRegistry.register(BlitToScreenEvent.class);
-        EventRegistry.register(GrabMouseEvent.class);
-        EventRegistry.register(PacketCaptureEvent.class);
+        CoreRegistries.events().register(TickEvent.class);
+        CoreRegistries.events().register(RenderWorldEvent.class);
+        CoreRegistries.events().register(RenderHudEvent.class);
+        CoreRegistries.events().register(KeyPressEvent.class);
+        CoreRegistries.events().register(MouseButtonEvent.class);
+        CoreRegistries.events().register(CharTypedEvent.class);
+        CoreRegistries.events().register(ScaledMousePosEvent.class);
+        CoreRegistries.events().register(BlitToScreenEvent.class);
+        CoreRegistries.events().register(GrabMouseEvent.class);
+        CoreRegistries.events().register(PacketCaptureEvent.class);
     }
 }

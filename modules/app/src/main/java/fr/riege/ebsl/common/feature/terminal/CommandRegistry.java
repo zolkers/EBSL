@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.terminal;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 import java.util.*;
@@ -28,7 +29,7 @@ import java.util.*;
 public final class CommandRegistry {
     private record Entry(CommandMeta meta, CommandHandler handler) {}
 
-    private static final MapRegistry<String, Entry> COMMANDS = new MapRegistry<>(null);
+    private static final IRegistry<String, Entry> COMMANDS = new MapRegistry<>(null);
 
     private CommandRegistry() {
     }

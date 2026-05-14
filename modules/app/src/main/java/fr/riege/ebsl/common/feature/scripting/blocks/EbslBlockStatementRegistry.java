@@ -21,12 +21,13 @@
 
 package fr.riege.ebsl.common.feature.scripting.blocks;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslControlStatements;
 import java.util.Locale;
 
 public final class EbslBlockStatementRegistry {
-    private static final MapRegistry<String, EbslBlockStatementHandler> HANDLERS = new MapRegistry<>(null);
+    private static final IRegistry<String, EbslBlockStatementHandler> HANDLERS = new MapRegistry<>(null);
 
     static {
         register(EbslBlockStatementType.EVENT_FUNCTION, invocation -> {

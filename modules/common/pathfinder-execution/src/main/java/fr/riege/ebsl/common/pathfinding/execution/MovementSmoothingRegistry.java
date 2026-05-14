@@ -22,13 +22,14 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.pathfinding.Node;
 
 import java.util.List;
 import java.util.Optional;
 
 final class MovementSmoothingRegistry {
-    private static final EnumRegistry<Node.MoveType, MovementSmoothing> STRATEGIES =
+    private static final IRegistry<Node.MoveType, MovementSmoothing> STRATEGIES =
         new EnumRegistry<>(Node.MoveType.class, null);
 
     private MovementSmoothingRegistry() {

@@ -21,12 +21,13 @@
 
 package fr.riege.ebsl.common.pathfinding.check;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.pathfinding.annotation.PathingStage;
 
 @PathingStage(PathingStage.Stage.RECOVERY)
 public final class PathCheckRegistry {
-    private static final MapRegistry<String, PathCheck> CHECKS = new MapRegistry<>(null);
+    private static final IRegistry<String, PathCheck> CHECKS = new MapRegistry<>(null);
 
     static {
         register("anomalous_cutoff", new AnomalousPathCutoffCheck());

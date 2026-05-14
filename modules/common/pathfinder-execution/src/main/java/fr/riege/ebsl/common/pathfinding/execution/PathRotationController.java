@@ -23,7 +23,7 @@ package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
-import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementEvaluatorRegistry;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.rotation.*;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
@@ -380,7 +380,7 @@ final class PathRotationController {
         }
         float tightness = walls / 8.0f;
         boolean ascending = pursuitSegment < path.size()
-            && MovementEvaluatorRegistry.get(path.get(pursuitSegment).moveType()).countsAsAscendingDifficulty();
+            && PathfindingRegistries.movementEvaluators().get(path.get(pursuitSegment).moveType()).countsAsAscendingDifficulty();
         return Math.clamp(tightness + (ascending ? 0.4f : 0.0f), Float.NEGATIVE_INFINITY, 1.0f);
     }
 

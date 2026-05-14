@@ -21,12 +21,11 @@
 
 package fr.riege.ebsl.common.feature.ui.state;
 
-import fr.riege.ebsl.common.feature.module.BotModuleRegistry;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
+import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
 import fr.riege.ebsl.common.feature.task.BotTask;
-import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 
 public final class EbslUiState {
     private MainViewTab mainViewTab = MainViewTab.MAIN;
@@ -77,18 +76,18 @@ public final class EbslUiState {
 
     public PathfinderModule selectedModule() {
         if (selectedModule == null) {
-            selectedModule = BotModuleRegistry.modules().stream().findFirst().orElse(null);
+            selectedModule = FeatureRegistries.modules().all().stream().findFirst().orElse(null);
         } else {
-            selectedModule = BotModuleRegistry.get(selectedModule.id());
+            selectedModule = FeatureRegistries.modules().get(selectedModule.id());
         }
         return selectedModule;
     }
 
     public BotTask selectedTask() {
         if (selectedTask == null) {
-            selectedTask = BotTaskRegistry.tasks().stream().findFirst().orElse(null);
+            selectedTask = FeatureRegistries.tasks().all().stream().findFirst().orElse(null);
         } else {
-            selectedTask = BotTaskRegistry.get(selectedTask.id());
+            selectedTask = FeatureRegistries.tasks().get(selectedTask.id());
         }
         return selectedTask;
     }

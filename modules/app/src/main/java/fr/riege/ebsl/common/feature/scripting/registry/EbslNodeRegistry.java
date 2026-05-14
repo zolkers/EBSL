@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.registry;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.nodes.*;
@@ -33,7 +34,7 @@ import java.util.Locale;
 import java.util.function.Supplier;
 
 public final class EbslNodeRegistry {
-    private static final MapRegistry<String, RegisteredNode> NODES = new MapRegistry<>(null);
+    private static final IRegistry<String, RegisteredNode> NODES = new MapRegistry<>(null);
 
     static {
         register(StartNode::new);

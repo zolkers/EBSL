@@ -22,11 +22,12 @@
 package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.core.registry.EnumRegistry;
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.pathfinding.Node;
 
 final class MovementRecoveryRegistry {
     private static final MovementRecoveryProfile DEFAULT = new WalkRecoveryProfile();
-    private static final EnumRegistry<Node.MoveType, MovementRecoveryProfile> PROFILES =
+    private static final IRegistry<Node.MoveType, MovementRecoveryProfile> PROFILES =
         new EnumRegistry<>(Node.MoveType.class, DEFAULT);
 
     static {

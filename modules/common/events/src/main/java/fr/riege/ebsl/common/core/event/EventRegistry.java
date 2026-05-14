@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.core.event;
 
+import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
 
 import java.lang.reflect.Method;
@@ -34,7 +35,7 @@ public final class EventRegistry {
     public record Entry(String category, String name, List<String> fields) {
     }
 
-    private static final MapRegistry<Class<?>, Class<?>> CLASSES = new MapRegistry<>(null);
+    private static final IRegistry<Class<?>, Class<?>> CLASSES = new MapRegistry<>(null);
 
     private EventRegistry() {
     }

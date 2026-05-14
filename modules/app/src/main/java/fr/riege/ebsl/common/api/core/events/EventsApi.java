@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.api.core.events;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
+import fr.riege.ebsl.common.core.event.CoreRegistries;
 import fr.riege.ebsl.common.core.event.Event;
 import fr.riege.ebsl.common.core.event.EventRegistry;
 import fr.riege.ebsl.common.platform.layer.IEventBus;
@@ -44,6 +45,6 @@ public final class EventsApi {
 
     @EbslApiOperation("Read registered event metadata.")
     public List<EventRegistry.Entry> registeredEvents() {
-        return EventRegistry.all();
+        return CoreRegistries.events().all();
     }
 }
