@@ -24,13 +24,13 @@ package fr.riege.ebsl.common.pathfinding.execution;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckContext;
-import fr.riege.ebsl.common.pathfinding.check.PathCheckRegistry;
 import fr.riege.ebsl.common.pathfinding.check.PathCheckResult;
 import fr.riege.ebsl.common.pathfinding.check.PathProximitySnapshot;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathExecutionDiagnostics;
 import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.movement.WalkabilityChecker;
 import fr.riege.ebsl.common.pathfinding.movement.types.evaluation.MovementValidationResult;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.rotation.RotationExecutor;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -141,6 +141,16 @@ public final class PathExecutor {
     public double getProgressRatio(Vec3d playerPos) { return pathTracker.getProgressRatio(playerPos); }
     public double getRemainingDistance(Vec3d playerPos) { return pathTracker.getRemainingDistance(playerPos); }
     public Node getNodeAtRatio(double ratio) { return pathTracker.getNodeAtRatio(ratio); }
+
+    public boolean canAcceptSpeculativeReplacement() {
+        Node.MoveType moveType = getCurrentMoveType();
+        return state == State.WALKING
+            && (player.onGround() || player.isInWater())
+            && moveType != Node.MoveType.JUMP
+            && moveType != Node.MoveType.PARKOUR
+            && moveType != Node.MoveType.FALL
+            && jumpCooldown == 0;
+    }
 
     public boolean consumeReplanFromPlayerRequest() {
         boolean requested = replanFromPlayerRequested;
@@ -363,7 +373,7 @@ public final class PathExecutor {
     }
 
     private boolean handlePathChecks(Vec3d playerPos, List<Node> path, PathProximitySnapshot proximity, long now) {
-        PathCheckResult pathCheckResult = PathCheckRegistry.evaluate(new PathCheckContext(
+        PathCheckResult pathCheckResult = PathfindingRegistries.pathChecks().evaluate(new PathCheckContext(
             playerPos,
             path,
             pathTracker.getPursuitSegment(),

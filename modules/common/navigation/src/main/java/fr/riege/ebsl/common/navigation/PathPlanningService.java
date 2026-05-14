@@ -29,10 +29,10 @@ import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
-import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
@@ -125,7 +125,7 @@ public final class PathPlanningService {
             .maxIterations(effectiveOptions.maxIterations())
             .maxLength(effectiveOptions.maxLength())
             .provider(provider)
-            .processors(NodeProcessorRegistry.createStandardProcessors())
+            .processors(PathfindingRegistries.nodeProcessors().standardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
                 effectiveOptions.maxJumpHeight(),
                 effectiveOptions.allowParkour(),

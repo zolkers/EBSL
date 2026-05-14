@@ -39,7 +39,7 @@ final class PathRecoveryController {
     RecoveryDecision update(IPlayerLayer player, IInputLayer input,
                             PathProgressSnapshot progress, boolean allowReplan,
                             boolean cooldownPassed, int jumpCooldown, Node.MoveType recoveryMoveType) {
-        MovementRecoveryProfile recoveryProfile = MovementRecoveryRegistry.get(recoveryMoveType);
+        MovementRecoveryProfile recoveryProfile = ExecutionRegistries.recovery().get(recoveryMoveType);
 
         boolean inWater = player.isInWater();
         keepSurfaceSwimming(input, inWater);

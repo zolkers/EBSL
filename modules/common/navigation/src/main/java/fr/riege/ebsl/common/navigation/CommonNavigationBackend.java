@@ -35,10 +35,10 @@ import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
-import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
+import fr.riege.ebsl.common.pathfinding.registry.PathfindingRegistries;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.platform.layer.IInputLayer;
@@ -62,9 +62,11 @@ public final class CommonNavigationBackend implements NavigationService {
     private final WorldNavigationPointProvider provider;
     private final PathExecutor executor;
     private final LongRangePathSession longRangeSession = new LongRangePathSession();
+    private final PathHandoffController handoffController = new PathHandoffController();
     private final Consumer<Runnable> gameThread;
 
     private InspectablePathfinder pathfinder;
+    private InspectablePathfinder analysisPathfinder;
     private final AtomicReference<PathfinderResult> lastResult = new AtomicReference<>();
     private volatile boolean navigating;
     private volatile Node.MoveType currentMoveType = Node.MoveType.WALK;
@@ -81,6 +83,8 @@ public final class CommonNavigationBackend implements NavigationService {
     private boolean allowJump = true;
     private boolean allowFall = true;
     private boolean allowWalkDiagonal = true;
+    private int analysisRequestId;
+    private long nextSpeculativeOptimizationAtMs;
 
     public CommonNavigationBackend(IWorldLayer world, IPlayerLayer player, IPhysicsLayer physics, IInputLayer input) {
         this(world, player, physics, input, Runnable::run);
@@ -168,6 +172,7 @@ public final class CommonNavigationBackend implements NavigationService {
         executor.stop();
         longRangeSession.clear();
         abortActiveSearch();
+        abortBackgroundAnalysis();
     }
 
     @Override public boolean isNavigating() {
@@ -298,6 +303,7 @@ public final class CommonNavigationBackend implements NavigationService {
 
     private void startPathTo(PathPosition target, Runnable onFinished, boolean executePath, boolean clearLongRange) {
         abortActiveSearch();
+        abortBackgroundAnalysis();
         clearPathCaches();
         if (clearLongRange) {
             longRangeSession.clear();
@@ -415,6 +421,7 @@ public final class CommonNavigationBackend implements NavigationService {
             return;
         }
         abortActiveSearch();
+        abortBackgroundAnalysis();
         clearPathCaches();
         Vec3d pos = player.position();
         PathPosition start = new PathPosition(Math.floor(pos.x()), resolveStartY(pos.x(), pos.y(), pos.z()), Math.floor(pos.z()));
@@ -626,7 +633,112 @@ public final class CommonNavigationBackend implements NavigationService {
             }
             return;
         }
+        tickSpeculativeOptimizer();
         handleLongRangeProgress(false);
+    }
+
+    private void tickSpeculativeOptimizer() {
+        if (!canRunSpeculativeOptimizer()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now < nextSpeculativeOptimizationAtMs) {
+            return;
+        }
+        Vec3d pos = player.position();
+        PathPosition start = new PathPosition(
+            Math.floor(pos.x()),
+            resolveStartY(pos.x(), pos.y(), pos.z()),
+            Math.floor(pos.z()));
+        PathPosition target = speculativeOptimizationTarget();
+        if (start.equals(target)) {
+            return;
+        }
+        PathfinderConfiguration config = speculativeOptimizationConfiguration();
+        InspectablePathfinder optimizer = Pathfinders.inspectableAStar(config);
+        analysisPathfinder = optimizer;
+        int requestId = ++analysisRequestId;
+        nextSpeculativeOptimizationAtMs = now + PathfinderSettings.instance().speculativeOptimizationIntervalMs.value();
+        optimizer.findPath(start, target)
+            .whenComplete((result, throwable) -> onGameThread(() -> completeSpeculativeOptimization(
+                requestId, optimizer, start, target, result, throwable, config)));
+    }
+
+    private boolean canRunSpeculativeOptimizer() {
+        return Boolean.TRUE.equals(PathfinderSettings.instance().speculativeOptimizationEnabled.value())
+            && executePath
+            && navigating
+            && executor.getState() == PathExecutor.State.WALKING
+            && pathfinder == null
+            && analysisPathfinder == null
+            && !activeNodes.isEmpty();
+    }
+
+    private PathPosition speculativeOptimizationTarget() {
+        if (longRangeSession.isActive()) {
+            int targetY = longRangeSession.requiresExactY()
+                ? longRangeSession.finalGoalY()
+                : resolveGoalYForXZ(longRangeSession.finalGoalX(), goalY, longRangeSession.finalGoalZ());
+            return new PathPosition(longRangeSession.finalGoalX(), targetY, longRangeSession.finalGoalZ());
+        }
+        return new PathPosition(goalX, goalY, goalZ);
+    }
+
+    private void completeSpeculativeOptimization(int requestId,
+                                                 InspectablePathfinder optimizer,
+                                                 PathPosition start,
+                                                 PathPosition target,
+                                                 PathfinderResult result,
+                                                 Throwable throwable,
+                                                 PathfinderConfiguration config) {
+        if (analysisPathfinder != optimizer || requestId != analysisRequestId) {
+            return;
+        }
+        analysisPathfinder = null;
+        if (throwable != null) {
+            return;
+        }
+        Collection<PathPosition> positions = result != null && result.getPath() != null
+            ? result.getPath().collect()
+            : List.of();
+        if (PathResultClassifier.classifyWalkResult(result, positions,
+            target.flooredX(), target.flooredY(), target.flooredZ()) != PathResultClassifier.PathAvailability.COMPLETE) {
+            return;
+        }
+        ProcessedPath processed = WalkPathProcessor.process(positions, config, checker);
+        PathPlan plan = PathPlan.from(result, config, positions, processed, checker);
+        SpeculativePathCandidate candidate = new SpeculativePathCandidate(
+            plan,
+            start,
+            target.flooredX(),
+            target.flooredY(),
+            target.flooredZ(),
+            optimizer.getExploredCount());
+        applySpeculativeCandidate(candidate);
+    }
+
+    private void applySpeculativeCandidate(SpeculativePathCandidate candidate) {
+        Vec3d pos = player.position();
+        PathHandoffController.HandoffDecision decision = handoffController.evaluate(
+            candidate,
+            executor.getPathSnapshot(),
+            executor.getRemainingDistance(pos),
+            pos,
+            executor.getCurrentMoveType(),
+            executor.canAcceptSpeculativeReplacement());
+        if (!decision.accepted()) {
+            return;
+        }
+        goalX = candidate.goalX();
+        goalY = candidate.goalY();
+        goalZ = candidate.goalZ();
+        lastResult.set(candidate.plan().result());
+        startExecutor(candidate.nodes(), goalX, goalY, goalZ, true);
+        activeNodes = executor.getPathSnapshot();
+        if (longRangeSession.isActive()
+            && longRangeSession.isFinalSegmentGoal(goalX, goalY, goalZ)) {
+            longRangeSession.markCompleted();
+        }
     }
 
     private boolean isAttachableSegment(List<Node> path,
@@ -773,7 +885,7 @@ public final class CommonNavigationBackend implements NavigationService {
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .provider(provider)
-            .processors(NodeProcessorRegistry.createStandardProcessors())
+            .processors(PathfindingRegistries.nodeProcessors().standardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
                 settings.maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
             .async(true)
@@ -798,7 +910,7 @@ public final class CommonNavigationBackend implements NavigationService {
             .maxIterations(maxIterations)
             .maxLength(maxLength)
             .provider(provider)
-            .processors(NodeProcessorRegistry.createStandardProcessors())
+            .processors(PathfindingRegistries.nodeProcessors().standardProcessors())
             .neighborStrategy(NeighborStrategies.horizontalDiagonalAndVertical(
                 PathfinderSettings.instance().maxJumpHeight.value(), allowParkour, allowJump, allowFall, allowWalkDiagonal))
             .async(true)
@@ -813,6 +925,21 @@ public final class CommonNavigationBackend implements NavigationService {
             .goalRefinementMaxTimeMs(PathfinderSettings.instance().goalRefinementMaxTimeMs.value())
             .goalRefinementCostMargin(PathfinderSettings.instance().goalRefinementCostMargin.value())
             .maxCalculationTimeMs(maxCalculationTimeMs)
+            .build();
+    }
+
+    private PathfinderConfiguration speculativeOptimizationConfiguration() {
+        PathfinderSettings settings = PathfinderSettings.instance();
+        return configuration(
+            settings.speculativeOptimizationMaxIterations.value(),
+            settings.speculativeOptimizationMaxLength.value(),
+            settings.speculativeOptimizationTimeMs.value(),
+            settings.speculativeOptimizationQualityScale.value())
+            .toBuilder()
+            .goalRefinement(true)
+            .goalRefinementMinIterations(Math.max(settings.goalRefinementMinIterations.value(), 128))
+            .goalRefinementMaxIterations(Math.max(settings.goalRefinementMaxIterations.value(), 8000))
+            .goalRefinementMaxTimeMs(Math.max(settings.goalRefinementMaxTimeMs.value(), 80))
             .build();
     }
 
@@ -872,6 +999,15 @@ public final class CommonNavigationBackend implements NavigationService {
     private void abortActiveSearch() {
         InspectablePathfinder active = pathfinder;
         pathfinder = null;
+        if (active != null) {
+            active.abort();
+        }
+    }
+
+    private void abortBackgroundAnalysis() {
+        InspectablePathfinder active = analysisPathfinder;
+        analysisPathfinder = null;
+        analysisRequestId++;
         if (active != null) {
             active.abort();
         }

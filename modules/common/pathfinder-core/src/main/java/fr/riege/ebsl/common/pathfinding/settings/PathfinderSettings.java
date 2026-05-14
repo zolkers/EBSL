@@ -176,6 +176,24 @@ public final class PathfinderSettings extends Settingable {
         "goal_refinement_max_time_ms", "Goal refinement time ms", 18, 0, 1000));
     public final DoubleSetting goalRefinementCostMargin = registerSetting(new DoubleSetting(
         "goal_refinement_cost_margin", "Goal refinement cost margin", 0.001, 0.0, 5.0));
+    public final BooleanSetting speculativeOptimizationEnabled = registerSetting(new BooleanSetting(
+        "speculative_optimization_enabled", "Speculative optimization", true));
+    public final IntSetting speculativeOptimizationIntervalMs = registerSetting(new IntSetting(
+        "speculative_optimization_interval_ms", "Speculative optimization interval", 650, 100, 10000));
+    public final IntSetting speculativeOptimizationMaxIterations = registerSetting(new IntSetting(
+        "speculative_optimization_max_iterations", "Speculative optimization iterations", 42000, 1000, 400000));
+    public final IntSetting speculativeOptimizationMaxLength = registerSetting(new IntSetting(
+        "speculative_optimization_max_length", "Speculative optimization length", 12000, 100, 80000));
+    public final IntSetting speculativeOptimizationTimeMs = registerSetting(new IntSetting(
+        "speculative_optimization_time_ms", "Speculative optimization time ms", 180, 0, 10000));
+    public final DoubleSetting speculativeOptimizationQualityScale = registerSetting(new DoubleSetting(
+        "speculative_optimization_quality_scale", "Speculative optimization quality scale", 1.55, 1.0, 8.0));
+    public final DoubleSetting speculativeMinLengthImprovement = registerSetting(new DoubleSetting(
+        "speculative_min_length_improvement", "Speculative min length improvement", 0.08, 0.0, 0.75));
+    public final DoubleSetting speculativeMinQualityGain = registerSetting(new DoubleSetting(
+        "speculative_min_quality_gain", "Speculative min quality gain", 0.08, 0.0, 1.0));
+    public final DoubleSetting speculativeHandoffStartDistance = registerSetting(new DoubleSetting(
+        "speculative_handoff_start_distance", "Speculative handoff start distance", 3.0, 0.25, 16.0));
     public final IntSetting instantCalculationTimeMs = registerSetting(new IntSetting(
         "instant_calculation_time_ms", "Instant time budget ms", 45, 0, 1000));
     public final IntSetting defaultCalculationTimeMs = registerSetting(new IntSetting(
@@ -505,6 +523,15 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.goalRefinementMaxIterations,
             INSTANCE.goalRefinementMaxTimeMs,
             INSTANCE.goalRefinementCostMargin,
+            INSTANCE.speculativeOptimizationEnabled,
+            INSTANCE.speculativeOptimizationIntervalMs,
+            INSTANCE.speculativeOptimizationMaxIterations,
+            INSTANCE.speculativeOptimizationMaxLength,
+            INSTANCE.speculativeOptimizationTimeMs,
+            INSTANCE.speculativeOptimizationQualityScale,
+            INSTANCE.speculativeMinLengthImprovement,
+            INSTANCE.speculativeMinQualityGain,
+            INSTANCE.speculativeHandoffStartDistance,
             INSTANCE.instantCalculationTimeMs,
             INSTANCE.defaultCalculationTimeMs,
             INSTANCE.repairCalculationTimeMs,

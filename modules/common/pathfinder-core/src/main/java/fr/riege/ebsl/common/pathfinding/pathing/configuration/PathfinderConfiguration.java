@@ -94,6 +94,34 @@ public final class PathfinderConfiguration {
 
     public static Builder builder() { return new Builder(); }
 
+    public Builder toBuilder() {
+        return new Builder()
+            .maxIterations(maxIterations)
+            .maxLength(maxLength)
+            .async(async)
+            .fallback(fallback)
+            .profiling(profiling)
+            .earlyFallback(earlyFallback)
+            .earlyFallbackIterations(earlyFallbackIterations)
+            .earlyFallbackMinPathNodes(earlyFallbackMinPathNodes)
+            .earlyFallbackMinProgressRatio(earlyFallbackMinProgressRatio)
+            .goalRefinement(goalRefinement)
+            .goalRefinementMinIterations(goalRefinementMinIterations)
+            .goalRefinementMaxIterations(goalRefinementMaxIterations)
+            .goalRefinementMaxTimeMs(goalRefinementMaxTimeMs)
+            .goalRefinementCostMargin(goalRefinementCostMargin)
+            .maxCalculationTimeMs(maxCalculationTimeMs)
+            .qualityRiskCostWeight(qualityRiskCostWeight)
+            .qualityTerrainCostWeight(qualityTerrainCostWeight)
+            .provider(provider)
+            .heuristicWeights(heuristicWeights)
+            .processors(processors)
+            .neighborStrategy(neighborStrategy)
+            .heuristicStrategy(heuristicStrategy)
+            .movementClassifier(movementClassifier)
+            .movementCostModel(movementCostModel);
+    }
+
     public static final class Builder {
         private int maxIterations = 50000;
         private int maxLength = 5000;

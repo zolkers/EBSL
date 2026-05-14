@@ -162,7 +162,7 @@ final class PathRotationController {
             return parkourLanding.get();
         }
 
-        Optional<MovementSmoothing.Plan> smoothing = MovementSmoothingRegistry.resolve(path, pursuitSegment, alreadyRotating);
+        Optional<MovementSmoothing.Plan> smoothing = ExecutionRegistries.smoothing().resolve(path, pursuitSegment, alreadyRotating);
         if (smoothing.isPresent()) {
             MovementSmoothing.Plan plan = smoothing.get();
             return new RotationTarget(plan.mode(), plan.targetIndex(), plan.visualizerIndex(), plan.position(),
