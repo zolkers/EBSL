@@ -23,11 +23,14 @@ package fr.riege.ebsl.common.pathfinding;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
-import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 
 import java.util.List;
+import java.util.Objects;
 
 public final class LongRangePathSession {
+    private final LongRangeNavigationPolicy policy;
+    private final LongRangeSegmentPlanner segmentPlanner;
+
     private boolean active;
     private int finalGoalX;
     private int finalGoalY;
@@ -45,6 +48,16 @@ public final class LongRangePathSession {
     private long nextRetryAfterMs;
     private int failedSegmentCalculations;
     private boolean immediateSegmentQueueRequested;
+    private LongRangeNavigationDiagnostics diagnostics = LongRangeNavigationDiagnostics.empty();
+
+    public LongRangePathSession() {
+        this(LongRangeNavigationPolicy.fromSettings(), new DirectLongRangeSegmentPlanner());
+    }
+
+    public LongRangePathSession(LongRangeNavigationPolicy policy, LongRangeSegmentPlanner segmentPlanner) {
+        this.policy = Objects.requireNonNull(policy, "policy");
+        this.segmentPlanner = Objects.requireNonNull(segmentPlanner, "segmentPlanner");
+    }
 
     public void start(int finalGoalX, int finalGoalZ) {
         start(finalGoalX, 0, finalGoalZ, GoalContract.XZ);
@@ -82,6 +95,7 @@ public final class LongRangePathSession {
             backgroundPathfinder.abort();
             backgroundPathfinder = null;
         }
+        updateDiagnostics("cleared");
     }
 
     public boolean isActive() {
@@ -101,22 +115,10 @@ public final class LongRangePathSession {
     public int currentSegmentGoalZ() { return currentSegmentGoalZ; }
 
     public SegmentGoal planSegmentGoal(double fromX, double fromZ) {
-        double dx = finalGoalX + 0.5 - fromX;
-        double dz = finalGoalZ + 0.5 - fromZ;
-        double maxSegmentDistance = PathfinderSettings.instance().maxSegmentDistance.value();
-        double distanceSquared = dx * dx + dz * dz;
-        if (distanceSquared <= maxSegmentDistance * maxSegmentDistance) {
-            return new SegmentGoal(finalGoalX, finalGoalZ, false);
-        }
-        double distance = Math.sqrt(distanceSquared);
-
-        double scale = maxSegmentDistance / Math.max(distance, 1.0e-6);
-        int segmentX = (int) Math.floor(fromX + dx * scale);
-        int segmentZ = (int) Math.floor(fromZ + dz * scale);
-        if (segmentX == finalGoalX && segmentZ == finalGoalZ) {
-            return new SegmentGoal(finalGoalX, finalGoalZ, false);
-        }
-        return new SegmentGoal(segmentX, segmentZ, true);
+        SegmentGoal segmentGoal = segmentPlanner.plan(new LongRangeSegmentPlanner.SegmentRequest(
+            fromX, fromZ, finalGoalX, finalGoalZ, policy));
+        diagnostics = diagnostics.withPlannedSegment(segmentGoal).withEvent("planned_segment");
+        return segmentGoal;
     }
 
     public void onSegmentStarted(int goalX, int goalZ, boolean needsContinuation) {
@@ -138,6 +140,7 @@ public final class LongRangePathSession {
         nextRetryAfterMs = 0;
         failedSegmentCalculations = 0;
         immediateSegmentQueueRequested = partial;
+        updateDiagnostics(partial ? "partial_segment_started" : "segment_started");
     }
 
     public void markCompleted() {
@@ -151,45 +154,41 @@ public final class LongRangePathSession {
             backgroundPathfinder.abort();
             backgroundPathfinder = null;
         }
+        updateDiagnostics("completed");
     }
 
     public SegmentQueueDecision queueDecision(double progressRatio, double remainingDistance, boolean walkExecutionDone, long now) {
-        if (!active || !currentSegmentNeedsContinuation || segmentCalculationInFlight || preparedSegment != null || now < nextRetryAfterMs) {
-            return SegmentQueueDecision.NONE;
-        }
+        SegmentQueueDecision decision = policy.queueDecision(new LongRangeNavigationPolicy.QueueInput(
+            active,
+            currentSegmentNeedsContinuation,
+            segmentCalculationInFlight,
+            preparedSegment != null,
+            now >= nextRetryAfterMs,
+            immediateSegmentQueueRequested,
+            walkExecutionDone,
+            progressRatio,
+            remainingDistance
+        ));
         if (immediateSegmentQueueRequested) {
             immediateSegmentQueueRequested = false;
-            return SegmentQueueDecision.NORMAL;
         }
-        if (walkExecutionDone) {
-            return SegmentQueueDecision.EMERGENCY_FROM_PLAYER;
-        }
-        if (remainingDistance <= PathfinderSettings.instance().emergencyRemainingDistance.value()) {
-            return SegmentQueueDecision.NORMAL;
-        }
-        if (progressRatio >= PathfinderSettings.instance().earlySegmentRecalcRatio.value()
-            || remainingDistance <= PathfinderSettings.instance().prepareRemainingDistance.value()) {
-            return SegmentQueueDecision.NORMAL;
-        }
-        return SegmentQueueDecision.NONE;
+        diagnostics = diagnostics.withQueueDecision(decision).withEvent("queue_decision");
+        return decision;
     }
 
     public boolean shouldActivatePreparedSegment(double progressRatio, double remainingDistance, boolean walkExecutionDone) {
-        return walkExecutionDone
-            || progressRatio >= PathfinderSettings.instance().segmentRecalcRatio.value()
-            || remainingDistance <= PathfinderSettings.instance().preparedSwitchRemainingDistance.value();
+        return policy.shouldActivatePreparedSegment(progressRatio, remainingDistance, walkExecutionDone);
     }
 
     public boolean shouldUsePlayerRecoveryStart(double progressRatio, boolean walkExecutionDone) {
-        return walkExecutionDone
-            || (failedSegmentCalculations >= PathfinderSettings.instance().playerStartAfterFailures.value()
-            && progressRatio >= PathfinderSettings.instance().playerStartRecoveryRatio.value());
+        return policy.shouldUsePlayerRecoveryStart(failedSegmentCalculations, progressRatio, walkExecutionDone);
     }
 
     public int markSegmentCalculationStarted(InspectablePathfinder pathfinder) {
         segmentCalculationInFlight = true;
         calculationSegmentId = currentSegmentId;
         backgroundPathfinder = pathfinder;
+        updateDiagnostics("segment_calculation_started");
         return calculationSegmentId;
     }
 
@@ -199,6 +198,7 @@ public final class LongRangePathSession {
         this.backgroundPathfinder = null;
         this.nextRetryAfterMs = 0;
         this.failedSegmentCalculations = 0;
+        updateDiagnostics("prepared_segment_ready");
     }
 
     public void markSegmentCalculationFailed(long now) {
@@ -206,8 +206,9 @@ public final class LongRangePathSession {
         calculationSegmentId = -1;
         backgroundPathfinder = null;
         preparedSegment = null;
-        nextRetryAfterMs = now + PathfinderSettings.instance().segmentRetryCooldownMs.value();
+        nextRetryAfterMs = now + policy.segmentRetryCooldownMs();
         failedSegmentCalculations++;
+        updateDiagnostics("segment_calculation_failed");
     }
 
     public void forceNextCalculationFromPlayer() {
@@ -219,8 +220,9 @@ public final class LongRangePathSession {
         backgroundPathfinder = null;
         preparedSegment = null;
         nextRetryAfterMs = 0;
-        failedSegmentCalculations = PathfinderSettings.instance().playerStartAfterFailures.value();
+        failedSegmentCalculations = policy.playerStartAfterFailures();
         immediateSegmentQueueRequested = true;
+        updateDiagnostics("forced_player_recovery");
     }
 
     public boolean isCurrentCalculation(int segmentId) {
@@ -230,11 +232,12 @@ public final class LongRangePathSession {
     public boolean hasPreparedSegment() { return preparedSegment != null; }
     public boolean hasSegmentCalculationInFlight() { return segmentCalculationInFlight; }
     public PendingSegment preparedSegment() { return preparedSegment; }
+    public LongRangeNavigationDiagnostics diagnostics() { return diagnostics; }
 
     public boolean isFinalGoalReached(Vec3d playerPos) {
         double dx = (finalGoalX + 0.5) - playerPos.x();
         double dz = (finalGoalZ + 0.5) - playerPos.z();
-        if (Math.sqrt(dx * dx + dz * dz) > PathfinderSettings.instance().finalGoalXzTolerance.value()) {
+        if (Math.sqrt(dx * dx + dz * dz) > policy.finalGoalXzTolerance()) {
             return false;
         }
         return !requiresExactY() || Math.abs(finalGoalY - playerPos.y()) <= 2.0;
@@ -244,7 +247,26 @@ public final class LongRangePathSession {
         return x == finalGoalX && z == finalGoalZ && (!requiresExactY() || y == finalGoalY);
     }
 
-    public record SegmentGoal(int x, int z, boolean segmented) {
+    private void updateDiagnostics(String event) {
+        diagnostics = diagnostics
+            .withEvent(event)
+            .withSessionState(
+                failedSegmentCalculations,
+                segmentCalculationInFlight,
+                preparedSegment != null,
+                nextRetryAfterMs);
+    }
+
+    public record SegmentGoal(
+        int x,
+        int z,
+        boolean segmented,
+        double distanceToFinalGoal,
+        DirectLongRangeSegmentPlanner.PlanningStrategy planningStrategy
+    ) {
+        public SegmentGoal(int x, int z, boolean segmented) {
+            this(x, z, segmented, 0.0, DirectLongRangeSegmentPlanner.PlanningStrategy.DIRECT_TO_GOAL);
+        }
     }
 
     public enum SegmentAttachment {
