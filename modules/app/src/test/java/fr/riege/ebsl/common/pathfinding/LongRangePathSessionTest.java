@@ -22,7 +22,10 @@
 package fr.riege.ebsl.common.pathfinding;
 
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,7 +40,7 @@ class LongRangePathSessionTest {
         assertTrue(segment.segmented());
         assertEquals(50, segment.x());
         assertEquals(0, segment.z());
-        assertEquals(DirectLongRangeSegmentPlanner.PlanningStrategy.ROLLING_HORIZON, segment.planningStrategy());
+        assertEquals(LongRangePlanningStrategy.ROLLING_HORIZON, segment.planningStrategy());
         assertEquals(segment, session.diagnostics().lastPlannedSegment());
     }
 
@@ -82,6 +85,85 @@ class LongRangePathSessionTest {
         assertTrue(session.isFinalGoalReached(new Vec3d(10.9, 65.0, 10.9)));
         assertFalse(session.isFinalGoalReached(new Vec3d(10.9, 69.0, 10.9)));
         assertFalse(session.isFinalGoalReached(new Vec3d(14.0, 65.0, 10.0)));
+    }
+
+    @Test
+    void hierarchicalPlannerAvoidsRememberedFailedSegment() {
+        LongRangePathMemory memory = new LongRangePathMemory();
+        LongRangePathSession session = new LongRangePathSession(
+            testPolicy(),
+            new HierarchicalLongRangeSegmentPlanner(),
+            new LongRangeSegmentAcceptancePolicy(),
+            memory);
+        session.start(100, 0);
+        LongRangePathSession.SegmentGoal direct = new DirectLongRangeSegmentPlanner().plan(
+            new LongRangeSegmentPlanner.SegmentRequest(0.5, 0.5, 100, 0, testPolicy(), memory));
+        memory.recordFailure(0, 0, direct.x(), direct.z());
+
+        LongRangePathSession.SegmentGoal segment = session.planSegmentGoal(0.5, 0.5);
+
+        assertEquals(LongRangePlanningStrategy.HIERARCHICAL_WAYPOINT, segment.planningStrategy());
+        assertNotEquals(direct.z(), segment.z());
+    }
+
+    @Test
+    void acceptedPreparedSegmentsAreRememberedAsCorridors() {
+        LongRangePathSession session = new LongRangePathSession(testPolicy(), new DirectLongRangeSegmentPlanner());
+        session.start(100, 0);
+        session.onSegmentStarted(50, 0, true);
+
+        session.setPreparedSegment(new LongRangePathSession.PendingSegment(
+            simpleNodes(Node.MoveType.WALK),
+            2,
+            64,
+            0,
+            true,
+            false,
+            5,
+            LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT,
+            true,
+            LongRangePathPlan.fromNodes(simpleNodes(Node.MoveType.WALK), false, LongRangePlanningStrategy.ROLLING_HORIZON)));
+
+        assertTrue(session.hasPreparedSegment());
+        assertEquals(1, session.diagnostics().rememberedCorridors());
+        assertEquals("quality_ok", session.diagnostics().lastAcceptanceReason());
+    }
+
+    @Test
+    void riskyPreparedSegmentsAreRejectedByAcceptancePolicy() {
+        LongRangePathSession session = new LongRangePathSession(
+            testPolicy(),
+            new DirectLongRangeSegmentPlanner(),
+            new LongRangeSegmentAcceptancePolicy(1.0, 2),
+            new LongRangePathMemory());
+        session.start(100, 0);
+        session.onSegmentStarted(50, 0, true);
+
+        List<Node> risky = simpleNodes(Node.MoveType.PARKOUR);
+        session.setPreparedSegment(new LongRangePathSession.PendingSegment(
+            risky,
+            2,
+            64,
+            0,
+            true,
+            false,
+            5,
+            LongRangePathSession.SegmentAttachment.MERGE_WITH_CURRENT,
+            true,
+            LongRangePathPlan.fromNodes(risky, false, LongRangePlanningStrategy.ROLLING_HORIZON)));
+
+        assertFalse(session.hasPreparedSegment());
+        assertEquals("too_risky", session.diagnostics().lastAcceptanceReason());
+        assertEquals("segment_calculation_failed", session.diagnostics().lastEvent());
+    }
+
+    private static List<Node> simpleNodes(Node.MoveType moveType) {
+        Node start = new Node(new PathPosition(0, 64, 0));
+        Node end = new Node(new PathPosition(2, 64, 0));
+        end.setParent(start);
+        end.setMoveType(moveType);
+        end.setGCost(2.0);
+        return List.of(start, end);
     }
 
     private static LongRangeNavigationPolicy testPolicy() {

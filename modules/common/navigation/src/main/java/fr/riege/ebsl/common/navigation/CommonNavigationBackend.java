@@ -584,6 +584,10 @@ public final class CommonNavigationBackend implements NavigationService {
         boolean partial = PathResultClassifier.isPartialWalkResult(result, positions, requestedX, requestedY, requestedZ);
         boolean needsContinuation = partial || !longRangeSession.isFinalSegmentGoal(last.flooredX(), last.flooredY(), last.flooredZ());
         Node end = processed.navigationPath().getLast();
+        LongRangePlanningStrategy strategy = partial
+            ? LongRangePlanningStrategy.MEMORY_REPAIR
+            : LongRangePlanningStrategy.ROLLING_HORIZON;
+        LongRangePathPlan plan = LongRangePathPlan.fromNodes(processed.navigationPath(), partial, strategy);
         longRangeSession.setPreparedSegment(new LongRangePathSession.PendingSegment(
             processed.navigationPath(),
             end.position.flooredX(),
@@ -593,7 +597,8 @@ public final class CommonNavigationBackend implements NavigationService {
             partial,
             0,
             attachment,
-            rollingHorizon));
+            rollingHorizon,
+            plan));
     }
 
     private void startPreparedLongRangeSegment() {

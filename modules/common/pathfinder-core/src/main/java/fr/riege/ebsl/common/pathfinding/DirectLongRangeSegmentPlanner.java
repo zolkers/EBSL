@@ -25,7 +25,7 @@ package fr.riege.ebsl.common.pathfinding;
  * Rolling-horizon segment planner using the direct vector toward the final goal.
  *
  * <p>This is not the final word on long-distance routing; it is the stable baseline planner that
- * preserves existing behavior while giving the navigation stack a replaceable planning seam.</p>
+ * preserves existing behavior while giving the navigation stack a replaceable planning boundary.</p>
  */
 public final class DirectLongRangeSegmentPlanner implements LongRangeSegmentPlanner {
     @Override
@@ -40,7 +40,7 @@ public final class DirectLongRangeSegmentPlanner implements LongRangeSegmentPlan
                 request.finalGoalZ(),
                 false,
                 Math.sqrt(distanceSquared),
-                PlanningStrategy.DIRECT_TO_GOAL
+                LongRangePlanningStrategy.DIRECT_TO_GOAL
             );
         }
 
@@ -54,7 +54,7 @@ public final class DirectLongRangeSegmentPlanner implements LongRangeSegmentPlan
                 request.finalGoalZ(),
                 false,
                 distance,
-                PlanningStrategy.DIRECT_TO_GOAL
+                LongRangePlanningStrategy.DIRECT_TO_GOAL
             );
         }
         return new LongRangePathSession.SegmentGoal(
@@ -62,12 +62,7 @@ public final class DirectLongRangeSegmentPlanner implements LongRangeSegmentPlan
             segmentZ,
             true,
             distance,
-            PlanningStrategy.ROLLING_HORIZON
+            LongRangePlanningStrategy.ROLLING_HORIZON
         );
-    }
-
-    public enum PlanningStrategy {
-        DIRECT_TO_GOAL,
-        ROLLING_HORIZON
     }
 }

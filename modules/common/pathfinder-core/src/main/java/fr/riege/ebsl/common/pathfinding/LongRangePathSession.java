@@ -30,6 +30,8 @@ import java.util.Objects;
 public final class LongRangePathSession {
     private final LongRangeNavigationPolicy policy;
     private final LongRangeSegmentPlanner segmentPlanner;
+    private final LongRangeSegmentAcceptancePolicy acceptancePolicy;
+    private final LongRangePathMemory memory;
 
     private boolean active;
     private int finalGoalX;
@@ -51,12 +53,24 @@ public final class LongRangePathSession {
     private LongRangeNavigationDiagnostics diagnostics = LongRangeNavigationDiagnostics.empty();
 
     public LongRangePathSession() {
-        this(LongRangeNavigationPolicy.fromSettings(), new DirectLongRangeSegmentPlanner());
+        this(LongRangeNavigationPolicy.fromSettings(),
+            new HierarchicalLongRangeSegmentPlanner(),
+            new LongRangeSegmentAcceptancePolicy(),
+            new LongRangePathMemory());
     }
 
     public LongRangePathSession(LongRangeNavigationPolicy policy, LongRangeSegmentPlanner segmentPlanner) {
+        this(policy, segmentPlanner, new LongRangeSegmentAcceptancePolicy(), new LongRangePathMemory());
+    }
+
+    public LongRangePathSession(LongRangeNavigationPolicy policy,
+                                LongRangeSegmentPlanner segmentPlanner,
+                                LongRangeSegmentAcceptancePolicy acceptancePolicy,
+                                LongRangePathMemory memory) {
         this.policy = Objects.requireNonNull(policy, "policy");
         this.segmentPlanner = Objects.requireNonNull(segmentPlanner, "segmentPlanner");
+        this.acceptancePolicy = Objects.requireNonNull(acceptancePolicy, "acceptancePolicy");
+        this.memory = Objects.requireNonNull(memory, "memory");
     }
 
     public void start(int finalGoalX, int finalGoalZ) {
@@ -88,6 +102,7 @@ public final class LongRangePathSession {
         calculationSegmentId = -1;
         segmentCalculationInFlight = false;
         preparedSegment = null;
+        memory.clear();
         nextRetryAfterMs = 0;
         failedSegmentCalculations = 0;
         immediateSegmentQueueRequested = false;
@@ -116,7 +131,7 @@ public final class LongRangePathSession {
 
     public SegmentGoal planSegmentGoal(double fromX, double fromZ) {
         SegmentGoal segmentGoal = segmentPlanner.plan(new LongRangeSegmentPlanner.SegmentRequest(
-            fromX, fromZ, finalGoalX, finalGoalZ, policy));
+            fromX, fromZ, finalGoalX, finalGoalZ, policy, memory));
         diagnostics = diagnostics.withPlannedSegment(segmentGoal).withEvent("planned_segment");
         return segmentGoal;
     }
@@ -193,15 +208,27 @@ public final class LongRangePathSession {
     }
 
     public void setPreparedSegment(PendingSegment preparedSegment) {
+        LongRangeSegmentAcceptancePolicy.SegmentAcceptanceDecision acceptance =
+            acceptancePolicy.evaluate(preparedSegment.plan());
+        diagnostics = diagnostics.withAcceptanceReason(acceptance.reason());
+        if (!acceptance.accepted()) {
+            markSegmentCalculationFailed(System.currentTimeMillis());
+            return;
+        }
         this.preparedSegment = preparedSegment;
         this.segmentCalculationInFlight = false;
         this.backgroundPathfinder = null;
         this.nextRetryAfterMs = 0;
         this.failedSegmentCalculations = 0;
+        memory.rememberCorridor(preparedSegment.plan());
         updateDiagnostics("prepared_segment_ready");
     }
 
     public void markSegmentCalculationFailed(long now) {
+        SegmentGoal failedGoal = diagnostics.lastPlannedSegment();
+        if (failedGoal != null) {
+            memory.recordFailure(currentSegmentGoalX, currentSegmentGoalZ, failedGoal.x(), failedGoal.z());
+        }
         segmentCalculationInFlight = false;
         calculationSegmentId = -1;
         backgroundPathfinder = null;
@@ -254,7 +281,8 @@ public final class LongRangePathSession {
                 failedSegmentCalculations,
                 segmentCalculationInFlight,
                 preparedSegment != null,
-                nextRetryAfterMs);
+                nextRetryAfterMs,
+                memory);
     }
 
     public record SegmentGoal(
@@ -262,10 +290,10 @@ public final class LongRangePathSession {
         int z,
         boolean segmented,
         double distanceToFinalGoal,
-        DirectLongRangeSegmentPlanner.PlanningStrategy planningStrategy
+        LongRangePlanningStrategy planningStrategy
     ) {
         public SegmentGoal(int x, int z, boolean segmented) {
-            this(x, z, segmented, 0.0, DirectLongRangeSegmentPlanner.PlanningStrategy.DIRECT_TO_GOAL);
+            this(x, z, segmented, 0.0, LongRangePlanningStrategy.DIRECT_TO_GOAL);
         }
     }
 
@@ -294,7 +322,14 @@ public final class LongRangePathSession {
         boolean partial,
         long exploredCount,
         SegmentAttachment attachment,
-        boolean rollingHorizon
+        boolean rollingHorizon,
+        LongRangePathPlan plan
     ) {
+        public PendingSegment(List<Node> path, int goalX, int goalY, int goalZ,
+                              boolean needsContinuation, boolean partial, long exploredCount,
+                              SegmentAttachment attachment, boolean rollingHorizon) {
+            this(path, goalX, goalY, goalZ, needsContinuation, partial, exploredCount, attachment,
+                rollingHorizon, LongRangePathPlan.fromNodes(path, partial, LongRangePlanningStrategy.ROLLING_HORIZON));
+        }
     }
 }

@@ -31,7 +31,10 @@ public record LongRangeNavigationDiagnostics(
     int failedSegmentCalculations,
     boolean segmentCalculationInFlight,
     boolean hasPreparedSegment,
-    long nextRetryAfterMs
+    long nextRetryAfterMs,
+    int rememberedFailures,
+    int rememberedCorridors,
+    String lastAcceptanceReason
 ) {
     public static LongRangeNavigationDiagnostics empty() {
         return new LongRangeNavigationDiagnostics(
@@ -41,7 +44,10 @@ public record LongRangeNavigationDiagnostics(
             0,
             false,
             false,
-            0L
+            0L,
+            0,
+            0,
+            "none"
         );
     }
 
@@ -53,7 +59,10 @@ public record LongRangeNavigationDiagnostics(
             failedSegmentCalculations,
             segmentCalculationInFlight,
             hasPreparedSegment,
-            nextRetryAfterMs
+            nextRetryAfterMs,
+            rememberedFailures,
+            rememberedCorridors,
+            lastAcceptanceReason
         );
     }
 
@@ -65,7 +74,10 @@ public record LongRangeNavigationDiagnostics(
             failedSegmentCalculations,
             segmentCalculationInFlight,
             hasPreparedSegment,
-            nextRetryAfterMs
+            nextRetryAfterMs,
+            rememberedFailures,
+            rememberedCorridors,
+            lastAcceptanceReason
         );
     }
 
@@ -77,12 +89,16 @@ public record LongRangeNavigationDiagnostics(
             failedSegmentCalculations,
             segmentCalculationInFlight,
             hasPreparedSegment,
-            nextRetryAfterMs
+            nextRetryAfterMs,
+            rememberedFailures,
+            rememberedCorridors,
+            lastAcceptanceReason
         );
     }
 
     LongRangeNavigationDiagnostics withSessionState(int failures, boolean inFlight,
-                                                    boolean prepared, long retryAfterMs) {
+                                                    boolean prepared, long retryAfterMs,
+                                                    LongRangePathMemory memory) {
         return new LongRangeNavigationDiagnostics(
             lastEvent,
             lastPlannedSegment,
@@ -90,7 +106,25 @@ public record LongRangeNavigationDiagnostics(
             failures,
             inFlight,
             prepared,
-            retryAfterMs
+            retryAfterMs,
+            memory == null ? rememberedFailures : memory.rememberedFailureEntries(),
+            memory == null ? rememberedCorridors : memory.rememberedCorridors(),
+            lastAcceptanceReason
+        );
+    }
+
+    LongRangeNavigationDiagnostics withAcceptanceReason(String reason) {
+        return new LongRangeNavigationDiagnostics(
+            lastEvent,
+            lastPlannedSegment,
+            lastQueueDecision,
+            failedSegmentCalculations,
+            segmentCalculationInFlight,
+            hasPreparedSegment,
+            nextRetryAfterMs,
+            rememberedFailures,
+            rememberedCorridors,
+            reason == null ? "none" : reason
         );
     }
 }

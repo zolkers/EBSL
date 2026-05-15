@@ -36,7 +36,8 @@ public interface LongRangeSegmentPlanner {
         double fromZ,
         int finalGoalX,
         int finalGoalZ,
-        LongRangeNavigationPolicy policy
+        LongRangeNavigationPolicy policy,
+        LongRangePathMemory memory
     ) {
         public SegmentRequest {
             if (!Double.isFinite(fromX) || !Double.isFinite(fromZ)) {
