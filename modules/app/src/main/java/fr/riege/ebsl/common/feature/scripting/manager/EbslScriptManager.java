@@ -114,14 +114,22 @@ public final class EbslScriptManager {
     }
 
     public void saveGraphLayout(String fileName, Map<String, EbslGraphNodePosition> positions) {
-        saveGraphDocument(fileName, new EbslGraphDocument(positions, List.of()));
+        saveGraphDocument(fileName, new EbslGraphDocument(positions, loadGraphDocument(fileName).connections()));
     }
 
     public EbslGraphDocument loadGraphDocument(String fileName) {
-        return storage.loadText(graphLayoutPath(fileName)).map(this::parseGraphDocument).orElseGet(EbslGraphDocument::empty);
+        String normalized = normalizeFileName(fileName);
+        EbslGraphDocument document = storage.loadText(graphLayoutPath(normalized)).map(this::parseGraphDocument).orElseGet(EbslGraphDocument::empty);
+        List<EbslGraphConnection> scriptConnections = storage.loadText(path(normalized))
+            .map(source -> EbslGraphScriptLinks.parse(normalized, source))
+            .orElse(List.of());
+        return scriptConnections.isEmpty()
+            ? document
+            : new EbslGraphDocument(document.positions(), scriptConnections);
     }
 
     public void saveGraphDocument(String fileName, EbslGraphDocument document) {
+        String normalized = normalizeFileName(fileName);
         JsonObject root = new JsonObject();
         JsonObject positions = new JsonObject();
         for (Map.Entry<String, EbslGraphNodePosition> entry : document.positions().entrySet()) {
@@ -144,7 +152,12 @@ public final class EbslScriptManager {
             connections.add(edge);
         }
         root.add(JSON_CONNECTIONS, connections);
-        storage.saveText(graphLayoutPath(fileName), root.toString());
+        storage.saveText(graphLayoutPath(normalized), root.toString());
+        syncScriptLinkDirectives(normalized, document.connections());
+    }
+
+    public static String syncGraphLinkDirectives(String fileName, String source, List<EbslGraphConnection> connections) {
+        return EbslGraphScriptLinks.sync(fileName, source, connections);
     }
 
     private EbslGraphDocument parseGraphDocument(String json) {
@@ -217,5 +230,12 @@ public final class EbslScriptManager {
 
     private static String graphLayoutPath(String fileName) {
         return GRAPH_LAYOUT_DIRECTORY + "/" + normalizeFileName(fileName) + ".json";
+    }
+
+    private void syncScriptLinkDirectives(String fileName, List<EbslGraphConnection> connections) {
+        String normalized = normalizeFileName(fileName);
+        storage.loadText(path(normalized))
+            .map(source -> EbslGraphScriptLinks.sync(normalized, source, connections))
+            .ifPresent(source -> storage.saveText(path(normalized), source));
     }
 }

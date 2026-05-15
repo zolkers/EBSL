@@ -176,10 +176,23 @@ final class ImGuiScriptGraphView {
         dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFF26313D, 5.0f, 0, 1.0f);
 
         float pad = 12.0f;
+        if (panel.height() >= 340.0f) {
+            float linkHeight = Math.clamp(panel.height() * 0.36f, 126.0f, 190.0f);
+            UiRect nodePanel = new UiRect(panel.x(), panel.y(), panel.width(), Math.round(panel.height() - linkHeight - 8.0f));
+            UiRect linkPanel = new UiRect(panel.x(), Math.round(nodePanel.bottom() + 8.0f), panel.width(), Math.round(linkHeight));
+            renderNodeInspectorContent(manager, nodePanel, nodes, pad);
+            renderLinkInspector(manager, linkPanel, pad);
+            return;
+        }
         if (connections.hasSelectedConnection()) {
             renderEdgeInspector(manager, panel, pad);
             return;
         }
+        renderNodeInspectorContent(manager, panel, nodes, pad);
+    }
+
+    private void renderNodeInspectorContent(EbslScriptManager manager, UiRect panel, List<EbslScriptGraphNode> nodes, float pad) {
+        ImDrawList dl = ImGui.getWindowDrawList();
         if (selectedGraphNode < 0 || selectedGraphNode >= nodes.size()) {
             ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + pad);
             ImGui.text("Node inspector");
@@ -203,7 +216,7 @@ final class ImGuiScriptGraphView {
 
         float contentTop = panel.y() + 62.0f;
         float footerHeight = 74.0f;
-        float contentHeight = Math.max(96.0f, panel.height() - (contentTop - panel.y()) - footerHeight);
+        float contentHeight = Math.max(48.0f, panel.height() - (contentTop - panel.y()) - footerHeight);
         ImGui.setCursorScreenPos(panel.x() + pad, contentTop);
         if (settingBacked) {
             ImGui.beginChild("##ebsl-node-settings", contentWidth, contentHeight, true);
@@ -336,7 +349,21 @@ final class ImGuiScriptGraphView {
         connections.renderSelectedConnectionInspector(
             () -> saveGraphLayout(manager),
             statusSink,
-            Math.max(120.0f, panel.width() - pad * 2.0f)
+            Math.max(120.0f, panel.width() - pad * 2.0f),
+            Math.max(72.0f, panel.height() - pad * 2.0f)
+        );
+    }
+
+    private void renderLinkInspector(EbslScriptManager manager, UiRect panel, float pad) {
+        ImDrawList dl = ImGui.getWindowDrawList();
+        dl.addRectFilled(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xEE151A20, 5.0f);
+        dl.addRect(panel.x(), panel.y(), panel.right(), panel.bottom(), 0xFFB58B38, 5.0f, 0, 1.0f);
+        ImGui.setCursorScreenPos(panel.x() + pad, panel.y() + pad);
+        connections.renderSelectedConnectionInspector(
+            () -> saveGraphLayout(manager),
+            statusSink,
+            Math.max(120.0f, panel.width() - pad * 2.0f),
+            Math.max(72.0f, panel.height() - pad * 2.0f)
         );
     }
 
@@ -497,7 +524,10 @@ final class ImGuiScriptGraphView {
         for (Map.Entry<String, NodePosition> entry : graphNodePositions.entrySet()) {
             positions.put(entry.getKey(), new EbslGraphNodePosition(entry.getValue().x(), entry.getValue().y()));
         }
-        manager.saveGraphDocument(loadedFile, new EbslGraphDocument(positions, connections.connections()));
+        List<EbslGraphConnection> graphConnections = connections.connections();
+        source.set(EbslScriptManager.syncGraphLinkDirectives(loadedFile, source.get(), graphConnections));
+        manager.save(loadedFile, source.get());
+        manager.saveGraphDocument(loadedFile, new EbslGraphDocument(positions, graphConnections));
     }
 
     private void autoLayoutGraph(EbslScriptManager manager) {
