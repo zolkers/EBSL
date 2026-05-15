@@ -33,13 +33,14 @@ import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.EvaluationContext;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
+import fr.riege.ebsl.common.pathfinding.pathing.state.SearchState;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.util.RegionKey;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
-import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 final class AStarPathfinder extends AbstractPathfinder implements InspectablePathfinder {
     private static final double[] BEST_PATH_COEFFICIENTS = {1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0};
@@ -70,19 +71,19 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     @Override
     protected void insertStartNode(Node node, double fCost, PrimitiveMinHeap openSet) {
         PathfindingSession session = sessionOrThrow();
-        long packedPos = RegionKey.pack(node.position);
+        long stateId = session.stateId(SearchState.at(node.position));
         node.setInOpen(true);
         node.setCachedFCost(fCost);
-        session.nodes.put(packedPos, node);
+        session.nodes.put(stateId, node);
         session.initializeFallback(node);
-        openSet.insertOrUpdate(packedPos, fCost);
+        openSet.insertOrUpdate(stateId, fCost);
     }
 
     @Override
     protected Node extractBestNode(PrimitiveMinHeap openSet) {
         PathfindingSession session = sessionOrThrow();
-        long packedPos = openSet.extractMin();
-        return session.nodes.get(packedPos);
+        long stateId = openSet.extractMin();
+        return session.nodes.get(stateId);
     }
 
     @Override
@@ -104,7 +105,8 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
                                      Node currentNode, PrimitiveMinHeap openSet,
                                      SearchContext searchContext) {
         PathfindingSession session = sessionOrThrow();
-        Iterable<MovementAction> actions = neighborStrategy.getActions(currentNode.position);
+        SearchState currentState = SearchState.of(currentNode.position, currentNode.moveType());
+        Iterable<MovementAction> actions = neighborStrategy.getActions(currentState);
         Node bestReachedTarget = null;
 
         for (MovementAction action : actions) {
@@ -134,16 +136,17 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
             profNeighborCount++;
         }
         PathPosition neighborPos = currentNode.position.add(action.offset());
-        long packedPos = RegionKey.pack(neighborPos);
-        Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, goal, currentNode);
+        Node.MoveType moveType = action.moveTypeHint() == null
+            ? classifyMove(currentNode.position, neighborPos, searchContext)
+            : action.moveTypeHint();
+        SearchState candidateState = SearchState.of(neighborPos, moveType);
+        long stateId = session.stateId(candidateState);
+        Node candidate = candidateNode(session, stateId, neighborPos, requestStart, goal, currentNode);
         if (candidate.inClosed()) {
             return null;
         }
 
         session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy, action);
-        Node.MoveType moveType = action.moveTypeHint() == null
-            ? classifyMove(currentNode.position, candidate.position, searchContext)
-            : action.moveTypeHint();
         Node.MoveType previousMoveType = candidate.moveType();
         candidate.setMoveType(moveType);
         if (!isValidCandidate(session.reusableContext)) {
@@ -159,24 +162,24 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         if (candidate.satisfies(goal)) {
             return candidate;
         }
-        enqueueCandidate(openSet, packedPos, candidate);
+        enqueueCandidate(openSet, stateId, candidate);
         return null;
     }
 
     private Node candidateNode(PathfindingSession session,
-                               long packedPos,
+                               long stateId,
                                PathPosition neighborPos,
                                PathPosition requestStart,
                                PathGoal goal,
                                Node currentNode) {
-        Node candidate = session.nodes.get(packedPos);
+        Node candidate = session.nodes.get(stateId);
         if (candidate != null) {
             return candidate;
         }
         long startedAt = profiling ? System.nanoTime() : 0L;
         Node created = createNeighborNode(neighborPos, requestStart, goal, currentNode);
         created.setGCost(Double.POSITIVE_INFINITY);
-        session.nodes.put(packedPos, created);
+        session.nodes.put(stateId, created);
         if (profiling) {
             profNodeCreateNanos += System.nanoTime() - startedAt;
         }
@@ -342,15 +345,28 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
 
     private static final class PathfindingSession {
         final Long2ObjectOpenHashMap<Node> nodes = new Long2ObjectOpenHashMap<>();
+        final Object2LongOpenHashMap<SearchState> stateIds = new Object2LongOpenHashMap<>();
         final LongSet closedSet = new LongOpenHashSet();
         final EvaluationContextImpl reusableContext;
         final Node[] bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
         final double[] bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
+        long nextStateId = 1L;
         int expandedCount = 0;
 
         PathfindingSession() {
 
             reusableContext = new EvaluationContextImpl(null, null, null, null);
+            stateIds.defaultReturnValue(-1L);
+        }
+
+        long stateId(SearchState state) {
+            long existing = stateIds.getLong(state);
+            if (existing != -1L) {
+                return existing;
+            }
+            long id = nextStateId++;
+            stateIds.put(state, id);
+            return id;
         }
 
         void initializeFallback(Node start) {

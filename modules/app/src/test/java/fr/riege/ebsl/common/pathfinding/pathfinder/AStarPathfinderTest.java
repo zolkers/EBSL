@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
+import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
@@ -34,6 +35,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.LayerPathProcess
 import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePathProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
+import fr.riege.ebsl.common.pathfinding.pathing.state.SearchState;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 import org.junit.jupiter.api.Test;
@@ -202,6 +204,35 @@ class AStarPathfinderTest {
     }
 
     @Test
+    void searchKeepsDistinctArrivalStatesForSamePosition() throws Exception {
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .maxIterations(128)
+            .goalRefinement(true)
+            .goalRefinementMinIterations(0)
+            .goalRefinementMaxIterations(128)
+            .goalRefinementMaxTimeMs(0)
+            .neighborStrategy(new ArrivalStateStrategy())
+            .build());
+
+        PathPosition start = new PathPosition(0, 64, 0);
+        PathPosition target = new PathPosition(2, 64, 0);
+        PathfinderResult result = pathfinder.findPath(start, target, null)
+            .toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
+
+        List<PathPosition> positions = new ArrayList<>(result.getPath().collect());
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertEquals(List.of(
+            start,
+            new PathPosition(0, 64, 1),
+            new PathPosition(1, 64, 0),
+            target
+        ), positions);
+    }
+
+    @Test
     void processorRegistryCreatesFreshStandardProcessors() {
         assertNotSame(
             NodeProcessorRegistry.createStandardProcessors().getFirst(),
@@ -248,6 +279,38 @@ class AStarPathfinderTest {
                 MovementAction.offset(new PathVector(0, 0, 1)),
                 MovementAction.offset(new PathVector(0, 0, -1))
             );
+        }
+    }
+
+    private static final class ArrivalStateStrategy implements INeighborStrategy {
+        @Override
+        public Iterable<PathVector> getOffsets() {
+            return List.of();
+        }
+
+        @Override
+        public Iterable<MovementAction> getActions(SearchState currentState) {
+            PathPosition position = currentState.position();
+            if (position.equals(new PathPosition(0, 64, 0))) {
+                return List.of(
+                    MovementAction.offset(new PathVector(1, 0, 0)).withMoveTypeHint(Node.MoveType.WALK),
+                    MovementAction.offset(new PathVector(0, 0, 1)).withMoveTypeHint(Node.MoveType.WALK)
+                );
+            }
+            if (position.equals(new PathPosition(0, 64, 1))) {
+                return List.of(
+                    MovementAction.offset(new PathVector(1, 0, -1)).withMoveTypeHint(Node.MoveType.FLY)
+                );
+            }
+            if (position.equals(new PathPosition(1, 64, 0))) {
+                double multiplier = currentState.arrivalMoveType() == Node.MoveType.FLY ? 1.0 : 100.0;
+                return List.of(
+                    MovementAction.offset(new PathVector(1, 0, 0))
+                        .withMoveTypeHint(Node.MoveType.WALK)
+                        .withCost(multiplier, 0.0)
+                );
+            }
+            return List.of();
         }
     }
 }

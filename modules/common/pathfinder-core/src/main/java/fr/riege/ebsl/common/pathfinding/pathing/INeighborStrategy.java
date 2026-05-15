@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.pathfinding.pathing;
 
 import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
+import fr.riege.ebsl.common.pathfinding.pathing.state.SearchState;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 
@@ -67,5 +68,18 @@ public interface INeighborStrategy {
             actions.add(MovementAction.offset(offset));
         }
         return actions;
+    }
+
+    /**
+     * Returns candidate movement actions for the supplied search state.
+     *
+     * <p>Strategies that care about arrival movement type, stance, medium, or other stateful
+     * information can override this method while legacy strategies can keep exposing offsets.</p>
+     *
+     * @param currentState the state currently being expanded
+     * @return the requested values
+     */
+    default Iterable<MovementAction> getActions(SearchState currentState) {
+        return getActions(currentState.position());
     }
 }

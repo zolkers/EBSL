@@ -29,8 +29,9 @@ import java.util.Objects;
 /**
  * Extensible identity for path search nodes.
  *
- * <p>The current engine still keys closed/open sets by position for speed, but this type is the
- * contract for richer planners that need to distinguish stance, movement phase, or medium.</p>
+ * <p>Search state lets planners distinguish paths that reach the same position through different
+ * movement modes. Future state dimensions such as stance or medium can be added here without
+ * forcing neighbor generation and evaluation APIs to change shape again.</p>
  */
 public record SearchState(PathPosition position, Node.MoveType arrivalMoveType) {
     public SearchState {
@@ -40,5 +41,9 @@ public record SearchState(PathPosition position, Node.MoveType arrivalMoveType) 
 
     public static SearchState at(PathPosition position) {
         return new SearchState(position, Node.MoveType.WALK);
+    }
+
+    public static SearchState of(PathPosition position, Node.MoveType arrivalMoveType) {
+        return new SearchState(position, arrivalMoveType);
     }
 }
