@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
 import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
+import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
 import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
@@ -103,11 +104,11 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
                                      Node currentNode, PrimitiveMinHeap openSet,
                                      SearchContext searchContext) {
         PathfindingSession session = sessionOrThrow();
-        Iterable<PathVector> offsets = neighborStrategy.getOffsets(currentNode.position);
+        Iterable<MovementAction> actions = neighborStrategy.getActions(currentNode.position);
         Node bestReachedTarget = null;
 
-        for (PathVector offset : offsets) {
-            Node reachedTarget = processOffset(requestStart, goal, currentNode, openSet, searchContext, session, offset);
+        for (MovementAction action : actions) {
+            Node reachedTarget = processAction(requestStart, goal, currentNode, openSet, searchContext, session, action);
             if (reachedTarget != null) {
                 bestReachedTarget = cheaperGoal(bestReachedTarget, reachedTarget);
             }
@@ -122,25 +123,27 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         return candidate.gCost() < currentBest.gCost() ? candidate : currentBest;
     }
 
-    private Node processOffset(PathPosition requestStart,
+    private Node processAction(PathPosition requestStart,
                                PathGoal goal,
                                Node currentNode,
                                PrimitiveMinHeap openSet,
                                SearchContext searchContext,
                                PathfindingSession session,
-                               PathVector offset) {
+                               MovementAction action) {
         if (profiling) {
             profNeighborCount++;
         }
-        PathPosition neighborPos = currentNode.position.add(offset);
+        PathPosition neighborPos = currentNode.position.add(action.offset());
         long packedPos = RegionKey.pack(neighborPos);
         Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, goal, currentNode);
         if (candidate.inClosed()) {
             return null;
         }
 
-        session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy);
-        Node.MoveType moveType = classifyMove(currentNode.position, candidate.position, searchContext);
+        session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy, action);
+        Node.MoveType moveType = action.moveTypeHint() == null
+            ? classifyMove(currentNode.position, candidate.position, searchContext)
+            : action.moveTypeHint();
         Node.MoveType previousMoveType = candidate.moveType();
         candidate.setMoveType(moveType);
         if (!isValidCandidate(session.reusableContext)) {

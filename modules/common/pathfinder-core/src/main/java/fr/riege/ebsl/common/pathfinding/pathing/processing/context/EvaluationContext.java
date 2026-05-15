@@ -24,6 +24,7 @@ package fr.riege.ebsl.common.pathfinding.pathing.processing.context;
 import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import java.util.Map;
@@ -94,6 +95,13 @@ public interface EvaluationContext {
      * @return the value defined by this contract
      */
     default Node.MoveType getCurrentMoveType() { return null; }
+
+    /**
+     * Returns the movement action currently being evaluated, when supplied by the neighbor strategy.
+     *
+     * @return the movement action metadata, or null for legacy offset-only expansion
+     */
+    default MovementAction getCurrentMovementAction() { return null; }
 
     /**
      * Returns the pathfinder configuration for the active search.

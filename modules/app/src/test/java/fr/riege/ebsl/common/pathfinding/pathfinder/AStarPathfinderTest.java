@@ -22,6 +22,8 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
+import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
+import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
@@ -33,6 +35,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePath
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -173,6 +176,32 @@ class AStarPathfinderTest {
     }
 
     @Test
+    void movementActionsCanBiasSearchCost() throws Exception {
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .maxIterations(128)
+            .goalRefinement(true)
+            .goalRefinementMinIterations(0)
+            .goalRefinementMaxIterations(128)
+            .goalRefinementMaxTimeMs(0)
+            .neighborStrategy(new ExpensiveDirectEastStrategy())
+            .build());
+
+        PathPosition start = new PathPosition(0, 64, 0);
+        PathPosition target = new PathPosition(1, 64, 0);
+        PathfinderResult result = pathfinder.findPath(start, target, null)
+            .toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
+
+        List<PathPosition> positions = new ArrayList<>(result.getPath().collect());
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertEquals(start, positions.getFirst());
+        assertEquals(target, positions.getLast());
+        assertTrue(positions.size() > 2);
+    }
+
+    @Test
     void processorRegistryCreatesFreshStandardProcessors() {
         assertNotSame(
             NodeProcessorRegistry.createStandardProcessors().getFirst(),
@@ -196,6 +225,29 @@ class AStarPathfinderTest {
             boolean startsAtRoot = context.getPreviousPathPosition().equals(context.getStartPathPosition());
             boolean reachesTarget = context.getCurrentPathPosition().equals(context.getTargetPathPosition());
             return startsAtRoot && reachesTarget ? Cost.of(100.0) : Cost.ZERO;
+        }
+    }
+
+    private static final class ExpensiveDirectEastStrategy implements INeighborStrategy {
+        @Override
+        public Iterable<PathVector> getOffsets() {
+            return List.of(
+                new PathVector(1, 0, 0),
+                new PathVector(-1, 0, 0),
+                new PathVector(0, 0, 1),
+                new PathVector(0, 0, -1)
+            );
+        }
+
+        @Override
+        public Iterable<MovementAction> getActions(PathPosition currentPosition) {
+            double eastMultiplier = currentPosition.flooredX() == 0 && currentPosition.flooredZ() == 0 ? 100.0 : 1.0;
+            return List.of(
+                MovementAction.offset(new PathVector(1, 0, 0)).withCost(eastMultiplier, 0.0),
+                MovementAction.offset(new PathVector(-1, 0, 0)),
+                MovementAction.offset(new PathVector(0, 0, 1)),
+                MovementAction.offset(new PathVector(0, 0, -1))
+            );
         }
     }
 }

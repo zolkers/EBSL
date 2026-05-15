@@ -21,8 +21,12 @@
 
 package fr.riege.ebsl.common.pathfinding.pathing;
 
+import fr.riege.ebsl.common.pathfinding.pathing.action.MovementAction;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Supplies candidate offsets explored by the pathfinder.
@@ -46,5 +50,22 @@ public interface INeighborStrategy {
      */
     default Iterable<PathVector> getOffsets(PathPosition currentPosition) {
         return getOffsets();
+    }
+
+    /**
+     * Returns candidate movement actions for the supplied search state.
+     *
+     * <p>The default adapter preserves legacy offset-only strategies while allowing advanced
+     * strategies to expose executable movement metadata.</p>
+     *
+     * @param currentPosition the current path position being expanded
+     * @return the requested values
+     */
+    default Iterable<MovementAction> getActions(PathPosition currentPosition) {
+        List<MovementAction> actions = new ArrayList<>();
+        for (PathVector offset : getOffsets(currentPosition)) {
+            actions.add(MovementAction.offset(offset));
+        }
+        return actions;
     }
 }
