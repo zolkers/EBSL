@@ -83,7 +83,7 @@ final class EbslGraphScriptLinks {
             }
             builder.append('\n');
         }
-        return builder.toString();
+        return builder.toString().stripTrailing();
     }
 
     private static String removeDirectives(String source) {
