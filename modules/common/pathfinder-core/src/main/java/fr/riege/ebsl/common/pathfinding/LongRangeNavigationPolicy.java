@@ -42,7 +42,11 @@ public record LongRangeNavigationPolicy(
     double finalGoalXzTolerance,
     int segmentRetryCooldownMs,
     int playerStartAfterFailures,
-    double playerStartRecoveryRatio
+    double playerStartRecoveryRatio,
+    boolean hierarchicalPlanningEnabled,
+    double hierarchicalLateralScale,
+    double preparedSegmentMaxRisk,
+    int preparedSegmentMinNodes
 ) {
     public LongRangeNavigationPolicy {
         requirePositiveFinite(maxSegmentDistance, "maxSegmentDistance");
@@ -59,6 +63,11 @@ public record LongRangeNavigationPolicy(
             throw new IllegalArgumentException("playerStartAfterFailures must be non-negative");
         }
         requireRatio(playerStartRecoveryRatio, "playerStartRecoveryRatio");
+        requireRatio(hierarchicalLateralScale, "hierarchicalLateralScale");
+        requireNonNegativeFinite(preparedSegmentMaxRisk, "preparedSegmentMaxRisk");
+        if (preparedSegmentMinNodes < 1) {
+            throw new IllegalArgumentException("preparedSegmentMinNodes must be positive");
+        }
     }
 
     public static LongRangeNavigationPolicy fromSettings() {
@@ -73,7 +82,11 @@ public record LongRangeNavigationPolicy(
             settings.finalGoalXzTolerance.value(),
             settings.segmentRetryCooldownMs.value(),
             settings.playerStartAfterFailures.value(),
-            settings.playerStartRecoveryRatio.value()
+            settings.playerStartRecoveryRatio.value(),
+            settings.longRangeHierarchicalPlanningEnabled.value(),
+            settings.longRangeHierarchicalLateralScale.value(),
+            settings.longRangePreparedSegmentMaxRisk.value(),
+            settings.longRangePreparedSegmentMinNodes.value()
         );
     }
 

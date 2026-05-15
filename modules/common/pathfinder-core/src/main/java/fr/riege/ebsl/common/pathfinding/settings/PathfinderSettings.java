@@ -302,6 +302,30 @@ public final class PathfinderSettings extends Settingable {
         "player_start_after_failures", "Player start after failures", 2, 0, 10));
     public final DoubleSetting playerStartRecoveryRatio = registerSetting(new DoubleSetting(
         "player_start_recovery_ratio", "Player start recovery ratio", 0.90, 0.0, 1.0));
+    public final BooleanSetting longRangeHierarchicalPlanningEnabled = registerSetting(new BooleanSetting(
+        "long_range_hierarchical_planning_enabled", "Hierarchical long-range planning", true));
+    public final DoubleSetting longRangeHierarchicalLateralScale = registerSetting(new DoubleSetting(
+        "long_range_hierarchical_lateral_scale", "Hierarchical lateral scale", 0.45, 0.0, 1.0));
+    public final DoubleSetting longRangePreparedSegmentMaxRisk = registerSetting(new DoubleSetting(
+        "long_range_prepared_segment_max_risk", "Prepared segment max risk", 64.0, 0.0, 1000.0));
+    public final IntSetting longRangePreparedSegmentMinNodes = registerSetting(new IntSetting(
+        "long_range_prepared_segment_min_nodes", "Prepared segment min nodes", 2, 1, 64));
+    public final IntSetting longRangeFailureCacheEntries = registerSetting(new IntSetting(
+        "long_range_failure_cache_entries", "Failure cache entries", 256, 0, 4096));
+    public final IntSetting longRangeCorridorCacheEntries = registerSetting(new IntSetting(
+        "long_range_corridor_cache_entries", "Corridor cache entries", 256, 0, 4096));
+    public final IntSetting longRangeMemoryMaxAgeEvents = registerSetting(new IntSetting(
+        "long_range_memory_max_age_events", "Memory max age events", 2048, 0, 100000));
+    public final DoubleSetting longRangeFailurePenalty = registerSetting(new DoubleSetting(
+        "long_range_failure_penalty", "Failure penalty", 1000.0, 0.0, 100000.0));
+    public final DoubleSetting longRangeFailureRetentionWeight = registerSetting(new DoubleSetting(
+        "long_range_failure_retention_weight", "Failure retention weight", 128.0, 0.0, 10000.0));
+    public final DoubleSetting longRangeCorridorHitWeight = registerSetting(new DoubleSetting(
+        "long_range_corridor_hit_weight", "Corridor hit weight", 96.0, 0.0, 10000.0));
+    public final DoubleSetting longRangeCorridorQualityWeight = registerSetting(new DoubleSetting(
+        "long_range_corridor_quality_weight", "Corridor quality weight", 512.0, 0.0, 10000.0));
+    public final DoubleSetting longRangeCorridorRecencyWeight = registerSetting(new DoubleSetting(
+        "long_range_corridor_recency_weight", "Corridor recency weight", 1.0, 0.0, 1000.0));
     public final BooleanSetting useCameraRail = registerSetting(new BooleanSetting(
         "use_camera_rail", "Use camera rail", true));
     public final DoubleSetting cameraRailReachedDist = registerSetting(new DoubleSetting(
@@ -597,7 +621,19 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.segmentTargetBacktrackSteps,
             INSTANCE.segmentRetryCooldownMs,
             INSTANCE.playerStartAfterFailures,
-            INSTANCE.playerStartRecoveryRatio);
+            INSTANCE.playerStartRecoveryRatio,
+            INSTANCE.longRangeHierarchicalPlanningEnabled,
+            INSTANCE.longRangeHierarchicalLateralScale,
+            INSTANCE.longRangePreparedSegmentMaxRisk,
+            INSTANCE.longRangePreparedSegmentMinNodes,
+            INSTANCE.longRangeFailureCacheEntries,
+            INSTANCE.longRangeCorridorCacheEntries,
+            INSTANCE.longRangeMemoryMaxAgeEvents,
+            INSTANCE.longRangeFailurePenalty,
+            INSTANCE.longRangeFailureRetentionWeight,
+            INSTANCE.longRangeCorridorHitWeight,
+            INSTANCE.longRangeCorridorQualityWeight,
+            INSTANCE.longRangeCorridorRecencyWeight);
     }
 
     public static List<Setting<?>> rotationSettings() {

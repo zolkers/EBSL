@@ -157,12 +157,52 @@ class LongRangePathSessionTest {
         assertEquals("segment_calculation_failed", session.diagnostics().lastEvent());
     }
 
+    @Test
+    void failureCacheEvictsLowestScoredEntries() {
+        LongRangePathMemory memory = new LongRangePathMemory(new LongRangeMemoryPolicy(
+            2, 2, 0, 10.0, 100.0, 1.0, 1.0, 1.0));
+
+        memory.recordFailure(0, 0, 10, 0);
+        memory.recordFailure(0, 0, 10, 0);
+        memory.recordFailure(0, 0, 20, 0);
+        memory.recordFailure(0, 0, 30, 0);
+
+        assertEquals(2, memory.rememberedFailureEntries());
+        assertEquals(2, memory.failureCount(0, 0, 10, 0));
+        assertEquals(0, memory.failureCount(0, 0, 20, 0));
+    }
+
+    @Test
+    void corridorCacheKeepsReusedCorridorsDuringEviction() {
+        LongRangePathMemory memory = new LongRangePathMemory(new LongRangeMemoryPolicy(
+            2, 2, 0, 10.0, 1.0, 100.0, 1.0, 0.0));
+        LongRangePathPlan first = LongRangePathPlan.fromNodes(simpleNodes(Node.MoveType.WALK), false,
+            LongRangePlanningStrategy.ROLLING_HORIZON);
+        LongRangePathPlan second = LongRangePathPlan.fromNodes(nodesTo(4, Node.MoveType.WALK), false,
+            LongRangePlanningStrategy.ROLLING_HORIZON);
+        LongRangePathPlan third = LongRangePathPlan.fromNodes(nodesTo(6, Node.MoveType.WALK), false,
+            LongRangePlanningStrategy.ROLLING_HORIZON);
+
+        memory.rememberCorridor(first);
+        assertNotNull(memory.corridor(0, 0, 2, 0));
+        memory.rememberCorridor(second);
+        memory.rememberCorridor(third);
+
+        assertEquals(2, memory.rememberedCorridors());
+        assertNotNull(memory.corridor(0, 0, 2, 0));
+        assertNull(memory.corridor(0, 0, 6, 0));
+    }
+
     private static List<Node> simpleNodes(Node.MoveType moveType) {
+        return nodesTo(2, moveType);
+    }
+
+    private static List<Node> nodesTo(int x, Node.MoveType moveType) {
         Node start = new Node(new PathPosition(0, 64, 0));
-        Node end = new Node(new PathPosition(2, 64, 0));
+        Node end = new Node(new PathPosition(x, 64, 0));
         end.setParent(start);
         end.setMoveType(moveType);
-        end.setGCost(2.0);
+        end.setGCost(x);
         return List.of(start, end);
     }
 
@@ -177,7 +217,11 @@ class LongRangePathSessionTest {
             2.0,
             1500,
             2,
-            0.75
+            0.75,
+            true,
+            0.45,
+            64.0,
+            2
         );
     }
 }

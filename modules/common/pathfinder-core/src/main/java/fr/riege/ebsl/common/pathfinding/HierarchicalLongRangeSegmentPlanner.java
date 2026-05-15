@@ -43,7 +43,7 @@ public final class HierarchicalLongRangeSegmentPlanner implements LongRangeSegme
     @Override
     public LongRangePathSession.SegmentGoal plan(SegmentRequest request) {
         LongRangePathSession.SegmentGoal direct = fallback.plan(request);
-        if (!direct.segmented() || request.memory() == null) {
+        if (!request.policy().hierarchicalPlanningEnabled() || !direct.segmented() || request.memory() == null) {
             return direct;
         }
 
@@ -54,7 +54,7 @@ public final class HierarchicalLongRangeSegmentPlanner implements LongRangeSegme
         double length = Math.max(Math.sqrt(dx * dx + dz * dz), 1.0e-6);
         double perpendicularX = -dz / length;
         double perpendicularZ = dx / length;
-        double lateralDistance = request.policy().maxSegmentDistance() * 0.45;
+        double lateralDistance = request.policy().maxSegmentDistance() * request.policy().hierarchicalLateralScale();
 
         for (int side : new int[] {-1, 1}) {
             int x = (int) Math.floor(direct.x() + perpendicularX * lateralDistance * side);

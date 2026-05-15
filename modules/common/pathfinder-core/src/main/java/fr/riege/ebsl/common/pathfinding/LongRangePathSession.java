@@ -60,7 +60,9 @@ public final class LongRangePathSession {
     }
 
     public LongRangePathSession(LongRangeNavigationPolicy policy, LongRangeSegmentPlanner segmentPlanner) {
-        this(policy, segmentPlanner, new LongRangeSegmentAcceptancePolicy(), new LongRangePathMemory());
+        this(policy, segmentPlanner,
+            new LongRangeSegmentAcceptancePolicy(policy.preparedSegmentMaxRisk(), policy.preparedSegmentMinNodes()),
+            new LongRangePathMemory());
     }
 
     public LongRangePathSession(LongRangeNavigationPolicy policy,

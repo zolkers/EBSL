@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Small long-range navigation memory used by planners and repair policies.
@@ -34,20 +35,33 @@ import java.util.Map;
  * implementation.</p>
  */
 public final class LongRangePathMemory {
-    private static final int MAX_ENTRIES = 256;
+    private final LongRangeMemoryPolicy policy;
 
-    private final Map<SegmentKey, Integer> failures = new LinkedHashMap<>();
-    private final Map<SegmentKey, LongRangePathPlan> successfulCorridors = new LinkedHashMap<>();
+    private final Map<SegmentKey, FailureEntry> failures = new LinkedHashMap<>();
+    private final Map<SegmentKey, CorridorEntry> successfulCorridors = new LinkedHashMap<>();
+    private long eventCounter;
+
+    public LongRangePathMemory() {
+        this(LongRangeMemoryPolicy.fromSettings());
+    }
+
+    public LongRangePathMemory(LongRangeMemoryPolicy policy) {
+        this.policy = Objects.requireNonNull(policy, "policy");
+    }
 
     public void clear() {
         failures.clear();
         successfulCorridors.clear();
+        eventCounter = 0L;
     }
 
     public void recordFailure(int fromX, int fromZ, int toX, int toZ) {
-        trim(failures);
+        long event = nextEvent();
         SegmentKey key = SegmentKey.of(fromX, fromZ, toX, toZ);
-        failures.merge(key, 1, Integer::sum);
+        failures.compute(key, (ignored, entry) -> entry == null
+            ? new FailureEntry(1, event, event)
+            : entry.recordedAgain(event));
+        evictFailures();
     }
 
     public void recordFailure(PathPosition from, int toX, int toZ) {
@@ -55,25 +69,36 @@ public final class LongRangePathMemory {
     }
 
     public int failureCount(int fromX, int fromZ, int toX, int toZ) {
-        return failures.getOrDefault(SegmentKey.of(fromX, fromZ, toX, toZ), 0);
+        FailureEntry entry = failures.get(SegmentKey.of(fromX, fromZ, toX, toZ));
+        return entry == null ? 0 : entry.count();
     }
 
     public double failurePenalty(int fromX, int fromZ, int toX, int toZ) {
-        return failureCount(fromX, fromZ, toX, toZ) * 1000.0;
+        return failureCount(fromX, fromZ, toX, toZ) * policy.failurePenalty();
     }
 
     public void rememberCorridor(LongRangePathPlan plan) {
         if (plan == null || plan.positions().isEmpty()) {
             return;
         }
-        trim(successfulCorridors);
+        long event = nextEvent();
         PathPosition start = plan.positions().getFirst();
         PathPosition end = plan.positions().getLast();
-        successfulCorridors.put(SegmentKey.of(start.flooredX(), start.flooredZ(), end.flooredX(), end.flooredZ()), plan);
+        successfulCorridors.put(
+            SegmentKey.of(start.flooredX(), start.flooredZ(), end.flooredX(), end.flooredZ()),
+            new CorridorEntry(plan, 0, event, event));
+        evictCorridors();
     }
 
     public LongRangePathPlan corridor(int fromX, int fromZ, int toX, int toZ) {
-        return successfulCorridors.get(SegmentKey.of(fromX, fromZ, toX, toZ));
+        SegmentKey key = SegmentKey.of(fromX, fromZ, toX, toZ);
+        CorridorEntry entry = successfulCorridors.get(key);
+        if (entry == null) {
+            return null;
+        }
+        long event = nextEvent();
+        successfulCorridors.put(key, entry.hit(event));
+        return entry.plan();
     }
 
     public int rememberedFailureEntries() {
@@ -84,10 +109,74 @@ public final class LongRangePathMemory {
         return successfulCorridors.size();
     }
 
-    private static <T> void trim(Map<SegmentKey, T> map) {
-        while (map.size() >= MAX_ENTRIES) {
-            SegmentKey first = map.keySet().iterator().next();
-            map.remove(first);
+    private long nextEvent() {
+        eventCounter++;
+        return eventCounter;
+    }
+
+    private void evictFailures() {
+        failures.entrySet().removeIf(entry -> isExpired(entry.getValue().lastSeenEvent()));
+        while (failures.size() > policy.maxFailureEntries()) {
+            removeLowestFailureScore();
+        }
+    }
+
+    private void evictCorridors() {
+        successfulCorridors.entrySet().removeIf(entry -> isExpired(entry.getValue().lastSeenEvent()));
+        while (successfulCorridors.size() > policy.maxCorridorEntries()) {
+            removeLowestCorridorScore();
+        }
+    }
+
+    private boolean isExpired(long lastSeenEvent) {
+        return policy.maxEntryAgeEvents() > 0L && eventCounter - lastSeenEvent > policy.maxEntryAgeEvents();
+    }
+
+    private void removeLowestFailureScore() {
+        SegmentKey victim = null;
+        double victimScore = Double.POSITIVE_INFINITY;
+        for (Map.Entry<SegmentKey, FailureEntry> entry : failures.entrySet()) {
+            double age = Math.max(0L, eventCounter - entry.getValue().lastSeenEvent());
+            double score = entry.getValue().count() * policy.failureRetentionWeight() - age;
+            if (score < victimScore) {
+                victim = entry.getKey();
+                victimScore = score;
+            }
+        }
+        if (victim != null) {
+            failures.remove(victim);
+        }
+    }
+
+    private void removeLowestCorridorScore() {
+        SegmentKey victim = null;
+        double victimScore = Double.POSITIVE_INFINITY;
+        for (Map.Entry<SegmentKey, CorridorEntry> entry : successfulCorridors.entrySet()) {
+            CorridorEntry corridor = entry.getValue();
+            double age = Math.max(0L, eventCounter - corridor.lastSeenEvent());
+            double quality = 1.0 / Math.max(1.0, corridor.plan().qualityScore());
+            double score = corridor.hits() * policy.corridorHitWeight()
+                + quality * policy.corridorQualityWeight()
+                - age * policy.corridorRecencyWeight();
+            if (score < victimScore) {
+                victim = entry.getKey();
+                victimScore = score;
+            }
+        }
+        if (victim != null) {
+            successfulCorridors.remove(victim);
+        }
+    }
+
+    private record FailureEntry(int count, long firstSeenEvent, long lastSeenEvent) {
+        FailureEntry recordedAgain(long event) {
+            return new FailureEntry(count + 1, firstSeenEvent, event);
+        }
+    }
+
+    private record CorridorEntry(LongRangePathPlan plan, int hits, long createdEvent, long lastSeenEvent) {
+        CorridorEntry hit(long event) {
+            return new CorridorEntry(plan, hits + 1, createdEvent, event);
         }
     }
 
