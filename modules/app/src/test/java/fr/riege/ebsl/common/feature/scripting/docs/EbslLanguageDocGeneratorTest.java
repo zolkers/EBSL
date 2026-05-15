@@ -32,6 +32,7 @@ class EbslLanguageDocGeneratorTest {
 
         assertEntry(doc, "break_block");
         assertEntry(doc, "repeat_until");
+        assertEntry(doc, "@link");
         assertEntry(doc, "sensor_targeted_block");
         assertEntry(doc, "greater_than");
         assertEntry(doc, "wood");

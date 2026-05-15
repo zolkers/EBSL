@@ -64,7 +64,7 @@ final class ScriptGraphConnectionEditor {
             ScriptGraphNodeLayout from = layoutByKey.get(connection.fromKey());
             ScriptGraphNodeLayout to = layoutByKey.get(connection.toKey());
             if (from != null && to != null) {
-                GraphEdgePainter.draw(dl, from, to, layouts, graphZoom, connection.id().equals(selectedConnectionId));
+                GraphEdgePainter.draw(dl, from, to, layouts, graphZoom, connection, connection.id().equals(selectedConnectionId));
                 if (handleEdgeHit(connection, from, to, graphZoom)) {
                     selected = true;
                 }
@@ -139,16 +139,29 @@ final class ScriptGraphConnectionEditor {
         return selectedConnection() != null;
     }
 
-    void renderSelectedConnectionInspector(Runnable save, Consumer<String> statusSink, float width) {
+    void renderSelectedConnectionInspector(Runnable save, Consumer<String> statusSink, float width, float height) {
+        ImGui.text("Links");
+        ImGui.textDisabled(connections.isEmpty() ? "No graph links yet." : "Select a link below, then edit its flow.");
+        ImGui.spacing();
+
+        float listHeight = Math.min(Math.max(42.0f, height * 0.34f), 72.0f);
+        ImGui.beginChild("##ebsl-link-list", width, listHeight, true);
+        for (int i = 0; i < connections.size(); i++) {
+            EbslGraphConnection candidate = connections.get(i);
+            if (ImGui.button(connectionTitle(candidate), Math.max(96.0f, width - 12.0f), 22.0f)) {
+                select(candidate);
+            }
+        }
+        ImGui.endChild();
+        ImGui.spacing();
+
         EbslGraphConnection connection = selectedConnection();
         if (connection == null) {
-            ImGui.text("Link inspector");
-            ImGui.textDisabled("Select a link to edit its execution mode.");
+            ImGui.textDisabled("Drag output to input, or select a listed link.");
             return;
         }
 
-        ImGui.text("Link inspector");
-        ImGui.textDisabled(connection.fromKey() + " -> " + connection.toKey());
+        ImGui.text(connectionTitle(connection));
         ImGui.spacing();
 
         String[] modes = {"flow", "each input"};
@@ -265,5 +278,15 @@ final class ScriptGraphConnectionEditor {
                 return;
             }
         }
+    }
+
+    private static String connectionTitle(EbslGraphConnection connection) {
+        String suffix = connection.label().isBlank() ? "" : " - " + connection.label();
+        return lineKey(connection.fromKey()) + " -> " + lineKey(connection.toKey()) + " [" + connection.mode().id() + "]" + suffix;
+    }
+
+    private static String lineKey(String key) {
+        int index = key.lastIndexOf(':');
+        return index >= 0 && index + 1 < key.length() ? "L" + key.substring(index + 1) : key;
     }
 }

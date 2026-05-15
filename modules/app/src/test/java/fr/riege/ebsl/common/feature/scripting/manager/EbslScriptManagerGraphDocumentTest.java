@@ -65,6 +65,72 @@ final class EbslScriptManagerGraphDocumentTest {
         assertEquals(List.of(new EbslGraphConnection("main.ebsl:1", "main.ebsl:2")), loaded.connections());
     }
 
+    @Test
+    void mirrorsGraphConnectionsIntoScriptDirectives() {
+        MemoryStorage storage = new MemoryStorage();
+        storage.saveText("scripts/main.ebsl", """
+            message first
+            message target
+            """);
+        EbslScriptManager manager = new EbslScriptManager(storage);
+
+        manager.saveGraphDocument("main.ebsl", new EbslGraphDocument(
+            Map.of(),
+            List.of(new EbslGraphConnection(
+                "main.ebsl:1",
+                "main.ebsl:2",
+                EbslGraphConnectionMode.EACH_INPUT,
+                "retry branch"
+            ))
+        ));
+
+        assertEquals("""
+            message first
+            message target
+
+            # Graph links
+            # @link 1 -> 2 mode=each_input label="retry branch"
+            """.stripTrailing(), storage.loadText("scripts/main.ebsl").orElseThrow());
+    }
+
+    @Test
+    void readsScriptDirectivesAsGraphConnections() {
+        MemoryStorage storage = new MemoryStorage();
+        storage.saveText("scripts/main.ebsl", """
+            message first
+            message target
+
+            # Graph links
+            # @link 1 -> 2 mode=each_input label="retry branch"
+            """);
+
+        EbslGraphDocument loaded = new EbslScriptManager(storage).loadGraphDocument("main.ebsl");
+
+        assertEquals(List.of(new EbslGraphConnection(
+            "main.ebsl:1",
+            "main.ebsl:2",
+            EbslGraphConnectionMode.EACH_INPUT,
+            "retry branch"
+        )), loaded.connections());
+    }
+
+    @Test
+    void executableSourceUsesScriptLinkDirectives() {
+        MemoryStorage storage = new MemoryStorage();
+        storage.saveText("scripts/main.ebsl", """
+            message second
+            message first
+
+            # Graph links
+            # @link 2 -> 1 mode=flow
+            """);
+
+        assertEquals("""
+            message first
+            message second
+            """, new EbslScriptManager(storage).executableSource("main.ebsl"));
+    }
+
     private static final class MemoryStorage implements IStorageLayer {
         private final Map<String, String> text = new HashMap<>();
 

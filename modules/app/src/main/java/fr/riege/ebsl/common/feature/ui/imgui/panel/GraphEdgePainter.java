@@ -21,6 +21,8 @@
 
 package fr.riege.ebsl.common.feature.ui.imgui.panel;
 
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphConnection;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphConnectionMode;
 import imgui.ImDrawList;
 
 import java.util.ArrayList;
@@ -39,6 +41,12 @@ final class GraphEdgePainter {
 
     static void draw(ImDrawList dl, ScriptGraphNodeLayout from, ScriptGraphNodeLayout to,
                      List<ScriptGraphNodeLayout> layouts, float graphZoom, boolean selected) {
+        draw(dl, from, to, layouts, graphZoom, new EbslGraphConnection(from.node().key(), to.node().key()), selected);
+    }
+
+    static void draw(ImDrawList dl, ScriptGraphNodeLayout from, ScriptGraphNodeLayout to,
+                     List<ScriptGraphNodeLayout> layouts, float graphZoom,
+                     EbslGraphConnection connection, boolean selected) {
         float portInset = 10.0f * graphZoom;
         float fromX = from.right() - portInset;
         float fromY = from.centerY();
@@ -74,6 +82,7 @@ final class GraphEdgePainter {
         int portColor = selected ? 0xFFFFD166 : 0xFF67B7FF;
         dl.addCircleFilled(fromX, fromY, 3.5f, portColor);
         dl.addCircleFilled(toX, toY, 3.5f, portColor);
+        drawBadge(dl, connection, startLaneX, startRouteY, endLaneX, endRouteY, selected);
     }
 
     private static int edgeColor(ScriptGraphNodeLayout to, boolean selected) {
@@ -112,5 +121,27 @@ final class GraphEdgePainter {
             return;
         }
         dl.addLine(x1, y1, x2, y2, color, 2.0f);
+    }
+
+    private static void drawBadge(ImDrawList dl, EbslGraphConnection connection, float x1, float y1, float x2, float y2, boolean selected) {
+        String text = badgeText(connection);
+        if (text.isBlank()) {
+            return;
+        }
+        float x = (x1 + x2) * 0.5f - Math.min(82.0f, text.length() * 3.8f);
+        float y = (y1 + y2) * 0.5f - 8.0f;
+        float width = Math.clamp(text.length() * 7.0f + 12.0f, 34.0f, 164.0f);
+        int fill = selected ? 0xEE3B3016 : 0xCC101820;
+        int border = selected ? 0xFFFFD166 : 0x774A90E2;
+        dl.addRectFilled(x, y, x + width, y + 18.0f, fill, 4.0f);
+        dl.addRect(x, y, x + width, y + 18.0f, border, 4.0f, 0, 1.0f);
+        dl.addText(x + 6.0f, y + 2.0f, selected ? 0xFFFFD166 : 0xFFD0D7DE, text.length() > 22 ? text.substring(0, 21) + "~" : text);
+    }
+
+    private static String badgeText(EbslGraphConnection connection) {
+        if (!connection.label().isBlank()) {
+            return connection.label();
+        }
+        return connection.mode() == EbslGraphConnectionMode.EACH_INPUT ? "each" : "";
     }
 }
