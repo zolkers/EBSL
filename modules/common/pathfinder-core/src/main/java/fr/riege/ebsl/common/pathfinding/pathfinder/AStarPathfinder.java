@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.diagnostics.PathfindingDiagnostics;
 import fr.riege.ebsl.common.pathfinding.movement.MovementClassificationContext;
 import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
 import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
 import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
@@ -98,7 +99,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     }
 
     @Override
-    protected Node processSuccessors(PathPosition requestStart, PathPosition requestTarget,
+    protected Node processSuccessors(PathPosition requestStart, PathGoal goal,
                                      Node currentNode, PrimitiveMinHeap openSet,
                                      SearchContext searchContext) {
         PathfindingSession session = sessionOrThrow();
@@ -106,7 +107,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         Node bestReachedTarget = null;
 
         for (PathVector offset : offsets) {
-            Node reachedTarget = processOffset(requestStart, requestTarget, currentNode, openSet, searchContext, session, offset);
+            Node reachedTarget = processOffset(requestStart, goal, currentNode, openSet, searchContext, session, offset);
             if (reachedTarget != null) {
                 bestReachedTarget = cheaperGoal(bestReachedTarget, reachedTarget);
             }
@@ -122,7 +123,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     }
 
     private Node processOffset(PathPosition requestStart,
-                               PathPosition requestTarget,
+                               PathGoal goal,
                                Node currentNode,
                                PrimitiveMinHeap openSet,
                                SearchContext searchContext,
@@ -133,22 +134,26 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         }
         PathPosition neighborPos = currentNode.position.add(offset);
         long packedPos = RegionKey.pack(neighborPos);
-        Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, requestTarget, currentNode);
+        Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, goal, currentNode);
         if (candidate.inClosed()) {
             return null;
         }
 
         session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy);
-        candidate.setMoveType(classifyMove(currentNode.position, candidate.position, searchContext));
+        Node.MoveType moveType = classifyMove(currentNode.position, candidate.position, searchContext);
+        Node.MoveType previousMoveType = candidate.moveType();
+        candidate.setMoveType(moveType);
         if (!isValidCandidate(session.reusableContext)) {
+            candidate.setMoveType(previousMoveType);
             return null;
         }
         double gCost = timedGCost(session.reusableContext);
         if (rejectsByGCost(candidate, gCost)) {
+            candidate.setMoveType(previousMoveType);
             return null;
         }
-        updateCandidate(candidate, currentNode, gCost, session);
-        if (candidate.isTarget(requestTarget)) {
+        updateCandidate(candidate, currentNode, moveType, gCost, session);
+        if (candidate.satisfies(goal)) {
             return candidate;
         }
         enqueueCandidate(openSet, packedPos, candidate);
@@ -159,14 +164,14 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
                                long packedPos,
                                PathPosition neighborPos,
                                PathPosition requestStart,
-                               PathPosition requestTarget,
+                               PathGoal goal,
                                Node currentNode) {
         Node candidate = session.nodes.get(packedPos);
         if (candidate != null) {
             return candidate;
         }
         long startedAt = profiling ? System.nanoTime() : 0L;
-        Node created = createNeighborNode(neighborPos, requestStart, requestTarget, currentNode);
+        Node created = createNeighborNode(neighborPos, requestStart, goal, currentNode);
         created.setGCost(Double.POSITIVE_INFINITY);
         session.nodes.put(packedPos, created);
         if (profiling) {
@@ -205,8 +210,9 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         return rejected;
     }
 
-    private void updateCandidate(Node candidate, Node currentNode, double gCost, PathfindingSession session) {
+    private void updateCandidate(Node candidate, Node currentNode, Node.MoveType moveType, double gCost, PathfindingSession session) {
         candidate.setParent(currentNode);
+        candidate.setMoveType(moveType);
         candidate.setGCost(gCost);
         session.recordFallbackCandidate(candidate);
     }
@@ -235,8 +241,8 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     }
 
     private Node createNeighborNode(PathPosition position, PathPosition start,
-                                     PathPosition target, Node parent) {
-        return new Node(position, start, target,
+                                     PathGoal goal, Node parent) {
+        return new Node(position, start, goal,
                 pathfinderConfiguration.heuristicWeights,
                 pathfinderConfiguration.heuristicStrategy,
                 parent.depth + 1);

@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
@@ -148,6 +149,27 @@ class AStarPathfinderTest {
 
         assertEquals(PathState.FALLBACK, result.getPathState());
         assertTrue(result.getPath().length() > 1);
+    }
+
+    @Test
+    void canStopAtAbstractNearGoal() throws Exception {
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .goalRefinement(false)
+            .build());
+
+        PathPosition target = new PathPosition(10, 64, 0);
+        PathfinderResult result = pathfinder.findPath(
+            new PathPosition(0, 64, 0),
+            PathGoals.near(target, 2),
+            null
+        ).toCompletableFuture().get(1, TimeUnit.SECONDS);
+
+        PathPosition reached = new ArrayList<>(result.getPath().collect()).getLast();
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertTrue(Math.abs(reached.flooredX() - target.flooredX()) <= 2);
+        assertNotEquals(target, reached);
     }
 
     @Test

@@ -30,6 +30,10 @@ import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.Pathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.ExactPathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.NearPathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
 import fr.riege.ebsl.common.pathfinding.pathing.result.*;
@@ -68,8 +72,14 @@ abstract class AbstractPathfinder implements Pathfinder {
     @Override
     public CompletionStage<PathfinderResult> findPath(PathPosition start, PathPosition target,
                                                        EnvironmentContext context) {
+        return findPath(start, PathGoals.exact(target), context);
+    }
+
+    @Override
+    public CompletionStage<PathfinderResult> findPath(PathPosition start, PathGoal goal,
+                                                       EnvironmentContext context) {
         abortRequested.set(false);
-        return initiatePathing(start, target, context);
+        return initiatePathing(start, goal, context);
     }
 
     @Override
@@ -77,39 +87,41 @@ abstract class AbstractPathfinder implements Pathfinder {
         abortRequested.set(true);
     }
 
-    private CompletionStage<PathfinderResult> initiatePathing(PathPosition start, PathPosition target,
-                                                               EnvironmentContext environmentContext) {
+    private CompletionStage<PathfinderResult> initiatePathing(PathPosition start, PathGoal goal,
+                                                                EnvironmentContext environmentContext) {
         PathPosition effectiveStart = start.floor();
-        PathPosition effectiveTarget = target.floor();
+        PathGoal effectiveGoal = normalizeGoal(goal);
+        PathPosition effectiveTarget = effectiveGoal.representative().floor();
 
         if (pathfinderConfiguration.async) {
             return EbslThreading.pathfinding()
                     .supply("path:" + effectiveStart + "->" + effectiveTarget,
-                            () -> executePathingAlgorithm(effectiveStart, effectiveTarget, environmentContext))
-                    .exceptionally(t -> handlePathingException(start, target, t));
+                            () -> executePathingAlgorithm(effectiveStart, effectiveGoal, environmentContext))
+                    .exceptionally(t -> handlePathingException(start, effectiveTarget, t));
         } else {
             try {
                 return CompletableFuture.completedFuture(
-                        executePathingAlgorithm(effectiveStart, effectiveTarget, environmentContext));
+                        executePathingAlgorithm(effectiveStart, effectiveGoal, environmentContext));
             } catch (Exception e) {
-                return CompletableFuture.completedFuture(handlePathingException(start, target, e));
+                return CompletableFuture.completedFuture(handlePathingException(start, effectiveTarget, e));
             }
         }
     }
 
     @SuppressWarnings({"java:S3776", "java:S6541"})
-    private PathfinderResult executePathingAlgorithm(PathPosition start, PathPosition target,
+    private PathfinderResult executePathingAlgorithm(PathPosition start, PathGoal goal,
                                                       EnvironmentContext environmentContext) {
         initializeSearch();
         long startedAtNanos = System.nanoTime();
+        PathPosition target = goal.representative();
 
         SearchContext searchContext = new SearchContextImpl(
-                start, target, pathfinderConfiguration, navigationPointProvider, environmentContext);
+                start, goal, pathfinderConfiguration, navigationPointProvider, environmentContext);
 
         try {
             for (NodeProcessor p : processors) p.initializeSearch(searchContext);
 
-            Node startNode = createStartNode(start, target);
+            Node startNode = createStartNode(start, goal);
             var startCtx = new EvaluationContextImpl(searchContext, startNode, null,
                     pathfinderConfiguration.heuristicStrategy);
 
@@ -159,7 +171,7 @@ abstract class AbstractPathfinder implements Pathfinder {
                             reconstructPath(start, target, currentNode)));
                 }
 
-                if (currentNode.isTarget(target)) {
+                if (currentNode.satisfies(goal)) {
                     goalRefinement.record(currentNode, currentDepth);
                     if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
                         return foundResult(start, target, goalRefinement.best());
@@ -167,7 +179,7 @@ abstract class AbstractPathfinder implements Pathfinder {
                     continue;
                 }
 
-                Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
+                Node reachedTarget = processSuccessors(start, goal, currentNode, openSet, searchContext);
                 if (reachedTarget != null) {
                     goalRefinement.record(reachedTarget, currentDepth);
                     if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
@@ -237,10 +249,20 @@ abstract class AbstractPathfinder implements Pathfinder {
                 Paths.of(start, target, EMPTY_PATH_POSITIONS)));
     }
 
-    protected Node createStartNode(PathPosition startPos, PathPosition targetPos) {
-        return new Node(startPos, startPos, targetPos,
+    protected Node createStartNode(PathPosition startPos, PathGoal goal) {
+        return new Node(startPos, startPos, goal,
                 pathfinderConfiguration.heuristicWeights,
                 pathfinderConfiguration.heuristicStrategy, 0);
+    }
+
+    private static PathGoal normalizeGoal(PathGoal goal) {
+        if (goal instanceof NearPathGoal near) {
+            return PathGoals.near(near.representative().floor(), near.radius());
+        }
+        if (goal instanceof ExactPathGoal exact) {
+            return PathGoals.exact(exact.representative().floor());
+        }
+        return goal;
     }
 
     private boolean hasReachedPathLengthLimit(Node node) {
@@ -415,7 +437,7 @@ abstract class AbstractPathfinder implements Pathfinder {
     protected abstract void initializeSearch();
     protected abstract void markNodeAsExpanded(Node node);
     protected abstract void performAlgorithmCleanup();
-    protected abstract Node processSuccessors(PathPosition requestStart, PathPosition requestTarget,
-                                              Node currentNode, PrimitiveMinHeap openSet,
-                                              SearchContext searchContext);
+    protected abstract Node processSuccessors(PathPosition requestStart, PathGoal goal,
+                                               Node currentNode, PrimitiveMinHeap openSet,
+                                               SearchContext searchContext);
 }

@@ -22,6 +22,8 @@
 package fr.riege.ebsl.common.pathfinding.pathing;
 
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import java.util.concurrent.CompletionStage;
@@ -51,8 +53,32 @@ public interface Pathfinder {
      * @param context the context describing the operation being performed
      * @return a completion stage that resolves to the asynchronous operation result
      */
-    CompletionStage<PathfinderResult> findPath(PathPosition start, PathPosition target,
+    default CompletionStage<PathfinderResult> findPath(PathPosition start, PathPosition target,
+                                                       EnvironmentContext context) {
+        return findPath(start, PathGoals.exact(target), context);
+    }
+
+    /**
+     * Starts a path search for an abstract goal.
+     *
+     * @param start the starting path position
+     * @param goal the objective satisfied by one or more positions
+     * @param context the context describing the operation being performed
+     * @return a completion stage that resolves to the asynchronous operation result
+     */
+    CompletionStage<PathfinderResult> findPath(PathPosition start, PathGoal goal,
                                                EnvironmentContext context);
+
+    /**
+     * Starts a path search for an abstract goal.
+     *
+     * @param start the starting path position
+     * @param goal the objective satisfied by one or more positions
+     * @return a completion stage that resolves to the asynchronous operation result
+     */
+    default CompletionStage<PathfinderResult> findPath(PathPosition start, PathGoal goal) {
+        return findPath(start, goal, null);
+    }
 
     /**
      * Requests cancellation of the active operation.

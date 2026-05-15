@@ -23,6 +23,8 @@ package fr.riege.ebsl.common.pathfinding.pathfinder.processing;
 
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.context.SearchContext;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -33,6 +35,7 @@ public final class SearchContextImpl implements SearchContext {
 
     private final PathPosition startPathPosition;
     private final PathPosition targetPathPosition;
+    private final PathGoal pathGoal;
     private final PathfinderConfiguration pathfinderConfiguration;
     private final NavigationPointProvider navigationPointProvider;
     private final EnvironmentContext environmentContext;
@@ -42,8 +45,16 @@ public final class SearchContextImpl implements SearchContext {
                               PathfinderConfiguration configuration,
                               NavigationPointProvider provider,
                               EnvironmentContext environmentContext) {
+        this(start, PathGoals.exact(target), configuration, provider, environmentContext);
+    }
+
+    public SearchContextImpl(PathPosition start, PathGoal goal,
+                             PathfinderConfiguration configuration,
+                             NavigationPointProvider provider,
+                             EnvironmentContext environmentContext) {
         this.startPathPosition = start;
-        this.targetPathPosition = target;
+        this.pathGoal = goal;
+        this.targetPathPosition = goal.representative();
         this.pathfinderConfiguration= configuration;
         this.navigationPointProvider= provider;
         this.environmentContext = environmentContext;
@@ -51,6 +62,7 @@ public final class SearchContextImpl implements SearchContext {
 
     @Override public PathPosition getStartPathPosition() { return startPathPosition; }
     @Override public PathPosition getTargetPathPosition() { return targetPathPosition; }
+    @Override public PathGoal getPathGoal() { return pathGoal; }
     @Override public PathfinderConfiguration getPathfinderConfiguration() { return pathfinderConfiguration; }
     @Override public NavigationPointProvider getNavigationPointProvider() { return navigationPointProvider; }
     @Override public Map<String, Object> getSharedData() { return sharedData; }

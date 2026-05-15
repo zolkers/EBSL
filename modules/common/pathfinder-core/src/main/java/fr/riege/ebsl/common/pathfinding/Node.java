@@ -24,6 +24,7 @@ package fr.riege.ebsl.common.pathfinding;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicContext;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicWeights;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.IHeuristicStrategy;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
 public final class Node implements Comparable<Node> {
@@ -65,6 +66,14 @@ public final class Node implements Comparable<Node> {
                 new HeuristicContext(position, start, target, heuristicWeights));
     }
 
+    public Node(PathPosition position, PathPosition start, PathGoal goal,
+                HeuristicWeights heuristicWeights, IHeuristicStrategy heuristicStrategy,
+                int depth) {
+        this.position = position;
+        this.depth = depth;
+        this.heuristic = goal.estimate(position, start, heuristicWeights, heuristicStrategy);
+    }
+
     public double gCost() { return gCost; }
 
     public void setGCost(double gCost) { this.gCost = gCost; }
@@ -96,6 +105,8 @@ public final class Node implements Comparable<Node> {
     public double fCost() { return gCost + heuristic; }
 
     public boolean isTarget(PathPosition target) { return position.equals(target); }
+
+    public boolean satisfies(PathGoal goal) { return goal.isSatisfiedBy(position); }
 
     @Override
     public boolean equals(Object o) {

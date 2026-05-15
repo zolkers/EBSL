@@ -23,6 +23,8 @@ package fr.riege.ebsl.common.pathfinding.pathing.processing.context;
 
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.context.EnvironmentContext;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import java.util.Map;
@@ -45,6 +47,15 @@ public interface SearchContext {
      * @return the value defined by this contract
      */
     PathPosition getTargetPathPosition();
+
+    /**
+     * Returns the abstract goal for the active search.
+     *
+     * @return the objective used by the pathfinder
+     */
+    default PathGoal getPathGoal() {
+        return PathGoals.exact(getTargetPathPosition());
+    }
     /**
      * Returns the pathfinder configuration for the active search.
  *

@@ -29,6 +29,8 @@ import fr.riege.ebsl.common.pathfinding.pathfinder.Pathfinders;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.NeighborStrategies;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoal;
+import fr.riege.ebsl.common.pathfinding.pathing.goal.PathGoals;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProviders;
 import fr.riege.ebsl.common.pathfinding.provider.WorldNavigationPointProvider;
@@ -73,15 +75,21 @@ public final class PathPlanningService {
     public CompletionStage<PathPlan> plan(PathPosition start, PathPosition target, PathPlannerOptions options) {
         Objects.requireNonNull(start, "start");
         Objects.requireNonNull(target, "target");
-        PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
-        return planOnce(start, target, effectiveOptions);
+        return plan(start, PathGoals.exact(resolveTarget(target)), options);
     }
 
-    private CompletionStage<PathPlan> planOnce(PathPosition start, PathPosition target, PathPlannerOptions options) {
+    public CompletionStage<PathPlan> plan(PathPosition start, PathGoal goal, PathPlannerOptions options) {
+        Objects.requireNonNull(start, "start");
+        Objects.requireNonNull(goal, "goal");
+        PathPlannerOptions effectiveOptions = options == null ? PathPlannerOptions.defaults() : options;
+        return planOnce(start, goal, effectiveOptions);
+    }
+
+    private CompletionStage<PathPlan> planOnce(PathPosition start, PathGoal goal, PathPlannerOptions options) {
         clearCaches();
         PathfinderConfiguration configuration = configuration(options);
         InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(configuration);
-        return pathfinder.findPath(start.floor(), resolveTarget(target))
+        return pathfinder.findPath(start.floor(), goal)
             .thenApply(result -> toPlan(result, configuration, options));
     }
 
