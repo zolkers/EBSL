@@ -31,13 +31,14 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class AnvilWorldLoader {
-    public HeadlessWorldLayer load(MinecraftWorldImportOptions options) throws IOException {
+    ImportedMinecraftWorld load(MinecraftWorldImportOptions options) throws IOException {
         HeadlessWorldLayer world = new HeadlessWorldLayer().heightRange(-64, 384);
+        MinecraftImportStats.Builder stats = new MinecraftImportStats.Builder();
         Path regionDirectory = options.worldDirectory().resolve("region");
         int startChunkX = blockToChunk((int) Math.floor(options.start().x()));
         int startChunkZ = blockToChunk((int) Math.floor(options.start().z()));
-        int goalChunkX = blockToChunk(options.goalX());
-        int goalChunkZ = blockToChunk(options.goalZ());
+        int goalChunkX = options.goalExplicit() ? blockToChunk(options.goalX()) : startChunkX;
+        int goalChunkZ = options.goalExplicit() ? blockToChunk(options.goalZ()) : startChunkZ;
         int minChunkX = Math.min(startChunkX, goalChunkX) - options.radiusChunks();
         int maxChunkX = Math.max(startChunkX, goalChunkX) + options.radiusChunks();
         int minChunkZ = Math.min(startChunkZ, goalChunkZ) - options.radiusChunks();
@@ -45,29 +46,42 @@ public final class AnvilWorldLoader {
 
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                loadChunk(regionDirectory, chunkX, chunkZ, world);
+                stats.requestedChunk();
+                loadChunk(regionDirectory, chunkX, chunkZ, world, stats);
             }
         }
-        return world;
+        return new ImportedMinecraftWorld(world, stats.build());
     }
 
-    private static void loadChunk(Path regionDirectory, int chunkX, int chunkZ, HeadlessWorldLayer world) throws IOException {
+    private static void loadChunk(Path regionDirectory,
+                                  int chunkX,
+                                  int chunkZ,
+                                  HeadlessWorldLayer world,
+                                  MinecraftImportStats.Builder stats) throws IOException {
         int regionX = Math.floorDiv(chunkX, 32);
         int regionZ = Math.floorDiv(chunkZ, 32);
         Optional<RegionFileReader> reader = RegionFileReader.open(regionDirectory, regionX, regionZ);
         if (reader.isEmpty()) {
+            stats.missingRegionChunk();
             return;
         }
         try (RegionFileReader region = reader.get()) {
             Optional<Map<String, Object>> chunk = region.readChunk(chunkX, chunkZ);
             if (chunk.isPresent()) {
-                loadChunkSections(chunk.get(), chunkX, chunkZ, world);
+                stats.loadedChunk();
+                loadChunkSections(chunk.get(), chunkX, chunkZ, world, stats);
+            } else {
+                stats.emptyChunk();
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void loadChunkSections(Map<String, Object> chunk, int chunkX, int chunkZ, HeadlessWorldLayer world) {
+    private static void loadChunkSections(Map<String, Object> chunk,
+                                          int chunkX,
+                                          int chunkZ,
+                                          HeadlessWorldLayer world,
+                                          MinecraftImportStats.Builder stats) {
         Object sectionsValue = chunk.get("sections");
         if (!(sectionsValue instanceof List<?> sections)) {
             Object level = chunk.get("Level");
@@ -80,13 +94,18 @@ public final class AnvilWorldLoader {
         }
         for (Object sectionValue : sections) {
             if (sectionValue instanceof Map<?, ?> section) {
-                loadSection((Map<String, Object>) section, chunkX, chunkZ, world);
+                stats.loadedSection();
+                loadSection((Map<String, Object>) section, chunkX, chunkZ, world, stats);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void loadSection(Map<String, Object> section, int chunkX, int chunkZ, HeadlessWorldLayer world) {
+    private static void loadSection(Map<String, Object> section,
+                                    int chunkX,
+                                    int chunkZ,
+                                    HeadlessWorldLayer world,
+                                    MinecraftImportStats.Builder stats) {
         Object blockStatesValue = section.get("block_states");
         if (!(blockStatesValue instanceof Map<?, ?> blockStates)) {
             blockStatesValue = section.get("BlockStates");
@@ -99,6 +118,7 @@ public final class AnvilWorldLoader {
         if (!(paletteValue instanceof List<?> palette) || palette.isEmpty()) {
             return;
         }
+        stats.sectionWithPalette();
         int sectionY = number(section.getOrDefault("Y", section.get("y"))).intValue();
         long[] data = dataValue instanceof long[] longs ? longs : new long[0];
         List<String> names = palette.stream()
@@ -121,7 +141,11 @@ public final class AnvilWorldLoader {
             int x = index & 15;
             int z = (index >> 4) & 15;
             int y = (index >> 8) & 15;
-            world.set(baseX + x, baseY + y, baseZ + z, state);
+            int worldX = baseX + x;
+            int worldY = baseY + y;
+            int worldZ = baseZ + z;
+            world.set(worldX, worldY, worldZ, state);
+            stats.importedBlock(worldX, worldY, worldZ);
         }
     }
 

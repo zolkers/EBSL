@@ -69,6 +69,12 @@ public record SimCliOptions(
                 minecraftWorld.goal(parseBlock(value(arg), 0, 64, 0));
             } else if (arg.startsWith("--mc-radius=")) {
                 minecraftWorld.radiusChunks(parsePositiveInt(value(arg), MinecraftWorldImportOptions.DEFAULT_RADIUS_CHUNKS));
+            } else if (arg.startsWith("--mc-goal-search=")) {
+                minecraftWorld.goalSearchBlocks(parsePositiveInt(
+                    value(arg),
+                    MinecraftWorldImportOptions.DEFAULT_GOAL_SEARCH_BLOCKS));
+            } else if ("--mc-diagnostics".equals(arg)) {
+                minecraftWorld.diagnostics(true);
             }
         }
         return new SimCliOptions(

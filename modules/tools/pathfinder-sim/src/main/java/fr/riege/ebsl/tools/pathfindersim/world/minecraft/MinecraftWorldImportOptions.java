@@ -28,12 +28,17 @@ import java.nio.file.Path;
 public record MinecraftWorldImportOptions(
     Path worldDirectory,
     Vec3d start,
+    boolean startExplicit,
     int goalX,
     int goalY,
     int goalZ,
-    int radiusChunks
+    boolean goalExplicit,
+    int radiusChunks,
+    int goalSearchBlocks,
+    boolean diagnostics
 ) {
     public static final int DEFAULT_RADIUS_CHUNKS = 4;
+    public static final int DEFAULT_GOAL_SEARCH_BLOCKS = 96;
 
     public static Builder builder() {
         return new Builder();
@@ -42,10 +47,14 @@ public record MinecraftWorldImportOptions(
     public static final class Builder {
         private Path worldDirectory;
         private Vec3d start = new Vec3d(0.5, 64.0, 0.5);
+        private boolean startExplicit;
         private int goalX;
         private int goalY = 64;
         private int goalZ;
+        private boolean goalExplicit;
         private int radiusChunks = DEFAULT_RADIUS_CHUNKS;
+        private int goalSearchBlocks = DEFAULT_GOAL_SEARCH_BLOCKS;
+        private boolean diagnostics;
 
         public Builder worldDirectory(Path value) {
             this.worldDirectory = value;
@@ -55,6 +64,7 @@ public record MinecraftWorldImportOptions(
         public Builder start(double[] value) {
             if (value != null && value.length == 3) {
                 this.start = new Vec3d(value[0], value[1], value[2]);
+                this.startExplicit = true;
             }
             return this;
         }
@@ -64,6 +74,7 @@ public record MinecraftWorldImportOptions(
                 this.goalX = value[0];
                 this.goalY = value[1];
                 this.goalZ = value[2];
+                this.goalExplicit = true;
             }
             return this;
         }
@@ -73,11 +84,31 @@ public record MinecraftWorldImportOptions(
             return this;
         }
 
+        public Builder goalSearchBlocks(int value) {
+            this.goalSearchBlocks = Math.max(8, value);
+            return this;
+        }
+
+        public Builder diagnostics(boolean value) {
+            this.diagnostics = value;
+            return this;
+        }
+
         public MinecraftWorldImportOptions buildOrNull() {
             if (worldDirectory == null) {
                 return null;
             }
-            return new MinecraftWorldImportOptions(worldDirectory, start, goalX, goalY, goalZ, radiusChunks);
+            return new MinecraftWorldImportOptions(
+                worldDirectory,
+                start,
+                startExplicit,
+                goalX,
+                goalY,
+                goalZ,
+                goalExplicit,
+                radiusChunks,
+                goalSearchBlocks,
+                diagnostics);
         }
     }
 }

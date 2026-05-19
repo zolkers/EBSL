@@ -41,6 +41,7 @@ public final class SimulationReport {
                 .append(" status=").append(result.status())
                 .append(" ticks=").append(result.ticks())
                 .append(" nodes=").append(result.navigationNodes())
+                .append(" complete=").append(result.completePlan())
                 .append(" stuckTicks=").append(metrics.stuckTicks())
                 .append(" stuckEvents=").append(metrics.stuckEvents())
                 .append(" finalDistance=").append(format(metrics.finalDistance()))

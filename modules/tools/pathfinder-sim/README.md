@@ -37,6 +37,14 @@ Import a Minecraft Anvil save around a start and goal:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--mc-world=C:\Users\you\AppData\Roaming\.minecraft\saves\World --mc-start=383.5,64,44.5 --mc-goal=500,62,40 --mc-radius=5 --ui --json=build/pathfinder-sim/mc-report.json"
 ```
 
+Import the repo `run` save and let the simulator choose a valid player-side start plus a far reachable goal:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:run --args="--scenario=minecraft --mc-world=run\saves\New --mc-diagnostics --mc-goal-search=64 --json=build/pathfinder-sim/mc-report.json"
+```
+
+The Minecraft importer resolves relative world paths from the simulator module and its parent folders. It also tolerates a truncated save folder prefix such as `run\saves\New` when the actual save is named `New World`, which keeps PowerShell/Gradle quoting friction out of normal use.
+
 ## Scenarios
 
 The default catalogue includes:
