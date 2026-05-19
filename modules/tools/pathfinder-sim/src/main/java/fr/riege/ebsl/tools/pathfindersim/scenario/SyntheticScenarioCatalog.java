@@ -30,14 +30,14 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessWorldLayer;
 
 import java.util.List;
 
-public final class ScenarioCatalog {
+public final class SyntheticScenarioCatalog {
     private static final int FLOOR_Y = 63;
     private static final int PLAYER_Y = 64;
 
-    private ScenarioCatalog() {
+    private SyntheticScenarioCatalog() {
     }
 
-    public static List<SimulationScenario> defaultScenarios() {
+    public static List<SimulationScenario> smokeScenarios() {
         return List.of(
             flatSprint(),
             wallBypass(),

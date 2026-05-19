@@ -25,8 +25,8 @@ import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
 import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationReport;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
-import fr.riege.ebsl.tools.pathfindersim.scenario.ScenarioCatalog;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
+import fr.riege.ebsl.tools.pathfindersim.scenario.SyntheticScenarioCatalog;
 import fr.riege.ebsl.tools.pathfindersim.ui.SimulationFrame;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldScenarioFactory;
@@ -47,12 +47,11 @@ public final class PathfinderSimApp {
     public static void main(String[] args) throws IOException {
         SimCliOptions options = SimCliOptions.parse(args);
         List<SimulationScenario> scenarios = new ArrayList<>();
-        if (options.headless()) {
-            scenarios.addAll(ScenarioCatalog.defaultScenarios());
-        }
         MinecraftWorldImportOptions importOptions = options.minecraftWorldImportOptions();
         if (importOptions != null) {
             scenarios.addAll(MinecraftWorldScenarioFactory.create(importOptions, options.minecraftStressGrid()));
+        } else if (options.headless()) {
+            scenarios.addAll(SyntheticScenarioCatalog.smokeScenarios());
         }
         SimulationSuite suite = new SimulationSuite(scenarios);
         List<SimulationResult> results = suite.run(options);
