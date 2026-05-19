@@ -46,7 +46,10 @@ public final class PathfinderSimApp {
 
     public static void main(String[] args) throws IOException {
         SimCliOptions options = SimCliOptions.parse(args);
-        List<SimulationScenario> scenarios = new ArrayList<>(ScenarioCatalog.defaultScenarios());
+        List<SimulationScenario> scenarios = new ArrayList<>();
+        if (options.headless()) {
+            scenarios.addAll(ScenarioCatalog.defaultScenarios());
+        }
         MinecraftWorldImportOptions importOptions = options.minecraftWorldImportOptions();
         if (importOptions != null) {
             scenarios.addAll(MinecraftWorldScenarioFactory.create(importOptions, options.minecraftStressGrid()));

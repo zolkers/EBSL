@@ -54,6 +54,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,7 @@ public final class SimulationFrame extends JFrame {
         this.timer = new Timer(DEFAULT_TIMER_DELAY_MS, event -> stepForward());
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(1180, 760));
+        setPreferredSize(new Dimension(1320, 820));
         setLayout(new BorderLayout());
         add(header(), BorderLayout.NORTH);
         add(splitView(), BorderLayout.CENTER);
@@ -113,8 +115,10 @@ public final class SimulationFrame extends JFrame {
     }
 
     private JPanel header() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 4));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+        JPanel replayRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        JPanel routeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         scenarioCombo.setModel(scenarioComboModel);
         scenarioCombo.setRenderer(new SimulationResultRenderer());
         scenarioCombo.addActionListener(event -> selectResult((SimulationResult) scenarioCombo.getSelectedItem()));
@@ -127,37 +131,36 @@ public final class SimulationFrame extends JFrame {
         JButton nextStuck = new JButton("Next stuck");
         nextStuck.addActionListener(event -> jumpToStuck(1));
         JButton browseWorld = new JButton("Browse");
-        browseWorld.setEnabled(minecraftOptions != null);
         browseWorld.addActionListener(event -> browseWorld());
         JButton runRoute = new JButton("Run route");
-        runRoute.setEnabled(minecraftOptions != null);
         runRoute.addActionListener(event -> runRoute());
-        goalType.setEnabled(minecraftOptions != null);
         goalType.addActionListener(event -> updateGoalHint());
         JSlider speed = new JSlider(1, 10, 5);
         speed.setPreferredSize(new Dimension(120, 28));
         speed.addChangeListener(event -> updateSpeed(speed.getValue()));
         isometric.addActionListener(event -> canvas.setIsometric(isometric.isSelected()));
         seedRouteFields();
-        panel.add(new JLabel("Scenario"));
-        panel.add(scenarioCombo);
-        panel.add(playButton);
-        panel.add(reset);
-        panel.add(previousStuck);
-        panel.add(nextStuck);
-        panel.add(isometric);
-        panel.add(new JLabel("World"));
-        panel.add(worldField);
-        panel.add(browseWorld);
-        panel.add(new JLabel("Start"));
-        panel.add(startField);
-        panel.add(new JLabel("Goal"));
-        panel.add(goalType);
-        panel.add(goalField);
-        panel.add(runRoute);
-        panel.add(new JLabel("Speed"));
-        panel.add(speed);
-        panel.add(status);
+        replayRow.add(new JLabel("Scenario"));
+        replayRow.add(scenarioCombo);
+        replayRow.add(playButton);
+        replayRow.add(reset);
+        replayRow.add(previousStuck);
+        replayRow.add(nextStuck);
+        replayRow.add(isometric);
+        replayRow.add(new JLabel("Speed"));
+        replayRow.add(speed);
+        replayRow.add(status);
+        routeRow.add(new JLabel("World"));
+        routeRow.add(worldField);
+        routeRow.add(browseWorld);
+        routeRow.add(new JLabel("Start"));
+        routeRow.add(startField);
+        routeRow.add(new JLabel("Goal"));
+        routeRow.add(goalType);
+        routeRow.add(goalField);
+        routeRow.add(runRoute);
+        panel.add(replayRow);
+        panel.add(routeRow);
         return panel;
     }
 
@@ -231,10 +234,10 @@ public final class SimulationFrame extends JFrame {
 
     private void seedRouteFields() {
         if (minecraftOptions == null) {
-            worldField.setEnabled(false);
-            startField.setEnabled(false);
-            goalField.setEnabled(false);
-            goalType.setEnabled(false);
+            worldField.setText("");
+            startField.setText(formatVec(0.5, 64.0, 0.5));
+            goalField.setText(formatVec(0, 64, 0));
+            updateGoalHint();
             return;
         }
         worldField.setText(minecraftOptions.worldDirectory().toString());
@@ -244,7 +247,7 @@ public final class SimulationFrame extends JFrame {
     }
 
     private void browseWorld() {
-        JFileChooser chooser = new JFileChooser(worldField.getText());
+        JFileChooser chooser = new JFileChooser(initialBrowseDirectory().toFile());
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         chooser.setDialogTitle("Select Minecraft world folder");
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -253,7 +256,8 @@ public final class SimulationFrame extends JFrame {
     }
 
     private void runRoute() {
-        if (minecraftOptions == null) {
+        if (worldField.getText().isBlank()) {
+            status.setText("choose a Minecraft world folder first");
             return;
         }
         status.setText("running route...");
@@ -289,15 +293,16 @@ public final class SimulationFrame extends JFrame {
             goalField.getText(),
             new Vec3d(start[0], start[1], start[2]),
             Path.of(worldField.getText().trim()),
-            minecraftOptions);
+            routeBaseOptions());
     }
 
     private SimCliOptions headlessOptions(MinecraftWorldImportOptions routeOptions) {
+        SimCliOptions source = options == null ? SimCliOptions.parse(new String[] { "--headless" }) : options;
         return new SimCliOptions(
             "all",
-            options.maxTicks(),
-            options.stuckWindowTicks(),
-            options.stuckEpsilon(),
+            source.maxTicks(),
+            source.stuckWindowTicks(),
+            source.stuckEpsilon(),
             null,
             true,
             routeOptions,
@@ -307,7 +312,7 @@ public final class SimulationFrame extends JFrame {
     private double[] parseStartField() {
         String[] parts = startField.getText().split(",");
         if (parts.length != 3) {
-            return new double[] { minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z() };
+            return defaultStart();
         }
         try {
             return new double[] {
@@ -316,7 +321,7 @@ public final class SimulationFrame extends JFrame {
                 Double.parseDouble(parts[2].trim())
             };
         } catch (NumberFormatException ignored) {
-            return new double[] { minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z() };
+            return defaultStart();
         }
     }
 
@@ -432,6 +437,40 @@ public final class SimulationFrame extends JFrame {
 
     private static String formatVec(double x, double y, double z) {
         return String.format(Locale.ROOT, "%.1f,%.1f,%.1f", x, y, z);
+    }
+
+    private MinecraftWorldImportOptions routeBaseOptions() {
+        if (minecraftOptions != null) {
+            return minecraftOptions;
+        }
+        return new MinecraftWorldImportOptions(
+            Path.of("."),
+            new Vec3d(0.5, 64.0, 0.5),
+            true,
+            0,
+            64,
+            0,
+            true,
+            MinecraftWorldImportOptions.DEFAULT_RADIUS_CHUNKS,
+            MinecraftWorldImportOptions.DEFAULT_GOAL_SEARCH_BLOCKS,
+            false);
+    }
+
+    private double[] defaultStart() {
+        Vec3d start = routeBaseOptions().start();
+        return new double[] { start.x(), start.y(), start.z() };
+    }
+
+    private Path initialBrowseDirectory() {
+        String current = worldField.getText().trim();
+        if (!current.isBlank()) {
+            return Path.of(current);
+        }
+        Path saves = Path.of("run", "saves").toAbsolutePath().normalize();
+        if (Files.isDirectory(saves)) {
+            return saves;
+        }
+        return Path.of(System.getProperty("user.dir"));
     }
 
     private void updateGoalHint() {

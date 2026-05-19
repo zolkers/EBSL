@@ -37,10 +37,10 @@ Open the graphical replay viewer:
 .\gradlew.bat :tools:pathfinder-sim:run
 ```
 
-The viewer opens in a 3D isometric replay by default. Use the `3D` toggle for top-down inspection,
-choose a Minecraft save folder with `Browse`, edit `Start`, pick an EBSL goal type, then press `Run route`
-to simulate a new Minecraft route without leaving the tool. The route form resolves the same goal classes used by
-navigation commands, including block, near, get-to-block, XZ, column, chunk, axis, Y-level, rectangle, and offset goals.
+The viewer opens without running the synthetic benchmark catalogue by default. Choose a Minecraft save folder with
+`Browse`, edit `Start`, pick an EBSL goal type, then press `Run route` to simulate a route without leaving the tool.
+The route form resolves the same goal classes used by navigation commands, including block, near, get-to-block, XZ,
+column, chunk, axis, Y-level, rectangle, and offset goals.
 
 Import a Minecraft Anvil save around a start and goal:
 
