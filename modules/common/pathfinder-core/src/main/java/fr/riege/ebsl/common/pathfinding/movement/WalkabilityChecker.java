@@ -42,6 +42,7 @@ public final class WalkabilityChecker implements MovementTerrain {
     private final Long2ByteOpenHashMap flagCache = new Long2ByteOpenHashMap(8192);
     private final Long2ObjectOpenHashMap<BlockId> blockCache = new Long2ObjectOpenHashMap<>(8192);
     private final Long2DoubleOpenHashMap topYCache = new Long2DoubleOpenHashMap(8192);
+    private final Object cacheLock = new Object();
 
     public WalkabilityChecker(IWorldLayer world) {
         this.world = world;
@@ -56,9 +57,11 @@ public final class WalkabilityChecker implements MovementTerrain {
 
     @Override
     public void clearCache() {
-        flagCache.clear();
-        blockCache.clear();
-        topYCache.clear();
+        synchronized (cacheLock) {
+            flagCache.clear();
+            blockCache.clear();
+            topYCache.clear();
+        }
     }
 
     @Override
@@ -154,10 +157,15 @@ public final class WalkabilityChecker implements MovementTerrain {
     @Override
     public double getTopY(int x, int y, int z) {
         long key = BlockPosUtil.pack(x, y, z);
-        double cached = topYCache.get(key);
+        double cached;
+        synchronized (cacheLock) {
+            cached = topYCache.get(key);
+        }
         if (!Double.isNaN(cached)) return cached;
         double topY = Math.clamp(world.getBlockHeight(x, y, z), 0.0, 1.0);
-        topYCache.put(key, topY);
+        synchronized (cacheLock) {
+            topYCache.put(key, topY);
+        }
         return topY;
     }
 
@@ -169,10 +177,15 @@ public final class WalkabilityChecker implements MovementTerrain {
     @Override
     public BlockId getBlock(int x, int y, int z) {
         long key = BlockPosUtil.pack(x, y, z);
-        BlockId block = blockCache.get(key);
+        BlockId block;
+        synchronized (cacheLock) {
+            block = blockCache.get(key);
+        }
         if (block != null) return block;
         block = world.getBlock(x, y, z);
-        blockCache.put(key, block);
+        synchronized (cacheLock) {
+            blockCache.put(key, block);
+        }
         return block;
     }
 
@@ -183,12 +196,17 @@ public final class WalkabilityChecker implements MovementTerrain {
 
     private byte getFlags(int x, int y, int z) {
         long key = BlockPosUtil.pack(x, y, z);
-        byte cached = flagCache.get(key);
+        byte cached;
+        synchronized (cacheLock) {
+            cached = flagCache.get(key);
+        }
         if ((cached & FLAG_COMPUTED) != 0) {
             return cached;
         }
         byte flags = computeFlags(x, y, z);
-        flagCache.put(key, (byte) (flags | FLAG_COMPUTED));
+        synchronized (cacheLock) {
+            flagCache.put(key, (byte) (flags | FLAG_COMPUTED));
+        }
         return flags;
     }
 

@@ -27,9 +27,16 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,6 +86,44 @@ class LayerNavigationPointProviderTest {
         NavigationPoint point = provider.getNavigationPoint(new PathPosition(0, 64, 0), null);
 
         assertTrue(point.isTraversable());
+    }
+
+    @Test
+    void handlesConcurrentLookupsAndClears() {
+        FakeWorld world = new FakeWorld();
+        for (int x = -32; x <= 32; x++) {
+            for (int z = -32; z <= 32; z++) {
+                world.solid(x, 63, z);
+            }
+        }
+        WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(new WalkabilityChecker(world));
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<?>> futures = new ArrayList<>();
+
+        for (int thread = 0; thread < 8; thread++) {
+            int threadOffset = thread;
+            futures.add(executor.submit(() -> {
+                start.await();
+                for (int i = 0; i < 2_000; i++) {
+                    int x = (i + threadOffset) % 65 - 32;
+                    int z = ((i * 31) + threadOffset) % 65 - 32;
+                    provider.getNavigationPoint(new PathPosition(x, 64, z), null);
+                    if (i % 127 == 0) {
+                        provider.clearCache();
+                    }
+                }
+                return null;
+            }));
+        }
+
+        start.countDown();
+        assertDoesNotThrow(() -> {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        });
+        executor.shutdownNow();
     }
 
     private static final class FakeWorld implements IWorldLayer {

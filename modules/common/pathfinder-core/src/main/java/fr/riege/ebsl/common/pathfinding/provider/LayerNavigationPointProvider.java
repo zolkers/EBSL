@@ -32,6 +32,7 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
 
     private final MovementTerrain checker;
     private final Long2ObjectOpenHashMap<NavigationPoint> navPointCache = new Long2ObjectOpenHashMap<>(512);
+    private final Object cacheLock = new Object();
 
     LayerNavigationPointProvider(MovementTerrain checker) {
         this.checker = checker;
@@ -44,7 +45,9 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
 
     @Override
     public void clearCache() {
-        navPointCache.clear();
+        synchronized (cacheLock) {
+            navPointCache.clear();
+        }
     }
 
     @Override
@@ -53,7 +56,7 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
         int y = position.flooredY();
         int z = position.flooredZ();
         long key = BlockPosUtil.pack(x, y, z);
-        NavigationPoint cached = navPointCache.get(key);
+        NavigationPoint cached = cachedPoint(key);
         if (cached != null) {
             return cached;
         }
@@ -64,7 +67,7 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
             return BLOCKED;
         }
         if (checker.isBlacklisted(x, y - 1, z) || checker.isBlacklisted(x, y, z) || checker.isBlacklisted(x, y + 1, z)) {
-            navPointCache.put(key, BLOCKED);
+            cachePoint(key, BLOCKED);
             return BLOCKED;
         }
 
@@ -78,8 +81,20 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
         double floorLevel = floorLevel(x, y, z, liquid, lowPartialFeet);
 
         NavigationPoint point = NavigationPoints.of(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
-        navPointCache.put(key, point);
+        cachePoint(key, point);
         return point;
+    }
+
+    private NavigationPoint cachedPoint(long key) {
+        synchronized (cacheLock) {
+            return navPointCache.get(key);
+        }
+    }
+
+    private void cachePoint(long key, NavigationPoint point) {
+        synchronized (cacheLock) {
+            navPointCache.put(key, point);
+        }
     }
 
     private double floorLevel(int x, int y, int z, boolean liquid, boolean lowPartialFeet) {
