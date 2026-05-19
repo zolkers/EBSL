@@ -34,15 +34,9 @@ public final class HeadlessPhysicsRegistry {
 
     public static HeadlessPhysicsRegistry vanillaLike() {
         HeadlessPhysicsRegistry registry = new HeadlessPhysicsRegistry();
-        registry.registerContains("ice", HeadlessPhysicsProfile.ICE);
-        registry.registerContains("packed_ice", HeadlessPhysicsProfile.ICE);
-        registry.registerContains("blue_ice", HeadlessPhysicsProfile.ICE);
-        registry.registerContains("soul_sand", HeadlessPhysicsProfile.SOUL_SAND);
-        registry.registerContains("honey_block", HeadlessPhysicsProfile.HONEY);
-        registry.registerContains("water", HeadlessPhysicsProfile.WATER);
-        registry.registerContains("lava", HeadlessPhysicsProfile.LAVA);
-        registry.registerContains("ladder", HeadlessPhysicsProfile.CLIMBABLE);
-        registry.registerContains("vine", HeadlessPhysicsProfile.CLIMBABLE);
+        for (HeadlessPhysicsBlockType type : HeadlessPhysicsBlockType.values()) {
+            registry.register(type.matcher(), type.profile());
+        }
         return registry;
     }
 
@@ -67,11 +61,6 @@ public final class HeadlessPhysicsRegistry {
             predicates.put(predicate, profile);
         }
         return this;
-    }
-
-    public HeadlessPhysicsRegistry registerContains(String token, HeadlessPhysicsProfile profile) {
-        String query = token == null ? "" : token;
-        return register(id -> id != null && id.toString().contains(query), profile);
     }
 
     public HeadlessPhysicsProfile profile(HeadlessBlockState state) {
