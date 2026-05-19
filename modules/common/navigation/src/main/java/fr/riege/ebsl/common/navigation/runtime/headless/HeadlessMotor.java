@@ -27,6 +27,7 @@ import fr.riege.ebsl.common.navigation.runtime.entity.NavigationMotor;
 
 public final class HeadlessMotor implements NavigationMotor {
     private final HeadlessActor actor;
+    private HeadlessWorldLayer world;
     private MovementIntent lastIntent = MovementIntent.stop();
 
     public HeadlessMotor(HeadlessActor actor) {
@@ -37,12 +38,28 @@ public final class HeadlessMotor implements NavigationMotor {
         return lastIntent;
     }
 
+    public HeadlessMotor world(HeadlessWorldLayer world) {
+        this.world = world;
+        return this;
+    }
+
     @Override public void apply(MovementIntent intent) {
         lastIntent = intent == null ? MovementIntent.stop() : intent;
         Vec3d velocity = lastIntent.velocity();
         if (lastIntent.jump() && actor.onGround()) {
-            velocity = new Vec3d(velocity.x(), Math.max(velocity.y(), 0.42), velocity.z());
+            HeadlessPhysicsProfile profile = jumpProfile();
+            velocity = new Vec3d(velocity.x(), Math.max(velocity.y(), profile.jumpVelocity()), velocity.z());
         }
         actor.velocity(velocity);
+    }
+
+    private HeadlessPhysicsProfile jumpProfile() {
+        if (world == null) {
+            return HeadlessPhysicsProfile.DEFAULT;
+        }
+        int x = (int) Math.floor(actor.position().x());
+        int y = (int) Math.floor(actor.position().y()) - 1;
+        int z = (int) Math.floor(actor.position().z());
+        return world.physicsAt(x, y, z);
     }
 }

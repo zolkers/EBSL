@@ -27,10 +27,10 @@ import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 
 public final class HeadlessNavigationService extends EntityNavigationService {
     public HeadlessNavigationService(HeadlessWorldLayer world, HeadlessActor actor) {
-        this(world, actor, new HeadlessMotor(actor));
+        this(world, actor, new HeadlessMotor(actor).world(world));
     }
 
     public HeadlessNavigationService(HeadlessWorldLayer world, HeadlessActor actor, HeadlessMotor motor) {
-        super(new PathPlanningService(world), actor, motor, EntityFollowerOptions.defaults(), Runnable::run);
+        super(new PathPlanningService(world), actor, motor.world(world), EntityFollowerOptions.defaults(), Runnable::run);
     }
 }

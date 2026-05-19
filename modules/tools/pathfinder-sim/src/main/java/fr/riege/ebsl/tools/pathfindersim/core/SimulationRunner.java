@@ -43,7 +43,7 @@ public final class SimulationRunner {
     public SimulationResult run(SimulationScenario scenario, SimCliOptions options) {
         long startNanos = System.nanoTime();
         HeadlessActor actor = new HeadlessActor(scenario.start());
-        HeadlessMotor motor = new HeadlessMotor(actor);
+        HeadlessMotor motor = new HeadlessMotor(actor).world(scenario.world());
         PathPlanningService planner = new PathPlanningService(scenario.world());
         EntityNavigationService service = new EntityNavigationService(
             planner,

@@ -32,6 +32,7 @@ import java.util.Map;
 public final class HeadlessWorldLayer implements IWorldLayer {
     private final Map<Long, HeadlessBlockState> blocks = new HashMap<>();
     private HeadlessBlockState defaultState = HeadlessBlockState.AIR;
+    private HeadlessPhysicsRegistry physicsRegistry = HeadlessPhysicsRegistry.vanillaLikeDefault();
     private int minY = -64;
     private int maxY = 320;
 
@@ -43,6 +44,11 @@ public final class HeadlessWorldLayer implements IWorldLayer {
 
     public HeadlessWorldLayer defaultState(HeadlessBlockState defaultState) {
         this.defaultState = defaultState == null ? HeadlessBlockState.AIR : defaultState;
+        return this;
+    }
+
+    public HeadlessWorldLayer physicsRegistry(HeadlessPhysicsRegistry physicsRegistry) {
+        this.physicsRegistry = physicsRegistry == null ? HeadlessPhysicsRegistry.vanillaLikeDefault() : physicsRegistry;
         return this;
     }
 
@@ -75,6 +81,10 @@ public final class HeadlessWorldLayer implements IWorldLayer {
 
     public HeadlessBlockState stateAt(int x, int y, int z) {
         return blocks.getOrDefault(BlockPosUtil.pack(x, y, z), defaultState);
+    }
+
+    public HeadlessPhysicsProfile physicsAt(int x, int y, int z) {
+        return physicsRegistry.profile(stateAt(x, y, z));
     }
 
     @Override public BlockId getBlock(int x, int y, int z) {

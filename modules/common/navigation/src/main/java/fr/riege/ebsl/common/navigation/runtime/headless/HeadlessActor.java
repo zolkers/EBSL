@@ -104,10 +104,22 @@ public final class HeadlessActor implements NavigationActor {
         position = next;
         if (world != null && world.isSolid(footX, footY - 1, footZ) && velocity.y() <= 0.0) {
             onGround = true;
-            velocity = new Vec3d(velocity.x(), 0.0, velocity.z());
+            HeadlessPhysicsProfile profile = world.physicsAt(footX, footY - 1, footZ);
+            double groundDrag = profile.slipperiness() * profile.horizontalDrag();
+            velocity = new Vec3d(velocity.x() * groundDrag, 0.0, velocity.z() * groundDrag);
         } else {
             onGround = false;
-            velocity = new Vec3d(velocity.x(), velocity.y() - 0.08, velocity.z());
+            HeadlessPhysicsProfile profile = world == null
+                ? HeadlessPhysicsProfile.DEFAULT
+                : world.physicsAt(footX, footY, footZ);
+            double velocityY = (velocity.y() - profile.gravity()) * profile.verticalDrag();
+            if (world != null && world.isClimbable(footX, footY, footZ)) {
+                velocityY = Math.clamp(velocityY, -profile.maxClimbVelocity(), profile.maxClimbVelocity());
+            }
+            velocity = new Vec3d(
+                velocity.x() * profile.horizontalDrag(),
+                velocityY,
+                velocity.z() * profile.horizontalDrag());
         }
     }
 
@@ -117,7 +129,11 @@ public final class HeadlessActor implements NavigationActor {
             return false;
         }
 
-        int steppedY = footY + 1;
+        HeadlessPhysicsProfile profile = world.physicsAt(footX, footY, footZ);
+        int steppedY = footY + (profile.stepHeight() >= 1.0 ? 1 : 0);
+        if (steppedY == footY) {
+            return false;
+        }
         if (world.isSolid(footX, steppedY, footZ) || world.isSolid(footX, steppedY + 1, footZ)) {
             return false;
         }

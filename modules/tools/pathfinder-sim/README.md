@@ -44,6 +44,10 @@ column, chunk, axis, Y-level, rectangle, and offset goals.
 Replay playback uses Minecraft's 20 ticks per second cadence by default. Disable `20 TPS` to scrub faster or slower
 with the speed slider.
 
+Headless movement uses a physics registry rather than hard-coded block checks. `HeadlessPhysicsRegistry` maps block IDs
+or predicates to `HeadlessPhysicsProfile` values for friction, drag, gravity, jump velocity, climb speed, and step
+height, so new Minecraft block physics can be registered without changing the actor loop.
+
 Import a Minecraft Anvil save around a start and goal:
 
 ```powershell
