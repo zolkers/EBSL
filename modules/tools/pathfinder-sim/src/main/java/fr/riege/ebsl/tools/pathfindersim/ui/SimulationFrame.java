@@ -81,6 +81,7 @@ public final class SimulationFrame extends JFrame {
     private final JTextField worldField = new JTextField(22);
     private final JTextField startField = new JTextField(16);
     private final JTextField goalField = new JTextField(12);
+    private final JComboBox<SimulationGoalInput> goalType = new JComboBox<>(SimulationGoalInput.values());
     private final JCheckBox isometric = new JCheckBox("3D", true);
     private final Timer timer;
     private transient SimulationResult selected;
@@ -131,6 +132,8 @@ public final class SimulationFrame extends JFrame {
         JButton runRoute = new JButton("Run route");
         runRoute.setEnabled(minecraftOptions != null);
         runRoute.addActionListener(event -> runRoute());
+        goalType.setEnabled(minecraftOptions != null);
+        goalType.addActionListener(event -> updateGoalHint());
         JSlider speed = new JSlider(1, 10, 5);
         speed.setPreferredSize(new Dimension(120, 28));
         speed.addChangeListener(event -> updateSpeed(speed.getValue()));
@@ -149,6 +152,7 @@ public final class SimulationFrame extends JFrame {
         panel.add(new JLabel("Start"));
         panel.add(startField);
         panel.add(new JLabel("Goal"));
+        panel.add(goalType);
         panel.add(goalField);
         panel.add(runRoute);
         panel.add(new JLabel("Speed"));
@@ -230,11 +234,13 @@ public final class SimulationFrame extends JFrame {
             worldField.setEnabled(false);
             startField.setEnabled(false);
             goalField.setEnabled(false);
+            goalType.setEnabled(false);
             return;
         }
         worldField.setText(minecraftOptions.worldDirectory().toString());
         startField.setText(formatVec(minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z()));
         goalField.setText(formatVec(minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ()));
+        updateGoalHint();
     }
 
     private void browseWorld() {
@@ -267,7 +273,7 @@ public final class SimulationFrame extends JFrame {
                     Thread.currentThread().interrupt();
                     status.setText("route interrupted");
                 } catch (ExecutionException exception) {
-                    status.setText("route failed: " + exception.getMessage());
+                    status.setText("route failed: " + rootMessage(exception));
                 }
             }
         }.execute();
@@ -275,18 +281,15 @@ public final class SimulationFrame extends JFrame {
 
     private MinecraftWorldImportOptions routeOptions() {
         double[] start = parseStartField();
-        int[] goal = parseGoalField();
-        return new MinecraftWorldImportOptions(
-            Path.of(worldField.getText().trim()),
+        SimulationGoalInput selectedGoalType = (SimulationGoalInput) goalType.getSelectedItem();
+        if (selectedGoalType == null) {
+            selectedGoalType = SimulationGoalInput.BLOCK;
+        }
+        return selectedGoalType.toOptions(
+            goalField.getText(),
             new Vec3d(start[0], start[1], start[2]),
-            true,
-            goal[0],
-            goal[1],
-            goal[2],
-            true,
-            minecraftOptions.radiusChunks(),
-            minecraftOptions.goalSearchBlocks(),
-            minecraftOptions.diagnostics());
+            Path.of(worldField.getText().trim()),
+            minecraftOptions);
     }
 
     private SimCliOptions headlessOptions(MinecraftWorldImportOptions routeOptions) {
@@ -314,22 +317,6 @@ public final class SimulationFrame extends JFrame {
             };
         } catch (NumberFormatException ignored) {
             return new double[] { minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z() };
-        }
-    }
-
-    private int[] parseGoalField() {
-        String[] parts = goalField.getText().split(",");
-        if (parts.length != 3) {
-            return new int[] { minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ() };
-        }
-        try {
-            return new int[] {
-                Integer.parseInt(parts[0].trim()),
-                Integer.parseInt(parts[1].trim()),
-                Integer.parseInt(parts[2].trim())
-            };
-        } catch (NumberFormatException ignored) {
-            return new int[] { minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ() };
         }
     }
 
@@ -445,5 +432,20 @@ public final class SimulationFrame extends JFrame {
 
     private static String formatVec(double x, double y, double z) {
         return String.format(Locale.ROOT, "%.1f,%.1f,%.1f", x, y, z);
+    }
+
+    private void updateGoalHint() {
+        SimulationGoalInput selectedGoalType = (SimulationGoalInput) goalType.getSelectedItem();
+        if (selectedGoalType != null) {
+            goalField.setToolTipText(selectedGoalType.hint());
+        }
+    }
+
+    private static String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage();
     }
 }
