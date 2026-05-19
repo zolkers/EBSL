@@ -32,6 +32,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
@@ -53,6 +54,7 @@ final class ReplayCanvas extends JPanel {
 
     private transient SimulationResult result;
     private int frame;
+    private boolean isometric = true;
 
     ReplayCanvas() {
         setBackground(BACKGROUND);
@@ -66,6 +68,11 @@ final class ReplayCanvas extends JPanel {
 
     void setFrame(int frame) {
         this.frame = Math.max(0, frame);
+        repaint();
+    }
+
+    void setIsometric(boolean isometric) {
+        this.isometric = isometric;
         repaint();
     }
 
@@ -104,6 +111,10 @@ final class ReplayCanvas extends JPanel {
         List<SimulationTick> ticks = result.ticksTrace();
         Bounds bounds = Bounds.of(ticks, result.terrain());
         int cappedFrame = Math.min(frame, ticks.size() - 1);
+        if (isometric) {
+            paintIsometricReplay(g, bounds, cappedFrame);
+            return;
+        }
         paintTerrain(g, bounds);
         g.setStroke(new BasicStroke(2.0f));
         for (int index = 1; index <= cappedFrame; index++) {
@@ -114,6 +125,21 @@ final class ReplayCanvas extends JPanel {
         }
         SimulationTick tick = ticks.get(cappedFrame);
         drawPlayer(g, bounds, tick);
+        paintHud(g, tick);
+    }
+
+    private void paintIsometricReplay(Graphics2D g, Bounds bounds, int cappedFrame) {
+        List<SimulationTick> ticks = result.ticksTrace();
+        paintIsometricTerrain(g, bounds);
+        g.setStroke(new BasicStroke(2.0f));
+        for (int index = 1; index <= cappedFrame; index++) {
+            SimulationTick previous = ticks.get(index - 1);
+            SimulationTick current = ticks.get(index);
+            g.setColor(current.stuck() ? STUCK : PATH);
+            drawIsoLine(g, bounds, previous.position(), current.position());
+        }
+        SimulationTick tick = ticks.get(cappedFrame);
+        drawIsoPlayer(g, bounds, tick);
         paintHud(g, tick);
     }
 
@@ -128,6 +154,43 @@ final class ReplayCanvas extends JPanel {
         }
     }
 
+    private void paintIsometricTerrain(Graphics2D g, Bounds bounds) {
+        List<ReplayBlock> terrain = result.terrain().stream()
+            .sorted((left, right) -> Integer.compare(left.x() + left.z() + left.y(), right.x() + right.z() + right.y()))
+            .toList();
+        for (ReplayBlock block : terrain) {
+            paintIsoBlock(g, bounds, block);
+        }
+    }
+
+    private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
+        double[] center = isoPoint(bounds, block.x() + 0.5, block.y(), block.z() + 0.5);
+        int size = (int) Math.max(5.0, Math.min(16.0, isoScale(bounds) * 0.72));
+        int half = Math.max(3, size / 2);
+        int height = Math.max(4, (int) (size * 0.55));
+        int x = (int) Math.round(center[0]);
+        int y = (int) Math.round(center[1]);
+        Polygon top = new Polygon(
+            new int[] { x, x + half, x, x - half },
+            new int[] { y - half, y, y + half, y },
+            4);
+        Polygon left = new Polygon(
+            new int[] { x - half, x, x, x - half },
+            new int[] { y, y + half, y + half + height, y + height },
+            4);
+        Polygon right = new Polygon(
+            new int[] { x + half, x, x, x + half },
+            new int[] { y, y + half, y + half + height, y + height },
+            4);
+        Color base = blockColor(block.kind());
+        g.setColor(base.darker());
+        g.fill(left);
+        g.setColor(base.darker().darker());
+        g.fill(right);
+        g.setColor(base);
+        g.fill(top);
+    }
+
     private void paintHud(Graphics2D g, SimulationTick tick) {
         g.setColor(TEXT);
         g.setFont(g.getFont().deriveFont(Font.PLAIN, 14f));
@@ -140,6 +203,12 @@ final class ReplayCanvas extends JPanel {
         g.draw(new Line2D.Double(screenX(bounds, from), screenY(bounds, from), screenX(bounds, to), screenY(bounds, to)));
     }
 
+    private void drawIsoLine(Graphics2D g, Bounds bounds, Vec3d from, Vec3d to) {
+        double[] a = isoPoint(bounds, from.x(), from.y(), from.z());
+        double[] b = isoPoint(bounds, to.x(), to.y(), to.z());
+        g.draw(new Line2D.Double(a[0], a[1], b[0], b[1]));
+    }
+
     private void drawPlayer(Graphics2D g, Bounds bounds, SimulationTick tick) {
         double x = screenX(bounds, tick.position());
         double y = screenY(bounds, tick.position());
@@ -147,6 +216,17 @@ final class ReplayCanvas extends JPanel {
         g.fill(new Ellipse2D.Double(x - 6.0, y - 6.0, 12.0, 12.0));
         g.setColor(TEXT);
         g.draw(new Ellipse2D.Double(x - 9.0, y - 9.0, 18.0, 18.0));
+    }
+
+    private void drawIsoPlayer(Graphics2D g, Bounds bounds, SimulationTick tick) {
+        double[] point = isoPoint(bounds, tick.position().x(), tick.position().y(), tick.position().z());
+        double x = point[0];
+        double y = point[1];
+        g.setColor(tick.stuck() ? STUCK : PLAYER);
+        g.fill(new Ellipse2D.Double(x - 7.0, y - 16.0, 14.0, 14.0));
+        g.setColor(TEXT);
+        g.draw(new Line2D.Double(x, y - 2.0, x, y - 15.0));
+        g.draw(new Ellipse2D.Double(x - 10.0, y - 19.0, 20.0, 20.0));
     }
 
     private double screenX(Bounds bounds, Vec3d value) {
@@ -170,6 +250,24 @@ final class ReplayCanvas extends JPanel {
     private double blockSize(Bounds bounds) {
         double span = Math.max(1.0, bounds.maxX() - bounds.minX());
         return (getWidth() - 96.0) / span;
+    }
+
+    private double[] isoPoint(Bounds bounds, double x, double y, double z) {
+        double centerX = (bounds.minX() + bounds.maxX()) * 0.5;
+        double centerZ = (bounds.minZ() + bounds.maxZ()) * 0.5;
+        double scale = isoScale(bounds);
+        double localX = x - centerX;
+        double localZ = z - centerZ;
+        double isoX = (localX - localZ) * scale + getWidth() * 0.5;
+        double groundY = (localX + localZ) * scale * 0.5 + getHeight() * 0.58;
+        double minY = result.terrain().stream().mapToInt(ReplayBlock::y).min().orElse((int) Math.floor(y));
+        double isoY = groundY - (y - minY) * scale * 0.8;
+        return new double[] { isoX, isoY };
+    }
+
+    private double isoScale(Bounds bounds) {
+        double span = Math.max(1.0, Math.max(bounds.maxX() - bounds.minX(), bounds.maxZ() - bounds.minZ()));
+        return Math.max(5.0, Math.min(22.0, Math.min(getWidth(), getHeight()) / (span * 1.55)));
     }
 
     private static Color blockColor(String kind) {

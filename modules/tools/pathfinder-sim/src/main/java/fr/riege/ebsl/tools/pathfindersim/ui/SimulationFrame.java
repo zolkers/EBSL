@@ -21,12 +21,19 @@
 
 package fr.riege.ebsl.tools.pathfindersim.ui;
 
+import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
+import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
+import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
+import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldScenarioFactory;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -36,15 +43,20 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 public final class SimulationFrame extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -52,20 +64,30 @@ public final class SimulationFrame extends JFrame {
     private static final int MIN_TIMER_DELAY_MS = 10;
     private static final int MAX_TIMER_DELAY_MS = 250;
 
-    private final transient List<SimulationResult> results;
+    private final transient SimCliOptions options;
+    private final transient MinecraftWorldImportOptions minecraftOptions;
+    private final transient List<SimulationResult> results = new ArrayList<>();
     private final ReplayCanvas canvas = new ReplayCanvas();
     private final JSlider timeline = new JSlider();
     private final JLabel status = new JLabel("ready");
     private final JLabel frameStatus = new JLabel("tick 0");
     private final JTextArea details = new JTextArea();
     private final JList<SimulationResult> scenarioList = new JList<>();
+    private final DefaultListModel<SimulationResult> scenarioModel = new DefaultListModel<>();
+    private final DefaultComboBoxModel<SimulationResult> scenarioComboModel = new DefaultComboBoxModel<>();
+    private final JComboBox<SimulationResult> scenarioCombo = new JComboBox<>();
+    private final JTextField startField = new JTextField(16);
+    private final JTextField goalField = new JTextField(12);
+    private final JCheckBox isometric = new JCheckBox("3D", true);
     private final Timer timer;
     private transient SimulationResult selected;
     private JButton playButton;
 
-    private SimulationFrame(List<SimulationResult> results) {
+    private SimulationFrame(List<SimulationResult> results, SimCliOptions options) {
         super("EBSL Pathfinder Simulator");
-        this.results = List.copyOf(results);
+        this.results.addAll(results);
+        this.options = options;
+        this.minecraftOptions = options == null ? null : options.minecraftWorldImportOptions();
         this.timer = new Timer(DEFAULT_TIMER_DELAY_MS, event -> stepForward());
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(1180, 760));
@@ -79,16 +101,19 @@ public final class SimulationFrame extends JFrame {
     }
 
     public static void show(List<SimulationResult> results) {
-        SwingUtilities.invokeLater(() -> new SimulationFrame(results).setVisible(true));
+        show(results, null);
+    }
+
+    public static void show(List<SimulationResult> results, SimCliOptions options) {
+        SwingUtilities.invokeLater(() -> new SimulationFrame(results, options).setVisible(true));
     }
 
     private JPanel header() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
-        JComboBox<SimulationResult> scenarios = new JComboBox<>();
-        scenarios.setModel(new DefaultComboBoxModel<>(results.toArray(SimulationResult[]::new)));
-        scenarios.setRenderer(new SimulationResultRenderer());
-        scenarios.addActionListener(event -> selectResult((SimulationResult) scenarios.getSelectedItem()));
+        scenarioCombo.setModel(scenarioComboModel);
+        scenarioCombo.setRenderer(new SimulationResultRenderer());
+        scenarioCombo.addActionListener(event -> selectResult((SimulationResult) scenarioCombo.getSelectedItem()));
         playButton = new JButton("Play");
         playButton.addActionListener(event -> togglePlayback());
         JButton reset = new JButton("Reset");
@@ -97,15 +122,26 @@ public final class SimulationFrame extends JFrame {
         previousStuck.addActionListener(event -> jumpToStuck(-1));
         JButton nextStuck = new JButton("Next stuck");
         nextStuck.addActionListener(event -> jumpToStuck(1));
+        JButton runRoute = new JButton("Run route");
+        runRoute.setEnabled(minecraftOptions != null);
+        runRoute.addActionListener(event -> runRoute());
         JSlider speed = new JSlider(1, 10, 5);
         speed.setPreferredSize(new Dimension(120, 28));
         speed.addChangeListener(event -> updateSpeed(speed.getValue()));
+        isometric.addActionListener(event -> canvas.setIsometric(isometric.isSelected()));
+        seedRouteFields();
         panel.add(new JLabel("Scenario"));
-        panel.add(scenarios);
+        panel.add(scenarioCombo);
         panel.add(playButton);
         panel.add(reset);
         panel.add(previousStuck);
         panel.add(nextStuck);
+        panel.add(isometric);
+        panel.add(new JLabel("Start"));
+        panel.add(startField);
+        panel.add(new JLabel("Goal"));
+        panel.add(goalField);
+        panel.add(runRoute);
         panel.add(new JLabel("Speed"));
         panel.add(speed);
         panel.add(status);
@@ -122,9 +158,8 @@ public final class SimulationFrame extends JFrame {
     private JPanel sidebar() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        DefaultListModel<SimulationResult> model = new DefaultListModel<>();
-        results.forEach(model::addElement);
-        scenarioList.setModel(model);
+        refreshScenarioList();
+        scenarioList.setModel(scenarioModel);
         scenarioList.setCellRenderer(new SimulationResultRenderer());
         scenarioList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         scenarioList.addListSelectionListener(event -> {
@@ -181,6 +216,119 @@ public final class SimulationFrame extends JFrame {
         timer.setDelay(delay);
     }
 
+    private void seedRouteFields() {
+        if (minecraftOptions == null) {
+            startField.setEnabled(false);
+            goalField.setEnabled(false);
+            return;
+        }
+        startField.setText(formatVec(minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z()));
+        goalField.setText(formatVec(minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ()));
+    }
+
+    private void runRoute() {
+        if (minecraftOptions == null) {
+            return;
+        }
+        status.setText("running route...");
+        new SwingWorker<List<SimulationResult>, Void>() {
+            @Override
+            protected List<SimulationResult> doInBackground() throws IOException {
+                MinecraftWorldImportOptions routeOptions = routeOptions();
+                List<SimulationScenario> scenarios = MinecraftWorldScenarioFactory.create(routeOptions, null);
+                return new SimulationSuite(scenarios).run(headlessOptions(routeOptions));
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    replaceResults(get());
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    status.setText("route interrupted");
+                } catch (ExecutionException exception) {
+                    status.setText("route failed: " + exception.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private MinecraftWorldImportOptions routeOptions() {
+        double[] start = parseStartField();
+        int[] goal = parseGoalField();
+        return new MinecraftWorldImportOptions(
+            minecraftOptions.worldDirectory(),
+            new Vec3d(start[0], start[1], start[2]),
+            true,
+            goal[0],
+            goal[1],
+            goal[2],
+            true,
+            minecraftOptions.radiusChunks(),
+            minecraftOptions.goalSearchBlocks(),
+            minecraftOptions.diagnostics());
+    }
+
+    private SimCliOptions headlessOptions(MinecraftWorldImportOptions routeOptions) {
+        return new SimCliOptions(
+            "all",
+            options.maxTicks(),
+            options.stuckWindowTicks(),
+            options.stuckEpsilon(),
+            null,
+            true,
+            routeOptions,
+            null);
+    }
+
+    private double[] parseStartField() {
+        String[] parts = startField.getText().split(",");
+        if (parts.length != 3) {
+            return new double[] { minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z() };
+        }
+        try {
+            return new double[] {
+                Double.parseDouble(parts[0].trim()),
+                Double.parseDouble(parts[1].trim()),
+                Double.parseDouble(parts[2].trim())
+            };
+        } catch (NumberFormatException ignored) {
+            return new double[] { minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z() };
+        }
+    }
+
+    private int[] parseGoalField() {
+        String[] parts = goalField.getText().split(",");
+        if (parts.length != 3) {
+            return new int[] { minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ() };
+        }
+        try {
+            return new int[] {
+                Integer.parseInt(parts[0].trim()),
+                Integer.parseInt(parts[1].trim()),
+                Integer.parseInt(parts[2].trim())
+            };
+        } catch (NumberFormatException ignored) {
+            return new int[] { minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ() };
+        }
+    }
+
+    private void replaceResults(List<SimulationResult> replacement) {
+        results.clear();
+        results.addAll(replacement);
+        refreshScenarioList();
+        selectResult(results.isEmpty() ? null : results.getFirst());
+    }
+
+    private void refreshScenarioList() {
+        scenarioModel.clear();
+        scenarioComboModel.removeAllElements();
+        for (SimulationResult result : results) {
+            scenarioModel.addElement(result);
+            scenarioComboModel.addElement(result);
+        }
+    }
+
     private void selectResult(SimulationResult result) {
         if (result == null) {
             selected = null;
@@ -194,6 +342,9 @@ public final class SimulationFrame extends JFrame {
         selected = result;
         if (scenarioList.getSelectedValue() != result) {
             scenarioList.setSelectedValue(result, true);
+        }
+        if (scenarioCombo.getSelectedItem() != result) {
+            scenarioCombo.setSelectedItem(result);
         }
         int max = Math.max(0, result.ticksTrace().size() - 1);
         timeline.setMinimum(0);
@@ -270,5 +421,9 @@ public final class SimulationFrame extends JFrame {
             tick.moveType(),
             tick.distanceToGoal(),
             tick.stuck()));
+    }
+
+    private static String formatVec(double x, double y, double z) {
+        return String.format(Locale.ROOT, "%.1f,%.1f,%.1f", x, y, z);
     }
 }

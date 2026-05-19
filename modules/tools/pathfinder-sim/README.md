@@ -37,6 +37,10 @@ Open the graphical replay viewer:
 .\gradlew.bat :tools:pathfinder-sim:run
 ```
 
+The viewer opens in a 3D isometric replay by default. Use the `3D` toggle for top-down inspection,
+edit the `Start` and `Goal` fields, then press `Run route` to simulate a new Minecraft route without
+leaving the tool.
+
 Import a Minecraft Anvil save around a start and goal:
 
 ```powershell

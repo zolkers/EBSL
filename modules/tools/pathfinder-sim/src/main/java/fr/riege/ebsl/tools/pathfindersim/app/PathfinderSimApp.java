@@ -56,7 +56,7 @@ public final class PathfinderSimApp {
         String report = SimulationReport.render(results);
         LOGGER.info(() -> System.lineSeparator() + report.stripTrailing());
         if (!options.headless()) {
-            SimulationFrame.show(results);
+            SimulationFrame.show(results, options);
         }
         if (options.jsonOutput() != null) {
             Path output = options.jsonOutput();
