@@ -34,7 +34,7 @@ public record SimCliOptions(
     int stuckWindowTicks,
     double stuckEpsilon,
     Path jsonOutput,
-    boolean ui,
+    boolean headless,
     MinecraftWorldImportOptions minecraftWorldImportOptions,
     MinecraftStressGrid minecraftStressGrid
 ) {
@@ -53,7 +53,7 @@ public record SimCliOptions(
             state.stuckWindow,
             state.stuckEpsilon,
             state.json,
-            state.ui,
+            state.headless,
             state.minecraftWorld.buildOrNull(),
             state.minecraftStressGrid);
     }
@@ -69,7 +69,7 @@ public record SimCliOptions(
         private int stuckWindow = DEFAULT_STUCK_WINDOW;
         private double stuckEpsilon = DEFAULT_STUCK_EPSILON;
         private Path json;
-        private boolean ui;
+        private boolean headless;
         private MinecraftStressGrid minecraftStressGrid;
         private final MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
 
@@ -101,8 +101,12 @@ public record SimCliOptions(
                 json = Path.of(value(arg));
                 return true;
             }
+            if ("--headless".equals(arg)) {
+                headless = true;
+                return true;
+            }
             if ("--ui".equals(arg)) {
-                ui = true;
+                headless = false;
                 return true;
             }
             return false;

@@ -55,7 +55,7 @@ public final class PathfinderSimApp {
         List<SimulationResult> results = suite.run(options);
         String report = SimulationReport.render(results);
         LOGGER.info(() -> System.lineSeparator() + report.stripTrailing());
-        if (options.ui()) {
+        if (!options.headless()) {
             SimulationFrame.show(results);
         }
         if (options.jsonOutput() != null) {
