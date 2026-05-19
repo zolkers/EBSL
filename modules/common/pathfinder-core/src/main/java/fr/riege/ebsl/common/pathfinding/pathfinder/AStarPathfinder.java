@@ -337,6 +337,9 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         final EvaluationContextImpl reusableContext;
         final Node[] bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
         final double[] bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
+        private double rootX;
+        private double rootY;
+        private double rootZ;
         int expandedCount = 0;
 
         PathfindingSession() {
@@ -345,6 +348,9 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         }
 
         void initializeFallback(Node start) {
+            rootX = start.position.x;
+            rootY = start.position.y;
+            rootZ = start.position.z;
             for (int i = 0; i < BEST_PATH_COEFFICIENTS.length; i++) {
                 bestFallbackNodes[i] = start;
                 bestFallbackScores[i] = fallbackScore(start, BEST_PATH_COEFFICIENTS[i]);
@@ -366,10 +372,10 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
 
         Node bestFallback(Node defaultFallback) {
             Node best = defaultFallback;
-            double bestDistance = distanceFromRootSquared(defaultFallback);
+            double bestDistance = distanceFromSessionRootSquared(defaultFallback);
             double minDistanceSquared = MIN_FALLBACK_DISTANCE * MIN_FALLBACK_DISTANCE;
             for (Node candidate : bestFallbackNodes) {
-                double distance = distanceFromRootSquared(candidate);
+                double distance = distanceFromSessionRootSquared(candidate);
                 if (distance >= minDistanceSquared) {
                     return candidate;
                 }
@@ -385,17 +391,13 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
             return node.heuristic + node.gCost() / coefficient;
         }
 
-        private static double distanceFromRootSquared(Node node) {
+        private double distanceFromSessionRootSquared(Node node) {
             if (node == null) {
                 return 0.0;
             }
-            Node root = node;
-            while (root.parent() != null) {
-                root = root.parent();
-            }
-            double dx = node.position.x - root.position.x;
-            double dy = node.position.y - root.position.y;
-            double dz = node.position.z - root.position.z;
+            double dx = node.position.x - rootX;
+            double dy = node.position.y - rootY;
+            double dz = node.position.z - rootZ;
             return dx * dx + dy * dy + dz * dz;
         }
     }

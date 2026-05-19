@@ -57,12 +57,15 @@ final class WalkMovementController {
     private static final double PARKOUR_LANDING_BACK_MARGIN = 0.34;
     private static final double PARKOUR_SHORT_ASCENT_CARRY_SPEED = 0.17;
     private static final double PARKOUR_CHAIN_OVERSHOOT_MARGIN = 0.35;
+    private static final double PARKOUR_TAKEOFF_MAX_LATERAL = 0.34;
+    private static final double PARKOUR_TAKEOFF_SPEED_TOLERANCE = 0.06;
 
     private final IWorldLayer world;
     private final IPlayerLayer player;
     private final IInputLayer input;
     private final MovementTerrain checker;
     private final WorldNavigationPointProvider navigationPointProvider;
+    private final InputApplier.MovementMemory movementMemory = new InputApplier.MovementMemory();
     private List<Node> path;
     private int lastValidatedSegment = -1;
     private int validationTick;
@@ -81,6 +84,7 @@ final class WalkMovementController {
         this.lastValidatedSegment = -1;
         this.validationTick = 0;
         this.lastValidationResult = MovementValidationResult.ok();
+        this.movementMemory.reset();
         this.navigationPointProvider.clearCache();
     }
 
@@ -176,13 +180,14 @@ final class WalkMovementController {
             return;
         }
 
-        PathSteering.SteeringVector steering = PathSteering.steer(checker, path, playerPos, targetWp, pursuitSegment);
-        InputApplier.applyRelativeMovement(
-            player, input, steering.x(), steering.z(),
+        PathSteering.SteeringVector steering = PathSteering.steer(checker, path, player, playerPos, targetWp,
+            pursuitSegment, nearStepUp || isParkourTransitionWindow(pursuitSegment));
+        InputApplier.MovementAxes axes = InputApplier.applyStableRelativeMovement(
+            player, input, movementMemory, steering.x(), steering.z(),
             settings.walkForwardDot.value(),
             settings.walkBackwardDot.value(),
             settings.walkStrafeDot.value());
-        input.setSprintDown(isForwardPressed(steering.x(), steering.z(), settings.walkForwardDot.value())
+        input.setSprintDown(axes.forward()
             && distToFinal > 2.0
             && !nearStepUp
             && (!steering.nearCorner() || !settings.cornerSteeringSlowdown.value()));
@@ -376,6 +381,12 @@ final class WalkMovementController {
             input.setJumpDown(false);
             return;
         }
+        if (waypoint.moveType() == Node.MoveType.PARKOUR
+            && player.onGround()
+            && !isParkourTakeoffReady(waypoint, playerPos, pursuitSegment)) {
+            input.setJumpDown(false);
+            return;
+        }
 
         boolean partialSupportAscent = isPartialSupportWaypoint(waypoint);
         boolean inStairSequence = isInStairSequence(pursuitSegment);
@@ -422,6 +433,23 @@ final class WalkMovementController {
             input.setForwardDown(true);
             input.setSprintDown(false);
         }
+    }
+
+    private boolean isParkourTakeoffReady(Node waypoint, Vec3d playerPos, int pursuitSegment) {
+        ParkourJumpGeometry geometry = parkourJumpGeometry(waypoint, pursuitSegment, playerPos);
+        if (geometry == null || Math.abs(geometry.lateral()) > PARKOUR_TAKEOFF_MAX_LATERAL) {
+            return false;
+        }
+        int distance = parkourDistanceBlocks(waypoint, pursuitSegment);
+        if (geometry.remaining() > parkourJumpTriggerDistance(distance) + 0.20) {
+            return false;
+        }
+        if (distance <= 2) {
+            return true;
+        }
+        Vec3d velocity = player.velocity();
+        double speedAlong = velocity.x() * geometry.dirX() + velocity.z() * geometry.dirZ();
+        return speedAlong >= targetTakeoffSpeed(distance, geometry.verticalDelta()) - PARKOUR_TAKEOFF_SPEED_TOLERANCE;
     }
 
     private boolean isGroundedOnParkourLanding(Node waypoint, Vec3d playerPos, int pursuitSegment) {

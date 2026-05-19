@@ -27,6 +27,8 @@ import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 final class InputApplier {
     private static final double STRAFE_SUPPRESSION_FORWARD_DOT = 0.45;
     private static final double STRAFE_SUPPRESSION_DOT = 0.55;
+    private static final double DOT_SMOOTHING = 0.42;
+    private static final double RELEASE_MARGIN = 0.10;
 
     private InputApplier() {
     }
@@ -40,6 +42,19 @@ final class InputApplier {
                                       double forwardThreshold,
                                       double backwardThreshold,
                                       double strafeThreshold) {
+        applyRelativeMovement(player, input, null, dx, dz, forwardThreshold, backwardThreshold, strafeThreshold);
+    }
+
+    static MovementAxes applyStableRelativeMovement(IPlayerLayer player, IInputLayer input, MovementMemory memory,
+                                                    double dx, double dz, double forwardThreshold,
+                                                    double backwardThreshold, double strafeThreshold) {
+        return applyRelativeMovement(player, input, memory, dx, dz, forwardThreshold, backwardThreshold, strafeThreshold);
+    }
+
+    private static MovementAxes applyRelativeMovement(IPlayerLayer player, IInputLayer input, MovementMemory memory,
+                                                      double dx, double dz, double forwardThreshold,
+                                                      double backwardThreshold,
+                                                      double strafeThreshold) {
         float yawRad = (float) Math.toRadians(player.yaw());
         double forwardX = -Math.sin(yawRad);
         double forwardZ = Math.cos(yawRad);
@@ -48,16 +63,44 @@ final class InputApplier {
 
         double forwardDot = dx * forwardX + dz * forwardZ;
         double strafeDot = dx * rightX + dz * rightZ;
+        if (memory != null) {
+            forwardDot = memory.smoothForward(forwardDot);
+            strafeDot = memory.smoothStrafe(strafeDot);
+        }
 
-        input.setForwardDown(forwardDot > forwardThreshold);
-        input.setBackwardDown(forwardDot < backwardThreshold);
+        boolean forward = shouldHoldPositive(memory == null ? input.forwardDown() : memory.forward,
+            forwardDot, forwardThreshold);
+        boolean backward = shouldHoldNegative(memory == null ? input.backwardDown() : memory.backward,
+            forwardDot, backwardThreshold);
+        if (forward && backward) {
+            backward = false;
+        }
+        input.setForwardDown(forward);
+        input.setBackwardDown(backward);
 
         boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT;
         double effectiveStrafeThreshold = mostlyForward
             ? Math.max(strafeThreshold, STRAFE_SUPPRESSION_DOT)
             : strafeThreshold;
-        input.setRightDown(strafeDot > effectiveStrafeThreshold);
-        input.setLeftDown(strafeDot < -effectiveStrafeThreshold);
+        boolean right = shouldHoldPositive(memory == null ? input.rightDown() : memory.right,
+            strafeDot, effectiveStrafeThreshold);
+        boolean left = shouldHoldNegative(memory == null ? input.leftDown() : memory.left,
+            strafeDot, -effectiveStrafeThreshold);
+        if (right && left) {
+            if (Math.abs(strafeDot) < effectiveStrafeThreshold + RELEASE_MARGIN) {
+                right = false;
+                left = false;
+            } else {
+                left = strafeDot < 0.0;
+                right = !left;
+            }
+        }
+        input.setRightDown(right);
+        input.setLeftDown(left);
+        if (memory != null) {
+            memory.remember(forward, backward, left, right);
+        }
+        return new MovementAxes(forwardDot, strafeDot, forward, backward, left, right);
     }
 
     static void applyGoalCentering(IPlayerLayer player, IInputLayer input, double dx, double dz) {
@@ -98,5 +141,61 @@ final class InputApplier {
         if (wrapped >= 180.0f) wrapped -= 360.0f;
         if (wrapped < -180.0f) wrapped += 360.0f;
         return wrapped;
+    }
+
+    private static boolean shouldHoldPositive(boolean currentlyHeld, double value, double pressThreshold) {
+        double threshold = currentlyHeld ? pressThreshold - RELEASE_MARGIN : pressThreshold;
+        return value > threshold;
+    }
+
+    private static boolean shouldHoldNegative(boolean currentlyHeld, double value, double pressThreshold) {
+        double threshold = currentlyHeld ? pressThreshold + RELEASE_MARGIN : pressThreshold;
+        return value < threshold;
+    }
+
+    static final class MovementMemory {
+        private boolean initialized;
+        private double forwardDot;
+        private double strafeDot;
+        private boolean forward;
+        private boolean backward;
+        private boolean left;
+        private boolean right;
+
+        void reset() {
+            initialized = false;
+            forwardDot = 0.0;
+            strafeDot = 0.0;
+            forward = false;
+            backward = false;
+            left = false;
+            right = false;
+        }
+
+        private double smoothForward(double value) {
+            forwardDot = smooth(forwardDot, value);
+            return forwardDot;
+        }
+
+        private double smoothStrafe(double value) {
+            strafeDot = smooth(strafeDot, value);
+            initialized = true;
+            return strafeDot;
+        }
+
+        private double smooth(double previous, double value) {
+            return initialized ? previous + (value - previous) * DOT_SMOOTHING : value;
+        }
+
+        private void remember(boolean forward, boolean backward, boolean left, boolean right) {
+            this.forward = forward;
+            this.backward = backward;
+            this.left = left;
+            this.right = right;
+        }
+    }
+
+    record MovementAxes(double forwardDot, double strafeDot, boolean forward, boolean backward,
+                        boolean left, boolean right) {
     }
 }
