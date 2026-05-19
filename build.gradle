@@ -97,6 +97,7 @@ def coverageClassExcludes = [
     'fr/riege/ebsl/common/pathfinding/wrapper/**',
     'fr/riege/ebsl/common/platform/**',
     'fr/riege/ebsl/common/world/layer/**',
+    'fr/riege/ebsl/tools/**',
     'fr/riege/ebsl/fabric/**',
     'fr/riege/ebsl/loader/**',
     'fr/riege/ebsl/mc/**'

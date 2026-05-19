@@ -1,0 +1,13 @@
+plugins {
+    id 'application'
+}
+
+apply from: rootProject.file('gradle/java-module.gradle')
+
+dependencies {
+    implementation project(':common:navigation')
+}
+
+application {
+    mainClass = 'fr.riege.ebsl.tools.pathfindersim.PathfinderSimApp'
+}
