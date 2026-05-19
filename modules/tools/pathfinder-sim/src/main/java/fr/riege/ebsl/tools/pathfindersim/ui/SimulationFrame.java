@@ -35,6 +35,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -53,6 +54,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -76,6 +78,7 @@ public final class SimulationFrame extends JFrame {
     private final DefaultListModel<SimulationResult> scenarioModel = new DefaultListModel<>();
     private final DefaultComboBoxModel<SimulationResult> scenarioComboModel = new DefaultComboBoxModel<>();
     private final JComboBox<SimulationResult> scenarioCombo = new JComboBox<>();
+    private final JTextField worldField = new JTextField(22);
     private final JTextField startField = new JTextField(16);
     private final JTextField goalField = new JTextField(12);
     private final JCheckBox isometric = new JCheckBox("3D", true);
@@ -122,6 +125,9 @@ public final class SimulationFrame extends JFrame {
         previousStuck.addActionListener(event -> jumpToStuck(-1));
         JButton nextStuck = new JButton("Next stuck");
         nextStuck.addActionListener(event -> jumpToStuck(1));
+        JButton browseWorld = new JButton("Browse");
+        browseWorld.setEnabled(minecraftOptions != null);
+        browseWorld.addActionListener(event -> browseWorld());
         JButton runRoute = new JButton("Run route");
         runRoute.setEnabled(minecraftOptions != null);
         runRoute.addActionListener(event -> runRoute());
@@ -137,6 +143,9 @@ public final class SimulationFrame extends JFrame {
         panel.add(previousStuck);
         panel.add(nextStuck);
         panel.add(isometric);
+        panel.add(new JLabel("World"));
+        panel.add(worldField);
+        panel.add(browseWorld);
         panel.add(new JLabel("Start"));
         panel.add(startField);
         panel.add(new JLabel("Goal"));
@@ -218,12 +227,23 @@ public final class SimulationFrame extends JFrame {
 
     private void seedRouteFields() {
         if (minecraftOptions == null) {
+            worldField.setEnabled(false);
             startField.setEnabled(false);
             goalField.setEnabled(false);
             return;
         }
+        worldField.setText(minecraftOptions.worldDirectory().toString());
         startField.setText(formatVec(minecraftOptions.start().x(), minecraftOptions.start().y(), minecraftOptions.start().z()));
         goalField.setText(formatVec(minecraftOptions.goalX(), minecraftOptions.goalY(), minecraftOptions.goalZ()));
+    }
+
+    private void browseWorld() {
+        JFileChooser chooser = new JFileChooser(worldField.getText());
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setDialogTitle("Select Minecraft world folder");
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            worldField.setText(chooser.getSelectedFile().toPath().toString());
+        }
     }
 
     private void runRoute() {
@@ -257,7 +277,7 @@ public final class SimulationFrame extends JFrame {
         double[] start = parseStartField();
         int[] goal = parseGoalField();
         return new MinecraftWorldImportOptions(
-            minecraftOptions.worldDirectory(),
+            Path.of(worldField.getText().trim()),
             new Vec3d(start[0], start[1], start[2]),
             true,
             goal[0],
