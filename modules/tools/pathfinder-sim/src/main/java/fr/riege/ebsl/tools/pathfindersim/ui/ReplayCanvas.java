@@ -33,10 +33,11 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -170,11 +171,15 @@ final class ReplayCanvas extends JPanel {
     private void paintTerrain(Graphics2D g, Bounds bounds) {
         for (ReplayBlock block : result.terrain()) {
             g.setColor(blockColor(block.kind()));
-            double x = screenX(bounds, block.x() + 0.5);
-            double y = screenY(bounds, block.z() + 0.5);
-            double size = Math.clamp(blockSize(bounds), 3.0, 18.0);
-            g.fillRect((int) Math.round(x - size / 2.0), (int) Math.round(y - size / 2.0),
-                (int) Math.round(size), (int) Math.round(size));
+            double left = screenX(bounds, block.x());
+            double right = screenX(bounds, block.x() + 1.0);
+            double top = screenY(bounds, block.z() + 1.0);
+            double bottom = screenY(bounds, block.z());
+            double x = Math.floor(Math.min(left, right));
+            double y = Math.floor(Math.min(top, bottom));
+            double width = Math.ceil(Math.max(left, right)) - x + 1.0;
+            double height = Math.ceil(Math.max(top, bottom)) - y + 1.0;
+            g.fill(new Rectangle2D.Double(x, y, width, height));
         }
     }
 
@@ -188,31 +193,49 @@ final class ReplayCanvas extends JPanel {
     }
 
     private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
-        double[] center = isoPoint(bounds, block.x() + 0.5, block.y(), block.z() + 0.5);
-        int size = (int) Math.clamp(isoScale(bounds) * viewZoom * 0.72, 5.0, 28.0);
-        int half = Math.max(3, size / 2);
-        int height = Math.max(4, (int) (size * 0.55));
-        int x = (int) Math.round(center[0]);
-        int y = (int) Math.round(center[1]);
-        Polygon top = new Polygon(
-            new int[] { x, x + half, x, x - half },
-            new int[] { y - half, y, y + half, y },
-            4);
-        Polygon left = new Polygon(
-            new int[] { x - half, x, x, x - half },
-            new int[] { y, y + half, y + half + height, y + height },
-            4);
-        Polygon right = new Polygon(
-            new int[] { x + half, x, x, x + half },
-            new int[] { y, y + half, y + half + height, y + height },
-            4);
         Color base = blockColor(block.kind());
-        g.setColor(base.darker());
-        g.fill(left);
-        g.setColor(base.darker().darker());
-        g.fill(right);
-        g.setColor(base);
-        g.fill(top);
+        Path2D.Double top = isoFace(bounds, block, 1.0, Face.TOP);
+        Path2D.Double left = isoFace(bounds, block, 0.0, Face.LEFT);
+        Path2D.Double right = isoFace(bounds, block, 0.0, Face.RIGHT);
+        fillFace(g, left, base.darker());
+        fillFace(g, right, base.darker().darker());
+        fillFace(g, top, base);
+    }
+
+    private Path2D.Double isoFace(Bounds bounds, ReplayBlock block, double yOffset, Face face) {
+        return switch (face) {
+            case TOP -> polygon(
+                isoPoint(bounds, block.x(), block.y() + yOffset, block.z()),
+                isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z()),
+                isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z() + 1.0),
+                isoPoint(bounds, block.x(), block.y() + yOffset, block.z() + 1.0));
+            case LEFT -> polygon(
+                isoPoint(bounds, block.x(), block.y() + 1.0, block.z()),
+                isoPoint(bounds, block.x(), block.y() + 1.0, block.z() + 1.0),
+                isoPoint(bounds, block.x(), block.y(), block.z() + 1.0),
+                isoPoint(bounds, block.x(), block.y(), block.z()));
+            case RIGHT -> polygon(
+                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z()),
+                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z() + 1.0),
+                isoPoint(bounds, block.x() + 1.0, block.y(), block.z() + 1.0),
+                isoPoint(bounds, block.x() + 1.0, block.y(), block.z()));
+        };
+    }
+
+    private static Path2D.Double polygon(double[] first, double[] second, double[] third, double[] fourth) {
+        Path2D.Double path = new Path2D.Double();
+        path.moveTo(first[0], first[1]);
+        path.lineTo(second[0], second[1]);
+        path.lineTo(third[0], third[1]);
+        path.lineTo(fourth[0], fourth[1]);
+        path.closePath();
+        return path;
+    }
+
+    private static void fillFace(Graphics2D g, Path2D.Double face, Color color) {
+        g.setColor(color);
+        g.fill(face);
+        g.draw(face);
     }
 
     private void paintHud(Graphics2D g, SimulationTick tick) {
@@ -269,11 +292,6 @@ final class ReplayCanvas extends JPanel {
     private double screenY(Bounds bounds, double z) {
         double span = Math.max(1.0, bounds.maxZ() - bounds.minZ());
         return transformY(getHeight() - 48.0 - (z - bounds.minZ()) / span * (getHeight() - 96.0));
-    }
-
-    private double blockSize(Bounds bounds) {
-        double span = Math.max(1.0, bounds.maxX() - bounds.minX());
-        return (getWidth() - 96.0) / span * viewZoom;
     }
 
     private double[] isoPoint(Bounds bounds, double x, double y, double z) {
@@ -364,5 +382,11 @@ final class ReplayCanvas extends JPanel {
 
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private enum Face {
+        TOP,
+        LEFT,
+        RIGHT
     }
 }
