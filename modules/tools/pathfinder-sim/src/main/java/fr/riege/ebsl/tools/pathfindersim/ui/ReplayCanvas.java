@@ -32,10 +32,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.List;
 import java.util.Locale;
 
@@ -51,18 +55,30 @@ final class ReplayCanvas extends JPanel {
     private static final Color STUCK = new Color(255, 96, 96);
     private static final Color PLAYER = new Color(115, 230, 145);
     private static final Color TEXT = new Color(226, 232, 240);
+    private static final double MIN_ZOOM = 0.35;
+    private static final double MAX_ZOOM = 6.0;
+    private static final double WHEEL_ZOOM_FACTOR = 1.12;
 
     private transient SimulationResult result;
+    private transient Point lastDrag;
     private int frame;
     private boolean isometric = true;
+    private double viewZoom = 1.0;
+    private double panX;
+    private double panY;
 
     ReplayCanvas() {
         setBackground(BACKGROUND);
+        CameraMouseHandler camera = new CameraMouseHandler();
+        addMouseListener(camera);
+        addMouseMotionListener(camera);
+        addMouseWheelListener(camera);
     }
 
     void setResult(SimulationResult result) {
         this.result = result;
         this.frame = 0;
+        resetCamera();
         repaint();
     }
 
@@ -73,6 +89,14 @@ final class ReplayCanvas extends JPanel {
 
     void setIsometric(boolean isometric) {
         this.isometric = isometric;
+        repaint();
+    }
+
+    void resetCamera() {
+        viewZoom = 1.0;
+        panX = 0.0;
+        panY = 0.0;
+        lastDrag = null;
         repaint();
     }
 
@@ -148,7 +172,7 @@ final class ReplayCanvas extends JPanel {
             g.setColor(blockColor(block.kind()));
             double x = screenX(bounds, block.x() + 0.5);
             double y = screenY(bounds, block.z() + 0.5);
-            double size = Math.max(3.0, Math.min(14.0, blockSize(bounds)));
+            double size = Math.max(3.0, Math.min(18.0, blockSize(bounds)));
             g.fillRect((int) Math.round(x - size / 2.0), (int) Math.round(y - size / 2.0),
                 (int) Math.round(size), (int) Math.round(size));
         }
@@ -165,7 +189,7 @@ final class ReplayCanvas extends JPanel {
 
     private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
         double[] center = isoPoint(bounds, block.x() + 0.5, block.y(), block.z() + 0.5);
-        int size = (int) Math.max(5.0, Math.min(16.0, isoScale(bounds) * 0.72));
+        int size = (int) Math.max(5.0, Math.min(28.0, isoScale(bounds) * viewZoom * 0.72));
         int half = Math.max(3, size / 2);
         int height = Math.max(4, (int) (size * 0.55));
         int x = (int) Math.round(center[0]);
@@ -239,17 +263,17 @@ final class ReplayCanvas extends JPanel {
 
     private double screenX(Bounds bounds, double x) {
         double span = Math.max(1.0, bounds.maxX() - bounds.minX());
-        return 48.0 + (x - bounds.minX()) / span * (getWidth() - 96.0);
+        return transformX(48.0 + (x - bounds.minX()) / span * (getWidth() - 96.0));
     }
 
     private double screenY(Bounds bounds, double z) {
         double span = Math.max(1.0, bounds.maxZ() - bounds.minZ());
-        return getHeight() - 48.0 - (z - bounds.minZ()) / span * (getHeight() - 96.0);
+        return transformY(getHeight() - 48.0 - (z - bounds.minZ()) / span * (getHeight() - 96.0));
     }
 
     private double blockSize(Bounds bounds) {
         double span = Math.max(1.0, bounds.maxX() - bounds.minX());
-        return (getWidth() - 96.0) / span;
+        return (getWidth() - 96.0) / span * viewZoom;
     }
 
     private double[] isoPoint(Bounds bounds, double x, double y, double z) {
@@ -262,12 +286,71 @@ final class ReplayCanvas extends JPanel {
         double groundY = (localX + localZ) * scale * 0.5 + getHeight() * 0.58;
         double minY = result.terrain().stream().mapToInt(ReplayBlock::y).min().orElse((int) Math.floor(y));
         double isoY = groundY - (y - minY) * scale * 0.8;
-        return new double[] { isoX, isoY };
+        return new double[] { transformX(isoX), transformY(isoY) };
     }
 
     private double isoScale(Bounds bounds) {
         double span = Math.max(1.0, Math.max(bounds.maxX() - bounds.minX(), bounds.maxZ() - bounds.minZ()));
         return Math.max(5.0, Math.min(22.0, Math.min(getWidth(), getHeight()) / (span * 1.55)));
+    }
+
+    private double transformX(double value) {
+        return value * viewZoom + panX;
+    }
+
+    private double transformY(double value) {
+        return value * viewZoom + panY;
+    }
+
+    private final class CameraMouseHandler extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent event) {
+            lastDrag = event.getPoint();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent event) {
+            lastDrag = null;
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent event) {
+            if (event.getClickCount() >= 2) {
+                resetCamera();
+            }
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent event) {
+            if (lastDrag == null) {
+                lastDrag = event.getPoint();
+                return;
+            }
+            Point point = event.getPoint();
+            panX += point.x - lastDrag.x;
+            panY += point.y - lastDrag.y;
+            lastDrag = point;
+            repaint();
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent event) {
+            zoomAt(event.getPoint(), event.getWheelRotation());
+        }
+
+        private void zoomAt(Point point, int wheelRotation) {
+            double oldZoom = viewZoom;
+            double factor = Math.pow(WHEEL_ZOOM_FACTOR, -wheelRotation);
+            double newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * factor));
+            if (Double.compare(oldZoom, newZoom) == 0) {
+                return;
+            }
+            double ratio = newZoom / oldZoom;
+            panX = point.x - (point.x - panX) * ratio;
+            panY = point.y - (point.y - panY) * ratio;
+            viewZoom = newZoom;
+            repaint();
+        }
     }
 
     private static Color blockColor(String kind) {

@@ -130,6 +130,8 @@ public final class SimulationFrame extends JFrame {
         previousStuck.addActionListener(event -> jumpToStuck(-1));
         JButton nextStuck = new JButton("Next stuck");
         nextStuck.addActionListener(event -> jumpToStuck(1));
+        JButton resetView = new JButton("View");
+        resetView.addActionListener(event -> canvas.resetCamera());
         JButton browseWorld = new JButton("Browse");
         browseWorld.addActionListener(event -> browseWorld());
         JButton runRoute = new JButton("Run route");
@@ -146,6 +148,7 @@ public final class SimulationFrame extends JFrame {
         replayRow.add(reset);
         replayRow.add(previousStuck);
         replayRow.add(nextStuck);
+        replayRow.add(resetView);
         replayRow.add(isometric);
         replayRow.add(new JLabel("Speed"));
         replayRow.add(speed);
