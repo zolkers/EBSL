@@ -21,6 +21,8 @@
 
 package fr.riege.ebsl.common.feature.terminal.goal;
 
+import fr.riege.ebsl.common.pathfinding.goal.GoalContext;
+import fr.riege.ebsl.common.pathfinding.goal.GoalParameterSpec;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 
 public record GoalParameter(String id, String label, DefaultProvider defaultProvider) {
@@ -51,6 +53,10 @@ public record GoalParameter(String id, String label, DefaultProvider defaultProv
         return new GoalParameter(id, label, player -> value);
     }
 
+    public static GoalParameter from(GoalParameterSpec spec) {
+        return new GoalParameter(spec.id(), spec.label(), player -> spec.defaultValue(context(player)));
+    }
+
     public static GoalParameter currentX() {
         return new GoalParameter("x", "X", p -> (int) Math.floor(p.position().x()));
     }
@@ -61,5 +67,15 @@ public record GoalParameter(String id, String label, DefaultProvider defaultProv
 
     public static GoalParameter currentZ() {
         return new GoalParameter("z", "Z", p -> (int) Math.floor(p.position().z()));
+    }
+
+    private static GoalContext context(IPlayerLayer player) {
+        if (player == null) {
+            return new GoalContext(0, 0, 0);
+        }
+        return new GoalContext(
+            (int) Math.floor(player.position().x()),
+            (int) Math.floor(player.position().y()),
+            (int) Math.floor(player.position().z()));
     }
 }

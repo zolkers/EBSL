@@ -283,7 +283,7 @@ public final class SimulationFrame extends JFrame {
         double[] start = parseStartField();
         SimulationGoalInput selectedGoalType = (SimulationGoalInput) goalType.getSelectedItem();
         if (selectedGoalType == null) {
-            selectedGoalType = SimulationGoalInput.BLOCK;
+            selectedGoalType = SimulationGoalInput.fallback();
         }
         return selectedGoalType.toOptions(
             goalField.getText(),

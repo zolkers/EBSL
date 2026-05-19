@@ -22,54 +22,55 @@
 package fr.riege.ebsl.tools.pathfindersim.ui;
 
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.pathfinding.goal.Goal;
-import fr.riege.ebsl.common.pathfinding.goal.GoalAxisX;
-import fr.riege.ebsl.common.pathfinding.goal.GoalAxisZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
-import fr.riege.ebsl.common.pathfinding.goal.GoalChunk;
-import fr.riege.ebsl.common.pathfinding.goal.GoalColumn;
-import fr.riege.ebsl.common.pathfinding.goal.GoalGetToBlock;
-import fr.riege.ebsl.common.pathfinding.goal.GoalNear;
-import fr.riege.ebsl.common.pathfinding.goal.GoalRectangleXZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalXZ;
-import fr.riege.ebsl.common.pathfinding.goal.GoalYLevel;
+import fr.riege.ebsl.common.pathfinding.goal.GoalCatalog;
+import fr.riege.ebsl.common.pathfinding.goal.GoalContext;
+import fr.riege.ebsl.common.pathfinding.goal.GoalDefinition;
+import fr.riege.ebsl.common.pathfinding.goal.GoalParameterSpec;
+import fr.riege.ebsl.common.pathfinding.goal.NavigationModeType;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
 
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-enum SimulationGoalInput {
-    BLOCK("Block", "x,y,z"),
-    NEAR("Near", "x,y,z,radius"),
-    GET_TO_BLOCK("Get To", "x,y,z"),
-    XZ("XZ", "x,z"),
-    COLUMN("Column", "x,z,radius"),
-    CHUNK("Chunk", "chunkX,chunkZ"),
-    AXIS_X("Axis X", "x"),
-    AXIS_Z("Axis Z", "z"),
-    Y_LEVEL("Y Level", "y"),
-    RECTANGLE("Rectangle", "minX,minZ,maxX,maxZ"),
-    OFFSET("Offset", "dx,dy,dz");
+final class SimulationGoalInput {
+    private final GoalDefinition definition;
 
-    private final String label;
-    private final String hint;
+    private SimulationGoalInput(GoalDefinition definition) {
+        this.definition = definition;
+    }
 
-    SimulationGoalInput(String label, String hint) {
-        this.label = label;
-        this.hint = hint;
+    static SimulationGoalInput[] values() {
+        return GoalCatalog.all().stream()
+            .filter(definition -> definition.mode() == NavigationModeType.WALK)
+            .map(SimulationGoalInput::new)
+            .toArray(SimulationGoalInput[]::new);
+    }
+
+    static SimulationGoalInput fallback() {
+        return Arrays.stream(values())
+            .filter(input -> GoalCatalog.WALK.equals(input.definition.id()))
+            .findFirst()
+            .orElseGet(() -> values()[0]);
     }
 
     String hint() {
-        return hint;
+        return definition.parameters().stream()
+            .map(GoalParameterSpec::id)
+            .reduce((left, right) -> left + ',' + right)
+            .orElse("");
     }
 
     MinecraftWorldImportOptions toOptions(String input,
                                           Vec3d start,
                                           Path worldDirectory,
                                           MinecraftWorldImportOptions baseOptions) {
-        Goal goal = toGoal(input, start);
-        NavigationTarget target = goal.resolve(floor(start.x()), floor(start.y()), floor(start.z()));
-        int[] block = switchTarget(target, floor(start.y()));
+        int startY = floor(start.y());
+        GoalContext context = new GoalContext(floor(start.x()), startY, floor(start.z()));
+        NavigationTarget target = definition.create(values(input), context).resolve(context.x(), context.y(), context.z());
+        int[] block = switchTarget(target, startY);
         return new MinecraftWorldImportOptions(
             worldDirectory,
             start,
@@ -83,36 +84,16 @@ enum SimulationGoalInput {
             baseOptions.diagnostics());
     }
 
-    private Goal toGoal(String input, Vec3d start) {
+    private Map<String, Integer> values(String input) {
         String[] parts = input.split(",");
-        return switch (this) {
-            case BLOCK -> new GoalBlock(integer(parts, 0), integer(parts, 1), integer(parts, 2));
-            case NEAR -> new GoalNear(integer(parts, 0), integer(parts, 1), integer(parts, 2), decimal(parts, 3));
-            case GET_TO_BLOCK -> new GoalGetToBlock(integer(parts, 0), integer(parts, 1), integer(parts, 2));
-            case XZ -> new GoalXZ(integer(parts, 0), integer(parts, 1));
-            case COLUMN -> new GoalColumn(integer(parts, 0), integer(parts, 1), decimal(parts, 2));
-            case CHUNK -> new GoalChunk(integer(parts, 0), integer(parts, 1));
-            case AXIS_X -> new GoalAxisX(integer(parts, 0));
-            case AXIS_Z -> new GoalAxisZ(integer(parts, 0));
-            case Y_LEVEL -> new GoalYLevel(integer(parts, 0));
-            case RECTANGLE -> rectangle(parts);
-            case OFFSET -> offset(parts, start);
-        };
-    }
-
-    private static Goal rectangle(String[] parts) {
-        int x1 = integer(parts, 0);
-        int z1 = integer(parts, 1);
-        int x2 = integer(parts, 2);
-        int z2 = integer(parts, 3);
-        return new GoalRectangleXZ(Math.min(x1, x2), Math.min(z1, z2), Math.max(x1, x2), Math.max(z1, z2));
-    }
-
-    private static Goal offset(String[] parts, Vec3d start) {
-        int x = floor(start.x()) + integer(parts, 0);
-        int y = floor(start.y()) + integer(parts, 1);
-        int z = floor(start.z()) + integer(parts, 2);
-        return new GoalBlock(x, y, z);
+        if (parts.length != definition.parameters().size()) {
+            throw new IllegalArgumentException("Expected goal input: " + hint());
+        }
+        Map<String, Integer> parsed = new LinkedHashMap<>();
+        for (int i = 0; i < definition.parameters().size(); i++) {
+            parsed.put(definition.parameters().get(i).id(), integer(parts[i], definition.parameters().get(i).id()));
+        }
+        return parsed;
     }
 
     private static int[] switchTarget(NavigationTarget target, int fallbackY) {
@@ -125,19 +106,11 @@ enum SimulationGoalInput {
         throw new IllegalArgumentException("Unsupported navigation target: " + target);
     }
 
-    private static int integer(String[] parts, int index) {
+    private static int integer(String value, String parameter) {
         try {
-            return Integer.parseInt(parts[index].trim());
-        } catch (ArrayIndexOutOfBoundsException | NumberFormatException exception) {
-            throw new IllegalArgumentException("Expected integer input at index " + index, exception);
-        }
-    }
-
-    private static double decimal(String[] parts, int index) {
-        try {
-            return Double.parseDouble(parts[index].trim());
-        } catch (ArrayIndexOutOfBoundsException | NumberFormatException exception) {
-            throw new IllegalArgumentException("Expected decimal input at index " + index, exception);
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Invalid integer for " + parameter + ": " + value, exception);
         }
     }
 
@@ -147,6 +120,6 @@ enum SimulationGoalInput {
 
     @Override
     public String toString() {
-        return label;
+        return definition.label();
     }
 }
