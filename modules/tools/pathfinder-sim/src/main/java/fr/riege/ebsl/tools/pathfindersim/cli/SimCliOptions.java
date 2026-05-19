@@ -41,27 +41,71 @@ public record SimCliOptions(
     private static final double DEFAULT_STUCK_EPSILON = 0.015;
 
     public static SimCliOptions parse(String[] args) {
-        String scenario = "all";
-        int maxTicks = DEFAULT_MAX_TICKS;
-        int stuckWindow = DEFAULT_STUCK_WINDOW;
-        double stuckEpsilon = DEFAULT_STUCK_EPSILON;
-        Path json = null;
-        boolean ui = false;
-        MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
+        ParseState state = new ParseState();
         for (String arg : args == null ? new String[0] : args) {
+            state.apply(arg);
+        }
+        return new SimCliOptions(
+            state.scenario.toLowerCase(Locale.ROOT),
+            state.maxTicks,
+            state.stuckWindow,
+            state.stuckEpsilon,
+            state.json,
+            state.ui,
+            state.minecraftWorld.buildOrNull());
+    }
+
+    public boolean accepts(SimulationScenario scenario) {
+        return "all".equals(scenarioFilter)
+            || scenario.id().toLowerCase(Locale.ROOT).contains(scenarioFilter);
+    }
+
+    private static final class ParseState {
+        private String scenario = "all";
+        private int maxTicks = DEFAULT_MAX_TICKS;
+        private int stuckWindow = DEFAULT_STUCK_WINDOW;
+        private double stuckEpsilon = DEFAULT_STUCK_EPSILON;
+        private Path json;
+        private boolean ui;
+        private final MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
+
+        void apply(String arg) {
+            if (applyCore(arg)) {
+                return;
+            }
+            applyMinecraft(arg);
+        }
+
+        private boolean applyCore(String arg) {
             if (arg.startsWith("--scenario=")) {
                 scenario = value(arg);
-            } else if (arg.startsWith("--max-ticks=")) {
+                return true;
+            }
+            if (arg.startsWith("--max-ticks=")) {
                 maxTicks = parsePositiveInt(value(arg), DEFAULT_MAX_TICKS);
-            } else if (arg.startsWith("--stuck-window=")) {
+                return true;
+            }
+            if (arg.startsWith("--stuck-window=")) {
                 stuckWindow = parsePositiveInt(value(arg), DEFAULT_STUCK_WINDOW);
-            } else if (arg.startsWith("--stuck-epsilon=")) {
+                return true;
+            }
+            if (arg.startsWith("--stuck-epsilon=")) {
                 stuckEpsilon = parsePositiveDouble(value(arg), DEFAULT_STUCK_EPSILON);
-            } else if (arg.startsWith("--json=")) {
+                return true;
+            }
+            if (arg.startsWith("--json=")) {
                 json = Path.of(value(arg));
-            } else if ("--ui".equals(arg)) {
+                return true;
+            }
+            if ("--ui".equals(arg)) {
                 ui = true;
-            } else if (arg.startsWith("--mc-world=")) {
+                return true;
+            }
+            return false;
+        }
+
+        private void applyMinecraft(String arg) {
+            if (arg.startsWith("--mc-world=")) {
                 minecraftWorld.worldDirectory(Path.of(value(arg)));
             } else if (arg.startsWith("--mc-start=")) {
                 minecraftWorld.start(parseVec(value(arg), 0.5, 64.0, 0.5));
@@ -77,71 +121,58 @@ public record SimCliOptions(
                 minecraftWorld.diagnostics(true);
             }
         }
-        return new SimCliOptions(
-            scenario.toLowerCase(Locale.ROOT),
-            maxTicks,
-            stuckWindow,
-            stuckEpsilon,
-            json,
-            ui,
-            minecraftWorld.buildOrNull());
-    }
 
-    public boolean accepts(SimulationScenario scenario) {
-        return "all".equals(scenarioFilter)
-            || scenario.id().toLowerCase(Locale.ROOT).contains(scenarioFilter);
-    }
-
-    private static String value(String arg) {
-        int equals = arg.indexOf('=');
-        return equals < 0 ? "" : arg.substring(equals + 1).trim();
-    }
-
-    private static int parsePositiveInt(String value, int fallback) {
-        try {
-            return Math.max(1, Integer.parseInt(value));
-        } catch (NumberFormatException ignored) {
-            return fallback;
+        private static String value(String arg) {
+            int equals = arg.indexOf('=');
+            return equals < 0 ? "" : arg.substring(equals + 1).trim();
         }
-    }
 
-    private static double parsePositiveDouble(String value, double fallback) {
-        try {
-            return Math.max(0.0, Double.parseDouble(value));
-        } catch (NumberFormatException ignored) {
-            return fallback;
+        private static int parsePositiveInt(String value, int fallback) {
+            try {
+                return Math.max(1, Integer.parseInt(value));
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
         }
-    }
 
-    private static double[] parseVec(String value, double fallbackX, double fallbackY, double fallbackZ) {
-        String[] parts = value.split(",");
-        if (parts.length != 3) {
-            return new double[] { fallbackX, fallbackY, fallbackZ };
+        private static double parsePositiveDouble(String value, double fallback) {
+            try {
+                return Math.max(0.0, Double.parseDouble(value));
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
         }
-        try {
-            return new double[] {
-                Double.parseDouble(parts[0].trim()),
-                Double.parseDouble(parts[1].trim()),
-                Double.parseDouble(parts[2].trim())
-            };
-        } catch (NumberFormatException ignored) {
-            return new double[] { fallbackX, fallbackY, fallbackZ };
-        }
-    }
 
-    private static int[] parseBlock(String value, int fallbackX, int fallbackY, int fallbackZ) {
-        String[] parts = value.split(",");
-        if (parts.length != 3) {
-            return new int[] { fallbackX, fallbackY, fallbackZ };
+        private static double[] parseVec(String value, double fallbackX, double fallbackY, double fallbackZ) {
+            String[] parts = value.split(",");
+            if (parts.length != 3) {
+                return new double[] { fallbackX, fallbackY, fallbackZ };
+            }
+            try {
+                return new double[] {
+                    Double.parseDouble(parts[0].trim()),
+                    Double.parseDouble(parts[1].trim()),
+                    Double.parseDouble(parts[2].trim())
+                };
+            } catch (NumberFormatException ignored) {
+                return new double[] { fallbackX, fallbackY, fallbackZ };
+            }
         }
-        try {
-            return new int[] {
-                Integer.parseInt(parts[0].trim()),
-                Integer.parseInt(parts[1].trim()),
-                Integer.parseInt(parts[2].trim())
-            };
-        } catch (NumberFormatException ignored) {
-            return new int[] { fallbackX, fallbackY, fallbackZ };
+
+        private static int[] parseBlock(String value, int fallbackX, int fallbackY, int fallbackZ) {
+            String[] parts = value.split(",");
+            if (parts.length != 3) {
+                return new int[] { fallbackX, fallbackY, fallbackZ };
+            }
+            try {
+                return new int[] {
+                    Integer.parseInt(parts[0].trim()),
+                    Integer.parseInt(parts[1].trim()),
+                    Integer.parseInt(parts[2].trim())
+                };
+            } catch (NumberFormatException ignored) {
+                return new int[] { fallbackX, fallbackY, fallbackZ };
+            }
         }
     }
 }

@@ -83,7 +83,7 @@ public final class AnvilWorldLoader {
                                           HeadlessWorldLayer world,
                                           MinecraftImportStats.Builder stats) {
         Object sectionsValue = chunk.get("sections");
-        if (!(sectionsValue instanceof List<?> sections)) {
+        if (!(sectionsValue instanceof List<?>)) {
             Object level = chunk.get("Level");
             if (level instanceof Map<?, ?> levelMap) {
                 sectionsValue = ((Map<String, Object>) levelMap).get("Sections");
@@ -107,7 +107,7 @@ public final class AnvilWorldLoader {
                                     HeadlessWorldLayer world,
                                     MinecraftImportStats.Builder stats) {
         Object blockStatesValue = section.get("block_states");
-        if (!(blockStatesValue instanceof Map<?, ?> blockStates)) {
+        if (!(blockStatesValue instanceof Map<?, ?>)) {
             blockStatesValue = section.get("BlockStates");
         }
         if (!(blockStatesValue instanceof Map<?, ?> blockStates)) {
@@ -130,23 +130,41 @@ public final class AnvilWorldLoader {
         int baseZ = chunkZ * 16;
         int baseY = sectionY * 16;
         for (int index = 0; index < 4096; index++) {
-            int paletteIndex = paletteIndex(index, bits, valuesPerLong, data);
-            if (paletteIndex < 0 || paletteIndex >= names.size()) {
-                continue;
+            Optional<HeadlessBlockState> state = blockState(index, bits, valuesPerLong, data, names);
+            if (state.isPresent()) {
+                importBlock(world, stats, baseX, baseY, baseZ, index, state.get());
             }
-            HeadlessBlockState state = MinecraftBlockMapper.map(names.get(paletteIndex));
-            if (state.isAir()) {
-                continue;
-            }
-            int x = index & 15;
-            int z = (index >> 4) & 15;
-            int y = (index >> 8) & 15;
-            int worldX = baseX + x;
-            int worldY = baseY + y;
-            int worldZ = baseZ + z;
-            world.set(worldX, worldY, worldZ, state);
-            stats.importedBlock(worldX, worldY, worldZ);
         }
+    }
+
+    private static Optional<HeadlessBlockState> blockState(int index,
+                                                           int bits,
+                                                           int valuesPerLong,
+                                                           long[] data,
+                                                           List<String> names) {
+        int paletteIndex = paletteIndex(index, bits, valuesPerLong, data);
+        if (paletteIndex < 0 || paletteIndex >= names.size()) {
+            return Optional.empty();
+        }
+        HeadlessBlockState state = MinecraftBlockMapper.map(names.get(paletteIndex));
+        return state.isAir() ? Optional.empty() : Optional.of(state);
+    }
+
+    private static void importBlock(HeadlessWorldLayer world,
+                                    MinecraftImportStats.Builder stats,
+                                    int baseX,
+                                    int baseY,
+                                    int baseZ,
+                                    int index,
+                                    HeadlessBlockState state) {
+        int x = index & 15;
+        int z = (index >> 4) & 15;
+        int y = (index >> 8) & 15;
+        int worldX = baseX + x;
+        int worldY = baseY + y;
+        int worldZ = baseZ + z;
+        world.set(worldX, worldY, worldZ, state);
+        stats.importedBlock(worldX, worldY, worldZ);
     }
 
     @SuppressWarnings("unchecked")

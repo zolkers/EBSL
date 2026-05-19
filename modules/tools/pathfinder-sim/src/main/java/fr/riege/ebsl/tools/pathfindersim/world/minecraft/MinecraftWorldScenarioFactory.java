@@ -276,9 +276,9 @@ public final class MinecraftWorldScenarioFactory {
     }
 
     private static double squaredDistance(int ax, int ay, int az, int bx, int by, int bz) {
-        double dx = ax - bx;
-        double dy = ay - by;
-        double dz = az - bz;
+        double dx = (double) ax - bx;
+        double dy = (double) ay - by;
+        double dz = (double) az - bz;
         return dx * dx + dy * dy + dz * dz;
     }
 

@@ -73,7 +73,9 @@ final class WalkPathProcessorTest {
         private static final IWorldLayer WORLD = new ClimbWorld();
 
         @Override public IWorldLayer world() { return WORLD; }
-        @Override public void clearCache() {}
+        @Override public void clearCache() {
+            // Test terrain is stateless.
+        }
         @Override public boolean isWalkable(int x, int y, int z) { return y >= 64; }
         @Override public boolean isPassable(int x, int y, int z) { return true; }
         @Override public boolean isAir(int x, int y, int z) { return y >= 64; }

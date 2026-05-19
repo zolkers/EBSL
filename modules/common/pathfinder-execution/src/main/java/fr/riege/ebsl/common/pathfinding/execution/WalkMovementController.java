@@ -185,10 +185,15 @@ final class WalkMovementController {
         PathSteering.SteeringVector steering = PathSteering.steer(checker, path, player, playerPos, targetWp,
             pursuitSegment, nearStepUp || isParkourTransitionWindow(pursuitSegment));
         InputApplier.MovementAxes axes = InputApplier.applyStableRelativeMovement(
-            player, input, movementMemory, steering.x(), steering.z(),
-            settings.walkForwardDot.value(),
-            settings.walkBackwardDot.value(),
-            settings.walkStrafeDot.value());
+            player,
+            input,
+            movementMemory,
+            new InputApplier.MovementIntent(
+                steering.x(),
+                steering.z(),
+                settings.walkForwardDot.value(),
+                settings.walkBackwardDot.value(),
+                settings.walkStrafeDot.value()));
         input.setSprintDown(axes.forward()
             && distToFinal > 2.0
             && !nearStepUp
@@ -627,13 +632,6 @@ final class WalkMovementController {
         return waypoint.moveType() == Node.MoveType.SWIM
             && checker.isWater(x, y - 1, z)
             && pos.y() - y <= WATER_ENTRY_SURFACE_DROP;
-    }
-
-    private boolean isForwardPressed(double dx, double dz, double forwardDot) {
-        float yawRad = (float) Math.toRadians(player.yaw());
-        double forwardX = -Math.sin(yawRad);
-        double forwardZ = Math.cos(yawRad);
-        return dx * forwardX + dz * forwardZ > forwardDot;
     }
 
     private void applyParkourAxisInput(double dirX, double dirZ, boolean forward) {

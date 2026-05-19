@@ -23,15 +23,10 @@ package fr.riege.ebsl.common.feature.scripting.manager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 final class EbslGraphScriptLinks {
     private static final String HEADER = "# Graph links";
     private static final String DIRECTIVE = "# @link ";
-    private static final Pattern LINK_PATTERN = Pattern.compile(
-        "^#\\s*@link\\s+(\\d+)\\s*->\\s*(\\d+)(?:\\s+mode=([a-zA-Z_-]+))?(?:\\s+label=\"((?:\\\\.|[^\"])*)\")?\\s*$"
-    );
 
     private EbslGraphScriptLinks() {
     }
@@ -40,20 +35,26 @@ final class EbslGraphScriptLinks {
         String normalized = EbslScriptManager.normalizeFileName(fileName);
         List<EbslGraphConnection> connections = new ArrayList<>();
         for (String line : (source == null ? "" : source).split("\\R")) {
-            Matcher matcher = LINK_PATTERN.matcher(line.trim());
-            if (!matcher.matches()) {
-                continue;
+            LinkDirective directive = parseDirective(line);
+            if (directive != null) {
+                addConnection(connections, normalized, directive);
             }
-            String from = normalized + ":" + matcher.group(1);
-            String to = normalized + ":" + matcher.group(2);
-            if (from.equals(to)) {
-                continue;
-            }
-            EbslGraphConnectionMode mode = EbslGraphConnectionMode.byId(matcher.group(3));
-            String label = unescape(matcher.group(4));
-            connections.add(new EbslGraphConnection(from, to, mode, label));
         }
         return connections;
+    }
+
+    private static void addConnection(List<EbslGraphConnection> connections,
+                                      String normalizedFileName,
+                                      LinkDirective directive) {
+        String from = normalizedFileName + ":" + directive.fromLine();
+        String to = normalizedFileName + ":" + directive.toLine();
+        if (!from.equals(to)) {
+            connections.add(new EbslGraphConnection(
+                from,
+                to,
+                EbslGraphConnectionMode.byId(directive.mode()),
+                unescape(directive.label())));
+        }
     }
 
     static String sync(String fileName, String source, List<EbslGraphConnection> connections) {
@@ -90,12 +91,80 @@ final class EbslGraphScriptLinks {
         List<String> kept = new ArrayList<>();
         for (String line : source.split("\\R", -1)) {
             String trimmed = line.trim();
-            if (trimmed.equals(HEADER) || trimmed.startsWith(DIRECTIVE)) {
-                continue;
+            if (!trimmed.equals(HEADER) && !trimmed.startsWith(DIRECTIVE)) {
+                kept.add(line);
             }
-            kept.add(line);
         }
         return String.join("\n", kept).stripTrailing();
+    }
+
+    private static LinkDirective parseDirective(String line) {
+        String trimmed = line == null ? "" : line.trim();
+        if (!trimmed.startsWith(DIRECTIVE)) {
+            return null;
+        }
+        String rest = trimmed.substring(DIRECTIVE.length()).trim();
+        int arrow = rest.indexOf("->");
+        if (arrow < 0) {
+            return null;
+        }
+        Integer from = parseLineNumber(rest.substring(0, arrow));
+        String tail = rest.substring(arrow + 2).trim();
+        Integer to = parseLineNumber(firstToken(tail));
+        if (from == null || to == null) {
+            return null;
+        }
+        return new LinkDirective(from, to, parseMode(tail), parseLabel(tail));
+    }
+
+    private static String firstToken(String value) {
+        int space = value.indexOf(' ');
+        return space < 0 ? value : value.substring(0, space);
+    }
+
+    private static String parseMode(String tail) {
+        String marker = " mode=";
+        int start = tail.indexOf(marker);
+        if (start < 0) {
+            return null;
+        }
+        String value = tail.substring(start + marker.length()).trim();
+        int end = value.indexOf(' ');
+        return end < 0 ? value : value.substring(0, end);
+    }
+
+    private static String parseLabel(String tail) {
+        String marker = " label=\"";
+        int start = tail.indexOf(marker);
+        if (start < 0) {
+            return null;
+        }
+        int valueStart = start + marker.length();
+        StringBuilder label = new StringBuilder();
+        boolean escaped = false;
+        for (int i = valueStart; i < tail.length(); i++) {
+            char c = tail.charAt(i);
+            if (escaped) {
+                label.append('\\').append(c);
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                return label.toString();
+            } else {
+                label.append(c);
+            }
+        }
+        return null;
+    }
+
+    private static Integer parseLineNumber(String value) {
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed < 1 ? null : parsed;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
 
     private static int lineNumber(String fileName, String key) {
@@ -135,5 +204,8 @@ final class EbslGraphScriptLinks {
             builder.append('\\');
         }
         return builder.toString().trim();
+    }
+
+    private record LinkDirective(int fromLine, int toLine, String mode, String label) {
     }
 }

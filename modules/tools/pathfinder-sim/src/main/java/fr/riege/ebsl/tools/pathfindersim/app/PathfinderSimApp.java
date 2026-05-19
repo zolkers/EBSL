@@ -36,8 +36,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public final class PathfinderSimApp {
+    private static final Logger LOGGER = Logger.getLogger(PathfinderSimApp.class.getName());
+
     private PathfinderSimApp() {
     }
 
@@ -51,7 +54,7 @@ public final class PathfinderSimApp {
         SimulationSuite suite = new SimulationSuite(scenarios);
         List<SimulationResult> results = suite.run(options);
         String report = SimulationReport.render(results);
-        System.out.println(report);
+        LOGGER.info(() -> System.lineSeparator() + report.stripTrailing());
         if (options.ui()) {
             SimulationFrame.show(results);
         }
@@ -62,7 +65,7 @@ public final class PathfinderSimApp {
                 Files.createDirectories(parent);
             }
             Files.writeString(output, SimulationReport.toJson(results));
-            System.out.println("json=" + output.toAbsolutePath());
+            LOGGER.info(() -> "json=" + output.toAbsolutePath());
         }
     }
 }

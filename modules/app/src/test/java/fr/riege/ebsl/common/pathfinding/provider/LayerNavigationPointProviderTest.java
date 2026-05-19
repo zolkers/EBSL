@@ -27,8 +27,6 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -99,11 +97,11 @@ class LayerNavigationPointProviderTest {
         WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(new WalkabilityChecker(world));
         ExecutorService executor = Executors.newFixedThreadPool(8);
         CountDownLatch start = new CountDownLatch(1);
-        List<Future<?>> futures = new ArrayList<>();
+        Future<?>[] lookupTasks = new Future<?>[8];
 
         for (int thread = 0; thread < 8; thread++) {
             int threadOffset = thread;
-            futures.add(executor.submit(() -> {
+            lookupTasks[thread] = executor.submit(() -> {
                 start.await();
                 for (int i = 0; i < 2_000; i++) {
                     int x = (i + threadOffset) % 65 - 32;
@@ -114,12 +112,12 @@ class LayerNavigationPointProviderTest {
                     }
                 }
                 return null;
-            }));
+            });
         }
 
         start.countDown();
         assertDoesNotThrow(() -> {
-            for (Future<?> future : futures) {
+            for (Future<?> future : lookupTasks) {
                 future.get();
             }
         });

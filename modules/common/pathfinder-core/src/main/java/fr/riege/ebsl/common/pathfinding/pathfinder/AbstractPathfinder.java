@@ -153,25 +153,28 @@ abstract class AbstractPathfinder implements Pathfinder {
                         if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
                             return foundResult(start, target, goalRefinement.best());
                         }
-                        continue;
-                    }
-                    return quality(PathfinderResults.of(PathState.LENGTH_LIMITED,
+                    } else {
+                        return quality(PathfinderResults.of(PathState.LENGTH_LIMITED,
                             reconstructPath(start, target, currentNode)));
+                    }
                 }
 
-                if (currentNode.isTarget(target)) {
-                    goalRefinement.record(currentNode, currentDepth);
+                boolean shouldExpandSuccessors = !hasReachedPathLengthLimit(currentNode);
+                if (shouldExpandSuccessors && currentNode.isTarget(target)) {
+                    goalRefinement.recordCandidate(currentNode, currentDepth);
                     if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
                         return foundResult(start, target, goalRefinement.best());
                     }
-                    continue;
+                    shouldExpandSuccessors = false;
                 }
 
-                Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
-                if (reachedTarget != null) {
-                    goalRefinement.record(reachedTarget, currentDepth);
-                    if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
-                        return foundResult(start, target, goalRefinement.best());
+                if (shouldExpandSuccessors) {
+                    Node reachedTarget = processSuccessors(start, target, currentNode, openSet, searchContext);
+                    if (reachedTarget != null) {
+                        goalRefinement.recordCandidate(reachedTarget, currentDepth);
+                        if (shouldAcceptGoalRefinement(goalRefinement, openSet, currentDepth)) {
+                            return foundResult(start, target, goalRefinement.best());
+                        }
                     }
                 }
 
@@ -376,7 +379,7 @@ abstract class AbstractPathfinder implements Pathfinder {
         private int bestIteration;
         private long bestFoundAtNanos;
 
-        void record(Node candidate, int iteration) {
+        void recordCandidate(Node candidate, int iteration) {
             if (candidate == null || !Double.isFinite(candidate.gCost())) {
                 return;
             }

@@ -42,19 +42,18 @@ final class InputApplier {
                                       double forwardThreshold,
                                       double backwardThreshold,
                                       double strafeThreshold) {
-        applyRelativeMovement(player, input, null, dx, dz, forwardThreshold, backwardThreshold, strafeThreshold);
+        applyRelativeMovement(player, input, null, dx, dz,
+            new MovementThresholds(forwardThreshold, backwardThreshold, strafeThreshold));
     }
 
     static MovementAxes applyStableRelativeMovement(IPlayerLayer player, IInputLayer input, MovementMemory memory,
-                                                    double dx, double dz, double forwardThreshold,
-                                                    double backwardThreshold, double strafeThreshold) {
-        return applyRelativeMovement(player, input, memory, dx, dz, forwardThreshold, backwardThreshold, strafeThreshold);
+                                                    MovementIntent intent) {
+        return applyRelativeMovement(player, input, memory, intent.dx(), intent.dz(), intent.thresholds());
     }
 
     private static MovementAxes applyRelativeMovement(IPlayerLayer player, IInputLayer input, MovementMemory memory,
-                                                      double dx, double dz, double forwardThreshold,
-                                                      double backwardThreshold,
-                                                      double strafeThreshold) {
+                                                      double dx, double dz,
+                                                      MovementThresholds thresholds) {
         float yawRad = (float) Math.toRadians(player.yaw());
         double forwardX = -Math.sin(yawRad);
         double forwardZ = Math.cos(yawRad);
@@ -69,9 +68,9 @@ final class InputApplier {
         }
 
         boolean forward = shouldHoldPositive(memory == null ? input.forwardDown() : memory.forward,
-            forwardDot, forwardThreshold);
+            forwardDot, thresholds.forward());
         boolean backward = shouldHoldNegative(memory == null ? input.backwardDown() : memory.backward,
-            forwardDot, backwardThreshold);
+            forwardDot, thresholds.backward());
         if (forward && backward) {
             backward = false;
         }
@@ -80,8 +79,8 @@ final class InputApplier {
 
         boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT;
         double effectiveStrafeThreshold = mostlyForward
-            ? Math.max(strafeThreshold, STRAFE_SUPPRESSION_DOT)
-            : strafeThreshold;
+            ? Math.max(thresholds.strafe(), STRAFE_SUPPRESSION_DOT)
+            : thresholds.strafe();
         boolean right = shouldHoldPositive(memory == null ? input.rightDown() : memory.right,
             strafeDot, effectiveStrafeThreshold);
         boolean left = shouldHoldNegative(memory == null ? input.leftDown() : memory.left,
@@ -197,5 +196,14 @@ final class InputApplier {
 
     record MovementAxes(double forwardDot, double strafeDot, boolean forward, boolean backward,
                         boolean left, boolean right) {
+    }
+
+    record MovementThresholds(double forward, double backward, double strafe) {
+    }
+
+    record MovementIntent(double dx, double dz, MovementThresholds thresholds) {
+        MovementIntent(double dx, double dz, double forwardThreshold, double backwardThreshold, double strafeThreshold) {
+            this(dx, dz, new MovementThresholds(forwardThreshold, backwardThreshold, strafeThreshold));
+        }
     }
 }

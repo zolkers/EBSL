@@ -110,7 +110,7 @@ public final class WalkPathProcessor {
     }
 
     private static MovementTypeClassifier effectiveClassifier(PathfinderConfiguration config) {
-        return config == null ? DefaultMovementTypeClassifier.INSTANCE : config.movementClassifier;
+        return config == null ? new DefaultMovementTypeClassifier() : config.movementClassifier;
     }
 
     private static NavigationPointProvider effectiveProvider(PathfinderConfiguration config) {

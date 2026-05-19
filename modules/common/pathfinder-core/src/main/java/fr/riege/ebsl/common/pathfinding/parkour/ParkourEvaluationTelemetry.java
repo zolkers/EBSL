@@ -35,7 +35,8 @@ public final class ParkourEvaluationTelemetry {
     }
 
     public static void recordEvaluation(PathPosition from, PathPosition to, ParkourJumpPlan plan) {
-        if ((plan == null || plan.feasible()) && !PathfinderSettings.instance().showDebug.value()) {
+        boolean debugEnabled = Boolean.TRUE.equals(PathfinderSettings.instance().showDebug.value());
+        if (plan == null || plan.feasible() && !debugEnabled) {
             return;
         }
         long now = System.currentTimeMillis();
@@ -51,7 +52,9 @@ public final class ParkourEvaluationTelemetry {
             ? ParkourGeometry.diagonalGapBlocks(dx, dz)
             : ParkourGeometry.cardinalGapBlocks(dx, dz);
 
-        String detail = plan.detail() == null || plan.detail().isBlank() ? "" : " detail=" + plan.detail();
+        String detail = plan.detail() == null || plan.detail().isBlank()
+            ? ""
+            : " detail=" + plan.detail();
         String message = String.format(Locale.ROOT,
             "%d,%d,%d -> %d,%d,%d gap=%d off=%d dy=%.2f approach=%d req=%.2f est=%.2f reason=%s%s",
             from.flooredX(), from.flooredY(), from.flooredZ(),

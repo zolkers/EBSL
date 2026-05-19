@@ -28,6 +28,7 @@ import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 
 import java.util.List;
+import java.util.Objects;
 
 final class PathSteering {
     private PathSteering() {
@@ -40,6 +41,9 @@ final class PathSteering {
 
     static SteeringVector steer(MovementTerrain checker, List<Node> path, IPlayerLayer player, Vec3d playerPos,
                                 Node targetWp, int pursuitSegment, boolean precisionWindow) {
+        if (targetWp == null) {
+            return new SteeringVector(0.0, 0.0, false);
+        }
         SteeringTarget target = steeringTarget(path, player, playerPos, targetWp, pursuitSegment, precisionWindow);
         double targetX = target.x();
         double targetZ = target.z();
@@ -109,8 +113,9 @@ final class PathSteering {
 
     private static SteeringTarget steeringTarget(List<Node> path, IPlayerLayer player, Vec3d playerPos,
                                                  Node targetWp, int pursuitSegment, boolean precisionWindow) {
+        Node waypoint = Objects.requireNonNull(targetWp, "targetWp");
         if (path == null || path.size() < 2 || precisionWindow || isPrecisionMove(targetWp)) {
-            return new SteeringTarget(targetWp.position.centeredX(), targetWp.position.centeredZ(), false);
+            return new SteeringTarget(waypoint.position.centeredX(), waypoint.position.centeredZ(), false);
         }
         double speed = horizontalLength(player.velocity().x(), player.velocity().z());
         double lookahead = Math.min(LOOKAHEAD_MAX, LOOKAHEAD_BASE + speed * LOOKAHEAD_SPEED_SCALE);
@@ -126,34 +131,35 @@ final class PathSteering {
         for (int i = segment; i < path.size() - 1; i++) {
             Node from = path.get(i);
             Node to = path.get(i + 1);
-            if (i > segment && isPrecisionMove(to)) {
-                return new SteeringTarget(to.position.centeredX(), to.position.centeredZ(), true);
-            }
             double ax = from.position.centeredX();
             double az = from.position.centeredZ();
             double bx = to.position.centeredX();
             double bz = to.position.centeredZ();
-            double dx = bx - ax;
-            double dz = bz - az;
-            double len = horizontalLength(dx, dz);
-            if (len < 1.0e-6) {
-                continue;
-            }
-            double t = i == segment
-                ? Math.clamp(((x - ax) * dx + (z - az) * dz) / (len * len), 0.0, 1.0)
-                : 0.0;
-            double available = len * (1.0 - t);
-            if (remaining <= available) {
-                double targetT = t + remaining / len;
-                return new SteeringTarget(ax + dx * targetT, az + dz * targetT, cornerLimited);
-            }
-            remaining -= available;
-            cornerLimited = cornerLimited || isTightTurnAt(path, i + 1);
-            if (cornerLimited) {
-                return new SteeringTarget(bx, bz, true);
-            }
+            SegmentAdvance advance = segmentAdvance(new SegmentInput(ax, az, bx, bz, x, z, i == segment, remaining));
+            remaining = advance.remaining();
+            if (i > segment && isPrecisionMove(to)) return new SteeringTarget(bx, bz, true);
+            if (advance.targetFound()) return new SteeringTarget(advance.x(), advance.z(), cornerLimited);
+            if (isTightTurnAt(path, i + 1)) return new SteeringTarget(bx, bz, true);
         }
-        return new SteeringTarget(targetWp.position.centeredX(), targetWp.position.centeredZ(), false);
+        return new SteeringTarget(waypoint.position.centeredX(), waypoint.position.centeredZ(), false);
+    }
+
+    private static SegmentAdvance segmentAdvance(SegmentInput input) {
+        double dx = input.bx() - input.ax();
+        double dz = input.bz() - input.az();
+        double len = horizontalLength(dx, dz);
+        if (len < 1.0e-6) {
+            return new SegmentAdvance(false, 0.0, 0.0, input.remaining());
+        }
+        double t = input.currentSegment()
+            ? Math.clamp(((input.x() - input.ax()) * dx + (input.z() - input.az()) * dz) / (len * len), 0.0, 1.0)
+            : 0.0;
+        double available = len * (1.0 - t);
+        if (input.remaining() > available) {
+            return new SegmentAdvance(false, 0.0, 0.0, input.remaining() - available);
+        }
+        double targetT = t + input.remaining() / len;
+        return new SegmentAdvance(true, input.ax() + dx * targetT, input.az() + dz * targetT, 0.0);
     }
 
     private static boolean isPrecisionMove(Node node) {
@@ -164,8 +170,8 @@ final class PathSteering {
     }
 
     private static boolean isTightTurnAhead(List<Node> path, int pursuitSegment) {
-        int start = Math.clamp(pursuitSegment + 1, 1, Math.max(1, path.size() - 2));
-        int end = (int) Math.clamp(start + 2L, 1L, Math.max(1L, path.size() - 2L));
+        int start = clampInt(pursuitSegment + 1, 1, Math.max(1, path.size() - 2));
+        int end = Math.min(start + 2, Math.max(1, path.size() - 2));
         for (int i = start; i <= end; i++) {
             if (isTightTurnAt(path, i)) {
                 return true;
@@ -231,5 +237,16 @@ final class PathSteering {
     }
 
     private record SteeringTarget(double x, double z, boolean cornerLimited) {
+    }
+
+    private static int clampInt(int value, int min, int max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    private record SegmentAdvance(boolean targetFound, double x, double z, double remaining) {
+    }
+
+    private record SegmentInput(double ax, double az, double bx, double bz,
+                                double x, double z, boolean currentSegment, double remaining) {
     }
 }

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 
 final class ReplayCanvas extends JPanel {
+    private static final long serialVersionUID = 1L;
     private static final Color BACKGROUND = new Color(18, 22, 27);
     private static final Color GRID = new Color(48, 56, 65);
     private static final Color SOLID = new Color(91, 101, 112);
@@ -50,7 +51,7 @@ final class ReplayCanvas extends JPanel {
     private static final Color PLAYER = new Color(115, 230, 145);
     private static final Color TEXT = new Color(226, 232, 240);
 
-    private SimulationResult result;
+    private transient SimulationResult result;
     private int frame;
 
     ReplayCanvas() {
@@ -120,7 +121,7 @@ final class ReplayCanvas extends JPanel {
         for (ReplayBlock block : result.terrain()) {
             g.setColor(blockColor(block.kind()));
             double x = screenX(bounds, block.x() + 0.5);
-            double y = screenY(bounds, block.x() + 0.5, block.z() + 0.5);
+            double y = screenY(bounds, block.z() + 0.5);
             double size = Math.max(3.0, Math.min(14.0, blockSize(bounds)));
             g.fillRect((int) Math.round(x - size / 2.0), (int) Math.round(y - size / 2.0),
                 (int) Math.round(size), (int) Math.round(size));
@@ -149,12 +150,11 @@ final class ReplayCanvas extends JPanel {
     }
 
     private double screenX(Bounds bounds, Vec3d value) {
-        double span = Math.max(1.0, bounds.maxX() - bounds.minX());
         return screenX(bounds, value.x());
     }
 
     private double screenY(Bounds bounds, Vec3d value) {
-        return screenY(bounds, value.x(), value.z());
+        return screenY(bounds, value.z());
     }
 
     private double screenX(Bounds bounds, double x) {
@@ -162,7 +162,7 @@ final class ReplayCanvas extends JPanel {
         return 48.0 + (x - bounds.minX()) / span * (getWidth() - 96.0);
     }
 
-    private double screenY(Bounds bounds, double x, double z) {
+    private double screenY(Bounds bounds, double z) {
         double span = Math.max(1.0, bounds.maxZ() - bounds.minZ());
         return getHeight() - 48.0 - (z - bounds.minZ()) / span * (getHeight() - 96.0);
     }

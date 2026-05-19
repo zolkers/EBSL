@@ -23,9 +23,7 @@ package fr.riege.ebsl.common.pathfinding.quality;
 
 import fr.riege.ebsl.common.pathfinding.Node;
 
-public enum DefaultMovementCostModel implements MovementCostModel {
-    INSTANCE;
-
+public final class DefaultMovementCostModel implements MovementCostModel {
     @Override
     public double risk(Node.MoveType type) {
         return MovementRiskScorer.risk(type);

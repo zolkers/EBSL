@@ -69,13 +69,12 @@ class PathTrackerContinuationTest {
     }
 
     @Test
-    void verticalBouncingDoesNotResetMovementProgress() throws InterruptedException {
+    void verticalBouncingDoesNotResetMovementProgress() {
         PathTracker tracker = new PathTracker();
         tracker.start(List.of(
             node(0, 64, 0),
             node(1, 64, 0)));
         long started = tracker.getLastProgressTime();
-        Thread.sleep(5L);
 
         double moved = tracker.noteMovementProgress(new Vec3d(0.0, 65.0, 0.0), 0.2);
 

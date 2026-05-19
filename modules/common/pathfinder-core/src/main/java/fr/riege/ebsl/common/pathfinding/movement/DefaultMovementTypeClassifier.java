@@ -27,9 +27,7 @@ import fr.riege.ebsl.common.pathfinding.provider.NavigationPoint;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
-public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
-    INSTANCE;
-
+public final class DefaultMovementTypeClassifier implements MovementTypeClassifier {
     private static final double STEP_DOWN_DY_THRESHOLD = -1.1;
 
     @Override

@@ -39,12 +39,14 @@ import java.awt.FlowLayout;
 import java.util.List;
 
 public final class SimulationFrame extends JFrame {
-    private final List<SimulationResult> results;
+    private static final long serialVersionUID = 1L;
+
+    private final transient List<SimulationResult> results;
     private final ReplayCanvas canvas = new ReplayCanvas();
     private final JSlider timeline = new JSlider();
     private final JLabel status = new JLabel("ready");
     private final Timer timer;
-    private SimulationResult selected;
+    private transient SimulationResult selected;
 
     private SimulationFrame(List<SimulationResult> results) {
         super("EBSL Pathfinder Simulator");

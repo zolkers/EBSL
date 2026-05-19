@@ -34,7 +34,7 @@ class DefaultMovementTypeClassifierTest {
     void parkourKeepsPriorityOverStepJumpRequirement() {
         MovementTerrain terrain = new TestTerrain();
 
-        Node.MoveType moveType = DefaultMovementTypeClassifier.INSTANCE.classify(
+        Node.MoveType moveType = new DefaultMovementTypeClassifier().classify(
             new MovementClassificationContext(
                 new PathPosition(0, 64, 0),
                 new PathPosition(2, 64, 0),
@@ -49,7 +49,9 @@ class DefaultMovementTypeClassifierTest {
         private final IWorldLayer world = new TestWorld();
 
         @Override public IWorldLayer world() { return world; }
-        @Override public void clearCache() {}
+        @Override public void clearCache() {
+            // Test terrain has no cache.
+        }
         @Override public boolean isSolid(int x, int y, int z) { return y == 63; }
         @Override public boolean isPassable(int x, int y, int z) { return y >= 64; }
         @Override public boolean isAir(int x, int y, int z) { return y >= 64; }
