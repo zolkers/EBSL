@@ -49,7 +49,7 @@ public final class PathfinderSimApp {
         List<SimulationScenario> scenarios = new ArrayList<>(ScenarioCatalog.defaultScenarios());
         MinecraftWorldImportOptions importOptions = options.minecraftWorldImportOptions();
         if (importOptions != null) {
-            scenarios.add(MinecraftWorldScenarioFactory.create(importOptions));
+            scenarios.addAll(MinecraftWorldScenarioFactory.create(importOptions, options.minecraftStressGrid()));
         }
         SimulationSuite suite = new SimulationSuite(scenarios);
         List<SimulationResult> results = suite.run(options);

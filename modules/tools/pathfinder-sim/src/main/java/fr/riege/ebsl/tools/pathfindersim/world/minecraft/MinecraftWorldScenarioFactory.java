@@ -44,12 +44,18 @@ public final class MinecraftWorldScenarioFactory {
     private static final int START_SCAN_RADIUS = 24;
     private static final int GOAL_SCAN_STEP = 2;
     private static final int MAX_GOAL_PLAN_ATTEMPTS = 32;
+    private static final int MAX_STRESS_SCENARIOS = 256;
     private static final int GOAL_PROBE_TIME_MS = 75;
 
     private MinecraftWorldScenarioFactory() {
     }
 
     public static SimulationScenario create(MinecraftWorldImportOptions options) throws IOException {
+        return create(options, null).getFirst();
+    }
+
+    public static List<SimulationScenario> create(MinecraftWorldImportOptions options,
+                                                  MinecraftStressGrid stressGrid) throws IOException {
         MinecraftWorldImportOptions effectiveOptions = effectiveOptions(options);
         ImportedMinecraftWorld importedWorld = new AnvilWorldLoader().load(effectiveOptions);
         HeadlessWorldLayer world = importedWorld.world();
@@ -62,12 +68,56 @@ public final class MinecraftWorldScenarioFactory {
             .maxCalculationTimeMs(5_000)
             .build();
         PathPlanningService planner = new PathPlanningService(world);
-        MinecraftWalkTarget startTarget = resolveStart(effectiveOptions, planner);
-        MinecraftWalkTarget goalTarget = resolveGoal(effectiveOptions, planner, startTarget, plannerOptions);
+        if (stressGrid == null) {
+            return List.of(scenario(effectiveOptions, importedWorld, planner, plannerOptions, "minecraft_world"));
+        }
+        return stressScenarios(effectiveOptions, importedWorld, planner, plannerOptions, stressGrid);
+    }
+
+    private static List<SimulationScenario> stressScenarios(MinecraftWorldImportOptions options,
+                                                            ImportedMinecraftWorld importedWorld,
+                                                            PathPlanningService planner,
+                                                            PathPlannerOptions plannerOptions,
+                                                            MinecraftStressGrid stressGrid) {
+        int scenarioCount = Math.min(stressGrid.scenarioCount(), MAX_STRESS_SCENARIOS);
+        List<SimulationScenario> scenarios = new ArrayList<>(scenarioCount);
+        int centerX = (int) Math.floor(options.start().x());
+        int centerY = (int) Math.floor(options.start().y());
+        int centerZ = (int) Math.floor(options.start().z());
+        for (int x = centerX - stressGrid.radiusX(); x <= centerX + stressGrid.radiusX(); x += stressGrid.step()) {
+            for (int z = centerZ - stressGrid.radiusZ(); z <= centerZ + stressGrid.radiusZ(); z += stressGrid.step()) {
+                for (int y = centerY - stressGrid.radiusY(); y <= centerY + stressGrid.radiusY(); y += stressGrid.step()) {
+                    if (scenarios.size() >= MAX_STRESS_SCENARIOS) {
+                        return List.copyOf(scenarios);
+                    }
+                    MinecraftWorldImportOptions scenarioOptions = withWorldDirectory(
+                        options,
+                        options.worldDirectory(),
+                        new Vec3d(x, y, z),
+                        options.radiusChunks());
+                    scenarios.add(scenario(
+                        scenarioOptions,
+                        importedWorld,
+                        planner,
+                        plannerOptions,
+                        "minecraft_world_grid_" + x + '_' + y + '_' + z));
+                }
+            }
+        }
+        return List.copyOf(scenarios);
+    }
+
+    private static SimulationScenario scenario(MinecraftWorldImportOptions options,
+                                               ImportedMinecraftWorld importedWorld,
+                                               PathPlanningService planner,
+                                               PathPlannerOptions plannerOptions,
+                                               String id) {
+        MinecraftWalkTarget startTarget = resolveStart(options, planner);
+        MinecraftWalkTarget goalTarget = resolveGoal(options, planner, startTarget, plannerOptions);
         return new SimulationScenario(
-            "minecraft_world",
-            description(effectiveOptions, importedWorld.stats(), startTarget, goalTarget),
-            world,
+            id,
+            description(options, importedWorld.stats(), startTarget, goalTarget),
+            importedWorld.world(),
             new Vec3d(startTarget.centerX(), startTarget.y(), startTarget.centerZ()),
             goalTarget.x(),
             goalTarget.y(),

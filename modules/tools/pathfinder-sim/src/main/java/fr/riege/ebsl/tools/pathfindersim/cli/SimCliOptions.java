@@ -23,6 +23,7 @@ package fr.riege.ebsl.tools.pathfindersim.cli;
 
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftStressGrid;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -34,7 +35,8 @@ public record SimCliOptions(
     double stuckEpsilon,
     Path jsonOutput,
     boolean ui,
-    MinecraftWorldImportOptions minecraftWorldImportOptions
+    MinecraftWorldImportOptions minecraftWorldImportOptions,
+    MinecraftStressGrid minecraftStressGrid
 ) {
     private static final int DEFAULT_MAX_TICKS = 600;
     private static final int DEFAULT_STUCK_WINDOW = 25;
@@ -52,7 +54,8 @@ public record SimCliOptions(
             state.stuckEpsilon,
             state.json,
             state.ui,
-            state.minecraftWorld.buildOrNull());
+            state.minecraftWorld.buildOrNull(),
+            state.minecraftStressGrid);
     }
 
     public boolean accepts(SimulationScenario scenario) {
@@ -67,6 +70,7 @@ public record SimCliOptions(
         private double stuckEpsilon = DEFAULT_STUCK_EPSILON;
         private Path json;
         private boolean ui;
+        private MinecraftStressGrid minecraftStressGrid;
         private final MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
 
         void apply(String arg) {
@@ -117,6 +121,8 @@ public record SimCliOptions(
                 minecraftWorld.goalSearchBlocks(parsePositiveInt(
                     value(arg),
                     MinecraftWorldImportOptions.DEFAULT_GOAL_SEARCH_BLOCKS));
+            } else if (arg.startsWith("--mc-stress-grid=")) {
+                minecraftStressGrid = parseStressGrid(value(arg));
             } else if ("--mc-diagnostics".equals(arg)) {
                 minecraftWorld.diagnostics(true);
             }
@@ -173,6 +179,24 @@ public record SimCliOptions(
             } catch (NumberFormatException ignored) {
                 return new int[] { fallbackX, fallbackY, fallbackZ };
             }
+        }
+
+        private static MinecraftStressGrid parseStressGrid(String value) {
+            int[] parts = parseGridParts(value);
+            return new MinecraftStressGrid(parts[0], parts[1], parts[2], parts[3]);
+        }
+
+        private static int[] parseGridParts(String value) {
+            String[] parts = value.split(",");
+            int[] parsed = { 2, 1, 2, 1 };
+            int count = Math.min(parts.length, parsed.length);
+            for (int i = 0; i < count; i++) {
+                parsed[i] = parsePositiveInt(parts[i].trim(), parsed[i]);
+            }
+            parsed[0] = Math.max(0, parsed[0]);
+            parsed[1] = Math.max(0, parsed[1]);
+            parsed[2] = Math.max(0, parsed[2]);
+            return parsed;
         }
     }
 }
