@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.pathfinding;
 
 import fr.riege.ebsl.common.pathfinding.movement.*;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.provider.NavigationPointProvider;
 import fr.riege.ebsl.common.pathfinding.settings.PathfinderSettings;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
@@ -40,14 +41,14 @@ public final class WalkPathProcessor {
                                         MovementTerrain checker) {
         List<Node> nodes = toNodeList(positions, config, checker);
         List<Node> smoothed = PathSmoother.smooth(nodes, checker);
-        relabelMoveTypes(smoothed, effectiveClassifier(config), checker);
+        relabelMoveTypes(smoothed, effectiveClassifier(config), effectiveProvider(config), checker);
         List<Node> keynodes = collapseAscendingStacks(smoothed);
-        relabelMoveTypes(keynodes, effectiveClassifier(config), checker);
+        relabelMoveTypes(keynodes, effectiveClassifier(config), effectiveProvider(config), checker);
         for (Node node : keynodes) {
             node.setKeynode(true);
         }
         List<Node> navigationPath = insertIntermediates(keynodes, checker);
-        relabelMoveTypes(navigationPath, effectiveClassifier(config), checker);
+        relabelMoveTypes(navigationPath, effectiveClassifier(config), effectiveProvider(config), checker);
         return new ProcessedPath(nodes, navigationPath, computePathLength(nodes));
     }
 
@@ -92,7 +93,8 @@ public final class WalkPathProcessor {
         return total;
     }
 
-    private static void relabelMoveTypes(List<Node> nodes, MovementTypeClassifier classifier, MovementTerrain checker) {
+    private static void relabelMoveTypes(List<Node> nodes, MovementTypeClassifier classifier,
+                                         NavigationPointProvider provider, MovementTerrain checker) {
         if (checker == null || nodes == null || nodes.size() < 2) {
             return;
         }
@@ -101,7 +103,7 @@ public final class WalkPathProcessor {
             node.setMoveType(classifier.classify(new MovementClassificationContext(
                 nodes.get(i - 1).position,
                 node.position,
-                null,
+                provider,
                 null,
                 checker)));
         }
@@ -109,6 +111,10 @@ public final class WalkPathProcessor {
 
     private static MovementTypeClassifier effectiveClassifier(PathfinderConfiguration config) {
         return config == null ? DefaultMovementTypeClassifier.INSTANCE : config.movementClassifier;
+    }
+
+    private static NavigationPointProvider effectiveProvider(PathfinderConfiguration config) {
+        return config == null ? PathfinderConfiguration.DEFAULT.provider : config.provider;
     }
 
     private static List<Node> insertIntermediates(List<Node> keynodes, MovementTerrain checker) {

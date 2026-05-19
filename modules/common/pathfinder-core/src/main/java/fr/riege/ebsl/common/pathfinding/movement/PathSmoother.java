@@ -35,7 +35,7 @@ public final class PathSmoother {
     private PathSmoother() {}
 
     public static List<Node> smooth(List<Node> raw, MovementTerrain checker) {
-        if (raw == null || raw.size() <= 2) {
+        if (raw == null || raw.size() <= 2 || checker == null) {
             return raw;
         }
 

@@ -96,6 +96,8 @@ final class WalkMovementController {
         if (pursuitSegment == lastValidatedSegment && validationTick % 5 != 0) {
             return lastValidationResult;
         }
+        checker.clearCache();
+        navigationPointProvider.clearCache();
         int currentIndex = Math.clamp(pursuitSegment, 0, path.size() - 1);
         int targetIndex = (int) Math.clamp(currentIndex + 1L, 0L, path.size() - 1L);
         Node from = path.get(currentIndex);

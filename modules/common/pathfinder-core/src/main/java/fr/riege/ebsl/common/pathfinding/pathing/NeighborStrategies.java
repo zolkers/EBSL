@@ -90,11 +90,13 @@ public final class NeighborStrategies {
             offsets.add(new PathVector(0,-1, 0));
         }
 
-        offsets.add(new PathVector(0, 1, 0));
-        offsets.add(new PathVector(1, 1, 0));
-        offsets.add(new PathVector(-1, 1, 0));
-        offsets.add(new PathVector(0, 1, 1));
-        offsets.add(new PathVector(0, 1, -1));
+        if (allowJump) {
+            offsets.add(new PathVector(0, 1, 0));
+            offsets.add(new PathVector(1, 1, 0));
+            offsets.add(new PathVector(-1, 1, 0));
+            offsets.add(new PathVector(0, 1, 1));
+            offsets.add(new PathVector(0, 1, -1));
+        }
 
         if (allowWalkDiagonal) {
             offsets.add(new PathVector(1, 0, 1));

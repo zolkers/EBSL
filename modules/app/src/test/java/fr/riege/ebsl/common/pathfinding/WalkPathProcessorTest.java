@@ -21,8 +21,11 @@
 
 package fr.riege.ebsl.common.pathfinding;
 
+import fr.riege.ebsl.common.domain.world.BlockId;
+import fr.riege.ebsl.common.pathfinding.movement.MovementTerrain;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.world.layer.IWorldLayer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -42,5 +45,63 @@ final class WalkPathProcessorTest {
         ), configuration, null);
 
         assertEquals(Node.MoveType.JUMP, path.rawNodes().get(1).moveType());
+    }
+
+    @Test
+    void processPreservesClimbTypeDuringRelabelingWithoutProvider() {
+        ProcessedPath path = WalkPathProcessor.process(List.of(
+            new PathPosition(0, 64, 0),
+            new PathPosition(0, 65, 0)
+        ), PathfinderConfiguration.DEFAULT, new ClimbTerrain());
+
+        assertEquals(Node.MoveType.CLIMB, path.navigationPath().get(1).moveType());
+    }
+
+    @Test
+    void processAllowsRawPathWhenNoTerrainIsAvailable() {
+        ProcessedPath path = WalkPathProcessor.process(List.of(
+            new PathPosition(0, 64, 0),
+            new PathPosition(1, 64, 0),
+            new PathPosition(2, 64, 0)
+        ), PathfinderConfiguration.DEFAULT, null);
+
+        assertEquals(3, path.rawNodes().size());
+        assertEquals(3, path.navigationPath().size());
+    }
+
+    private static final class ClimbTerrain implements MovementTerrain {
+        private static final IWorldLayer WORLD = new ClimbWorld();
+
+        @Override public IWorldLayer world() { return WORLD; }
+        @Override public void clearCache() {}
+        @Override public boolean isWalkable(int x, int y, int z) { return y >= 64; }
+        @Override public boolean isPassable(int x, int y, int z) { return true; }
+        @Override public boolean isAir(int x, int y, int z) { return y >= 64; }
+        @Override public boolean isSolid(int x, int y, int z) { return y < 64; }
+        @Override public boolean isWater(int x, int y, int z) { return false; }
+        @Override public boolean isClimbable(int x, int y, int z) { return x == 0 && z == 0 && y >= 64 && y <= 65; }
+        @Override public boolean isDangerous(int x, int y, int z) { return false; }
+        @Override public boolean hasWalkableTop(int x, int y, int z) { return y < 64; }
+        @Override public double getTopY(int x, int y, int z) { return y < 64 ? 1.0 : 0.0; }
+        @Override public boolean isLowPartialSupport(int x, int y, int z) { return false; }
+        @Override public boolean isFullWallBlock(int x, int y, int z) { return false; }
+        @Override public boolean isFullWall(int x, int y, int z) { return false; }
+        @Override public boolean wouldSuffocate(int x, int y, int z) { return false; }
+        @Override public boolean safeToFall(int fromY, int toX, int toY, int toZ) { return true; }
+        @Override public boolean canOcclude(int x, int y, int z) { return false; }
+        @Override public BlockId getBlock(int x, int y, int z) { return BlockId.AIR; }
+        @Override public boolean isBlacklisted(int x, int y, int z) { return false; }
+    }
+
+    private static final class ClimbWorld implements IWorldLayer {
+        @Override public BlockId getBlock(int x, int y, int z) { return BlockId.AIR; }
+        @Override public boolean isAir(int x, int y, int z) { return y >= 64; }
+        @Override public boolean isSolid(int x, int y, int z) { return y < 64; }
+        @Override public boolean isWater(int x, int y, int z) { return false; }
+        @Override public boolean isLava(int x, int y, int z) { return false; }
+        @Override public boolean isClimbable(int x, int y, int z) { return x == 0 && z == 0 && y >= 64 && y <= 65; }
+        @Override public boolean isLoaded(int x, int y, int z) { return true; }
+        @Override public int getTopSolidY(int x, int z) { return 63; }
+        @Override public double getBlockHeight(int x, int y, int z) { return y < 64 ? 1.0 : 0.0; }
     }
 }

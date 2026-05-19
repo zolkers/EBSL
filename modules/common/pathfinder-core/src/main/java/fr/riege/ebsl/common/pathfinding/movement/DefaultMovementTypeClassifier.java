@@ -51,7 +51,7 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
         if (isSwim(previous, current, previousPoint, currentPoint, checker)) {
             return Node.MoveType.SWIM;
         }
-        if (isClimb(previousPoint, currentPoint)) {
+        if (isClimb(previous, current, previousPoint, currentPoint, checker)) {
             return Node.MoveType.CLIMB;
         }
 
@@ -81,12 +81,24 @@ public enum DefaultMovementTypeClassifier implements MovementTypeClassifier {
         return isSwimPosition(checker, previous) || isSwimPosition(checker, current);
     }
 
-    private static boolean isClimb(NavigationPoint previousPoint, NavigationPoint currentPoint) {
-        return isClimbable(previousPoint) || isClimbable(currentPoint);
+    private static boolean isClimb(PathPosition previous, PathPosition current,
+                                   NavigationPoint previousPoint, NavigationPoint currentPoint,
+                                   MovementTerrain checker) {
+        if (isClimbable(previousPoint) || isClimbable(currentPoint)) {
+            return true;
+        }
+        if (checker == null) {
+            return false;
+        }
+        return isClimbable(checker, previous) || isClimbable(checker, current);
     }
 
     private static boolean isClimbable(NavigationPoint point) {
         return point != null && point.isClimbable();
+    }
+
+    private static boolean isClimbable(MovementTerrain checker, PathPosition position) {
+        return checker.isClimbable(position.flooredX(), position.flooredY(), position.flooredZ());
     }
 
     private static Node.MoveType classifyGroundMove(int dx, int dz, double dy) {
