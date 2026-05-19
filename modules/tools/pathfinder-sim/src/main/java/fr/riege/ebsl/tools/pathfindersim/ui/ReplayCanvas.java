@@ -61,8 +61,11 @@ final class ReplayCanvas extends JPanel {
     private static final double WHEEL_ZOOM_FACTOR = 1.12;
 
     private transient SimulationResult result;
+    private transient Bounds replayBounds;
+    private transient List<ReplayBlock> isoTerrain = List.of();
     private transient Point lastDrag;
     private int frame;
+    private int terrainMinY;
     private boolean isometric = true;
     private double viewZoom = 1.0;
     private double panX;
@@ -78,6 +81,9 @@ final class ReplayCanvas extends JPanel {
 
     void setResult(SimulationResult result) {
         this.result = result;
+        this.replayBounds = boundsFor(result);
+        this.isoTerrain = sortedIsoTerrain(result);
+        this.terrainMinY = minTerrainY(result);
         this.frame = 0;
         resetCamera();
         repaint();
@@ -134,7 +140,7 @@ final class ReplayCanvas extends JPanel {
 
     private void paintReplay(Graphics2D g) {
         List<SimulationTick> ticks = result.ticksTrace();
-        Bounds bounds = Bounds.of(ticks, result.terrain());
+        Bounds bounds = replayBounds;
         int cappedFrame = Math.min(frame, ticks.size() - 1);
         if (isometric) {
             paintIsometricReplay(g, bounds, cappedFrame);
@@ -184,10 +190,7 @@ final class ReplayCanvas extends JPanel {
     }
 
     private void paintIsometricTerrain(Graphics2D g, Bounds bounds) {
-        List<ReplayBlock> terrain = result.terrain().stream()
-            .sorted((left, right) -> Integer.compare(left.x() + left.z() + left.y(), right.x() + right.z() + right.y()))
-            .toList();
-        for (ReplayBlock block : terrain) {
+        for (ReplayBlock block : isoTerrain) {
             paintIsoBlock(g, bounds, block);
         }
     }
@@ -302,8 +305,7 @@ final class ReplayCanvas extends JPanel {
         double localZ = z - centerZ;
         double isoX = (localX - localZ) * scale + getWidth() * 0.5;
         double groundY = (localX + localZ) * scale * 0.5 + getHeight() * 0.58;
-        double minY = result.terrain().stream().mapToInt(ReplayBlock::y).min().orElse((int) Math.floor(y));
-        double isoY = groundY - (y - minY) * scale * 0.8;
+        double isoY = groundY - (y - terrainMinY) * scale * 0.8;
         return new double[] { transformX(isoX), transformY(isoY) };
     }
 
@@ -382,6 +384,32 @@ final class ReplayCanvas extends JPanel {
 
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private static Bounds boundsFor(SimulationResult result) {
+        if (result == null) {
+            return null;
+        }
+        return Bounds.of(result.ticksTrace(), result.terrain());
+    }
+
+    private static List<ReplayBlock> sortedIsoTerrain(SimulationResult result) {
+        if (result == null) {
+            return List.of();
+        }
+        return result.terrain().stream()
+            .sorted((left, right) -> Integer.compare(left.x() + left.z() + left.y(), right.x() + right.z() + right.y()))
+            .toList();
+    }
+
+    private static int minTerrainY(SimulationResult result) {
+        if (result == null) {
+            return 0;
+        }
+        return result.terrain().stream()
+            .mapToInt(ReplayBlock::y)
+            .min()
+            .orElse(0);
     }
 
     private enum Face {
