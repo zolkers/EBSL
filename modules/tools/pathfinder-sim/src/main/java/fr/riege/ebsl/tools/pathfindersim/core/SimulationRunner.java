@@ -148,6 +148,37 @@ public final class SimulationRunner {
         if (state.dangerous() || state.lava()) {
             return "danger";
         }
+        String path = state.id().path();
+        if (containsAny(path, "grass_block", "moss", "podzol")) {
+            return "grass";
+        }
+        if (containsAny(path, "leaves", "azalea")) {
+            return "leaves";
+        }
+        if (containsAny(path, "sand", "sandstone", "terracotta")) {
+            return "sand";
+        }
+        if (containsAny(path, "snow", "ice")) {
+            return "snow";
+        }
+        if (containsAny(path, "dirt", "mud", "clay", "gravel")) {
+            return "earth";
+        }
+        if (containsAny(path, "log", "planks", "wood", "stem", "hyphae")) {
+            return "wood";
+        }
+        if (containsAny(path, "ore", "stone", "deepslate", "andesite", "diorite", "granite", "tuff")) {
+            return "stone";
+        }
         return "solid";
+    }
+
+    private static boolean containsAny(String value, String... tokens) {
+        for (String token : tokens) {
+            if (value.contains(token)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

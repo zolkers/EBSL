@@ -49,6 +49,13 @@ final class ReplayCanvas extends JPanel {
     private static final Color BACKGROUND = new Color(18, 22, 27);
     private static final Color GRID = new Color(48, 56, 65);
     private static final Color SOLID = new Color(91, 101, 112);
+    private static final Color GRASS = new Color(82, 132, 67);
+    private static final Color LEAVES = new Color(54, 112, 55);
+    private static final Color EARTH = new Color(111, 84, 56);
+    private static final Color SAND = new Color(194, 177, 113);
+    private static final Color STONE = new Color(102, 108, 114);
+    private static final Color WOOD = new Color(130, 91, 53);
+    private static final Color SNOW = new Color(217, 228, 230);
     private static final Color WATER = new Color(43, 111, 184);
     private static final Color CLIMBABLE = new Color(186, 138, 72);
     private static final Color DANGER = new Color(180, 63, 55);
@@ -176,7 +183,7 @@ final class ReplayCanvas extends JPanel {
 
     private void paintTerrain(Graphics2D g, Bounds bounds) {
         for (ReplayBlock block : result.terrain()) {
-            g.setColor(blockColor(block.kind()));
+            g.setColor(blockColor(block));
             double left = screenX(bounds, block.x());
             double right = screenX(bounds, block.x() + 1.0);
             double top = screenY(bounds, block.z() + 1.0);
@@ -196,12 +203,12 @@ final class ReplayCanvas extends JPanel {
     }
 
     private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
-        Color base = blockColor(block.kind());
+        Color base = blockColor(block);
         Path2D.Double top = isoFace(bounds, block, 1.0, Face.TOP);
-        Path2D.Double left = isoFace(bounds, block, 0.0, Face.LEFT);
-        Path2D.Double right = isoFace(bounds, block, 0.0, Face.RIGHT);
-        fillFace(g, left, base.darker());
-        fillFace(g, right, base.darker().darker());
+        Path2D.Double south = isoFace(bounds, block, 0.0, Face.SOUTH);
+        Path2D.Double east = isoFace(bounds, block, 0.0, Face.EAST);
+        fillFace(g, south, shade(base, -28));
+        fillFace(g, east, shade(base, -50));
         fillFace(g, top, base);
     }
 
@@ -212,12 +219,12 @@ final class ReplayCanvas extends JPanel {
                 isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z()),
                 isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z() + 1.0),
                 isoPoint(bounds, block.x(), block.y() + yOffset, block.z() + 1.0));
-            case LEFT -> polygon(
-                isoPoint(bounds, block.x(), block.y() + 1.0, block.z()),
+            case SOUTH -> polygon(
                 isoPoint(bounds, block.x(), block.y() + 1.0, block.z() + 1.0),
-                isoPoint(bounds, block.x(), block.y(), block.z() + 1.0),
-                isoPoint(bounds, block.x(), block.y(), block.z()));
-            case RIGHT -> polygon(
+                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z() + 1.0),
+                isoPoint(bounds, block.x() + 1.0, block.y(), block.z() + 1.0),
+                isoPoint(bounds, block.x(), block.y(), block.z() + 1.0));
+            case EAST -> polygon(
                 isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z()),
                 isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z() + 1.0),
                 isoPoint(bounds, block.x() + 1.0, block.y(), block.z() + 1.0),
@@ -373,13 +380,29 @@ final class ReplayCanvas extends JPanel {
         }
     }
 
-    private static Color blockColor(String kind) {
-        return switch (kind) {
+    private Color blockColor(ReplayBlock block) {
+        Color base = switch (block.kind()) {
             case "water" -> WATER;
             case "climbable" -> CLIMBABLE;
             case "danger" -> DANGER;
+            case "grass" -> GRASS;
+            case "leaves" -> LEAVES;
+            case "earth" -> EARTH;
+            case "sand" -> SAND;
+            case "stone" -> STONE;
+            case "wood" -> WOOD;
+            case "snow" -> SNOW;
             default -> SOLID;
         };
+        int elevation = Math.clamp((block.y() - terrainMinY) * 5, -36, 52);
+        return shade(base, elevation);
+    }
+
+    private static Color shade(Color color, int delta) {
+        return new Color(
+            Math.clamp(color.getRed() + delta, 0, 255),
+            Math.clamp(color.getGreen() + delta, 0, 255),
+            Math.clamp(color.getBlue() + delta, 0, 255));
     }
 
     private static String format(double value) {
@@ -414,7 +437,7 @@ final class ReplayCanvas extends JPanel {
 
     private enum Face {
         TOP,
-        LEFT,
-        RIGHT
+        SOUTH,
+        EAST
     }
 }
