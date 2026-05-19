@@ -31,6 +31,7 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessActor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
 import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlock;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlockKind;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimMetrics;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationTick;
@@ -130,55 +131,11 @@ public final class SimulationRunner {
                 for (int y = minY; y <= maxY; y++) {
                     HeadlessBlockState state = scenario.world().stateAt(x, y, z);
                     if (!state.isAir()) {
-                        blocks.add(new ReplayBlock(x, y, z, blockKind(state)));
+                        blocks.add(new ReplayBlock(x, y, z, ReplayBlockKind.classify(state)));
                     }
                 }
             }
         }
         return List.copyOf(blocks);
-    }
-
-    private static String blockKind(HeadlessBlockState state) {
-        if (state.water()) {
-            return "water";
-        }
-        if (state.climbable()) {
-            return "climbable";
-        }
-        if (state.dangerous() || state.lava()) {
-            return "danger";
-        }
-        String path = state.id().path();
-        if (containsAny(path, "grass_block", "moss", "podzol")) {
-            return "grass";
-        }
-        if (containsAny(path, "leaves", "azalea")) {
-            return "leaves";
-        }
-        if (containsAny(path, "sand", "sandstone", "terracotta")) {
-            return "sand";
-        }
-        if (containsAny(path, "snow", "ice")) {
-            return "snow";
-        }
-        if (containsAny(path, "dirt", "mud", "clay", "gravel")) {
-            return "earth";
-        }
-        if (containsAny(path, "log", "planks", "wood", "stem", "hyphae")) {
-            return "wood";
-        }
-        if (containsAny(path, "ore", "stone", "deepslate", "andesite", "diorite", "granite", "tuff")) {
-            return "stone";
-        }
-        return "solid";
-    }
-
-    private static boolean containsAny(String value, String... tokens) {
-        for (String token : tokens) {
-            if (value.contains(token)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

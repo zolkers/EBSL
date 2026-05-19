@@ -21,5 +21,5 @@
 
 package fr.riege.ebsl.tools.pathfindersim.replay;
 
-public record ReplayBlock(int x, int y, int z, String kind) {
+public record ReplayBlock(int x, int y, int z, ReplayBlockKind kind) {
 }

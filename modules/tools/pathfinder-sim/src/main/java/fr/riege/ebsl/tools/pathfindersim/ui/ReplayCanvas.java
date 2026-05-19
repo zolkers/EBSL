@@ -382,27 +382,33 @@ final class ReplayCanvas extends JPanel {
 
     private Color blockColor(ReplayBlock block) {
         Color base = switch (block.kind()) {
-            case "water" -> WATER;
-            case "climbable" -> CLIMBABLE;
-            case "danger" -> DANGER;
-            case "grass" -> GRASS;
-            case "leaves" -> LEAVES;
-            case "earth" -> EARTH;
-            case "sand" -> SAND;
-            case "stone" -> STONE;
-            case "wood" -> WOOD;
-            case "snow" -> SNOW;
+            case WATER -> WATER;
+            case CLIMBABLE -> CLIMBABLE;
+            case DANGER -> DANGER;
+            case GRASS -> GRASS;
+            case LEAVES -> LEAVES;
+            case EARTH -> EARTH;
+            case SAND -> SAND;
+            case STONE -> STONE;
+            case WOOD -> WOOD;
+            case SNOW -> SNOW;
             default -> SOLID;
         };
-        int elevation = Math.clamp((block.y() - terrainMinY) * 5, -36, 52);
+        long heightDelta = (long) block.y() - (long) terrainMinY;
+        int elevation = Math.toIntExact(Math.clamp(heightDelta * 5L, -36L, 52L));
         return shade(base, elevation);
     }
 
     private static Color shade(Color color, int delta) {
         return new Color(
-            Math.clamp(color.getRed() + delta, 0, 255),
-            Math.clamp(color.getGreen() + delta, 0, 255),
-            Math.clamp(color.getBlue() + delta, 0, 255));
+            colorChannel(color.getRed(), delta),
+            colorChannel(color.getGreen(), delta),
+            colorChannel(color.getBlue(), delta));
+    }
+
+    private static int colorChannel(int channel, int delta) {
+        long adjusted = (long) channel + (long) delta;
+        return Math.toIntExact(Math.clamp(adjusted, 0L, 255L));
     }
 
     private static String format(double value) {

@@ -100,7 +100,7 @@ public final class SimulationReport {
                 .append("\"x\":").append(block.x()).append(',')
                 .append("\"y\":").append(block.y()).append(',')
                 .append("\"z\":").append(block.z()).append(',')
-                .append("\"kind\":\"").append(block.kind()).append("\"")
+                .append("\"kind\":\"").append(block.kind().key()).append("\"")
                 .append('}');
         }
     }
