@@ -170,8 +170,9 @@ final class PathSteering {
     }
 
     private static boolean isTightTurnAhead(List<Node> path, int pursuitSegment) {
-        int start = clampInt(pursuitSegment + 1, 1, Math.max(1, path.size() - 2));
-        int end = Math.min(start + 2, Math.max(1, path.size() - 2));
+        int maxTurnIndex = Math.max(1, path.size() - 2);
+        int start = Math.clamp(pursuitSegment + 1L, 1, maxTurnIndex);
+        int end = Math.clamp(start + 2L, start, maxTurnIndex);
         for (int i = start; i <= end; i++) {
             if (isTightTurnAt(path, i)) {
                 return true;
@@ -237,10 +238,6 @@ final class PathSteering {
     }
 
     private record SteeringTarget(double x, double z, boolean cornerLimited) {
-    }
-
-    private static int clampInt(int value, int min, int max) {
-        return Math.min(Math.max(value, min), max);
     }
 
     private record SegmentAdvance(boolean targetFound, double x, double z, double remaining) {

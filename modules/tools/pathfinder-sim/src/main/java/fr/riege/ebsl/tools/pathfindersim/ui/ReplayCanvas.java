@@ -172,7 +172,7 @@ final class ReplayCanvas extends JPanel {
             g.setColor(blockColor(block.kind()));
             double x = screenX(bounds, block.x() + 0.5);
             double y = screenY(bounds, block.z() + 0.5);
-            double size = Math.max(3.0, Math.min(18.0, blockSize(bounds)));
+            double size = Math.clamp(blockSize(bounds), 3.0, 18.0);
             g.fillRect((int) Math.round(x - size / 2.0), (int) Math.round(y - size / 2.0),
                 (int) Math.round(size), (int) Math.round(size));
         }
@@ -189,7 +189,7 @@ final class ReplayCanvas extends JPanel {
 
     private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
         double[] center = isoPoint(bounds, block.x() + 0.5, block.y(), block.z() + 0.5);
-        int size = (int) Math.max(5.0, Math.min(28.0, isoScale(bounds) * viewZoom * 0.72));
+        int size = (int) Math.clamp(isoScale(bounds) * viewZoom * 0.72, 5.0, 28.0);
         int half = Math.max(3, size / 2);
         int height = Math.max(4, (int) (size * 0.55));
         int x = (int) Math.round(center[0]);
@@ -291,7 +291,7 @@ final class ReplayCanvas extends JPanel {
 
     private double isoScale(Bounds bounds) {
         double span = Math.max(1.0, Math.max(bounds.maxX() - bounds.minX(), bounds.maxZ() - bounds.minZ()));
-        return Math.max(5.0, Math.min(22.0, Math.min(getWidth(), getHeight()) / (span * 1.55)));
+        return Math.clamp(Math.min(getWidth(), getHeight()) / (span * 1.55), 5.0, 22.0);
     }
 
     private double transformX(double value) {
@@ -341,7 +341,7 @@ final class ReplayCanvas extends JPanel {
         private void zoomAt(Point point, int wheelRotation) {
             double oldZoom = viewZoom;
             double factor = Math.pow(WHEEL_ZOOM_FACTOR, -wheelRotation);
-            double newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * factor));
+            double newZoom = Math.clamp(oldZoom * factor, MIN_ZOOM, MAX_ZOOM);
             if (Double.compare(oldZoom, newZoom) == 0) {
                 return;
             }

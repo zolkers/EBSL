@@ -144,7 +144,7 @@ final class ScriptGraphConnectionEditor {
         ImGui.textDisabled(connections.isEmpty() ? "No graph links yet." : "Select a link below, then edit its flow.");
         ImGui.spacing();
 
-        float listHeight = Math.min(Math.max(42.0f, height * 0.34f), 72.0f);
+        float listHeight = Math.clamp(height * 0.34f, 42.0f, 72.0f);
         ImGui.beginChild("##ebsl-link-list", width, listHeight, true);
         for (int i = 0; i < connections.size(); i++) {
             EbslGraphConnection candidate = connections.get(i);

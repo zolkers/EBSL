@@ -239,7 +239,10 @@ public final class SimulationFrame extends JFrame {
             timer.setDelay(DEFAULT_TIMER_DELAY_MS);
             return;
         }
-        int delay = Math.max(MIN_TIMER_DELAY_MS, MAX_TIMER_DELAY_MS - value * 24);
+        int delay = Math.clamp(
+            MAX_TIMER_DELAY_MS - value * 24L,
+            MIN_TIMER_DELAY_MS,
+            MAX_TIMER_DELAY_MS);
         timer.setDelay(delay);
     }
 
@@ -436,7 +439,7 @@ public final class SimulationFrame extends JFrame {
             details.setText("");
             return;
         }
-        int index = Math.min(timeline.getValue(), Math.max(0, selected.ticksTrace().size() - 1));
+        int index = Math.clamp(timeline.getValue(), 0, Math.max(0, selected.ticksTrace().size() - 1));
         frameStatus.setText("tick " + index + " / " + Math.max(0, selected.ticksTrace().size() - 1));
         if (selected.ticksTrace().isEmpty()) {
             status.setText("empty trace");
