@@ -84,6 +84,7 @@ public final class SimulationFrame extends JFrame {
     private final JTextField goalField = new JTextField(12);
     private final JComboBox<SimulationGoalInput> goalType = new JComboBox<>(SimulationGoalInput.values());
     private final JCheckBox isometric = new JCheckBox("3D", true);
+    private final JCheckBox minecraftSpeed = new JCheckBox("20 TPS", true);
     private final Timer timer;
     private transient SimulationResult selected;
     private JButton playButton;
@@ -140,6 +141,8 @@ public final class SimulationFrame extends JFrame {
         JSlider speed = new JSlider(1, 10, 5);
         speed.setPreferredSize(new Dimension(120, 28));
         speed.addChangeListener(event -> updateSpeed(speed.getValue()));
+        speed.setEnabled(false);
+        minecraftSpeed.addActionListener(event -> updateSpeedMode(speed));
         isometric.addActionListener(event -> canvas.setIsometric(isometric.isSelected()));
         seedRouteFields();
         replayRow.add(new JLabel("Scenario"));
@@ -150,6 +153,7 @@ public final class SimulationFrame extends JFrame {
         replayRow.add(nextStuck);
         replayRow.add(resetView);
         replayRow.add(isometric);
+        replayRow.add(minecraftSpeed);
         replayRow.add(new JLabel("Speed"));
         replayRow.add(speed);
         replayRow.add(status);
@@ -231,8 +235,17 @@ public final class SimulationFrame extends JFrame {
     }
 
     private void updateSpeed(int value) {
+        if (minecraftSpeed.isSelected()) {
+            timer.setDelay(DEFAULT_TIMER_DELAY_MS);
+            return;
+        }
         int delay = Math.max(MIN_TIMER_DELAY_MS, MAX_TIMER_DELAY_MS - value * 24);
         timer.setDelay(delay);
+    }
+
+    private void updateSpeedMode(JSlider speed) {
+        speed.setEnabled(!minecraftSpeed.isSelected());
+        updateSpeed(speed.getValue());
     }
 
     private void seedRouteFields() {

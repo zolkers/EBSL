@@ -41,6 +41,8 @@ The viewer opens without running the synthetic benchmark catalogue by default. C
 `Browse`, edit `Start`, pick an EBSL goal type, then press `Run route` to simulate a route without leaving the tool.
 The route form resolves the same goal classes used by navigation commands, including block, near, get-to-block, XZ,
 column, chunk, axis, Y-level, rectangle, and offset goals.
+Replay playback uses Minecraft's 20 ticks per second cadence by default. Disable `20 TPS` to scrub faster or slower
+with the speed slider.
 
 Import a Minecraft Anvil save around a start and goal:
 
