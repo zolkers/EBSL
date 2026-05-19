@@ -28,6 +28,7 @@ import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -63,5 +64,19 @@ class HeadlessNavigationApiTest {
 
         assertTrue(service.isNavigating(), "service should be executing after a usable path is found");
         assertTrue(motor.lastIntent().velocity().x() > 0.0, "server motor should receive a positive X velocity");
+    }
+
+    @Test
+    void headlessActorStepsOntoOneBlockLedgeWhenBodySpaceIsClear() {
+        HeadlessWorldLayer world = HeadlessWorldLayer.flat(63)
+            .set(1, 64, 0, HeadlessBlockState.STONE);
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.8, 64.0, 0.5))
+            .velocity(new Vec3d(0.35, 0.0, 0.0));
+
+        actor.tick(world);
+
+        assertEquals(65.0, actor.position().y(), 1.0e-6);
+        assertTrue(actor.onGround(), "stepping onto a ledge should keep the actor grounded");
+        assertTrue(actor.velocity().x() > 0.0, "horizontal intent should survive the step-up");
     }
 }

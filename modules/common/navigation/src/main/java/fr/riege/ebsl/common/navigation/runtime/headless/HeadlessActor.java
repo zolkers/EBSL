@@ -25,6 +25,8 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationActor;
 
 public final class HeadlessActor implements NavigationActor {
+    private static final double MIN_STEP_HORIZONTAL_SPEED = 1.0e-5;
+
     private Vec3d position;
     private Vec3d velocity = new Vec3d(0.0, 0.0, 0.0);
     private boolean onGround = true;
@@ -92,6 +94,9 @@ public final class HeadlessActor implements NavigationActor {
         int footY = (int) Math.floor(next.y());
         int footZ = (int) Math.floor(next.z());
         if (world != null && world.isSolid(footX, footY, footZ)) {
+            if (tryStepUp(world, next, footX, footY, footZ)) {
+                return;
+            }
             velocity = new Vec3d(0.0, 0.0, 0.0);
             onGround = true;
             return;
@@ -104,5 +109,22 @@ public final class HeadlessActor implements NavigationActor {
             onGround = false;
             velocity = new Vec3d(velocity.x(), velocity.y() - 0.08, velocity.z());
         }
+    }
+
+    private boolean tryStepUp(HeadlessWorldLayer world, Vec3d blockedPosition, int footX, int footY, int footZ) {
+        double horizontalSpeed = Math.sqrt(velocity.x() * velocity.x() + velocity.z() * velocity.z());
+        if (horizontalSpeed <= MIN_STEP_HORIZONTAL_SPEED || velocity.y() < -0.2) {
+            return false;
+        }
+
+        int steppedY = footY + 1;
+        if (world.isSolid(footX, steppedY, footZ) || world.isSolid(footX, steppedY + 1, footZ)) {
+            return false;
+        }
+
+        position = new Vec3d(blockedPosition.x(), steppedY, blockedPosition.z());
+        velocity = new Vec3d(velocity.x(), 0.0, velocity.z());
+        onGround = true;
+        return true;
     }
 }
