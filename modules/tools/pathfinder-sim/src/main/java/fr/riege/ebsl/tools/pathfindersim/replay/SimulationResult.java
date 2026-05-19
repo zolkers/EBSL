@@ -19,14 +19,28 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.replay;
 
-public record SimMetrics(
+import fr.riege.ebsl.common.navigation.NavigationStatus;
+
+import java.util.List;
+
+public record SimulationResult(
+    String scenarioId,
+    String description,
+    NavigationStatus status,
+    boolean reached,
     int ticks,
-    int stuckTicks,
-    int stuckEvents,
-    int longestStuckStreak,
-    double bestDistance,
-    double finalDistance
+    long elapsedNanos,
+    int navigationNodes,
+    int rawNodes,
+    boolean completePlan,
+    SimMetrics metrics,
+    List<ReplayBlock> terrain,
+    List<SimulationTick> ticksTrace
 ) {
+    public SimulationResult {
+        terrain = terrain == null ? List.of() : List.copyOf(terrain);
+        ticksTrace = ticksTrace == null ? List.of() : List.copyOf(ticksTrace);
+    }
 }

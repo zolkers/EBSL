@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.replay;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.NavigationStatus;
@@ -41,8 +41,8 @@ public record SimulationTick(
     boolean sprint,
     boolean sneak
 ) {
-    static SimulationTick capture(int tick, HeadlessActor actor, HeadlessMotor motor,
-                                  EntityNavigationService service, double distanceToGoal, boolean stuck) {
+    public static SimulationTick capture(int tick, HeadlessActor actor, HeadlessMotor motor,
+                                         EntityNavigationService service, double distanceToGoal, boolean stuck) {
         MovementIntent intent = motor.lastIntent();
         return new SimulationTick(
             tick,

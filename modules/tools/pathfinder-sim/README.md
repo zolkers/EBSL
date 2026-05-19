@@ -25,6 +25,18 @@ Run a single scenario:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--scenario=parkour --max-ticks=900"
 ```
 
+Open the graphical replay viewer:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:run --args="--ui"
+```
+
+Import a Minecraft Anvil save around a start and goal:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:run --args="--mc-world=C:\Users\you\AppData\Roaming\.minecraft\saves\World --mc-start=383.5,64,44.5 --mc-goal=500,62,40 --mc-radius=5 --ui --json=build/pathfinder-sim/mc-report.json"
+```
+
 ## Scenarios
 
 The default catalogue includes:
@@ -36,3 +48,13 @@ The default catalogue includes:
 - `ladder_column`
 
 Failures are useful. A failed scenario records where the current planning/following/physics model disagrees, gets stuck, falls away, or terminates too early.
+
+## Packages
+
+- `app`: CLI entry point
+- `cli`: argument parsing
+- `core`: simulation runner and stuck detection
+- `replay`: per-tick replay data and reports
+- `scenario`: built-in synthetic worlds
+- `ui`: Swing replay viewer
+- `world.minecraft`: minimal Anvil `.mca` importer

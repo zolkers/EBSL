@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.replay;
 
 import fr.riege.ebsl.common.math.Vec3d;
 
@@ -82,9 +82,26 @@ public final class SimulationReport {
             .append("\"longestStuckStreak\":").append(metrics.longestStuckStreak()).append(',')
             .append("\"bestDistance\":").append(format(metrics.bestDistance())).append(',')
             .append("\"finalDistance\":").append(format(metrics.finalDistance()))
-            .append("},\"trace\":[");
+            .append("},\"terrain\":[");
+        appendTerrain(builder, result.terrain());
+        builder.append("],\"trace\":[");
         appendTrace(builder, result.ticksTrace());
         builder.append("]}");
+    }
+
+    private static void appendTerrain(StringBuilder builder, List<ReplayBlock> terrain) {
+        for (int i = 0; i < terrain.size(); i++) {
+            if (i > 0) {
+                builder.append(',');
+            }
+            ReplayBlock block = terrain.get(i);
+            builder.append('{')
+                .append("\"x\":").append(block.x()).append(',')
+                .append("\"y\":").append(block.y()).append(',')
+                .append("\"z\":").append(block.z()).append(',')
+                .append("\"kind\":\"").append(block.kind()).append("\"")
+                .append('}');
+        }
     }
 
     private static void appendTrace(StringBuilder builder, List<SimulationTick> ticks) {

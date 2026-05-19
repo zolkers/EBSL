@@ -19,11 +19,22 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.app;
+
+import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
+import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
+import fr.riege.ebsl.tools.pathfindersim.replay.SimulationReport;
+import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
+import fr.riege.ebsl.tools.pathfindersim.scenario.ScenarioCatalog;
+import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
+import fr.riege.ebsl.tools.pathfindersim.ui.SimulationFrame;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldScenarioFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class PathfinderSimApp {
@@ -32,10 +43,18 @@ public final class PathfinderSimApp {
 
     public static void main(String[] args) throws IOException {
         SimCliOptions options = SimCliOptions.parse(args);
-        SimulationSuite suite = new SimulationSuite(ScenarioCatalog.defaultScenarios());
+        List<SimulationScenario> scenarios = new ArrayList<>(ScenarioCatalog.defaultScenarios());
+        MinecraftWorldImportOptions importOptions = options.minecraftWorldImportOptions();
+        if (importOptions != null) {
+            scenarios.add(MinecraftWorldScenarioFactory.create(importOptions));
+        }
+        SimulationSuite suite = new SimulationSuite(scenarios);
         List<SimulationResult> results = suite.run(options);
         String report = SimulationReport.render(results);
         System.out.println(report);
+        if (options.ui()) {
+            SimulationFrame.show(results);
+        }
         if (options.jsonOutput() != null) {
             Path output = options.jsonOutput();
             Path parent = output.getParent();

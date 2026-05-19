@@ -9,5 +9,5 @@ dependencies {
 }
 
 application {
-    mainClass = 'fr.riege.ebsl.tools.pathfindersim.PathfinderSimApp'
+    mainClass = 'fr.riege.ebsl.tools.pathfindersim.app.PathfinderSimApp'
 }

@@ -19,7 +19,11 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.core;
+
+import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
+import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
+import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
 
 import java.util.ArrayList;
 import java.util.List;

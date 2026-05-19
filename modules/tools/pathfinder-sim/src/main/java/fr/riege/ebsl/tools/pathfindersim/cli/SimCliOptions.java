@@ -19,7 +19,10 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.cli;
+
+import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
+import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -29,7 +32,9 @@ public record SimCliOptions(
     int maxTicks,
     int stuckWindowTicks,
     double stuckEpsilon,
-    Path jsonOutput
+    Path jsonOutput,
+    boolean ui,
+    MinecraftWorldImportOptions minecraftWorldImportOptions
 ) {
     private static final int DEFAULT_MAX_TICKS = 600;
     private static final int DEFAULT_STUCK_WINDOW = 25;
@@ -41,6 +46,8 @@ public record SimCliOptions(
         int stuckWindow = DEFAULT_STUCK_WINDOW;
         double stuckEpsilon = DEFAULT_STUCK_EPSILON;
         Path json = null;
+        boolean ui = false;
+        MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
         for (String arg : args == null ? new String[0] : args) {
             if (arg.startsWith("--scenario=")) {
                 scenario = value(arg);
@@ -52,6 +59,16 @@ public record SimCliOptions(
                 stuckEpsilon = parsePositiveDouble(value(arg), DEFAULT_STUCK_EPSILON);
             } else if (arg.startsWith("--json=")) {
                 json = Path.of(value(arg));
+            } else if ("--ui".equals(arg)) {
+                ui = true;
+            } else if (arg.startsWith("--mc-world=")) {
+                minecraftWorld.worldDirectory(Path.of(value(arg)));
+            } else if (arg.startsWith("--mc-start=")) {
+                minecraftWorld.start(parseVec(value(arg), 0.5, 64.0, 0.5));
+            } else if (arg.startsWith("--mc-goal=")) {
+                minecraftWorld.goal(parseBlock(value(arg), 0, 64, 0));
+            } else if (arg.startsWith("--mc-radius=")) {
+                minecraftWorld.radiusChunks(parsePositiveInt(value(arg), MinecraftWorldImportOptions.DEFAULT_RADIUS_CHUNKS));
             }
         }
         return new SimCliOptions(
@@ -59,10 +76,12 @@ public record SimCliOptions(
             maxTicks,
             stuckWindow,
             stuckEpsilon,
-            json);
+            json,
+            ui,
+            minecraftWorld.buildOrNull());
     }
 
-    boolean accepts(SimulationScenario scenario) {
+    public boolean accepts(SimulationScenario scenario) {
         return "all".equals(scenarioFilter)
             || scenario.id().toLowerCase(Locale.ROOT).contains(scenarioFilter);
     }
@@ -85,6 +104,38 @@ public record SimCliOptions(
             return Math.max(0.0, Double.parseDouble(value));
         } catch (NumberFormatException ignored) {
             return fallback;
+        }
+    }
+
+    private static double[] parseVec(String value, double fallbackX, double fallbackY, double fallbackZ) {
+        String[] parts = value.split(",");
+        if (parts.length != 3) {
+            return new double[] { fallbackX, fallbackY, fallbackZ };
+        }
+        try {
+            return new double[] {
+                Double.parseDouble(parts[0].trim()),
+                Double.parseDouble(parts[1].trim()),
+                Double.parseDouble(parts[2].trim())
+            };
+        } catch (NumberFormatException ignored) {
+            return new double[] { fallbackX, fallbackY, fallbackZ };
+        }
+    }
+
+    private static int[] parseBlock(String value, int fallbackX, int fallbackY, int fallbackZ) {
+        String[] parts = value.split(",");
+        if (parts.length != 3) {
+            return new int[] { fallbackX, fallbackY, fallbackZ };
+        }
+        try {
+            return new int[] {
+                Integer.parseInt(parts[0].trim()),
+                Integer.parseInt(parts[1].trim()),
+                Integer.parseInt(parts[2].trim())
+            };
+        } catch (NumberFormatException ignored) {
+            return new int[] { fallbackX, fallbackY, fallbackZ };
         }
     }
 }

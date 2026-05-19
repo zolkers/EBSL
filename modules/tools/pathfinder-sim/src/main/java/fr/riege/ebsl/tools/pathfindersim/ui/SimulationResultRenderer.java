@@ -19,26 +19,22 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.ui;
 
-import fr.riege.ebsl.common.navigation.NavigationStatus;
+import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 
-import java.util.List;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JList;
+import java.awt.Component;
 
-public record SimulationResult(
-    String scenarioId,
-    String description,
-    NavigationStatus status,
-    boolean reached,
-    int ticks,
-    long elapsedNanos,
-    int navigationNodes,
-    int rawNodes,
-    boolean completePlan,
-    SimMetrics metrics,
-    List<SimulationTick> ticksTrace
-) {
-    public SimulationResult {
-        ticksTrace = ticksTrace == null ? List.of() : List.copyOf(ticksTrace);
+final class SimulationResultRenderer extends DefaultListCellRenderer {
+    @Override
+    public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                  boolean isSelected, boolean cellHasFocus) {
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        if (value instanceof SimulationResult result) {
+            setText((result.reached() ? "PASS " : "FAIL ") + result.scenarioId());
+        }
+        return this;
     }
 }

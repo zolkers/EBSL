@@ -19,7 +19,9 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim;
+package fr.riege.ebsl.tools.pathfindersim.core;
+
+import fr.riege.ebsl.tools.pathfindersim.replay.SimMetrics;
 
 final class StuckTracker {
     private final int windowTicks;
