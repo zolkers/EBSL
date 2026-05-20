@@ -23,6 +23,7 @@ package fr.riege.ebsl.tools.pathfindersim.ui;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlock;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlockKind;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationTick;
 
@@ -41,8 +42,10 @@ import java.awt.geom.Rectangle2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 final class ReplayCanvas extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -59,9 +62,11 @@ final class ReplayCanvas extends JPanel {
     private transient SimulationResult result;
     private transient Bounds replayBounds;
     private transient List<ReplayBlock> isoTerrain = List.of();
+    private transient List<TerrainColumn> surfaceTerrain = List.of();
     private transient Point lastDrag;
     private int frame;
     private int terrainMinY;
+    private double yawRadians = Math.toRadians(45.0);
     private boolean isometric = true;
     private double viewZoom = 1.0;
     private double panX;
@@ -78,7 +83,8 @@ final class ReplayCanvas extends JPanel {
     void setResult(SimulationResult result) {
         this.result = result;
         this.replayBounds = boundsFor(result);
-        this.isoTerrain = sortedIsoTerrain(result);
+        this.surfaceTerrain = surfaceTerrain(result);
+        this.isoTerrain = sortedIsoTerrain(result, replayBounds, yawRadians);
         this.terrainMinY = minTerrainY(result);
         this.frame = 0;
         resetCamera();
@@ -92,6 +98,12 @@ final class ReplayCanvas extends JPanel {
 
     void setIsometric(boolean isometric) {
         this.isometric = isometric;
+        repaint();
+    }
+
+    void setYawDegrees(int degrees) {
+        yawRadians = Math.toRadians(Math.floorMod(degrees, 360));
+        isoTerrain = sortedIsoTerrain(result, replayBounds, yawRadians);
         repaint();
     }
 
@@ -171,12 +183,12 @@ final class ReplayCanvas extends JPanel {
     }
 
     private void paintTerrain(Graphics2D g, Bounds bounds) {
-        for (ReplayBlock block : result.terrain()) {
-            g.setColor(blockColor(block));
-            double left = screenX(bounds, block.x());
-            double right = screenX(bounds, block.x() + 1.0);
-            double top = screenY(bounds, block.z() + 1.0);
-            double bottom = screenY(bounds, block.z());
+        for (TerrainColumn column : surfaceTerrain) {
+            g.setColor(columnColor(column));
+            double left = screenX(bounds, column.x());
+            double right = screenX(bounds, column.x() + 1.0);
+            double top = screenY(bounds, column.z() + 1.0);
+            double bottom = screenY(bounds, column.z());
             double x = Math.floor(Math.min(left, right));
             double y = Math.floor(Math.min(top, bottom));
             double width = Math.ceil(Math.max(left, right)) - x + 1.0;
@@ -297,10 +309,9 @@ final class ReplayCanvas extends JPanel {
         double centerX = (bounds.minX() + bounds.maxX()) * 0.5;
         double centerZ = (bounds.minZ() + bounds.maxZ()) * 0.5;
         double scale = isoScale(bounds);
-        double localX = x - centerX;
-        double localZ = z - centerZ;
-        double isoX = (localX - localZ) * scale + getWidth() * 0.5;
-        double groundY = (localX + localZ) * scale * 0.5 + getHeight() * 0.58;
+        double[] rotated = rotate(x - centerX, z - centerZ, yawRadians);
+        double isoX = (rotated[0] - rotated[1]) * scale + getWidth() * 0.5;
+        double groundY = (rotated[0] + rotated[1]) * scale * 0.5 + getHeight() * 0.58;
         double isoY = groundY - (y - terrainMinY) * scale * 0.8;
         return new double[] { transformX(isoX), transformY(isoY) };
     }
@@ -376,6 +387,13 @@ final class ReplayCanvas extends JPanel {
         return shade(base, elevation);
     }
 
+    private Color columnColor(TerrainColumn column) {
+        Color base = new Color(column.kind().baseRgb());
+        int heightShade = Math.toIntExact(Math.clamp(((long) column.y() - terrainMinY) * 4L, -34L, 44L));
+        int reliefShade = Math.toIntExact(Math.clamp(column.relief() * 18L, -42L, 42L));
+        return shade(base, heightShade + reliefShade);
+    }
+
     private static Color shade(Color color, int delta) {
         return new Color(
             colorChannel(color.getRed(), delta),
@@ -399,13 +417,61 @@ final class ReplayCanvas extends JPanel {
         return Bounds.of(result.ticksTrace(), result.terrain());
     }
 
-    private static List<ReplayBlock> sortedIsoTerrain(SimulationResult result) {
-        if (result == null) {
+    private static List<ReplayBlock> sortedIsoTerrain(SimulationResult result, Bounds bounds, double yawRadians) {
+        if (result == null || bounds == null) {
             return List.of();
         }
+        double centerX = (bounds.minX() + bounds.maxX()) * 0.5;
+        double centerZ = (bounds.minZ() + bounds.maxZ()) * 0.5;
         return result.terrain().stream()
-            .sorted((left, right) -> Integer.compare(left.x() + left.z() + left.y(), right.x() + right.z() + right.y()))
+            .sorted((left, right) -> Double.compare(
+                isoDepth(left, centerX, centerZ, yawRadians),
+                isoDepth(right, centerX, centerZ, yawRadians)))
             .toList();
+    }
+
+    private static double isoDepth(ReplayBlock block, double centerX, double centerZ, double yawRadians) {
+        double[] rotated = rotate(block.x() - centerX, block.z() - centerZ, yawRadians);
+        return rotated[0] + rotated[1] + block.y() * 0.35;
+    }
+
+    private static double[] rotate(double x, double z, double yawRadians) {
+        double cos = Math.cos(yawRadians);
+        double sin = Math.sin(yawRadians);
+        return new double[] { x * cos - z * sin, x * sin + z * cos };
+    }
+
+    private static List<TerrainColumn> surfaceTerrain(SimulationResult result) {
+        if (result == null || result.terrain().isEmpty()) {
+            return List.of();
+        }
+        Map<String, ReplayBlock> columns = new HashMap<>();
+        for (ReplayBlock block : result.terrain()) {
+            columns.merge(columnKey(block.x(), block.z()), block, (left, right) -> left.y() >= right.y() ? left : right);
+        }
+        int fallback = terrainMinFallback(result.terrain());
+        return columns.values().stream()
+            .map(block -> new TerrainColumn(block.x(), block.y(), block.z(), block.kind(), relief(block, columns, fallback)))
+            .toList();
+    }
+
+    private static int relief(ReplayBlock block, Map<String, ReplayBlock> columns, int fallback) {
+        int west = surfaceY(columns, block.x() - 1, block.z(), fallback);
+        int north = surfaceY(columns, block.x(), block.z() - 1, fallback);
+        return Math.clamp((block.y() - west) + (block.y() - north), -3, 3);
+    }
+
+    private static int surfaceY(Map<String, ReplayBlock> columns, int x, int z, int fallback) {
+        ReplayBlock block = columns.get(columnKey(x, z));
+        return block == null ? fallback : block.y();
+    }
+
+    private static String columnKey(int x, int z) {
+        return x + "," + z;
+    }
+
+    private static int terrainMinFallback(List<ReplayBlock> terrain) {
+        return terrain.stream().mapToInt(ReplayBlock::y).min().orElse(0);
     }
 
     private static int minTerrainY(SimulationResult result) {
@@ -422,5 +488,8 @@ final class ReplayCanvas extends JPanel {
         TOP,
         SOUTH,
         EAST
+    }
+
+    private record TerrainColumn(int x, int y, int z, ReplayBlockKind kind, int relief) {
     }
 }

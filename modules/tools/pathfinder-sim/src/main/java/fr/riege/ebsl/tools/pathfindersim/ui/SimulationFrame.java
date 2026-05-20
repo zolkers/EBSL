@@ -43,6 +43,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
@@ -71,6 +72,7 @@ public final class SimulationFrame extends JFrame {
     private final transient MinecraftWorldImportOptions minecraftOptions;
     private final transient List<SimulationResult> results = new ArrayList<>();
     private final ReplayCanvas canvas = new ReplayCanvas();
+    private final MetricsCanvas metricsCanvas = new MetricsCanvas();
     private final JSlider timeline = new JSlider();
     private final JLabel status = new JLabel("ready");
     private final JLabel frameStatus = new JLabel("tick 0");
@@ -100,7 +102,7 @@ public final class SimulationFrame extends JFrame {
         setPreferredSize(new Dimension(1320, 820));
         setLayout(new BorderLayout());
         add(header(), BorderLayout.NORTH);
-        add(splitView(), BorderLayout.CENTER);
+        add(tabbedView(), BorderLayout.CENTER);
         add(timelinePanel(), BorderLayout.SOUTH);
         selectResult(this.results.isEmpty() ? null : this.results.getFirst());
         pack();
@@ -133,6 +135,9 @@ public final class SimulationFrame extends JFrame {
         nextStuck.addActionListener(event -> jumpToStuck(1));
         JButton resetView = new JButton("View");
         resetView.addActionListener(event -> canvas.resetCamera());
+        JSlider rotation = new JSlider(0, 359, 45);
+        rotation.setPreferredSize(new Dimension(130, 28));
+        rotation.addChangeListener(event -> canvas.setYawDegrees(rotation.getValue()));
         JButton browseWorld = new JButton("Browse");
         browseWorld.addActionListener(event -> browseWorld());
         JButton runRoute = new JButton("Run route");
@@ -153,6 +158,8 @@ public final class SimulationFrame extends JFrame {
         replayRow.add(nextStuck);
         replayRow.add(resetView);
         replayRow.add(isometric);
+        replayRow.add(new JLabel("Yaw"));
+        replayRow.add(rotation);
         replayRow.add(minecraftSpeed);
         replayRow.add(new JLabel("Speed"));
         replayRow.add(speed);
@@ -171,11 +178,26 @@ public final class SimulationFrame extends JFrame {
         return panel;
     }
 
+    private JTabbedPane tabbedView() {
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("Replay", splitView());
+        tabs.addTab("Charts", metricsCanvas);
+        tabs.addTab("Summary", summaryPanel());
+        return tabs;
+    }
+
     private JSplitPane splitView() {
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sidebar(), canvas);
         split.setResizeWeight(0.22);
         split.setBorder(BorderFactory.createEmptyBorder());
         return split;
+    }
+
+    private JPanel summaryPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        panel.add(new JScrollPane(details), BorderLayout.CENTER);
+        return panel;
     }
 
     private JPanel sidebar() {
@@ -193,10 +215,7 @@ public final class SimulationFrame extends JFrame {
         details.setEditable(false);
         details.setLineWrap(true);
         details.setWrapStyleWord(true);
-        JPanel metrics = new JPanel(new GridLayout(1, 1));
-        metrics.add(new JScrollPane(details));
         panel.add(new JScrollPane(scenarioList), BorderLayout.CENTER);
-        panel.add(metrics, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -367,6 +386,7 @@ public final class SimulationFrame extends JFrame {
             timeline.setMaximum(0);
             timeline.setValue(0);
             canvas.setResult(null);
+            metricsCanvas.setResult(null);
             updateFrame();
             return;
         }
@@ -382,6 +402,7 @@ public final class SimulationFrame extends JFrame {
         timeline.setMaximum(max);
         timeline.setValue(0);
         canvas.setResult(result);
+        metricsCanvas.setResult(result);
         details.setText(detailsText(result));
         updateFrame();
     }
