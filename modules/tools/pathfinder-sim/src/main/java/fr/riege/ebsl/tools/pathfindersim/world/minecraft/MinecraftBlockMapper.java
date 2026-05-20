@@ -29,28 +29,12 @@ final class MinecraftBlockMapper {
     }
 
     static HeadlessBlockState map(String blockName) {
-        String name = blockName == null ? "minecraft:air" : blockName;
-        if (name.endsWith(":air") || name.endsWith(":cave_air") || name.endsWith(":void_air")) {
-            return HeadlessBlockState.AIR;
+        BlockId id = blockName == null ? BlockId.AIR : BlockId.of(blockName);
+        for (MinecraftBlockMappingRule rule : MinecraftBlockMappingRule.values()) {
+            if (rule.matches(id)) {
+                return rule.map(id);
+            }
         }
-        if (name.contains("water")) {
-            return new HeadlessBlockState(BlockId.of(name), false, true, false, false, false, 0.0);
-        }
-        if (name.contains("lava") || name.contains("fire") || name.contains("magma_block")) {
-            return new HeadlessBlockState(BlockId.of(name), true, false, name.contains("lava"), true, false, 1.0);
-        }
-        if (name.contains("ladder") || name.contains("vine") || name.contains("scaffolding")) {
-            return HeadlessBlockState.climbable(BlockId.of(name));
-        }
-        if (name.contains("slab")) {
-            return HeadlessBlockState.slab(BlockId.of(name), 0.5);
-        }
-        if (name.contains("carpet") || name.contains("snow")) {
-            return HeadlessBlockState.slab(BlockId.of(name), 0.125);
-        }
-        if (name.contains("torch") || name.contains("flower") || name.contains("grass") || name.contains("button")) {
-            return HeadlessBlockState.AIR;
-        }
-        return HeadlessBlockState.solid(BlockId.of(name));
+        return HeadlessBlockState.solid(id);
     }
 }

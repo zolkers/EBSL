@@ -43,6 +43,18 @@ public record HeadlessBlockState(
         return new HeadlessBlockState(id, true, false, false, false, false, Math.clamp(height, 0.0, 1.0));
     }
 
+    public static HeadlessBlockState water(BlockId id) {
+        return new HeadlessBlockState(id, false, true, false, false, false, 0.0);
+    }
+
+    public static HeadlessBlockState lava(BlockId id) {
+        return new HeadlessBlockState(id, true, false, true, true, false, 1.0);
+    }
+
+    public static HeadlessBlockState danger(BlockId id) {
+        return new HeadlessBlockState(id, true, false, false, true, false, 1.0);
+    }
+
     public static HeadlessBlockState climbable(BlockId id) {
         return new HeadlessBlockState(id, false, false, false, false, true, 0.0);
     }
