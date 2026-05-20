@@ -8,6 +8,7 @@ The repository currently provides:
 
 - `sonarqube`: local static analysis server at `http://localhost:9000`
 - `sonarqube-db`: PostgreSQL data store for SonarQube
+- `pathfinder-sim-viewer`: isolated Spring Boot simulator viewer at `http://localhost:8087`
 
 Start the default local services from the repository root:
 
@@ -27,11 +28,49 @@ Remove containers and local service data:
 docker compose down -v
 ```
 
+## Pathfinder Simulator Viewer
+
+Use Docker when the host browser keeps showing stale viewer assets or when you want a clean server process:
+
+```powershell
+docker compose up --build pathfinder-sim-viewer
+```
+
+Open:
+
+```text
+http://localhost:8087
+```
+
+The container builds the TypeScript viewer, syncs the Spring Boot static resources, and then starts the Java simulator
+server. That makes the served HTML deterministic: `Open world`, the world browser, and the goal list come from the
+current source tree in the image.
+
+Docker can only browse host folders that are mounted into the container. By default, the compose service mounts:
+
+```text
+./run/saves -> /workspace/run/saves
+```
+
+So choose `/workspace/run/saves/<world>` from the web UI. To use another Minecraft saves directory, add a bind mount in
+a local compose override:
+
+```yaml
+services:
+  pathfinder-sim-viewer:
+    volumes:
+      - "C:/Users/<you>/AppData/Roaming/.minecraft/saves:/minecraft-saves:ro"
+```
+
+Then choose `/minecraft-saves/<world>` in the viewer. Replays are persisted in the Docker volume
+`pathfinder_sim_replays`.
+
 ## What Belongs In Docker
 
 Good candidates:
 
 - SonarQube and its database
+- isolated simulator viewer runs for stale-process debugging
 - future documentation preview servers
 - future mock API services
 - future benchmark result stores or dashboards
@@ -42,7 +81,7 @@ Poor candidates:
 - Minecraft client runtime
 - Fabric run tasks
 - IDE state
-- user saves under `run/`
+- unmapped personal save folders
 - secrets or personal Sonar tokens
 
 ## Local Configuration

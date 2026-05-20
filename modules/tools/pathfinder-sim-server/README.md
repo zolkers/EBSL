@@ -14,6 +14,15 @@ Run it through the shared launcher:
 .\scripts\sim-viewer.bat
 ```
 
+Run it through Docker with isolated assets and process state:
+
+```powershell
+docker compose up --build pathfinder-sim-viewer
+```
+
+The Docker service exposes the same API on `http://localhost:8087`. Host worlds must be mounted into the container;
+the default compose file maps `run\saves` to `/workspace/run/saves`.
+
 Or directly:
 
 ```powershell

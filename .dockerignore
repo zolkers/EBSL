@@ -1,0 +1,10 @@
+.git
+.gradle
+.idea
+build
+**/build
+*.iml
+*.ipr
+*.iws
+run/logs
+run/crash-reports

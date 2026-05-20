@@ -24,8 +24,26 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
 
+  pathfinder-sim-viewer:
+    build:
+      context: .
+      dockerfile: docker/pathfinder-sim-viewer.Dockerfile
+    ports:
+      - "${VIEWER_PORT:-8087}:8087"
+    environment:
+      VIEWER_PORT: 8087
+      VIEWER_BIND_ADDRESS: 0.0.0.0
+      VIEWER_REPLAY_DIR: /data/replays
+      NODE_EXECUTABLE: node
+    volumes:
+      - ./run/saves:/workspace/run/saves:ro
+      - pathfinder_sim_replays:/data/replays
+      - pathfinder_sim_gradle:/gradle-cache
+
 volumes:
   sonarqube_db:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
+  pathfinder_sim_replays:
+  pathfinder_sim_gradle:

@@ -24,6 +24,15 @@ Build and serve it from the repo:
 .\scripts\sim-viewer.bat
 ```
 
+Run it in an isolated Docker server when you want to avoid stale host processes or cached build output:
+
+```powershell
+docker compose up --build pathfinder-sim-viewer
+```
+
+Docker mounts `run\saves` as `/workspace/run/saves`, so choose `/workspace/run/saves/<world>` in the world browser.
+Mount additional save folders through a local compose override when needed.
+
 PowerShell entrypoint:
 
 ```powershell
