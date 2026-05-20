@@ -34,3 +34,8 @@ API:
 - `GET /api/health`
 - `GET /api/replays`
 - `GET /api/replays/{fileName}`
+- `GET /api/goals`
+- `POST /api/simulations/minecraft`
+
+The HTTP layer delegates to `PathfinderSimApi`; simulator behavior should live in the Java simulator API, not in Spring
+controllers.

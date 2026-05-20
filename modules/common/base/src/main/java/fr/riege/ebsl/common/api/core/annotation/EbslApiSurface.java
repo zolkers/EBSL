@@ -52,6 +52,7 @@ public @interface EbslApiSurface {
         ANALYTICS,
         RENDERING,
         THREADING,
-        UI
+        UI,
+        SIMULATION
     }
 }

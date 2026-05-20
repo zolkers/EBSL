@@ -91,4 +91,5 @@ generating new replays.
 
 The viewer deliberately avoids duplicating simulator rules. Terrain colors come from the Java replay export as `rgb`
 values derived from `ReplayBlockKind`; the TypeScript layer only projects and draws replay data. Runtime data should
-come from `tools:pathfinder-sim-server` when Java can provide it.
+come from `tools:pathfinder-sim-server` when Java can provide it. The server delegates simulator work to
+`PathfinderSimApi`, which is annotated with the same EBSL API surface metadata as the common app API.
