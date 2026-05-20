@@ -6,7 +6,8 @@
 It is intentionally separate from the Java/Swing simulator:
 
 - the Java simulator remains the source of truth for world loading, pathfinding, physics, metrics, and replay export
-- the web viewer consumes the existing `SimulationReport.toJson` schema
+- the Spring Boot simulator server exposes the Java replay catalogue through `/api`
+- the web viewer consumes the existing `SimulationReport.toJson` schema and stays frontend-only
 - the app is a static PWA, so it can run from a desktop browser or Android browser and work offline after first load
 
 ## Run Locally
@@ -35,14 +36,14 @@ Unix shell entrypoint:
 sh ./scripts/sim-viewer.sh
 ```
 
-The scripts configure the bundled JDK and Node runtime when they are available locally, copy the Java simulator replay
-catalogue into the served app, open the browser, and serve the viewer on `0.0.0.0` so Android devices on the same
-network can connect.
+The scripts configure the bundled JDK and Node runtime when they are available locally, build the viewer assets, open
+the browser, and serve the viewer on `0.0.0.0` so Android devices on the same network can connect. The launcher now
+uses `tools:pathfinder-sim-server`, so saved replays are read from Java instead of being copied into a static folder.
 
-You can also call the Gradle task directly when your environment is already configured:
+You can also call the backend Gradle task directly when your environment is already configured:
 
 ```powershell
-.\gradlew.bat :tools:pathfinder-sim-viewer:serve
+.\gradlew.bat :tools:pathfinder-sim-server:bootRun
 ```
 
 Open `http://localhost:8087` on desktop, or `http://<pc-lan-ip>:8087` from an Android phone on the same network.
@@ -74,7 +75,8 @@ Generate a compatible replay:
 ```
 
 The Java simulator also persists replay JSON files and an `index.json` under `%USERPROFILE%\.ebsl\pathfinder-sim\replays`
-by default. Restart `scripts\sim-viewer.bat` after generating new replays to refresh the saved replay list.
+by default. The Spring Boot server reads that directory through `/api/replays`, so refreshing the page is enough after
+generating new replays.
 
 ## Controls
 
@@ -88,4 +90,5 @@ by default. Restart `scripts\sim-viewer.bat` after generating new replays to ref
 ## Code Ownership
 
 The viewer deliberately avoids duplicating simulator rules. Terrain colors come from the Java replay export as `rgb`
-values derived from `ReplayBlockKind`; the TypeScript layer only projects and draws replay data.
+values derived from `ReplayBlockKind`; the TypeScript layer only projects and draws replay data. Runtime data should
+come from `tools:pathfinder-sim-server` when Java can provide it.

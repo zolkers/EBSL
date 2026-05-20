@@ -29,18 +29,11 @@ if ([string]::IsNullOrWhiteSpace($ReplayDir)) {
     $ReplayDir = Join-Path $env:USERPROFILE ".ebsl\pathfinder-sim\replays"
 }
 
-& .\gradlew.bat :tools:pathfinder-sim-viewer:syncSavedReplays "-Pviewer.replayDir=$ReplayDir"
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
-
-$viewerDirectory = Join-Path $repoDirectory "build\tools\pathfinder-sim-viewer\webapp"
-$javaExecutable = Join-Path $env:JAVA_HOME "bin\java.exe"
 $url = "http://localhost:$Port"
 
 Write-Host "Serving pathfinder sim viewer at $url"
 Write-Host "Bound to $BindAddress for LAN/mobile testing."
-Write-Host "Serving saved replays from $ReplayDir"
+Write-Host "Serving Java replay API from $ReplayDir"
 Write-Host "Press Ctrl+C to stop the viewer server."
 
 if (-not $NoOpen) {
@@ -51,4 +44,4 @@ if (-not $NoOpen) {
     } -ArgumentList $url | Out-Null
 }
 
-& $javaExecutable -m jdk.httpserver -b $BindAddress -p $Port -d $viewerDirectory
+& .\gradlew.bat :tools:pathfinder-sim-server:bootRun "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir"

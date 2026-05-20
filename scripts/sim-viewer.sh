@@ -47,14 +47,11 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-./gradlew :tools:pathfinder-sim-viewer:syncSavedReplays "-Pviewer.replayDir=$replay_dir"
-
-viewer_dir="$repo_dir/build/tools/pathfinder-sim-viewer/webapp"
 url="http://localhost:$port"
 
 echo "Serving pathfinder sim viewer at $url"
 echo "Bound to $bind_address for LAN/mobile testing."
-echo "Serving saved replays from $replay_dir"
+echo "Serving Java replay API from $replay_dir"
 echo "Press Ctrl+C to stop the viewer server."
 
 if [ "$open_browser" = true ]; then
@@ -65,4 +62,7 @@ if [ "$open_browser" = true ]; then
     fi
 fi
 
-java -m jdk.httpserver -b "$bind_address" -p "$port" -d "$viewer_dir"
+./gradlew :tools:pathfinder-sim-server:bootRun \
+    "-Pviewer.port=$port" \
+    "-Pviewer.bindAddress=$bind_address" \
+    "-Pviewer.replayDir=$replay_dir"

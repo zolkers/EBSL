@@ -13,7 +13,7 @@ interface ReplayCatalogFile {
 }
 
 export async function loadReplayCatalog(): Promise<readonly ReplayCatalogEntry[]> {
-  const response = await fetch("replays/index.json", { cache: "no-store" });
+  const response = await fetchFirst(["api/replays", "replays/index.json"]);
   if (!response.ok) {
     return [];
   }
@@ -22,9 +22,26 @@ export async function loadReplayCatalog(): Promise<readonly ReplayCatalogEntry[]
 }
 
 export async function loadCatalogReplay(entry: ReplayCatalogEntry): Promise<string> {
-  const response = await fetch(`replays/${encodeURIComponent(entry.file)}`, { cache: "no-store" });
+  const encodedFile = encodeURIComponent(entry.file);
+  const response = await fetchFirst([`api/replays/${encodedFile}`, `replays/${encodedFile}`]);
   if (!response.ok) {
     throw new Error(`Unable to load saved replay: ${entry.file}`);
   }
   return response.text();
+}
+
+async function fetchFirst(urls: readonly string[]): Promise<Response> {
+  let fallback = new Response(null, { status: 404 });
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (response.ok) {
+        return response;
+      }
+      fallback = response;
+    } catch {
+      fallback = new Response(null, { status: 503 });
+    }
+  }
+  return fallback;
 }

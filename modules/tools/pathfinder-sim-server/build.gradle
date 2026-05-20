@@ -1,0 +1,62 @@
+plugins {
+    id 'application'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+apply from: rootProject.file('gradle/java-module.gradle')
+
+dependencies {
+    implementation project(':tools:pathfinder-sim')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}
+
+application {
+    mainClass = 'fr.riege.ebsl.tools.pathfindersim.server.PathfinderSimServerApp'
+}
+
+def viewerPort = providers.gradleProperty('viewer.port')
+    .orElse(providers.environmentVariable('VIEWER_PORT'))
+    .orElse('8087')
+def viewerBindAddress = providers.gradleProperty('viewer.bindAddress')
+    .orElse(providers.environmentVariable('VIEWER_BIND_ADDRESS'))
+    .orElse('0.0.0.0')
+def viewerReplayDir = providers.gradleProperty('viewer.replayDir')
+    .orElse(providers.environmentVariable('VIEWER_REPLAY_DIR'))
+    .orElse("${System.getProperty('user.home')}/.ebsl/pathfinder-sim/replays")
+def viewerAppDir = rootProject.layout.buildDirectory.dir('tools/pathfinder-sim-viewer/webapp')
+def generatedResourcesDir = layout.buildDirectory.dir('generated-resources')
+
+tasks.register('syncViewerAssets', Sync) {
+    group = 'build'
+    description = 'Copies the compiled web viewer into the Spring Boot static resources.'
+    dependsOn ':tools:pathfinder-sim-viewer:syncViewerApp'
+
+    from viewerAppDir
+    into generatedResourcesDir.map { it.dir('static') }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir generatedResourcesDir
+        }
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn tasks.named('syncViewerAssets')
+}
+
+tasks.named('bootRun') {
+    systemProperty 'server.port', viewerPort.get()
+    systemProperty 'server.address', viewerBindAddress.get()
+    systemProperty 'ebsl.sim.replay-dir', viewerReplayDir.get()
+
+    doFirst {
+        logger.lifecycle("Serving pathfinder sim viewer at http://localhost:${viewerPort.get()}")
+        logger.lifecycle("Bound to ${viewerBindAddress.get()} for LAN/mobile testing.")
+        logger.lifecycle("Serving Java replay API from ${viewerReplayDir.get()}")
+        logger.lifecycle('Press Ctrl+C to stop the viewer server.')
+    }
+}

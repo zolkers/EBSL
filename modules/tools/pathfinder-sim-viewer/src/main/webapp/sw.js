@@ -1,9 +1,9 @@
-const CACHE_NAME = "ebsl-pathfinder-mobile-v1";
+const CACHE_NAME = "ebsl-pathfinder-mobile-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./src/app.js",
+  "./dist/app.js",
   "./src/styles.css"
 ];
 
@@ -21,6 +21,9 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") {
+    return;
+  }
+  if (new URL(event.request.url).pathname.startsWith("/api/")) {
     return;
   }
   event.respondWith(
