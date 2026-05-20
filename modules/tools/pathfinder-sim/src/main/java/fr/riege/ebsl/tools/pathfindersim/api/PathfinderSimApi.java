@@ -33,6 +33,7 @@ import fr.riege.ebsl.common.pathfinding.goal.NavigationTarget;
 import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
 import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayRepository;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayPaths;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationReport;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
@@ -171,7 +172,7 @@ public final class PathfinderSimApi {
 
     private static Path replayDirectory(Path value) {
         Path directory = value == null
-            ? Path.of(System.getProperty("user.home", "."), ".ebsl", "pathfinder-sim", "replays")
+            ? ReplayPaths.defaultReplayDirectory()
             : value;
         return directory.toAbsolutePath().normalize();
     }

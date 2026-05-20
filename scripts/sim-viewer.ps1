@@ -28,18 +28,22 @@ if (-not $env:NODE_EXECUTABLE -and (Test-Path $bundledNode)) {
 
 Set-Location $repoDirectory
 if ([string]::IsNullOrWhiteSpace($ReplayDir)) {
-    $ReplayDir = Join-Path $env:USERPROFILE ".ebsl\pathfinder-sim\replays"
+    $ReplayDir = Join-Path $repoDirectory "run\config\ebsl\replays"
 }
 
 $url = "http://localhost:$Port"
 
 if ($Docker) {
     $resolvedWorldDir = (Resolve-Path -LiteralPath $WorldDir).Path
+    New-Item -ItemType Directory -Path $ReplayDir -Force | Out-Null
+    $resolvedReplayDir = (Resolve-Path -LiteralPath $ReplayDir).Path
     $env:VIEWER_PORT = "$Port"
     $env:VIEWER_WORLD_DIR = $resolvedWorldDir
+    $env:VIEWER_REPLAY_DIR = $resolvedReplayDir
 
     Write-Host "Serving pathfinder sim viewer with Docker at $url"
     Write-Host "Mounting worlds from $resolvedWorldDir to /workspace/run/saves"
+    Write-Host "Saving replays to $resolvedReplayDir"
     Write-Host "Building image and starting isolated viewer server."
     Write-Host "Press Ctrl+C to stop the viewer server."
 

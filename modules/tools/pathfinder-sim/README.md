@@ -28,7 +28,7 @@ Run the synthetic smoke scenarios:
 Every successful run saves a replay JSON and an `index.json` catalogue under:
 
 ```text
-%USERPROFILE%\.ebsl\pathfinder-sim\replays
+run\config\ebsl\replays
 ```
 
 The web viewer serves that Java replay catalogue when launched through `scripts\sim-viewer.bat`, so browsers and phones

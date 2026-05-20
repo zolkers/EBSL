@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.tools.pathfindersim.cli;
 
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayPaths;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftWorldImportOptions;
 import fr.riege.ebsl.tools.pathfindersim.world.minecraft.MinecraftStressGrid;
@@ -152,8 +153,7 @@ public record SimCliOptions(
         }
 
         private static Path defaultReplayDirectory() {
-            String userHome = System.getProperty("user.home", ".");
-            return Path.of(userHome, ".ebsl", "pathfinder-sim", "replays");
+            return ReplayPaths.defaultReplayDirectory();
         }
 
         private static int parsePositiveInt(String value, int fallback) {

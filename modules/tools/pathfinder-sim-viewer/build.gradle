@@ -25,7 +25,7 @@ def viewerBindAddress = providers.gradleProperty('viewer.bindAddress')
     .orElse('0.0.0.0')
 def viewerReplayDir = providers.gradleProperty('viewer.replayDir')
     .orElse(providers.environmentVariable('VIEWER_REPLAY_DIR'))
-    .orElse("${System.getProperty('user.home')}/.ebsl/pathfinder-sim/replays")
+    .orElse('run/config/ebsl/replays')
 
 tasks.register('downloadTypeScriptCompiler') {
     group = 'build setup'

@@ -18,7 +18,7 @@ fi
 
 port="${VIEWER_PORT:-8087}"
 bind_address="${VIEWER_BIND_ADDRESS:-0.0.0.0}"
-replay_dir="${VIEWER_REPLAY_DIR:-$HOME/.ebsl/pathfinder-sim/replays}"
+replay_dir="${VIEWER_REPLAY_DIR:-$repo_dir/run/config/ebsl/replays}"
 world_dir="${VIEWER_WORLD_DIR:-run/saves}"
 open_browser=true
 docker_mode=false
@@ -68,11 +68,18 @@ if [ "$docker_mode" = true ]; then
         echo "World directory does not exist: $resolved_world_dir" >&2
         exit 1
     fi
+    case "$replay_dir" in
+        /*) resolved_replay_dir="$replay_dir" ;;
+        *) resolved_replay_dir="$repo_dir/$replay_dir" ;;
+    esac
+    mkdir -p "$resolved_replay_dir"
     export VIEWER_PORT="$port"
     export VIEWER_WORLD_DIR="$resolved_world_dir"
+    export VIEWER_REPLAY_DIR="$resolved_replay_dir"
 
     echo "Serving pathfinder sim viewer with Docker at $url"
     echo "Mounting worlds from $resolved_world_dir to /workspace/run/saves"
+    echo "Saving replays to $resolved_replay_dir"
     echo "Building image and starting isolated viewer server."
     echo "Press Ctrl+C to stop the viewer server."
 

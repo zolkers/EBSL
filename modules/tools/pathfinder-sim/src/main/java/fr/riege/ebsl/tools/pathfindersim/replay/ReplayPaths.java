@@ -19,22 +19,15 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.tools.pathfindersim.server.config;
-
-import fr.riege.ebsl.tools.pathfindersim.replay.ReplayPaths;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+package fr.riege.ebsl.tools.pathfindersim.replay;
 
 import java.nio.file.Path;
 
-@ConfigurationProperties(prefix = "ebsl.sim")
-public class PathfinderSimServerProperties {
-    private Path replayDir = ReplayPaths.defaultReplayDirectory();
-
-    public Path getReplayDir() {
-        return replayDir;
+public final class ReplayPaths {
+    private ReplayPaths() {
     }
 
-    public void setReplayDir(Path replayDir) {
-        this.replayDir = replayDir;
+    public static Path defaultReplayDirectory() {
+        return Path.of("run", "config", "ebsl", "replays");
     }
 }

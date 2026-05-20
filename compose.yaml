@@ -37,7 +37,7 @@ services:
       NODE_EXECUTABLE: node
     volumes:
       - ${VIEWER_WORLD_DIR:-./run/saves}:/workspace/run/saves:ro
-      - pathfinder_sim_replays:/data/replays
+      - ${VIEWER_REPLAY_DIR:-./run/config/ebsl/replays}:/data/replays
       - pathfinder_sim_gradle:/gradle-cache
 
 volumes:
@@ -45,5 +45,4 @@ volumes:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
-  pathfinder_sim_replays:
   pathfinder_sim_gradle:

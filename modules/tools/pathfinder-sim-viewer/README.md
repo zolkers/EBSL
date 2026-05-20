@@ -89,9 +89,9 @@ Generate a compatible replay:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--headless --scenario=minecraft --mc-world=run\saves\New --mc-start=386,61,42 --mc-goal=500,61,40 --mc-radius=5 --json=build/pathfinder-sim/mc-report.json"
 ```
 
-The Java simulator also persists replay JSON files and an `index.json` under `%USERPROFILE%\.ebsl\pathfinder-sim\replays`
-by default. The Spring Boot server reads that directory through `/api/replays`, so refreshing the page is enough after
-generating new replays.
+The Java simulator persists replay JSON files and an `index.json` under `run\config\ebsl\replays` by default. The
+Spring Boot server reads that directory through `/api/replays`, so refreshing the page is enough after generating new
+replays.
 
 The web app can also run a Minecraft-world route directly through the Java simulator API. Fill `World`, `Start`, and
 `Goal` in the `Server route` panel, then press `Run route`. The browser posts to `POST /api/simulations/minecraft`;

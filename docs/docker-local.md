@@ -82,8 +82,11 @@ services:
       - "C:/Users/<you>/AppData/Roaming/.minecraft/saves:/minecraft-saves:ro"
 ```
 
-Then choose `/minecraft-saves/<world>` in the viewer. Replays are persisted in the Docker volume
-`pathfinder_sim_replays`.
+Then choose `/minecraft-saves/<world>` in the viewer. Replays are persisted on the host by default:
+
+```text
+./run/config/ebsl/replays -> /data/replays
+```
 
 ## What Belongs In Docker
 
