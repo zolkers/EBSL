@@ -41,6 +41,7 @@ On macOS/Linux:
 ```
 
 Local SonarQube setup is documented in [docs/sonarqube-local.md](docs/sonarqube-local.md). Sonar is recommended for contributors and expected before merging larger code changes.
+Docker-backed local services are documented in [docs/docker-local.md](docs/docker-local.md).
 
 ## Branch Names
 
@@ -100,6 +101,7 @@ Every pull request should include:
 - Keep Minecraft/Fabric imports out of platform-independent modules.
 - Follow the module boundaries and extension contracts in [docs/architecture.md](docs/architecture.md).
 - Treat [docs/architecture/api-surface.md](docs/architecture/api-surface.md) as the source of truth for public API, SPI, and implementation visibility.
+- Follow [docs/java-toolchains.md](docs/java-toolchains.md) when adding Minecraft targets with a newer Java runtime.
 - Do not commit generated files, local run data, IDE files, or `.codex-tmp/`.
 - Avoid hardcoded fully-qualified Java type names outside imports.
 - Keep tests focused on behavior and risk.

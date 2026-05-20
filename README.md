@@ -78,7 +78,11 @@ The development run directory is `run/`, which is intentionally ignored by Git.
 - Sonar-style coverage threshold, currently `>= 80%`
 - hardcoded fully-qualified Java name guard
 
-Local SonarQube setup is documented in [docs/sonarqube-local.md](docs/sonarqube-local.md).
+Local SonarQube setup is documented in [docs/sonarqube-local.md](docs/sonarqube-local.md). Docker-backed local services are documented in [docs/docker-local.md](docs/docker-local.md).
+
+## Java Toolchains
+
+The current Minecraft target runs on Java 21. Future Minecraft targets that require Java 25 should be added as separate target modules with their own Gradle toolchain instead of forcing every shared module to Java 25 immediately. See [docs/java-toolchains.md](docs/java-toolchains.md).
 
 ## Git Conventions
 

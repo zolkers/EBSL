@@ -1,10 +1,10 @@
 # Local SonarQube
 
-EBSL expects local SonarQube at `http://localhost:9000` by default.
+EBSL expects local SonarQube at `http://localhost:9000` by default. The Docker service setup is part of [docker-local.md](docker-local.md).
 
 ## Start SonarQube
 
-Start the local server from the repository root:
+Start SonarQube and its PostgreSQL database from the repository root:
 
 ```powershell
 docker compose up -d sonarqube
@@ -21,6 +21,8 @@ Reset the local SonarQube data if you intentionally want a fresh instance:
 ```powershell
 docker compose down -v
 ```
+
+The compose file uses local-only PostgreSQL defaults. Override `SONAR_POSTGRES_USER`, `SONAR_POSTGRES_PASSWORD`, or `SONAR_POSTGRES_DB` through your shell or a local `.env` file if needed.
 
 ## One-time token setup
 
