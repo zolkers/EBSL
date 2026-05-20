@@ -48,17 +48,6 @@ final class ReplayCanvas extends JPanel {
     private static final long serialVersionUID = 1L;
     private static final Color BACKGROUND = new Color(18, 22, 27);
     private static final Color GRID = new Color(48, 56, 65);
-    private static final Color SOLID = new Color(91, 101, 112);
-    private static final Color GRASS = new Color(82, 132, 67);
-    private static final Color LEAVES = new Color(54, 112, 55);
-    private static final Color EARTH = new Color(111, 84, 56);
-    private static final Color SAND = new Color(194, 177, 113);
-    private static final Color STONE = new Color(102, 108, 114);
-    private static final Color WOOD = new Color(130, 91, 53);
-    private static final Color SNOW = new Color(217, 228, 230);
-    private static final Color WATER = new Color(43, 111, 184);
-    private static final Color CLIMBABLE = new Color(186, 138, 72);
-    private static final Color DANGER = new Color(180, 63, 55);
     private static final Color PATH = new Color(80, 170, 255);
     private static final Color STUCK = new Color(255, 96, 96);
     private static final Color PLAYER = new Color(115, 230, 145);
@@ -381,19 +370,7 @@ final class ReplayCanvas extends JPanel {
     }
 
     private Color blockColor(ReplayBlock block) {
-        Color base = switch (block.kind()) {
-            case WATER -> WATER;
-            case CLIMBABLE -> CLIMBABLE;
-            case DANGER -> DANGER;
-            case GRASS -> GRASS;
-            case LEAVES -> LEAVES;
-            case EARTH -> EARTH;
-            case SAND -> SAND;
-            case STONE -> STONE;
-            case WOOD -> WOOD;
-            case SNOW -> SNOW;
-            default -> SOLID;
-        };
+        Color base = new Color(block.kind().baseRgb());
         long heightDelta = (long) block.y() - (long) terrainMinY;
         int elevation = Math.toIntExact(Math.clamp(heightDelta * 5L, -36L, 52L));
         return shade(base, elevation);

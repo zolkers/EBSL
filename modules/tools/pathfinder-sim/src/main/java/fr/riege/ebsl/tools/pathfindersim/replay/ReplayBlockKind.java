@@ -28,40 +28,42 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessPhysicsBlockType
 import java.util.Arrays;
 
 public enum ReplayBlockKind {
-    WATER("water", HeadlessPhysicsBlockType.WATER),
-    CLIMBABLE("climbable", HeadlessPhysicsBlockType.CLIMBABLE),
-    DANGER("danger", HeadlessPhysicsBlockType.LAVA, "fire", "magma_block"),
-    GRASS("grass", "grass_block", "moss", "podzol"),
-    LEAVES("leaves", "leaves", "azalea"),
-    SAND("sand", "sand", "sandstone", "terracotta"),
-    SNOW("snow", HeadlessPhysicsBlockType.ICE, "snow"),
-    EARTH("earth", "dirt", "mud", "clay", "gravel"),
-    WOOD("wood", "log", "planks", "wood", "stem", "hyphae"),
-    STONE("stone", "ore", "stone", "deepslate", "andesite", "diorite", "granite", "tuff"),
-    SOLID("solid");
+    WATER("water", 0x2B6FB8, HeadlessPhysicsBlockType.WATER),
+    CLIMBABLE("climbable", 0xBA8A48, HeadlessPhysicsBlockType.CLIMBABLE),
+    DANGER("danger", 0xB43F37, HeadlessPhysicsBlockType.LAVA, "fire", "magma_block"),
+    GRASS("grass", 0x528443, "grass_block", "moss", "podzol"),
+    LEAVES("leaves", 0x367037, "leaves", "azalea"),
+    SAND("sand", 0xC2B171, "sand", "sandstone", "terracotta"),
+    SNOW("snow", 0xD9E4E6, HeadlessPhysicsBlockType.ICE, "snow"),
+    EARTH("earth", 0x6F5438, "dirt", "mud", "clay", "gravel"),
+    WOOD("wood", 0x825B35, "log", "planks", "wood", "stem", "hyphae"),
+    STONE("stone", 0x666C72, "ore", "stone", "deepslate", "andesite", "diorite", "granite", "tuff"),
+    SOLID("solid", 0x5B6570);
 
     private final String key;
+    private final int baseRgb;
     private final HeadlessPhysicsBlockType[] physicsTypes;
     private final String[] pathTokens;
 
-    ReplayBlockKind(String key) {
-        this(key, new HeadlessPhysicsBlockType[0], new String[0]);
+    ReplayBlockKind(String key, int baseRgb) {
+        this(key, baseRgb, new HeadlessPhysicsBlockType[0], new String[0]);
     }
 
-    ReplayBlockKind(String key, HeadlessPhysicsBlockType physicsType) {
-        this(key, new HeadlessPhysicsBlockType[] { physicsType }, new String[0]);
+    ReplayBlockKind(String key, int baseRgb, HeadlessPhysicsBlockType physicsType) {
+        this(key, baseRgb, new HeadlessPhysicsBlockType[] { physicsType }, new String[0]);
     }
 
-    ReplayBlockKind(String key, String... pathTokens) {
-        this(key, new HeadlessPhysicsBlockType[0], pathTokens);
+    ReplayBlockKind(String key, int baseRgb, String... pathTokens) {
+        this(key, baseRgb, new HeadlessPhysicsBlockType[0], pathTokens);
     }
 
-    ReplayBlockKind(String key, HeadlessPhysicsBlockType physicsType, String... pathTokens) {
-        this(key, new HeadlessPhysicsBlockType[] { physicsType }, pathTokens);
+    ReplayBlockKind(String key, int baseRgb, HeadlessPhysicsBlockType physicsType, String... pathTokens) {
+        this(key, baseRgb, new HeadlessPhysicsBlockType[] { physicsType }, pathTokens);
     }
 
-    ReplayBlockKind(String key, HeadlessPhysicsBlockType[] physicsTypes, String[] pathTokens) {
+    ReplayBlockKind(String key, int baseRgb, HeadlessPhysicsBlockType[] physicsTypes, String[] pathTokens) {
         this.key = key;
+        this.baseRgb = baseRgb;
         this.physicsTypes = Arrays.copyOf(physicsTypes, physicsTypes.length);
         this.pathTokens = Arrays.copyOf(pathTokens, pathTokens.length);
     }
@@ -86,6 +88,10 @@ public enum ReplayBlockKind {
 
     public String key() {
         return key;
+    }
+
+    public int baseRgb() {
+        return baseRgb;
     }
 
     private boolean matches(BlockId id) {
