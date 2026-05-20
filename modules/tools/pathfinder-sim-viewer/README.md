@@ -35,8 +35,9 @@ Unix shell entrypoint:
 sh ./scripts/sim-viewer.sh
 ```
 
-The scripts configure the bundled JDK and Node runtime when they are available locally, open the browser, and serve
-the viewer on `0.0.0.0` so Android devices on the same network can connect.
+The scripts configure the bundled JDK and Node runtime when they are available locally, copy the Java simulator replay
+catalogue into the served app, open the browser, and serve the viewer on `0.0.0.0` so Android devices on the same
+network can connect.
 
 You can also call the Gradle task directly when your environment is already configured:
 
@@ -58,6 +59,12 @@ Limit the server to this PC only when needed:
 .\scripts\sim-viewer.bat -BindAddress 127.0.0.1
 ```
 
+Serve a custom Java replay directory:
+
+```powershell
+.\scripts\sim-viewer.bat -ReplayDir run\pathfinder-replays
+```
+
 ## Workflow
 
 Generate a compatible replay:
@@ -66,7 +73,8 @@ Generate a compatible replay:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--headless --scenario=minecraft --mc-world=run\saves\New --mc-start=386,61,42 --mc-goal=500,61,40 --mc-radius=5 --json=build/pathfinder-sim/mc-report.json"
 ```
 
-Then open the JSON file in the viewer.
+The Java simulator also persists replay JSON files and an `index.json` under `%USERPROFILE%\.ebsl\pathfinder-sim\replays`
+by default. Restart `scripts\sim-viewer.bat` after generating new replays to refresh the saved replay list.
 
 ## Controls
 

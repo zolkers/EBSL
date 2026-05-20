@@ -23,6 +23,7 @@ package fr.riege.ebsl.tools.pathfindersim.app;
 
 import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
 import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayRepository;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationReport;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
@@ -68,6 +69,11 @@ public final class PathfinderSimApp {
             }
             Files.writeString(output, SimulationReport.toJson(results));
             LOGGER.info(() -> "json=" + output.toAbsolutePath());
+        }
+        if (options.replaySaveEnabled() && !results.isEmpty()) {
+            ReplayRepository.SavedReplay replay = new ReplayRepository(options.replayDirectory()).save(results);
+            LOGGER.info(() -> "replay=" + options.replayDirectory().resolve(replay.fileName()).toAbsolutePath());
+            LOGGER.info(() -> "replayIndex=" + options.replayDirectory().resolve("index.json").toAbsolutePath());
         }
     }
 }

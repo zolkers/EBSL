@@ -337,6 +337,8 @@ public final class SimulationFrame extends JFrame {
             source.stuckWindowTicks(),
             source.stuckEpsilon(),
             null,
+            source.replayDirectory(),
+            source.replaySaveEnabled(),
             true,
             routeOptions,
             null);

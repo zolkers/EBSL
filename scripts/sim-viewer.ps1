@@ -1,6 +1,7 @@
 param(
     [int] $Port = 8087,
     [string] $BindAddress = "0.0.0.0",
+    [string] $ReplayDir = "",
     [switch] $NoOpen
 )
 
@@ -24,7 +25,11 @@ if (-not $env:NODE_EXECUTABLE -and (Test-Path $bundledNode)) {
 }
 
 Set-Location $repoDirectory
-& .\gradlew.bat :tools:pathfinder-sim-viewer:syncViewerApp
+if ([string]::IsNullOrWhiteSpace($ReplayDir)) {
+    $ReplayDir = Join-Path $env:USERPROFILE ".ebsl\pathfinder-sim\replays"
+}
+
+& .\gradlew.bat :tools:pathfinder-sim-viewer:syncSavedReplays "-Pviewer.replayDir=$ReplayDir"
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
@@ -35,6 +40,7 @@ $url = "http://localhost:$Port"
 
 Write-Host "Serving pathfinder sim viewer at $url"
 Write-Host "Bound to $BindAddress for LAN/mobile testing."
+Write-Host "Serving saved replays from $ReplayDir"
 Write-Host "Press Ctrl+C to stop the viewer server."
 
 if (-not $NoOpen) {

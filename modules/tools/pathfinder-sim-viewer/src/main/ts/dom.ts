@@ -6,6 +6,7 @@ export interface ViewerElements {
   readonly playButton: HTMLButtonElement;
   readonly resetViewButton: HTMLButtonElement;
   readonly modeButton: HTMLButtonElement;
+  readonly savedReplaySelect: HTMLSelectElement;
   readonly emptyState: HTMLElement;
   readonly scenarioLabel: HTMLElement;
   readonly frameLabel: HTMLElement;
@@ -26,6 +27,7 @@ export function queryViewerElements(): ViewerElements {
     playButton: query("#play-button", HTMLButtonElement),
     resetViewButton: query("#reset-view-button", HTMLButtonElement),
     modeButton: query("#mode-button", HTMLButtonElement),
+    savedReplaySelect: query("#saved-replay-select", HTMLSelectElement),
     emptyState: query("#empty-state", HTMLElement),
     scenarioLabel: query("#scenario-label", HTMLElement),
     frameLabel: query("#frame-label", HTMLElement),

@@ -18,6 +18,7 @@ fi
 
 port="${VIEWER_PORT:-8087}"
 bind_address="${VIEWER_BIND_ADDRESS:-0.0.0.0}"
+replay_dir="${VIEWER_REPLAY_DIR:-$HOME/.ebsl/pathfinder-sim/replays}"
 open_browser=true
 
 while [ "$#" -gt 0 ]; do
@@ -34,21 +35,26 @@ while [ "$#" -gt 0 ]; do
             open_browser=false
             shift
             ;;
+        --replay-dir)
+            replay_dir="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1" >&2
-            echo "Usage: scripts/sim-viewer.sh [--port 8087] [--bind-address 0.0.0.0] [--no-open]" >&2
+            echo "Usage: scripts/sim-viewer.sh [--port 8087] [--bind-address 0.0.0.0] [--replay-dir path] [--no-open]" >&2
             exit 1
             ;;
     esac
 done
 
-./gradlew :tools:pathfinder-sim-viewer:syncViewerApp
+./gradlew :tools:pathfinder-sim-viewer:syncSavedReplays "-Pviewer.replayDir=$replay_dir"
 
 viewer_dir="$repo_dir/build/tools/pathfinder-sim-viewer/webapp"
 url="http://localhost:$port"
 
 echo "Serving pathfinder sim viewer at $url"
 echo "Bound to $bind_address for LAN/mobile testing."
+echo "Serving saved replays from $replay_dir"
 echo "Press Ctrl+C to stop the viewer server."
 
 if [ "$open_browser" = true ]; then

@@ -1,5 +1,6 @@
 import type { ViewerElements } from "./dom.js";
 import { clamp, normalizeRadians } from "./math-utils.js";
+import { loadCatalogReplay, loadReplayCatalog, ReplayCatalogEntry } from "./replay-catalog.js";
 import { parseReplay } from "./replay-model.js";
 import { ReplayRenderer } from "./replay-renderer.js";
 import { createViewerState, maxFrame, resetCamera, TICK_MS, ViewerState } from "./viewer-state.js";
@@ -10,6 +11,7 @@ const ROTATION_RADIANS_PER_PIXEL = 0.008;
 export class ReplayController {
   private readonly state: ViewerState = createViewerState();
   private readonly renderer: ReplayRenderer;
+  private catalog: readonly ReplayCatalogEntry[] = [];
 
   constructor(private readonly elements: ViewerElements) {
     this.renderer = new ReplayRenderer(elements.canvas);
@@ -17,6 +19,7 @@ export class ReplayController {
 
   start(): void {
     this.elements.fileInput.addEventListener("change", () => void this.loadSelectedFile());
+    this.elements.savedReplaySelect.addEventListener("change", () => void this.loadSelectedCatalogReplay());
     this.elements.timeline.addEventListener("input", () => this.setFrame(Number(this.elements.timeline.value)));
     this.elements.playButton.addEventListener("click", () => this.togglePlayback());
     this.elements.resetViewButton.addEventListener("click", () => this.resetView());
@@ -31,6 +34,7 @@ export class ReplayController {
     this.elements.dropZone.addEventListener("drop", event => void this.dropFile(event));
     window.addEventListener("keydown", event => this.handleKeyboard(event));
     window.addEventListener("resize", () => this.render());
+    void this.loadCatalog();
     this.render();
   }
 
@@ -42,12 +46,31 @@ export class ReplayController {
   }
 
   private async loadReplayFile(file: File): Promise<void> {
-    this.state.result = parseReplay(JSON.parse(await file.text()));
+    this.loadReplayPayload(await file.text());
+  }
+
+  private loadReplayPayload(payload: string): void {
+    this.state.result = parseReplay(JSON.parse(payload));
     this.state.frame = 0;
     this.elements.timeline.max = maxFrame(this.state).toString();
     this.elements.timeline.value = "0";
     resetCamera(this.state);
     this.updateUi();
+  }
+
+  private async loadCatalog(): Promise<void> {
+    this.catalog = await loadReplayCatalog();
+    this.elements.savedReplaySelect.replaceChildren(this.catalogPlaceholder());
+    for (const entry of this.catalog) {
+      this.elements.savedReplaySelect.append(this.catalogOption(entry));
+    }
+  }
+
+  private async loadSelectedCatalogReplay(): Promise<void> {
+    const selected = this.catalog.find(entry => entry.file === this.elements.savedReplaySelect.value);
+    if (selected !== undefined) {
+      this.loadReplayPayload(await loadCatalogReplay(selected));
+    }
   }
 
   private togglePlayback(): void {
@@ -213,5 +236,20 @@ export class ReplayController {
 
   private render(): void {
     this.renderer.render(this.state);
+  }
+
+  private catalogPlaceholder(): HTMLOptionElement {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = this.catalog.length === 0 ? "No saved replay" : "Saved replays";
+    return option;
+  }
+
+  private catalogOption(entry: ReplayCatalogEntry): HTMLOptionElement {
+    const option = document.createElement("option");
+    option.value = entry.file;
+    option.textContent = `${entry.scenarioId} · ${entry.status} · ${entry.ticks} ticks`;
+    option.title = new Date(entry.savedAt).toLocaleString();
+    return option;
   }
 }

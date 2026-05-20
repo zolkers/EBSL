@@ -25,6 +25,22 @@ Run the synthetic smoke scenarios:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--headless --json=build/pathfinder-sim/report.json"
 ```
 
+Every successful run saves a replay JSON and an `index.json` catalogue under:
+
+```text
+%USERPROFILE%\.ebsl\pathfinder-sim\replays
+```
+
+The web viewer serves that Java replay catalogue when launched through `scripts\sim-viewer.bat`, so browsers and phones
+load saved replay JSONs rather than Minecraft worlds directly.
+
+Override or disable replay persistence:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:run --args="--headless --replay-dir=run\pathfinder-replays"
+.\gradlew.bat :tools:pathfinder-sim:run --args="--headless --no-replay-save"
+```
+
 Run a single scenario:
 
 ```powershell

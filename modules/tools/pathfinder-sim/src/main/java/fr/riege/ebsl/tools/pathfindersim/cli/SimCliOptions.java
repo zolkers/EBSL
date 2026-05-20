@@ -34,6 +34,8 @@ public record SimCliOptions(
     int stuckWindowTicks,
     double stuckEpsilon,
     Path jsonOutput,
+    Path replayDirectory,
+    boolean replaySaveEnabled,
     boolean headless,
     MinecraftWorldImportOptions minecraftWorldImportOptions,
     MinecraftStressGrid minecraftStressGrid
@@ -53,6 +55,8 @@ public record SimCliOptions(
             state.stuckWindow,
             state.stuckEpsilon,
             state.json,
+            state.replayDirectory,
+            state.replaySaveEnabled,
             state.headless,
             state.minecraftWorld.buildOrNull(),
             state.minecraftStressGrid);
@@ -69,6 +73,8 @@ public record SimCliOptions(
         private int stuckWindow = DEFAULT_STUCK_WINDOW;
         private double stuckEpsilon = DEFAULT_STUCK_EPSILON;
         private Path json;
+        private Path replayDirectory = defaultReplayDirectory();
+        private boolean replaySaveEnabled = true;
         private boolean headless;
         private MinecraftStressGrid minecraftStressGrid;
         private final MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
@@ -99,6 +105,14 @@ public record SimCliOptions(
             }
             if (arg.startsWith("--json=")) {
                 json = Path.of(value(arg));
+                return true;
+            }
+            if (arg.startsWith("--replay-dir=")) {
+                replayDirectory = Path.of(value(arg));
+                return true;
+            }
+            if ("--no-replay-save".equals(arg)) {
+                replaySaveEnabled = false;
                 return true;
             }
             if ("--headless".equals(arg)) {
@@ -135,6 +149,11 @@ public record SimCliOptions(
         private static String value(String arg) {
             int equals = arg.indexOf('=');
             return equals < 0 ? "" : arg.substring(equals + 1).trim();
+        }
+
+        private static Path defaultReplayDirectory() {
+            String userHome = System.getProperty("user.home", ".");
+            return Path.of(userHome, ".ebsl", "pathfinder-sim", "replays");
         }
 
         private static int parsePositiveInt(String value, int fallback) {

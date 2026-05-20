@@ -23,6 +23,9 @@ def viewerPort = providers.gradleProperty('viewer.port')
 def viewerBindAddress = providers.gradleProperty('viewer.bindAddress')
     .orElse(providers.environmentVariable('VIEWER_BIND_ADDRESS'))
     .orElse('0.0.0.0')
+def viewerReplayDir = providers.gradleProperty('viewer.replayDir')
+    .orElse(providers.environmentVariable('VIEWER_REPLAY_DIR'))
+    .orElse("${System.getProperty('user.home')}/.ebsl/pathfinder-sim/replays")
 
 tasks.register('downloadTypeScriptCompiler') {
     group = 'build setup'
@@ -120,6 +123,26 @@ tasks.register('validateViewerApp') {
     }
 }
 
+tasks.register('syncSavedReplays') {
+    group = 'build'
+    description = 'Copies locally persisted simulator replays into the served viewer app.'
+    dependsOn tasks.named('syncViewerApp')
+
+    doLast {
+        def source = file(viewerReplayDir.get())
+        def target = generatedAppDir.get().dir('replays').asFile
+        delete target
+        target.mkdirs()
+        if (source.isDirectory()) {
+            copy {
+                from source
+                include '*.json'
+                into target
+            }
+        }
+    }
+}
+
 tasks.register('packageViewerApp', Zip) {
     group = 'distribution'
     description = 'Packages the static responsive replay viewer.'
@@ -133,7 +156,7 @@ tasks.register('packageViewerApp', Zip) {
 tasks.register('serve', Exec) {
     group = 'application'
     description = 'Builds and serves the static replay viewer on http://localhost:8087 by default.'
-    dependsOn tasks.named('syncViewerApp')
+    dependsOn tasks.named('syncSavedReplays')
 
     doFirst {
         logger.lifecycle("Serving pathfinder sim viewer at http://localhost:${viewerPort.get()}")
