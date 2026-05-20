@@ -33,6 +33,8 @@ public enum ReplayBlockKind {
     DANGER("danger", 0xB43F37, HeadlessPhysicsBlockType.LAVA, "fire", "magma_block"),
     GRASS("grass", 0x528443, "grass_block", "moss", "podzol"),
     LEAVES("leaves", 0x367037, "leaves", "azalea"),
+    SLAB("slab", 0x9C927E, "slab"),
+    STAIR("stair", 0x8C7E68, "stairs"),
     SAND("sand", 0xC2B171, "sand", "sandstone", "terracotta"),
     SNOW("snow", 0xD9E4E6, HeadlessPhysicsBlockType.ICE, "snow"),
     EARTH("earth", 0x6F5438, "dirt", "mud", "clay", "gravel"),
