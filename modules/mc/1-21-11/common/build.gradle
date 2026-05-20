@@ -20,9 +20,11 @@ dependencies {
     modCompileOnly "net.fabricmc:fabric-loader:${loader_version}"
 }
 
+def minecraftJavaVersion = (findProperty('minecraft_java_version') ?: '21') as Integer
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = minecraftJavaVersion
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
         dependsOn project(modulePath).tasks.named('classes')
     }
@@ -30,8 +32,8 @@ tasks.withType(JavaCompile).configureEach {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(minecraftJavaVersion)
     }
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
+    targetCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
 }

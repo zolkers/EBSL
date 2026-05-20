@@ -8,8 +8,8 @@ EBSL is organized around platform-independent contracts first, then Minecraft/Fa
 - `modules/common/pathfinder-core`: path search, movement classification, quality scoring, path processing, and diagnostics.
 - `modules/common/pathfinder-execution`: movement executors and runtime path following helpers.
 - `modules/common/navigation`: service-level navigation API and runtime adapters.
-- `modules/minecraft-1-21-11/common`: Minecraft-specific world and player adapters shared by loaders.
-- `modules/minecraft-1-21-11/fabric`: Fabric entrypoint, metadata, and packaging only.
+- `modules/mc/<minecraft-version>/common`: Minecraft-specific world and player adapters shared by loaders.
+- `modules/mc/<minecraft-version>/fabric`: Fabric entrypoint, metadata, and packaging only.
 - `modules/tools/pathfinder-sim`: Java headless and Swing simulator used to run scenarios, import worlds, and export replay JSON.
 - `modules/tools/pathfinder-sim-viewer`: static responsive PWA for desktop and Android/mobile replay inspection.
 
@@ -27,6 +27,7 @@ Pathfinder behavior should be extended through explicit contracts instead of sta
 ## Contribution Rules
 
 - Keep Fabric and Minecraft imports out of platform-independent modules.
+- Add new Minecraft targets under `modules/mc/<minecraft-version>` with the same loader submodule shape.
 - Prefer adding or replacing a contract implementation over branching inside core algorithms.
 - When a new movement behavior is added, update classification, validation, execution, quality scoring, and tests together.
 

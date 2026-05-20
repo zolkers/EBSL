@@ -106,8 +106,8 @@ sh ./scripts/install-git-hooks.sh
 
 - `modules/common/*`: platform-independent contracts, pathfinding, execution, navigation, and rendering APIs.
 - `modules/app`: shared application features, UI, terminal commands, scripting, and tests.
-- `modules/minecraft-1-21-11/common`: Minecraft-specific adapters shared by loaders.
-- `modules/minecraft-1-21-11/fabric`: Fabric entrypoint and packaging.
+- `modules/mc/1-21-11/common`: Minecraft-specific adapters shared by loaders.
+- `modules/mc/1-21-11/fabric`: Fabric entrypoint and packaging.
 - `docs`: project documentation.
 - `scripts`: local setup helpers.
 

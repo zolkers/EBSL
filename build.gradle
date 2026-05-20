@@ -478,13 +478,13 @@ allprojects {
 tasks.register('runClient121Fabric') {
     group = 'ebsl'
     description = 'Run Minecraft 1.21.11 (Fabric) client'
-    dependsOn ':minecraft-1-21-11:fabric:runClient'
+    dependsOn ':mc:1-21-11:fabric:runClient'
 }
 
 tasks.register('buildMod121Fabric') {
     group = 'ebsl'
     description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
-    dependsOn ':minecraft-1-21-11:fabric:build'
+    dependsOn ':mc:1-21-11:fabric:build'
 }
 
 sonar {

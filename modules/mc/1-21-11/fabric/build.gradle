@@ -5,8 +5,9 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
-def mcCommonProject = project(':minecraft-1-21-11:common')
+def mcCommonProject = project(':mc:1-21-11:common')
 def archiveProjectName = project.name
+def minecraftJavaVersion = (findProperty('minecraft_java_version') ?: '21') as Integer
 
 evaluationDependsOn(mcCommonProject.path)
 
@@ -102,7 +103,7 @@ tasks.withType(JavaExec).matching { it.name == 'runClient' }.configureEach {
         executable = imguiX64Java.asFile.absolutePath
         doFirst {
             if (!imguiX64Java.asFile.exists()) {
-                throw new GradleException("ImGui needs a Windows x64 JVM on Windows ARM64. Run :minecraft-1-21-11:fabric:installImguiX64Jdk, then runClient again.")
+                throw new GradleException("ImGui needs a Windows x64 JVM on Windows ARM64. Run :mc:1-21-11:fabric:installImguiX64Jdk, then runClient again.")
             }
         }
     }
@@ -118,7 +119,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = minecraftJavaVersion
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
         dependsOn project(modulePath).tasks.named('classes')
     }
@@ -131,10 +132,10 @@ tasks.named('test') {
 java {
     withSourcesJar()
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(minecraftJavaVersion)
     }
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
+    targetCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
 }
 
 jar {
