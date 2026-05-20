@@ -23,28 +23,46 @@ package fr.riege.ebsl.tools.pathfindersim.world.minecraft;
 
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessBlockState;
+import fr.riege.ebsl.tools.pathfindersim.world.BlockPathRule;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Function;
 
 enum MinecraftBlockMappingRule {
-    AIR(MinecraftBlockMatcher.exact("air", "cave_air", "void_air"), ignored -> HeadlessBlockState.AIR),
-    WATER(MinecraftBlockMatcher.exact("water"), HeadlessBlockState::water),
-    LAVA(MinecraftBlockMatcher.exact("lava"), HeadlessBlockState::lava),
-    DANGER(MinecraftBlockMatcher.exact("fire", "soul_fire", "magma_block"), HeadlessBlockState::danger),
+    AIR(BlockPathRule.exact("air", "cave_air", "void_air"), ignored -> HeadlessBlockState.AIR),
+    WATER(BlockPathRule.exact("water"), HeadlessBlockState::water),
+    LAVA(BlockPathRule.exact("lava"), HeadlessBlockState::lava),
+    DANGER(BlockPathRule.exact("fire", "soul_fire", "magma_block"), HeadlessBlockState::danger),
     CLIMBABLE(
-        MinecraftBlockMatcher.exact("ladder", "vine", "weeping_vines", "twisting_vines", "scaffolding"),
+        BlockPathRule.exact("ladder", "vine", "weeping_vines", "twisting_vines", "scaffolding"),
         HeadlessBlockState::climbable),
-    HALF_SLAB(MinecraftBlockMatcher.suffix("_slab"), id -> HeadlessBlockState.slab(id, 0.5)),
-    SNOW_LAYER(MinecraftBlockMatcher.exact("snow"), id -> HeadlessBlockState.slab(id, 0.125)),
-    THIN_LAYER(MinecraftBlockMatcher.suffix("_carpet", "_pressure_plate"), id -> HeadlessBlockState.slab(id, 0.125)),
-    NON_COLLIDING_DECORATION(MinecraftBlockMatcher.nonCollidingDecoration(), ignored -> HeadlessBlockState.AIR);
+    HALF_SLAB(BlockPathRule.suffix("_slab"), id -> HeadlessBlockState.slab(id, 0.5)),
+    SNOW_LAYER(BlockPathRule.exact("snow"), id -> HeadlessBlockState.slab(id, 0.125)),
+    THIN_LAYER(BlockPathRule.suffix("_carpet", "_pressure_plate"), id -> HeadlessBlockState.slab(id, 0.125)),
+    NON_COLLIDING_DECORATION(BlockPathRule.exactOrSuffix(
+        "button",
+        "torch",
+        "redstone_torch",
+        "soul_torch",
+        "lever",
+        "short_grass",
+        "tall_grass",
+        "fern",
+        "large_fern",
+        "dead_bush",
+        "seagrass",
+        "tall_seagrass",
+        "kelp",
+        "kelp_plant",
+        "flower",
+        "mushroom",
+        "sapling",
+        "roots",
+        "sprouts"), ignored -> HeadlessBlockState.AIR);
 
-    private final MinecraftBlockMatcher matcher;
+    private final BlockPathRule matcher;
     private final Function<BlockId, HeadlessBlockState> mapper;
 
-    MinecraftBlockMappingRule(MinecraftBlockMatcher matcher, Function<BlockId, HeadlessBlockState> mapper) {
+    MinecraftBlockMappingRule(BlockPathRule matcher, Function<BlockId, HeadlessBlockState> mapper) {
         this.matcher = matcher;
         this.mapper = mapper;
     }
@@ -55,82 +73,5 @@ enum MinecraftBlockMappingRule {
 
     HeadlessBlockState map(BlockId id) {
         return mapper.apply(id);
-    }
-
-    private static final class MinecraftBlockMatcher {
-        private final MatchMode mode;
-        private final List<String> paths;
-
-        private MinecraftBlockMatcher(MatchMode mode, String... paths) {
-            this.mode = mode;
-            this.paths = List.copyOf(Arrays.asList(paths));
-        }
-
-        static MinecraftBlockMatcher exact(String... paths) {
-            return new MinecraftBlockMatcher(MatchMode.EXACT, paths);
-        }
-
-        static MinecraftBlockMatcher suffix(String... paths) {
-            return new MinecraftBlockMatcher(MatchMode.SUFFIX, paths);
-        }
-
-        static MinecraftBlockMatcher nonCollidingDecoration() {
-            return new MinecraftBlockMatcher(MatchMode.EXACT_OR_SUFFIX,
-                "button",
-                "torch",
-                "redstone_torch",
-                "soul_torch",
-                "lever",
-                "short_grass",
-                "tall_grass",
-                "fern",
-                "large_fern",
-                "dead_bush",
-                "seagrass",
-                "tall_seagrass",
-                "kelp",
-                "kelp_plant",
-                "flower",
-                "mushroom",
-                "sapling",
-                "roots",
-                "sprouts");
-        }
-
-        boolean matches(BlockId id) {
-            if (id == null) {
-                return false;
-            }
-            for (String path : paths) {
-                if (mode.matches(id.path(), path)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-    }
-
-    private enum MatchMode {
-        EXACT {
-            @Override
-            boolean matches(String actual, String expected) {
-                return actual.equals(expected);
-            }
-        },
-        SUFFIX {
-            @Override
-            boolean matches(String actual, String expected) {
-                return actual.endsWith(expected);
-            }
-        },
-        EXACT_OR_SUFFIX {
-            @Override
-            boolean matches(String actual, String expected) {
-                return actual.equals(expected) || actual.endsWith("_" + expected);
-            }
-        };
-
-        abstract boolean matches(String actual, String expected);
     }
 }
