@@ -41,6 +41,9 @@ Override or disable replay persistence:
 .\gradlew.bat :tools:pathfinder-sim:run --args="--headless --no-replay-save"
 ```
 
+In the Swing simulator UI, use the `Replay folder` field and `Browse` button to choose where route runs save their
+replay catalogue.
+
 Run a single scenario:
 
 ```powershell

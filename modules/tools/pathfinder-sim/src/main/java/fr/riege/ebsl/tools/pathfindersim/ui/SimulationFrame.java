@@ -22,6 +22,7 @@
 package fr.riege.ebsl.tools.pathfindersim.ui;
 
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayRepository;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
 import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
@@ -67,6 +68,7 @@ public final class SimulationFrame extends JFrame {
     private static final int DEFAULT_TIMER_DELAY_MS = 50;
     private static final int MIN_TIMER_DELAY_MS = 10;
     private static final int MAX_TIMER_DELAY_MS = 250;
+    private static final String HEADLESS_ARG = "--headless";
 
     private final transient SimCliOptions options;
     private final transient MinecraftWorldImportOptions minecraftOptions;
@@ -84,7 +86,9 @@ public final class SimulationFrame extends JFrame {
     private final JTextField worldField = new JTextField(22);
     private final JTextField startField = new JTextField(16);
     private final JTextField goalField = new JTextField(12);
+    private final JTextField replayDirField = new JTextField(28);
     private final JComboBox<SimulationGoalInput> goalType = new JComboBox<>(SimulationGoalInput.values());
+    private final JCheckBox saveReplay = new JCheckBox("Save replay", true);
     private final JCheckBox isometric = new JCheckBox("3D", true);
     private final JCheckBox minecraftSpeed = new JCheckBox("20 TPS", true);
     private final Timer timer;
@@ -122,6 +126,7 @@ public final class SimulationFrame extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
         JPanel replayRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         JPanel routeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
+        JPanel replayStorageRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         scenarioCombo.setModel(scenarioComboModel);
         scenarioCombo.setRenderer(new SimulationResultRenderer());
         scenarioCombo.addActionListener(event -> selectResult((SimulationResult) scenarioCombo.getSelectedItem()));
@@ -137,6 +142,8 @@ public final class SimulationFrame extends JFrame {
         resetView.addActionListener(event -> canvas.resetCamera());
         JButton browseWorld = new JButton("Browse");
         browseWorld.addActionListener(event -> browseWorld());
+        JButton browseReplayDirectory = new JButton("Browse");
+        browseReplayDirectory.addActionListener(event -> browseReplayDirectory());
         JButton runRoute = new JButton("Run route");
         runRoute.addActionListener(event -> runRoute());
         goalType.addActionListener(event -> updateGoalHint());
@@ -147,6 +154,7 @@ public final class SimulationFrame extends JFrame {
         minecraftSpeed.addActionListener(event -> updateSpeedMode(speed));
         isometric.addActionListener(event -> canvas.setIsometric(isometric.isSelected()));
         seedRouteFields();
+        seedReplayFields();
         replayRow.add(new JLabel("Scenario"));
         replayRow.add(scenarioCombo);
         replayRow.add(playButton);
@@ -168,8 +176,13 @@ public final class SimulationFrame extends JFrame {
         routeRow.add(goalType);
         routeRow.add(goalField);
         routeRow.add(runRoute);
+        replayStorageRow.add(saveReplay);
+        replayStorageRow.add(new JLabel("Replay folder"));
+        replayStorageRow.add(replayDirField);
+        replayStorageRow.add(browseReplayDirectory);
         panel.add(replayRow);
         panel.add(routeRow);
+        panel.add(replayStorageRow);
         return panel;
     }
 
@@ -279,12 +292,27 @@ public final class SimulationFrame extends JFrame {
         updateGoalHint();
     }
 
+    private void seedReplayFields() {
+        SimCliOptions source = options == null ? SimCliOptions.parse(new String[] { HEADLESS_ARG }) : options;
+        replayDirField.setText(source.replayDirectory().toString());
+        saveReplay.setSelected(source.replaySaveEnabled());
+    }
+
     private void browseWorld() {
         JFileChooser chooser = new JFileChooser(initialBrowseDirectory().toFile());
         chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         chooser.setDialogTitle("Select Minecraft world folder");
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             worldField.setText(chooser.getSelectedFile().toPath().toString());
+        }
+    }
+
+    private void browseReplayDirectory() {
+        JFileChooser chooser = new JFileChooser(initialReplayDirectory().toFile());
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setDialogTitle("Select replay output folder");
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            replayDirField.setText(chooser.getSelectedFile().toPath().toString());
         }
     }
 
@@ -299,7 +327,10 @@ public final class SimulationFrame extends JFrame {
             protected List<SimulationResult> doInBackground() throws IOException {
                 MinecraftWorldImportOptions routeOptions = routeOptions();
                 List<SimulationScenario> scenarios = MinecraftWorldScenarioFactory.create(routeOptions, null);
-                return new SimulationSuite(scenarios).run(headlessOptions(routeOptions));
+                SimCliOptions runOptions = headlessOptions(routeOptions);
+                List<SimulationResult> routeResults = new SimulationSuite(scenarios).run(runOptions);
+                persistReplay(routeResults, runOptions);
+                return routeResults;
             }
 
             @Override
@@ -330,18 +361,29 @@ public final class SimulationFrame extends JFrame {
     }
 
     private SimCliOptions headlessOptions(MinecraftWorldImportOptions routeOptions) {
-        SimCliOptions source = options == null ? SimCliOptions.parse(new String[] { "--headless" }) : options;
+        SimCliOptions source = options == null ? SimCliOptions.parse(new String[] { HEADLESS_ARG }) : options;
         return new SimCliOptions(
             "all",
             source.maxTicks(),
             source.stuckWindowTicks(),
             source.stuckEpsilon(),
             null,
-            source.replayDirectory(),
-            source.replaySaveEnabled(),
+            selectedReplayDirectory(source),
+            saveReplay.isSelected(),
             true,
             routeOptions,
             null);
+    }
+
+    private void persistReplay(List<SimulationResult> routeResults, SimCliOptions runOptions) throws IOException {
+        if (runOptions.replaySaveEnabled() && !routeResults.isEmpty()) {
+            new ReplayRepository(runOptions.replayDirectory()).save(routeResults);
+        }
+    }
+
+    private Path selectedReplayDirectory(SimCliOptions source) {
+        String selectedDirectory = replayDirField.getText().trim();
+        return selectedDirectory.isBlank() ? source.replayDirectory() : Path.of(selectedDirectory);
     }
 
     private double[] parseStartField() {
@@ -508,6 +550,15 @@ public final class SimulationFrame extends JFrame {
             return saves;
         }
         return Path.of(System.getProperty("user.dir"));
+    }
+
+    private Path initialReplayDirectory() {
+        String current = replayDirField.getText().trim();
+        if (!current.isBlank()) {
+            return Path.of(current);
+        }
+        SimCliOptions source = options == null ? SimCliOptions.parse(new String[] { HEADLESS_ARG }) : options;
+        return source.replayDirectory();
     }
 
     private void updateGoalHint() {
