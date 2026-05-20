@@ -21,51 +21,40 @@
 
 package fr.riege.ebsl.tools.pathfindersim.ui;
 
-import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlock;
-import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlockKind;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
-import fr.riege.ebsl.tools.pathfindersim.replay.SimulationTick;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.IsometricReplayRenderer;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayCamera;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayHudRenderer;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayPalette;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayRenderContext;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayRenderModel;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.ReplayRenderer;
+import fr.riege.ebsl.tools.pathfindersim.ui.render.TopDownReplayRenderer;
 
 import javax.swing.JPanel;
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 final class ReplayCanvas extends JPanel {
     private static final long serialVersionUID = 1L;
-    private static final Color BACKGROUND = new Color(18, 22, 27);
-    private static final Color GRID = new Color(48, 56, 65);
-    private static final Color PATH = new Color(80, 170, 255);
-    private static final Color STUCK = new Color(255, 96, 96);
-    private static final Color PLAYER = new Color(115, 230, 145);
-    private static final Color TEXT = new Color(226, 232, 240);
     private static final double MIN_ZOOM = 0.35;
     private static final double MAX_ZOOM = 6.0;
     private static final double WHEEL_ZOOM_FACTOR = 1.12;
 
+    private final transient ReplayRenderer topDownRenderer = new TopDownReplayRenderer();
+    private final transient ReplayRenderer isometricRenderer = new IsometricReplayRenderer();
+    private final transient ReplayHudRenderer hudRenderer = new ReplayHudRenderer();
+
     private transient SimulationResult result;
-    private transient Bounds replayBounds;
-    private transient List<ReplayBlock> isoTerrain = List.of();
-    private transient List<TerrainColumn> surfaceTerrain = List.of();
+    private transient ReplayRenderModel renderModel = ReplayRenderModel.of(null, 0.0);
     private transient Point lastDrag;
     private int frame;
-    private int terrainMinY;
     private double yawRadians = Math.toRadians(45.0);
     private boolean isometric = true;
     private double viewZoom = 1.0;
@@ -73,7 +62,7 @@ final class ReplayCanvas extends JPanel {
     private double panY;
 
     ReplayCanvas() {
-        setBackground(BACKGROUND);
+        setBackground(ReplayPalette.BACKGROUND);
         CameraMouseHandler camera = new CameraMouseHandler();
         addMouseListener(camera);
         addMouseMotionListener(camera);
@@ -82,10 +71,7 @@ final class ReplayCanvas extends JPanel {
 
     void setResult(SimulationResult result) {
         this.result = result;
-        this.replayBounds = boundsFor(result);
-        this.surfaceTerrain = surfaceTerrain(result);
-        this.isoTerrain = sortedIsoTerrain(result, replayBounds, yawRadians);
-        this.terrainMinY = minTerrainY(result);
+        this.renderModel = ReplayRenderModel.of(result, yawRadians);
         this.frame = 0;
         resetCamera();
         repaint();
@@ -103,7 +89,7 @@ final class ReplayCanvas extends JPanel {
 
     void setYawDegrees(int degrees) {
         yawRadians = Math.toRadians(Math.floorMod(degrees, 360));
-        isoTerrain = sortedIsoTerrain(result, replayBounds, yawRadians);
+        renderModel.updateYaw(yawRadians);
         repaint();
     }
 
@@ -130,7 +116,7 @@ final class ReplayCanvas extends JPanel {
     }
 
     private void paintGrid(Graphics2D g) {
-        g.setColor(GRID);
+        g.setColor(ReplayPalette.GRID);
         int spacing = 32;
         for (int x = 0; x < getWidth(); x += spacing) {
             g.drawLine(x, 0, x, getHeight());
@@ -140,193 +126,22 @@ final class ReplayCanvas extends JPanel {
         }
     }
 
-    private void paintEmpty(Graphics2D g) {
-        g.setColor(TEXT);
+    private static void paintEmpty(Graphics2D g) {
+        g.setColor(ReplayPalette.TEXT);
         g.setFont(g.getFont().deriveFont(Font.BOLD, 18f));
         g.drawString("No replay loaded", 28, 42);
     }
 
     private void paintReplay(Graphics2D g) {
-        List<SimulationTick> ticks = result.ticksTrace();
-        Bounds bounds = replayBounds;
-        int cappedFrame = Math.min(frame, ticks.size() - 1);
-        if (isometric) {
-            paintIsometricReplay(g, bounds, cappedFrame);
-            return;
-        }
-        paintTerrain(g, bounds);
-        g.setStroke(new BasicStroke(2.0f));
-        for (int index = 1; index <= cappedFrame; index++) {
-            SimulationTick previous = ticks.get(index - 1);
-            SimulationTick current = ticks.get(index);
-            g.setColor(current.stuck() ? STUCK : PATH);
-            drawLine(g, bounds, previous.position(), current.position());
-        }
-        SimulationTick tick = ticks.get(cappedFrame);
-        drawPlayer(g, bounds, tick);
-        paintHud(g, tick);
+        int cappedFrame = Math.min(frame, result.ticksTrace().size() - 1);
+        ReplayCamera camera = new ReplayCamera(viewZoom, panX, panY, yawRadians, getWidth(), getHeight());
+        ReplayRenderContext context = new ReplayRenderContext(result, renderModel, camera, cappedFrame);
+        currentRenderer().render(g, context);
+        hudRenderer.render(g, context);
     }
 
-    private void paintIsometricReplay(Graphics2D g, Bounds bounds, int cappedFrame) {
-        List<SimulationTick> ticks = result.ticksTrace();
-        paintIsometricTerrain(g, bounds);
-        g.setStroke(new BasicStroke(2.0f));
-        for (int index = 1; index <= cappedFrame; index++) {
-            SimulationTick previous = ticks.get(index - 1);
-            SimulationTick current = ticks.get(index);
-            g.setColor(current.stuck() ? STUCK : PATH);
-            drawIsoLine(g, bounds, previous.position(), current.position());
-        }
-        SimulationTick tick = ticks.get(cappedFrame);
-        drawIsoPlayer(g, bounds, tick);
-        paintHud(g, tick);
-    }
-
-    private void paintTerrain(Graphics2D g, Bounds bounds) {
-        for (TerrainColumn column : surfaceTerrain) {
-            g.setColor(columnColor(column));
-            double left = screenX(bounds, column.x());
-            double right = screenX(bounds, column.x() + 1.0);
-            double top = screenY(bounds, column.z() + 1.0);
-            double bottom = screenY(bounds, column.z());
-            double x = Math.floor(Math.min(left, right));
-            double y = Math.floor(Math.min(top, bottom));
-            double width = Math.ceil(Math.max(left, right)) - x + 1.0;
-            double height = Math.ceil(Math.max(top, bottom)) - y + 1.0;
-            g.fill(new Rectangle2D.Double(x, y, width, height));
-        }
-    }
-
-    private void paintIsometricTerrain(Graphics2D g, Bounds bounds) {
-        for (ReplayBlock block : isoTerrain) {
-            paintIsoBlock(g, bounds, block);
-        }
-    }
-
-    private void paintIsoBlock(Graphics2D g, Bounds bounds, ReplayBlock block) {
-        Color base = blockColor(block);
-        Path2D.Double top = isoFace(bounds, block, 1.0, Face.TOP);
-        Path2D.Double south = isoFace(bounds, block, 0.0, Face.SOUTH);
-        Path2D.Double east = isoFace(bounds, block, 0.0, Face.EAST);
-        fillFace(g, south, shade(base, -28));
-        fillFace(g, east, shade(base, -50));
-        fillFace(g, top, base);
-    }
-
-    private Path2D.Double isoFace(Bounds bounds, ReplayBlock block, double yOffset, Face face) {
-        return switch (face) {
-            case TOP -> polygon(
-                isoPoint(bounds, block.x(), block.y() + yOffset, block.z()),
-                isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z()),
-                isoPoint(bounds, block.x() + 1.0, block.y() + yOffset, block.z() + 1.0),
-                isoPoint(bounds, block.x(), block.y() + yOffset, block.z() + 1.0));
-            case SOUTH -> polygon(
-                isoPoint(bounds, block.x(), block.y() + 1.0, block.z() + 1.0),
-                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z() + 1.0),
-                isoPoint(bounds, block.x() + 1.0, block.y(), block.z() + 1.0),
-                isoPoint(bounds, block.x(), block.y(), block.z() + 1.0));
-            case EAST -> polygon(
-                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z()),
-                isoPoint(bounds, block.x() + 1.0, block.y() + 1.0, block.z() + 1.0),
-                isoPoint(bounds, block.x() + 1.0, block.y(), block.z() + 1.0),
-                isoPoint(bounds, block.x() + 1.0, block.y(), block.z()));
-        };
-    }
-
-    private static Path2D.Double polygon(double[] first, double[] second, double[] third, double[] fourth) {
-        Path2D.Double path = new Path2D.Double();
-        path.moveTo(first[0], first[1]);
-        path.lineTo(second[0], second[1]);
-        path.lineTo(third[0], third[1]);
-        path.lineTo(fourth[0], fourth[1]);
-        path.closePath();
-        return path;
-    }
-
-    private static void fillFace(Graphics2D g, Path2D.Double face, Color color) {
-        g.setColor(color);
-        g.fill(face);
-        g.draw(face);
-    }
-
-    private void paintHud(Graphics2D g, SimulationTick tick) {
-        g.setColor(TEXT);
-        g.setFont(g.getFont().deriveFont(Font.PLAIN, 14f));
-        g.drawString("scenario: " + result.scenarioId(), 24, 28);
-        g.drawString("tick: " + tick.tick() + " move: " + tick.moveType() + " dist: " + format(tick.distanceToGoal()), 24, 48);
-        g.drawString("pos: " + format(tick.position().x()) + ", " + format(tick.position().y()) + ", " + format(tick.position().z()), 24, 68);
-    }
-
-    private void drawLine(Graphics2D g, Bounds bounds, Vec3d from, Vec3d to) {
-        g.draw(new Line2D.Double(screenX(bounds, from), screenY(bounds, from), screenX(bounds, to), screenY(bounds, to)));
-    }
-
-    private void drawIsoLine(Graphics2D g, Bounds bounds, Vec3d from, Vec3d to) {
-        double[] a = isoPoint(bounds, from.x(), from.y(), from.z());
-        double[] b = isoPoint(bounds, to.x(), to.y(), to.z());
-        g.draw(new Line2D.Double(a[0], a[1], b[0], b[1]));
-    }
-
-    private void drawPlayer(Graphics2D g, Bounds bounds, SimulationTick tick) {
-        double x = screenX(bounds, tick.position());
-        double y = screenY(bounds, tick.position());
-        g.setColor(tick.stuck() ? STUCK : PLAYER);
-        g.fill(new Ellipse2D.Double(x - 6.0, y - 6.0, 12.0, 12.0));
-        g.setColor(TEXT);
-        g.draw(new Ellipse2D.Double(x - 9.0, y - 9.0, 18.0, 18.0));
-    }
-
-    private void drawIsoPlayer(Graphics2D g, Bounds bounds, SimulationTick tick) {
-        double[] point = isoPoint(bounds, tick.position().x(), tick.position().y(), tick.position().z());
-        double x = point[0];
-        double y = point[1];
-        g.setColor(tick.stuck() ? STUCK : PLAYER);
-        g.fill(new Ellipse2D.Double(x - 7.0, y - 16.0, 14.0, 14.0));
-        g.setColor(TEXT);
-        g.draw(new Line2D.Double(x, y - 2.0, x, y - 15.0));
-        g.draw(new Ellipse2D.Double(x - 10.0, y - 19.0, 20.0, 20.0));
-    }
-
-    private double screenX(Bounds bounds, Vec3d value) {
-        return screenX(bounds, value.x());
-    }
-
-    private double screenY(Bounds bounds, Vec3d value) {
-        return screenY(bounds, value.z());
-    }
-
-    private double screenX(Bounds bounds, double x) {
-        double span = Math.max(1.0, bounds.maxX() - bounds.minX());
-        return transformX(48.0 + (x - bounds.minX()) / span * (getWidth() - 96.0));
-    }
-
-    private double screenY(Bounds bounds, double z) {
-        double span = Math.max(1.0, bounds.maxZ() - bounds.minZ());
-        return transformY(getHeight() - 48.0 - (z - bounds.minZ()) / span * (getHeight() - 96.0));
-    }
-
-    private double[] isoPoint(Bounds bounds, double x, double y, double z) {
-        double centerX = (bounds.minX() + bounds.maxX()) * 0.5;
-        double centerZ = (bounds.minZ() + bounds.maxZ()) * 0.5;
-        double scale = isoScale(bounds);
-        double[] rotated = rotate(x - centerX, z - centerZ, yawRadians);
-        double isoX = (rotated[0] - rotated[1]) * scale + getWidth() * 0.5;
-        double groundY = (rotated[0] + rotated[1]) * scale * 0.5 + getHeight() * 0.58;
-        double isoY = groundY - (y - terrainMinY) * scale * 0.8;
-        return new double[] { transformX(isoX), transformY(isoY) };
-    }
-
-    private double isoScale(Bounds bounds) {
-        double span = Math.max(1.0, Math.max(bounds.maxX() - bounds.minX(), bounds.maxZ() - bounds.minZ()));
-        return Math.clamp(Math.min(getWidth(), getHeight()) / (span * 1.55), 5.0, 22.0);
-    }
-
-    private double transformX(double value) {
-        return value * viewZoom + panX;
-    }
-
-    private double transformY(double value) {
-        return value * viewZoom + panY;
+    private ReplayRenderer currentRenderer() {
+        return isometric ? isometricRenderer : topDownRenderer;
     }
 
     private final class CameraMouseHandler extends MouseAdapter {
@@ -354,8 +169,8 @@ final class ReplayCanvas extends JPanel {
                 return;
             }
             Point point = event.getPoint();
-            panX += point.x - lastDrag.x;
-            panY += point.y - lastDrag.y;
+            panX += (long) point.x - (long) lastDrag.x;
+            panY += (long) point.y - (long) lastDrag.y;
             lastDrag = point;
             repaint();
         }
@@ -378,118 +193,5 @@ final class ReplayCanvas extends JPanel {
             viewZoom = newZoom;
             repaint();
         }
-    }
-
-    private Color blockColor(ReplayBlock block) {
-        Color base = new Color(block.kind().baseRgb());
-        long heightDelta = (long) block.y() - (long) terrainMinY;
-        int elevation = Math.toIntExact(Math.clamp(heightDelta * 5L, -36L, 52L));
-        return shade(base, elevation);
-    }
-
-    private Color columnColor(TerrainColumn column) {
-        Color base = new Color(column.kind().baseRgb());
-        int heightShade = Math.toIntExact(Math.clamp(((long) column.y() - terrainMinY) * 4L, -34L, 44L));
-        int reliefShade = Math.toIntExact(Math.clamp(column.relief() * 18L, -42L, 42L));
-        return shade(base, heightShade + reliefShade);
-    }
-
-    private static Color shade(Color color, int delta) {
-        return new Color(
-            colorChannel(color.getRed(), delta),
-            colorChannel(color.getGreen(), delta),
-            colorChannel(color.getBlue(), delta));
-    }
-
-    private static int colorChannel(int channel, int delta) {
-        long adjusted = (long) channel + (long) delta;
-        return Math.toIntExact(Math.clamp(adjusted, 0L, 255L));
-    }
-
-    private static String format(double value) {
-        return String.format(Locale.ROOT, "%.2f", value);
-    }
-
-    private static Bounds boundsFor(SimulationResult result) {
-        if (result == null) {
-            return null;
-        }
-        return Bounds.of(result.ticksTrace(), result.terrain());
-    }
-
-    private static List<ReplayBlock> sortedIsoTerrain(SimulationResult result, Bounds bounds, double yawRadians) {
-        if (result == null || bounds == null) {
-            return List.of();
-        }
-        double centerX = (bounds.minX() + bounds.maxX()) * 0.5;
-        double centerZ = (bounds.minZ() + bounds.maxZ()) * 0.5;
-        return result.terrain().stream()
-            .sorted((left, right) -> Double.compare(
-                isoDepth(left, centerX, centerZ, yawRadians),
-                isoDepth(right, centerX, centerZ, yawRadians)))
-            .toList();
-    }
-
-    private static double isoDepth(ReplayBlock block, double centerX, double centerZ, double yawRadians) {
-        double[] rotated = rotate(block.x() - centerX, block.z() - centerZ, yawRadians);
-        return rotated[0] + rotated[1] + block.y() * 0.35;
-    }
-
-    private static double[] rotate(double x, double z, double yawRadians) {
-        double cos = Math.cos(yawRadians);
-        double sin = Math.sin(yawRadians);
-        return new double[] { x * cos - z * sin, x * sin + z * cos };
-    }
-
-    private static List<TerrainColumn> surfaceTerrain(SimulationResult result) {
-        if (result == null || result.terrain().isEmpty()) {
-            return List.of();
-        }
-        Map<String, ReplayBlock> columns = new HashMap<>();
-        for (ReplayBlock block : result.terrain()) {
-            columns.merge(columnKey(block.x(), block.z()), block, (left, right) -> left.y() >= right.y() ? left : right);
-        }
-        int fallback = terrainMinFallback(result.terrain());
-        return columns.values().stream()
-            .map(block -> new TerrainColumn(block.x(), block.y(), block.z(), block.kind(), relief(block, columns, fallback)))
-            .toList();
-    }
-
-    private static int relief(ReplayBlock block, Map<String, ReplayBlock> columns, int fallback) {
-        int west = surfaceY(columns, block.x() - 1, block.z(), fallback);
-        int north = surfaceY(columns, block.x(), block.z() - 1, fallback);
-        return Math.clamp((block.y() - west) + (block.y() - north), -3, 3);
-    }
-
-    private static int surfaceY(Map<String, ReplayBlock> columns, int x, int z, int fallback) {
-        ReplayBlock block = columns.get(columnKey(x, z));
-        return block == null ? fallback : block.y();
-    }
-
-    private static String columnKey(int x, int z) {
-        return x + "," + z;
-    }
-
-    private static int terrainMinFallback(List<ReplayBlock> terrain) {
-        return terrain.stream().mapToInt(ReplayBlock::y).min().orElse(0);
-    }
-
-    private static int minTerrainY(SimulationResult result) {
-        if (result == null) {
-            return 0;
-        }
-        return result.terrain().stream()
-            .mapToInt(ReplayBlock::y)
-            .min()
-            .orElse(0);
-    }
-
-    private enum Face {
-        TOP,
-        SOUTH,
-        EAST
-    }
-
-    private record TerrainColumn(int x, int y, int z, ReplayBlockKind kind, int relief) {
     }
 }

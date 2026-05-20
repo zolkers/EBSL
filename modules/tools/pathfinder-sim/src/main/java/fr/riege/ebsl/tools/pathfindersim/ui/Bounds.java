@@ -26,8 +26,8 @@ import fr.riege.ebsl.tools.pathfindersim.replay.SimulationTick;
 
 import java.util.List;
 
-record Bounds(double minX, double maxX, double minZ, double maxZ) {
-    static Bounds of(List<SimulationTick> ticks, List<ReplayBlock> terrain) {
+public record Bounds(double minX, double maxX, double minZ, double maxZ) {
+    public static Bounds of(List<SimulationTick> ticks, List<ReplayBlock> terrain) {
         double minX = Double.POSITIVE_INFINITY;
         double maxX = Double.NEGATIVE_INFINITY;
         double minZ = Double.POSITIVE_INFINITY;
