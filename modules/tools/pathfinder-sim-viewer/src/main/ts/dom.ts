@@ -2,6 +2,7 @@ export interface ViewerElements {
   readonly canvas: HTMLCanvasElement;
   readonly dropZone: HTMLElement;
   readonly fileInput: HTMLInputElement;
+  readonly openWorldButton: HTMLButtonElement;
   readonly timeline: HTMLInputElement;
   readonly playButton: HTMLButtonElement;
   readonly resetViewButton: HTMLButtonElement;
@@ -44,6 +45,7 @@ export function queryViewerElements(): ViewerElements {
     canvas: query("#replay-canvas", HTMLCanvasElement),
     dropZone: query("#drop-zone", HTMLElement),
     fileInput: query("#file-input", HTMLInputElement),
+    openWorldButton: query("#open-world-button", HTMLButtonElement),
     timeline: query("#timeline", HTMLInputElement),
     playButton: query("#play-button", HTMLButtonElement),
     resetViewButton: query("#reset-view-button", HTMLButtonElement),

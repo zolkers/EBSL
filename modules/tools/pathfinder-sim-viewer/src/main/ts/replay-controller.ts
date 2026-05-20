@@ -31,6 +31,7 @@ export class ReplayController {
 
   start(): void {
     this.elements.fileInput.addEventListener("change", () => void this.loadSelectedFile());
+    this.elements.openWorldButton.addEventListener("click", () => void this.openWorldBrowser());
     this.elements.savedReplaySelect.addEventListener("change", () => void this.loadSelectedCatalogReplay());
     this.elements.goalSelect.addEventListener("change", () => this.updateGoalSelection());
     this.elements.routeForm.addEventListener("submit", event => void this.runRoute(event));

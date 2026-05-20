@@ -55,6 +55,13 @@ button:disabled {
   min-height: 64px;
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .eyebrow {
   margin: 0 0 3px;
   color: var(--blue);
@@ -87,6 +94,12 @@ button {
 }
 
 .file-button {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+#open-world-button {
   border-color: var(--blue);
   background: var(--blue);
   color: #ffffff;
@@ -334,7 +347,7 @@ button:active,
 }
 
 .control-row button:first-child:hover,
-.file-button:hover {
+#open-world-button:hover {
   background: var(--blue-strong);
 }
 
