@@ -20,10 +20,22 @@ Package and validate the app:
 Build and serve it from the repo:
 
 ```powershell
+.\scripts\sim-viewer.bat
+```
+
+PowerShell entrypoint:
+
+```powershell
 .\scripts\sim-viewer.ps1
 ```
 
-The script configures the bundled JDK and Node runtime when they are available locally, opens the browser, and serves
+Unix shell entrypoint:
+
+```bash
+sh ./scripts/sim-viewer.sh
+```
+
+The scripts configure the bundled JDK and Node runtime when they are available locally, open the browser, and serve
 the viewer on `0.0.0.0` so Android devices on the same network can connect.
 
 You can also call the Gradle task directly when your environment is already configured:
@@ -37,13 +49,13 @@ Open `http://localhost:8087` on desktop, or `http://<pc-lan-ip>:8087` from an An
 Use another port when needed:
 
 ```powershell
-.\scripts\sim-viewer.ps1 -Port 8090
+.\scripts\sim-viewer.bat -Port 8090
 ```
 
 Limit the server to this PC only when needed:
 
 ```powershell
-.\scripts\sim-viewer.ps1 -BindAddress 127.0.0.1
+.\scripts\sim-viewer.bat -BindAddress 127.0.0.1
 ```
 
 ## Workflow
