@@ -43,20 +43,24 @@ import java.awt.event.MouseWheelEvent;
 
 final class ReplayCanvas extends JPanel {
     private static final long serialVersionUID = 1L;
+    private static final double DEFAULT_YAW_RADIANS = Math.toRadians(45.0);
+    private static final double FULL_ROTATION_RADIANS = Math.PI * 2.0;
     private static final double MIN_ZOOM = 0.35;
     private static final double MAX_ZOOM = 6.0;
     private static final double WHEEL_ZOOM_FACTOR = 1.12;
+    private static final double DRAG_ROTATION_RADIANS_PER_PIXEL = 0.008;
 
     private final transient ReplayRenderer topDownRenderer = new TopDownReplayRenderer();
     private final transient ReplayRenderer isometricRenderer = new IsometricReplayRenderer();
     private final transient ReplayHudRenderer hudRenderer = new ReplayHudRenderer();
 
     private transient SimulationResult result;
-    private transient ReplayRenderModel renderModel = ReplayRenderModel.of(null, 0.0);
+    private transient ReplayRenderModel renderModel = ReplayRenderModel.of(null, DEFAULT_YAW_RADIANS);
     private transient Point lastDrag;
     private int frame;
-    private double yawRadians = Math.toRadians(45.0);
+    private double yawRadians = DEFAULT_YAW_RADIANS;
     private boolean isometric = true;
+    private boolean rotating;
     private double viewZoom = 1.0;
     private double panX;
     private double panY;
@@ -97,7 +101,10 @@ final class ReplayCanvas extends JPanel {
         viewZoom = 1.0;
         panX = 0.0;
         panY = 0.0;
+        yawRadians = DEFAULT_YAW_RADIANS;
+        renderModel.updateYaw(yawRadians);
         lastDrag = null;
+        rotating = false;
         repaint();
     }
 
@@ -147,12 +154,14 @@ final class ReplayCanvas extends JPanel {
     private final class CameraMouseHandler extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent event) {
+            rotating = event.getButton() == MouseEvent.BUTTON2;
             lastDrag = event.getPoint();
         }
 
         @Override
         public void mouseReleased(MouseEvent event) {
             lastDrag = null;
+            rotating = false;
         }
 
         @Override
@@ -169,8 +178,11 @@ final class ReplayCanvas extends JPanel {
                 return;
             }
             Point point = event.getPoint();
-            panX += (long) point.x - (long) lastDrag.x;
-            panY += (long) point.y - (long) lastDrag.y;
+            if (rotating) {
+                rotateView(point);
+            } else {
+                panView(point);
+            }
             lastDrag = point;
             repaint();
         }
@@ -193,5 +205,21 @@ final class ReplayCanvas extends JPanel {
             viewZoom = newZoom;
             repaint();
         }
+
+        private void panView(Point point) {
+            panX += (long) point.x - (long) lastDrag.x;
+            panY += (long) point.y - (long) lastDrag.y;
+        }
+
+        private void rotateView(Point point) {
+            long deltaX = (long) point.x - (long) lastDrag.x;
+            yawRadians = normalizeYaw(yawRadians + deltaX * DRAG_ROTATION_RADIANS_PER_PIXEL);
+            renderModel.updateYaw(yawRadians);
+        }
+    }
+
+    private static double normalizeYaw(double radians) {
+        double normalized = radians % FULL_ROTATION_RADIANS;
+        return normalized < 0.0 ? normalized + FULL_ROTATION_RADIANS : normalized;
     }
 }

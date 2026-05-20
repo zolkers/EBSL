@@ -135,9 +135,6 @@ public final class SimulationFrame extends JFrame {
         nextStuck.addActionListener(event -> jumpToStuck(1));
         JButton resetView = new JButton("View");
         resetView.addActionListener(event -> canvas.resetCamera());
-        JSlider rotation = new JSlider(0, 359, 45);
-        rotation.setPreferredSize(new Dimension(130, 28));
-        rotation.addChangeListener(event -> canvas.setYawDegrees(rotation.getValue()));
         JButton browseWorld = new JButton("Browse");
         browseWorld.addActionListener(event -> browseWorld());
         JButton runRoute = new JButton("Run route");
@@ -158,8 +155,6 @@ public final class SimulationFrame extends JFrame {
         replayRow.add(nextStuck);
         replayRow.add(resetView);
         replayRow.add(isometric);
-        replayRow.add(new JLabel("Yaw"));
-        replayRow.add(rotation);
         replayRow.add(minecraftSpeed);
         replayRow.add(new JLabel("Speed"));
         replayRow.add(speed);
