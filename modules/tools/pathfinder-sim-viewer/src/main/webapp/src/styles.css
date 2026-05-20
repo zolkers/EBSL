@@ -1,8 +1,19 @@
 :root {
-  color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #151a20;
-  color: #e2e8f0;
+  color-scheme: light;
+  font-family: Inter, Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f8fafd;
+  color: #202124;
+  --blue: #1a73e8;
+  --blue-strong: #1558b0;
+  --surface: #ffffff;
+  --surface-soft: #f1f4f8;
+  --canvas: #111827;
+  --line: #dfe4ea;
+  --line-strong: #c9d2dc;
+  --text: #202124;
+  --muted: #5f6368;
+  --muted-soft: #80868b;
+  --shadow: 0 1px 2px rgba(60, 64, 67, 0.16), 0 1px 3px rgba(60, 64, 67, 0.08);
 }
 
 * {
@@ -12,7 +23,9 @@
 body {
   margin: 0;
   min-height: 100svh;
-  background: #151a20;
+  background:
+    linear-gradient(180deg, #ffffff 0, #f8fafd 220px),
+    #f8fafd;
 }
 
 button,
@@ -24,21 +37,21 @@ input {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   min-height: 100svh;
-  padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
-  gap: 10px;
+  padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom);
+  gap: 12px;
 }
 
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 10px;
+  gap: 14px;
+  min-height: 64px;
 }
 
 .eyebrow {
-  margin: 0 0 2px;
-  color: #83c7ff;
+  margin: 0 0 3px;
+  color: var(--blue);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -46,63 +59,111 @@ input {
 
 h1 {
   margin: 0;
-  font-size: 22px;
+  color: var(--text);
+  font-size: 24px;
   line-height: 1.15;
+  font-weight: 650;
 }
 
 .file-button,
 button {
-  border: 1px solid #3e4a58;
-  border-radius: 8px;
-  background: #202832;
-  color: #f8fafc;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
   min-height: 40px;
-  padding: 0 14px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+  box-shadow: 0 1px 1px rgba(60, 64, 67, 0.08);
+}
+
+.file-button {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
 }
 
 .file-button input {
   display: none;
 }
 
+button:active,
+.file-button:active {
+  transform: translateY(1px);
+}
+
 .status-strip,
-.controls-panel {
-  border: 1px solid #303946;
-  border-radius: 8px;
-  background: #1b222b;
+.controls-panel,
+.viewport-panel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .status-strip {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  min-height: 40px;
-  padding: 10px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--muted);
   font-size: 13px;
-  color: #cbd5e1;
+}
+
+.status-strip span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-weight: 600;
 }
 
 .workspace {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: 12px;
   min-height: 0;
 }
 
 .viewport-panel {
   position: relative;
-  min-height: 280px;
-  border: 1px solid #303946;
-  border-radius: 8px;
+  min-height: 320px;
   overflow: hidden;
-  background: #12171d;
+  background: var(--canvas);
   touch-action: none;
 }
 
 .viewport-panel.drag-over {
-  border-color: #50aaff;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.16), var(--shadow);
+}
+
+.viewport-toolbar {
+  position: absolute;
+  z-index: 2;
+  inset: 12px 12px auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid rgba(226, 232, 240, 0.12);
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.72);
+  color: #dbeafe;
+  font-size: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.viewport-toolbar span:first-child {
+  color: #ffffff;
+  font-weight: 650;
 }
 
 #replay-canvas {
@@ -116,9 +177,10 @@ button {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 24px;
-  color: #94a3b8;
+  padding: 28px;
+  color: #cbd5e1;
   text-align: center;
+  font-size: 14px;
 }
 
 .empty-state.hidden {
@@ -127,8 +189,22 @@ button {
 
 .controls-panel {
   display: grid;
-  gap: 10px;
-  padding: 10px;
+  gap: 14px;
+  padding: 14px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.panel-heading span:first-child {
+  color: var(--text);
 }
 
 .control-row {
@@ -137,37 +213,52 @@ button {
   gap: 8px;
 }
 
+.control-row button:first-child {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.control-row button:first-child:hover,
+.file-button:hover {
+  background: var(--blue-strong);
+}
+
 #timeline {
   width: 100%;
-  accent-color: #50aaff;
+  accent-color: var(--blue);
 }
 
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   margin: 0;
 }
 
 .metrics-grid div {
   min-width: 0;
-  border: 1px solid #303946;
-  border-radius: 8px;
-  padding: 8px;
-  background: #151b23;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--surface-soft);
 }
 
 dt {
-  color: #94a3b8;
+  color: var(--muted-soft);
   font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
 dd {
-  margin: 3px 0 0;
+  margin: 5px 0 0;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 15px;
+  font-weight: 650;
 }
 
 @media (min-width: 900px) {
@@ -175,17 +266,17 @@ dd {
     max-width: 1480px;
     margin: 0 auto;
     width: 100%;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .workspace {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) 360px;
     grid-template-rows: minmax(0, 1fr);
   }
 
   .viewport-panel {
-    min-height: 620px;
+    min-height: 650px;
   }
 
   .controls-panel {
@@ -203,7 +294,7 @@ dd {
   }
 
   .workspace {
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 320px;
     grid-template-rows: minmax(0, 1fr);
   }
 
