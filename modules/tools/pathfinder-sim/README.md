@@ -40,12 +40,19 @@ Open the graphical replay viewer:
 Open an exported replay in the desktop/mobile web viewer:
 
 ```powershell
-.\gradlew.bat :tools:pathfinder-sim-viewer:assemble
-python -m http.server 8087 -d build\tools\pathfinder-sim-viewer\webapp
+.\scripts\sim-viewer.ps1
 ```
 
 Then open `http://localhost:8087` on PC or `http://<pc-lan-ip>:8087` from an Android phone and load a JSON file generated
 with `--json=...`.
+
+Package the simulator as a desktop app image:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:packageDesktopAppImage
+```
+
+The app image is written under `build\tools\pathfinder-sim\desktop`.
 
 The viewer opens without running synthetic smoke scenarios by default. Choose a Minecraft save folder with
 `Browse`, edit `Start`, pick an EBSL goal type, then press `Run route` to simulate a route without leaving the tool.

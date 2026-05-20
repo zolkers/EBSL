@@ -11,3 +11,32 @@ dependencies {
 application {
     mainClass = 'fr.riege.ebsl.tools.pathfindersim.app.PathfinderSimApp'
 }
+
+def javaExecutableName = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'jpackage.exe' : 'jpackage'
+def jpackageExecutable = new File(System.getProperty('java.home'), "bin/${javaExecutableName}")
+def desktopPackageDir = layout.buildDirectory.dir('desktop')
+
+tasks.register('packageDesktopAppImage', Exec) {
+    group = 'distribution'
+    description = 'Packages the pathfinder simulator as a desktop app image with a bundled Java runtime.'
+    dependsOn tasks.named('installDist')
+
+    def installedAppDir = layout.buildDirectory.dir("install/${project.name}")
+    def installedLibDir = installedAppDir.map { it.dir('lib') }
+    def mainJar = tasks.named('jar').flatMap { it.archiveFile }
+
+    inputs.dir(installedLibDir)
+    outputs.dir(desktopPackageDir)
+
+    doFirst {
+        delete(desktopPackageDir)
+    }
+
+    commandLine jpackageExecutable.absolutePath,
+        '--type', 'app-image',
+        '--name', 'EBSL Pathfinder Simulator',
+        '--input', installedLibDir.get().asFile.absolutePath,
+        '--main-jar', mainJar.get().asFile.name,
+        '--main-class', application.mainClass.get(),
+        '--dest', desktopPackageDir.get().asFile.absolutePath
+}
