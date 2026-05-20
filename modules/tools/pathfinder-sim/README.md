@@ -42,7 +42,8 @@ Override or disable replay persistence:
 ```
 
 In the Swing simulator UI, use the `Replay folder` field and `Browse` button to choose where route runs save their
-replay catalogue.
+replay catalogue. Use `Load replay` to reopen any saved replay JSON in the desktop simulator without re-running the
+route.
 
 Run a single scenario:
 

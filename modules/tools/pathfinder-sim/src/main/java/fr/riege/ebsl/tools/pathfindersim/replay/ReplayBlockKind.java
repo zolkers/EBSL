@@ -97,6 +97,15 @@ public enum ReplayBlockKind {
         return SOLID;
     }
 
+    public static ReplayBlockKind fromKey(String key) {
+        for (ReplayBlockKind kind : values()) {
+            if (kind.key.equals(key)) {
+                return kind;
+            }
+        }
+        return SOLID;
+    }
+
     public String key() {
         return key;
     }

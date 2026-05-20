@@ -22,6 +22,7 @@
 package fr.riege.ebsl.tools.pathfindersim.ui;
 
 import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.tools.pathfindersim.replay.ReplayReportReader;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayRepository;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationResult;
 import fr.riege.ebsl.tools.pathfindersim.scenario.SimulationScenario;
@@ -51,6 +52,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -144,6 +146,8 @@ public final class SimulationFrame extends JFrame {
         browseWorld.addActionListener(event -> browseWorld());
         JButton browseReplayDirectory = new JButton("Browse");
         browseReplayDirectory.addActionListener(event -> browseReplayDirectory());
+        JButton loadReplay = new JButton("Load replay");
+        loadReplay.addActionListener(event -> loadReplay());
         JButton runRoute = new JButton("Run route");
         runRoute.addActionListener(event -> runRoute());
         goalType.addActionListener(event -> updateGoalHint());
@@ -180,6 +184,7 @@ public final class SimulationFrame extends JFrame {
         replayStorageRow.add(new JLabel("Replay folder"));
         replayStorageRow.add(replayDirField);
         replayStorageRow.add(browseReplayDirectory);
+        replayStorageRow.add(loadReplay);
         panel.add(replayRow);
         panel.add(routeRow);
         panel.add(replayStorageRow);
@@ -313,6 +318,28 @@ public final class SimulationFrame extends JFrame {
         chooser.setDialogTitle("Select replay output folder");
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             replayDirField.setText(chooser.getSelectedFile().toPath().toString());
+        }
+    }
+
+    private void loadReplay() {
+        JFileChooser chooser = new JFileChooser(initialReplayDirectory().toFile());
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setDialogTitle("Load replay JSON");
+        chooser.setFileFilter(new FileNameExtensionFilter("Replay JSON (*.json)", "json"));
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        Path replay = chooser.getSelectedFile().toPath();
+        try {
+            List<SimulationResult> loaded = new ReplayReportReader().read(replay);
+            Path parent = replay.getParent();
+            if (parent != null) {
+                replayDirField.setText(parent.toString());
+            }
+            replaceResults(loaded);
+            status.setText("loaded replay " + replay.getFileName());
+        } catch (IOException exception) {
+            status.setText("load failed: " + rootMessage(exception));
         }
     }
 
