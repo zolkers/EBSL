@@ -126,8 +126,7 @@ abstract class AbstractPathfinder implements Pathfinder {
             }
 
             PrimitiveMinHeap openSet = new PrimitiveMinHeap(1024);
-            double startKey = calculateHeapKey(startNode, startNode.fCost());
-            insertStartNode(startNode, startKey, openSet);
+            insertStartNode(startNode, startNode.fCost(), openSet);
 
             int currentDepth = 0;
             Node bestFallbackNode = startNode;
@@ -316,7 +315,7 @@ abstract class AbstractPathfinder implements Pathfinder {
         if (exploredAfterBest < pathfinderConfiguration.goalRefinementMinIterations) {
             return false;
         }
-        return openSet.peekMinCost() + pathfinderConfiguration.goalRefinementCostMargin >= refinement.best().gCost();
+        return openSetRawFCostLowerBound(openSet) + pathfinderConfiguration.goalRefinementCostMargin >= refinement.best().gCost();
     }
 
     private boolean hasExceededGoalRefinementBudget(GoalRefinement refinement, int exploredAfterBest) {
@@ -415,6 +414,7 @@ abstract class AbstractPathfinder implements Pathfinder {
 
     protected abstract void insertStartNode(Node node, double fCost, PrimitiveMinHeap openSet);
     protected abstract Node extractBestNode(PrimitiveMinHeap openSet);
+    protected abstract double openSetRawFCostLowerBound(PrimitiveMinHeap openSet);
     protected abstract void initializeSearch();
     protected abstract void markNodeAsExpanded(Node node);
     protected abstract void performAlgorithmCleanup();

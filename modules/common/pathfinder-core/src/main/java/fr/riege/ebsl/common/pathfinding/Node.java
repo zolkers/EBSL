@@ -29,7 +29,7 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 public final class Node implements Comparable<Node> {
 
     public final PathPosition position;
-    public final int depth;
+    public int depth;
     public final double heuristic;
 
     private double gCost = 0.0;
@@ -72,6 +72,8 @@ public final class Node implements Comparable<Node> {
     public Node parent() { return parent; }
 
     public void setParent(Node parent) { this.parent = parent; }
+
+    public void setDepth(int depth) { this.depth = Math.max(0, depth); }
 
     public MoveType moveType() { return moveType; }
 

@@ -39,6 +39,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
 final class AStarPathfinder extends AbstractPathfinder implements InspectablePathfinder {
     private static final double[] BEST_PATH_COEFFICIENTS = {1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 10.0};
     private static final double MIN_FALLBACK_DISTANCE = 5.0;
@@ -73,7 +76,8 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         node.setCachedFCost(fCost);
         session.nodes.put(packedPos, node);
         session.initializeFallback(node);
-        openSet.insertOrUpdate(packedPos, fCost);
+        session.addOpenRawFCost(fCost);
+        openSet.insertOrUpdate(packedPos, calculateHeapKey(node, fCost));
     }
 
     @Override
@@ -81,6 +85,14 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         PathfindingSession session = sessionOrThrow();
         long packedPos = openSet.extractMin();
         return session.nodes.get(packedPos);
+    }
+
+    @Override
+    protected double openSetRawFCostLowerBound(PrimitiveMinHeap openSet) {
+        if (openSet.isEmpty()) {
+            return Double.POSITIVE_INFINITY;
+        }
+        return sessionOrThrow().minOpenRawFCost();
     }
 
     @Override
@@ -134,10 +146,6 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         PathPosition neighborPos = currentNode.position.add(offset);
         long packedPos = RegionKey.pack(neighborPos);
         Node candidate = candidateNode(session, packedPos, neighborPos, requestStart, requestTarget, currentNode);
-        if (candidate.inClosed()) {
-            return null;
-        }
-
         session.reusableContext.update(searchContext, candidate, currentNode, pathfinderConfiguration.heuristicStrategy);
         candidate.setMoveType(classifyMove(currentNode.position, candidate.position, searchContext));
         if (!isValidCandidate(session.reusableContext)) {
@@ -207,17 +215,24 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
 
     private void updateCandidate(Node candidate, Node currentNode, double gCost, PathfindingSession session) {
         candidate.setParent(currentNode);
+        candidate.setDepth(currentNode.depth + 1);
         candidate.setGCost(gCost);
+        candidate.setInClosed(false);
         session.recordFallbackCandidate(candidate);
     }
 
     private void enqueueCandidate(PrimitiveMinHeap openSet, long packedPos, Node candidate) {
         double fCost = candidate.fCost();
+        PathfindingSession session = sessionOrThrow();
+        if (candidate.inOpen()) {
+            session.removeOpenRawFCost(candidate.cachedFCost());
+        }
         candidate.setCachedFCost(fCost);
         double heapKey = calculateHeapKey(candidate, fCost);
         long startedAt = profiling ? System.nanoTime() : 0L;
         openSet.insertOrUpdate(packedPos, heapKey);
         candidate.setInOpen(true);
+        session.addOpenRawFCost(fCost);
         if (profiling) {
             profHeapNanos += System.nanoTime() - startedAt;
         }
@@ -263,6 +278,9 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     @Override
     protected void markNodeAsExpanded(Node node) {
         PathfindingSession session = sessionOrThrow();
+        if (node.inOpen()) {
+            session.removeOpenRawFCost(node.cachedFCost());
+        }
         node.setInOpen(false);
         node.setInClosed(true);
         session.expandedCount++;
@@ -334,6 +352,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
     private static final class PathfindingSession {
         final Long2ObjectOpenHashMap<Node> nodes = new Long2ObjectOpenHashMap<>();
         final LongSet closedSet = new LongOpenHashSet();
+        final NavigableMap<Double, Integer> openRawFCostCounts = new TreeMap<>();
         final EvaluationContextImpl reusableContext;
         final Node[] bestFallbackNodes = new Node[BEST_PATH_COEFFICIENTS.length];
         final double[] bestFallbackScores = new double[BEST_PATH_COEFFICIENTS.length];
@@ -355,6 +374,33 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
                 bestFallbackNodes[i] = start;
                 bestFallbackScores[i] = fallbackScore(start, BEST_PATH_COEFFICIENTS[i]);
             }
+        }
+
+        void addOpenRawFCost(double fCost) {
+            if (Double.isFinite(fCost)) {
+                openRawFCostCounts.merge(fCost, 1, Integer::sum);
+            }
+        }
+
+        void removeOpenRawFCost(double fCost) {
+            if (!Double.isFinite(fCost)) {
+                return;
+            }
+            Integer count = openRawFCostCounts.get(fCost);
+            if (count == null) {
+                return;
+            }
+            if (count <= 1) {
+                openRawFCostCounts.remove(fCost);
+            } else {
+                openRawFCostCounts.put(fCost, count - 1);
+            }
+        }
+
+        double minOpenRawFCost() {
+            return openRawFCostCounts.isEmpty()
+                ? Double.POSITIVE_INFINITY
+                : openRawFCostCounts.firstKey();
         }
 
         void recordFallbackCandidate(Node node) {

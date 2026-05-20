@@ -21,6 +21,16 @@
 
 package fr.riege.ebsl.common.pathfinding.pathing.heuristic;
 
+/**
+ * Coefficients applied by {@link LinearHeuristicStrategy}.
+ *
+ * <p>The default octile-only weights are intended to be admissible and consistent with the
+ * default nonnegative Euclidean transition cost. Custom positive combinations can overestimate
+ * or become inconsistent, especially when Manhattan, perpendicular, height, or weights above
+ * {@code 1.0} are mixed in. Such weighted heuristics are useful for practical speed bias, but
+ * callers that require optimal A* results should keep the heuristic admissible/consistent and
+ * keep processor cost contributions nonnegative.</p>
+ */
 public final class HeuristicWeights {
     public final double manhattanWeight;
     public final double octileWeight;

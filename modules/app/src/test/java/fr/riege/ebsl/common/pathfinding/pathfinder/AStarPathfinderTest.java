@@ -22,7 +22,11 @@
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
+import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
+import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicContext;
+import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicWeights;
+import fr.riege.ebsl.common.pathfinding.pathing.heuristic.IHeuristicStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
@@ -32,6 +36,7 @@ import fr.riege.ebsl.common.pathfinding.pathing.processing.impl.QualityAwarePath
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathState;
 import fr.riege.ebsl.common.pathfinding.pathing.result.PathfinderResult;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -86,6 +91,45 @@ class AStarPathfinderTest {
         assertTrue(positions.size() > 2);
         assertEquals(start, positions.getFirst());
         assertEquals(target, positions.getLast());
+    }
+
+    @Test
+    void reopensClosedNodeWhenBetterGCostIsDiscovered() throws Exception {
+        PathPosition start = new PathPosition(0, 64, 0);
+        PathPosition highCostFirstHop = new PathPosition(1, 64, 0);
+        PathPosition cheaperDetour = new PathPosition(0, 64, 1);
+        PathPosition target = new PathPosition(2, 64, 0);
+
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .maxIterations(64)
+            .goalRefinement(true)
+            .goalRefinementMinIterations(10)
+            .goalRefinementMaxIterations(64)
+            .goalRefinementMaxTimeMs(0)
+            .neighborStrategy(new DirectedReopenGraph(start, highCostFirstHop, cheaperDetour, target))
+            .heuristicStrategy(new InconsistentReopenHeuristic(cheaperDetour))
+            .processors(List.of(new ExpensiveRootHop(highCostFirstHop)))
+            .build());
+
+        PathfinderResult result = pathfinder.findPath(start, target, null)
+            .toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
+
+        List<PathPosition> positions = new ArrayList<>(result.getPath().collect());
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertEquals(List.of(start, cheaperDetour, highCostFirstHop, target), positions);
+    }
+
+    @Test
+    void defaultHeuristicWeightsStayOctileOnlyForOptimalSearchAssumption() {
+        HeuristicWeights weights = HeuristicWeights.DEFAULT_WEIGHTS;
+
+        assertEquals(0.0, weights.manhattanWeight);
+        assertEquals(1.0, weights.octileWeight);
+        assertEquals(0.0, weights.perpendicularWeight);
+        assertEquals(0.0, weights.heightWeight);
     }
 
     @Test
@@ -174,6 +218,77 @@ class AStarPathfinderTest {
             boolean startsAtRoot = context.getPreviousPathPosition().equals(context.getStartPathPosition());
             boolean reachesTarget = context.getCurrentPathPosition().equals(context.getTargetPathPosition());
             return startsAtRoot && reachesTarget ? Cost.of(100.0) : Cost.ZERO;
+        }
+    }
+
+    private static final class ExpensiveRootHop implements NodeProcessor {
+        private final PathPosition expensiveHop;
+
+        private ExpensiveRootHop(PathPosition expensiveHop) {
+            this.expensiveHop = expensiveHop;
+        }
+
+        @Override
+        public Cost calculateCostContribution(EvaluationContext context) {
+            boolean startsAtRoot = context.getPreviousPathPosition().equals(context.getStartPathPosition());
+            boolean takesExpensiveHop = context.getCurrentPathPosition().equals(expensiveHop);
+            return startsAtRoot && takesExpensiveHop ? Cost.of(4.0) : Cost.ZERO;
+        }
+    }
+
+    private static final class DirectedReopenGraph implements INeighborStrategy {
+        private final PathPosition start;
+        private final PathPosition highCostFirstHop;
+        private final PathPosition cheaperDetour;
+        private final PathPosition target;
+
+        private DirectedReopenGraph(PathPosition start, PathPosition highCostFirstHop,
+                                    PathPosition cheaperDetour, PathPosition target) {
+            this.start = start;
+            this.highCostFirstHop = highCostFirstHop;
+            this.cheaperDetour = cheaperDetour;
+            this.target = target;
+        }
+
+        @Override
+        public Iterable<PathVector> getOffsets() {
+            return List.of();
+        }
+
+        @Override
+        public Iterable<PathVector> getOffsets(PathPosition currentPosition) {
+            if (currentPosition.equals(start)) {
+                return List.of(offset(start, highCostFirstHop), offset(start, cheaperDetour));
+            }
+            if (currentPosition.equals(highCostFirstHop)) {
+                return List.of(offset(highCostFirstHop, target));
+            }
+            if (currentPosition.equals(cheaperDetour)) {
+                return List.of(offset(cheaperDetour, highCostFirstHop));
+            }
+            return List.of();
+        }
+
+        private static PathVector offset(PathPosition from, PathPosition to) {
+            return new PathVector(to.x - from.x, to.y - from.y, to.z - from.z);
+        }
+    }
+
+    private static final class InconsistentReopenHeuristic implements IHeuristicStrategy {
+        private final PathPosition delayedDetour;
+
+        private InconsistentReopenHeuristic(PathPosition delayedDetour) {
+            this.delayedDetour = delayedDetour;
+        }
+
+        @Override
+        public double calculate(HeuristicContext context) {
+            return context.pathfindingProgress.current.equals(delayedDetour) ? 10.0 : 0.0;
+        }
+
+        @Override
+        public double calculateTransitionCost(PathPosition from, PathPosition to) {
+            return from.distance(to);
         }
     }
 }
