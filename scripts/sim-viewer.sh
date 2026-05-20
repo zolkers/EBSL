@@ -19,7 +19,9 @@ fi
 port="${VIEWER_PORT:-8087}"
 bind_address="${VIEWER_BIND_ADDRESS:-0.0.0.0}"
 replay_dir="${VIEWER_REPLAY_DIR:-$HOME/.ebsl/pathfinder-sim/replays}"
+world_dir="${VIEWER_WORLD_DIR:-run/saves}"
 open_browser=true
+docker_mode=false
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -39,15 +41,51 @@ while [ "$#" -gt 0 ]; do
             replay_dir="$2"
             shift 2
             ;;
+        --world-dir)
+            world_dir="$2"
+            shift 2
+            ;;
+        --docker)
+            docker_mode=true
+            shift
+            ;;
         *)
             echo "Unknown argument: $1" >&2
-            echo "Usage: scripts/sim-viewer.sh [--port 8087] [--bind-address 0.0.0.0] [--replay-dir path] [--no-open]" >&2
+            echo "Usage: scripts/sim-viewer.sh [--docker] [--port 8087] [--bind-address 0.0.0.0] [--world-dir path] [--replay-dir path] [--no-open]" >&2
             exit 1
             ;;
     esac
 done
 
 url="http://localhost:$port"
+
+if [ "$docker_mode" = true ]; then
+    case "$world_dir" in
+        /*) resolved_world_dir="$world_dir" ;;
+        *) resolved_world_dir="$repo_dir/$world_dir" ;;
+    esac
+    if [ ! -d "$resolved_world_dir" ]; then
+        echo "World directory does not exist: $resolved_world_dir" >&2
+        exit 1
+    fi
+    export VIEWER_PORT="$port"
+    export VIEWER_WORLD_DIR="$resolved_world_dir"
+
+    echo "Serving pathfinder sim viewer with Docker at $url"
+    echo "Mounting worlds from $resolved_world_dir to /workspace/run/saves"
+    echo "Building image and starting isolated viewer server."
+    echo "Press Ctrl+C to stop the viewer server."
+
+    if [ "$open_browser" = true ]; then
+        if command -v xdg-open >/dev/null 2>&1; then
+            (sleep 8 && xdg-open "$url" >/dev/null 2>&1) &
+        elif command -v open >/dev/null 2>&1; then
+            (sleep 8 && open "$url" >/dev/null 2>&1) &
+        fi
+    fi
+
+    exec docker compose up --build pathfinder-sim-viewer
+fi
 
 echo "Serving pathfinder sim viewer at $url"
 echo "Bound to $bind_address for LAN/mobile testing."

@@ -17,11 +17,11 @@ Run it through the shared launcher:
 Run it through Docker with isolated assets and process state:
 
 ```powershell
-docker compose up --build pathfinder-sim-viewer
+.\scripts\sim-viewer.bat -Docker
 ```
 
-The Docker service exposes the same API on `http://localhost:8087`. Host worlds must be mounted into the container;
-the default compose file maps `run\saves` to `/workspace/run/saves`.
+The Docker service exposes the same API on `http://localhost:8087`. Host worlds must be mounted into the container.
+The default launcher maps `run\saves` to `/workspace/run/saves`; pass `-WorldDir` to mount another save directory.
 
 Or directly:
 

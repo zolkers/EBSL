@@ -36,7 +36,7 @@ services:
       VIEWER_REPLAY_DIR: /data/replays
       NODE_EXECUTABLE: node
     volumes:
-      - ./run/saves:/workspace/run/saves:ro
+      - ${VIEWER_WORLD_DIR:-./run/saves}:/workspace/run/saves:ro
       - pathfinder_sim_replays:/data/replays
       - pathfinder_sim_gradle:/gradle-cache
 

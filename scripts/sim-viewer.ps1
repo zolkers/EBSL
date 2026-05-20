@@ -2,6 +2,8 @@ param(
     [int] $Port = 8087,
     [string] $BindAddress = "0.0.0.0",
     [string] $ReplayDir = "",
+    [string] $WorldDir = "run\saves",
+    [switch] $Docker,
     [switch] $NoOpen
 )
 
@@ -30,6 +32,28 @@ if ([string]::IsNullOrWhiteSpace($ReplayDir)) {
 }
 
 $url = "http://localhost:$Port"
+
+if ($Docker) {
+    $resolvedWorldDir = (Resolve-Path -LiteralPath $WorldDir).Path
+    $env:VIEWER_PORT = "$Port"
+    $env:VIEWER_WORLD_DIR = $resolvedWorldDir
+
+    Write-Host "Serving pathfinder sim viewer with Docker at $url"
+    Write-Host "Mounting worlds from $resolvedWorldDir to /workspace/run/saves"
+    Write-Host "Building image and starting isolated viewer server."
+    Write-Host "Press Ctrl+C to stop the viewer server."
+
+    if (-not $NoOpen) {
+        Start-Job -ScriptBlock {
+            param($ViewerUrl)
+            Start-Sleep -Seconds 8
+            Start-Process $ViewerUrl
+        } -ArgumentList $url | Out-Null
+    }
+
+    docker compose up --build pathfinder-sim-viewer
+    exit $LASTEXITCODE
+}
 
 Write-Host "Serving pathfinder sim viewer at $url"
 Write-Host "Bound to $BindAddress for LAN/mobile testing."

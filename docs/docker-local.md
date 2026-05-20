@@ -36,6 +36,16 @@ Use Docker when the host browser keeps showing stale viewer assets or when you w
 docker compose up --build pathfinder-sim-viewer
 ```
 
+The shared launchers can start the same Docker service:
+
+```powershell
+.\scripts\sim-viewer.bat -Docker
+```
+
+```bash
+sh ./scripts/sim-viewer.sh --docker
+```
+
 Open:
 
 ```text
@@ -53,7 +63,17 @@ Docker can only browse host folders that are mounted into the container. By defa
 ```
 
 So choose `/workspace/run/saves/<world>` from the web UI. To use another Minecraft saves directory, add a bind mount in
-a local compose override:
+a local compose override or pass it through the launchers:
+
+```powershell
+.\scripts\sim-viewer.bat -Docker -WorldDir "C:\Users\<you>\AppData\Roaming\.minecraft\saves"
+```
+
+```bash
+sh ./scripts/sim-viewer.sh --docker --world-dir "$HOME/.minecraft/saves"
+```
+
+Compose override example:
 
 ```yaml
 services:
