@@ -34,7 +34,13 @@ $url = "http://localhost:$Port"
 Write-Host "Serving pathfinder sim viewer at $url"
 Write-Host "Bound to $BindAddress for LAN/mobile testing."
 Write-Host "Serving Java replay API from $ReplayDir"
+Write-Host "Building and syncing viewer assets before launch."
 Write-Host "Press Ctrl+C to stop the viewer server."
+
+& .\gradlew.bat :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-server:processResources "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" --console=plain
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
 
 if (-not $NoOpen) {
     Start-Job -ScriptBlock {
@@ -44,4 +50,4 @@ if (-not $NoOpen) {
     } -ArgumentList $url | Out-Null
 }
 
-& .\gradlew.bat :tools:pathfinder-sim-server:bootRun "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir"
+& .\gradlew.bat :tools:pathfinder-sim-server:bootRun "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" --console=plain
