@@ -39,3 +39,20 @@ API:
 
 The HTTP layer delegates to `PathfinderSimApi`; simulator behavior should live in the Java simulator API, not in Spring
 controllers.
+
+Example route request:
+
+```json
+{
+  "worldDirectory": "run\\saves\\New World",
+  "startX": 386.5,
+  "startY": 61.0,
+  "startZ": 42.5,
+  "goalId": "walk",
+  "goalValues": { "x": 500, "y": 61, "z": 40 },
+  "maxTicks": 600,
+  "radiusChunks": 5,
+  "goalSearchBlocks": 96,
+  "saveReplay": true
+}
+```

@@ -3,6 +3,7 @@ import { clamp, normalizeRadians } from "./math-utils.js";
 import { loadCatalogReplay, loadReplayCatalog, ReplayCatalogEntry } from "./replay-catalog.js";
 import { parseReplay } from "./replay-model.js";
 import { ReplayRenderer } from "./replay-renderer.js";
+import { loadSimGoals, MinecraftRouteRequest, runMinecraftRoute, SimGoalDescriptor } from "./sim-api.js";
 import { createViewerState, maxFrame, resetCamera, TICK_MS, ViewerState } from "./viewer-state.js";
 
 const WHEEL_ZOOM_FACTOR = 1.12;
@@ -12,6 +13,7 @@ export class ReplayController {
   private readonly state: ViewerState = createViewerState();
   private readonly renderer: ReplayRenderer;
   private catalog: readonly ReplayCatalogEntry[] = [];
+  private goals: readonly SimGoalDescriptor[] = [];
 
   constructor(private readonly elements: ViewerElements) {
     this.renderer = new ReplayRenderer(elements.canvas);
@@ -20,6 +22,8 @@ export class ReplayController {
   start(): void {
     this.elements.fileInput.addEventListener("change", () => void this.loadSelectedFile());
     this.elements.savedReplaySelect.addEventListener("change", () => void this.loadSelectedCatalogReplay());
+    this.elements.goalSelect.addEventListener("change", () => this.renderGoalFields());
+    this.elements.routeForm.addEventListener("submit", event => void this.runRoute(event));
     this.elements.timeline.addEventListener("input", () => this.setFrame(Number(this.elements.timeline.value)));
     this.elements.playButton.addEventListener("click", () => this.togglePlayback());
     this.elements.resetViewButton.addEventListener("click", () => this.resetView());
@@ -35,6 +39,7 @@ export class ReplayController {
     window.addEventListener("keydown", event => this.handleKeyboard(event));
     window.addEventListener("resize", () => this.render());
     void this.loadCatalog();
+    void this.loadGoals();
     this.render();
   }
 
@@ -71,6 +76,102 @@ export class ReplayController {
     if (selected !== undefined) {
       this.loadReplayPayload(await loadCatalogReplay(selected));
     }
+  }
+
+  private async loadGoals(): Promise<void> {
+    this.goals = await loadSimGoals();
+    this.elements.goalSelect.replaceChildren();
+    for (const goal of this.goals) {
+      const option = document.createElement("option");
+      option.value = goal.id;
+      option.textContent = goal.label;
+      option.title = goal.description;
+      this.elements.goalSelect.append(option);
+    }
+    if (this.goals.length === 0) {
+      const option = document.createElement("option");
+      option.value = "walk";
+      option.textContent = "Walk";
+      this.elements.goalSelect.append(option);
+      this.elements.serverStatus.textContent = "offline";
+    } else {
+      this.elements.serverStatus.textContent = "ready";
+    }
+    this.renderGoalFields();
+  }
+
+  private renderGoalFields(): void {
+    this.elements.goalFields.replaceChildren();
+    const goal = this.selectedGoal();
+    for (const parameter of goal?.parameters ?? this.walkParameters()) {
+      const label = document.createElement("label");
+      label.textContent = parameter.label;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "1";
+      input.value = parameter.defaultValue.toString();
+      input.dataset.parameter = parameter.id;
+      label.append(input);
+      this.elements.goalFields.append(label);
+    }
+  }
+
+  private async runRoute(event: Event): Promise<void> {
+    event.preventDefault();
+    if (this.elements.worldInput.value.trim() === "") {
+      this.elements.serverStatus.textContent = "world missing";
+      return;
+    }
+    this.elements.serverStatus.textContent = "running";
+    this.elements.runRouteButton.disabled = true;
+    try {
+      const payload = await runMinecraftRoute(this.routeRequest());
+      this.loadReplayPayload(payload);
+      await this.loadCatalog();
+      this.elements.serverStatus.textContent = "done";
+    } catch (error) {
+      this.elements.serverStatus.textContent = error instanceof Error ? error.message : "failed";
+    } finally {
+      this.elements.runRouteButton.disabled = false;
+    }
+  }
+
+  private routeRequest(): MinecraftRouteRequest {
+    return {
+      worldDirectory: this.elements.worldInput.value.trim(),
+      startX: numberInput(this.elements.startXInput, 0.5),
+      startY: numberInput(this.elements.startYInput, 64.0),
+      startZ: numberInput(this.elements.startZInput, 0.5),
+      goalId: this.elements.goalSelect.value || "walk",
+      goalValues: this.goalValues(),
+      maxTicks: integerInput(this.elements.maxTicksInput, 600),
+      radiusChunks: integerInput(this.elements.radiusInput, 4),
+      goalSearchBlocks: integerInput(this.elements.goalSearchInput, 96),
+      saveReplay: this.elements.saveReplayInput.checked
+    };
+  }
+
+  private goalValues(): Readonly<Record<string, number>> {
+    const values: Record<string, number> = {};
+    this.elements.goalFields.querySelectorAll("input").forEach(input => {
+      const parameter = input.dataset.parameter;
+      if (parameter !== undefined) {
+        values[parameter] = signedIntegerInput(input, 0);
+      }
+    });
+    return values;
+  }
+
+  private selectedGoal(): SimGoalDescriptor | undefined {
+    return this.goals.find(goal => goal.id === this.elements.goalSelect.value);
+  }
+
+  private walkParameters(): readonly { readonly id: string; readonly label: string; readonly defaultValue: number }[] {
+    return [
+      { id: "x", label: "X", defaultValue: 500 },
+      { id: "y", label: "Y", defaultValue: 61 },
+      { id: "z", label: "Z", defaultValue: 40 }
+    ];
   }
 
   private togglePlayback(): void {
@@ -252,4 +353,18 @@ export class ReplayController {
     option.title = new Date(entry.savedAt).toLocaleString();
     return option;
   }
+}
+
+function numberInput(input: HTMLInputElement, fallback: number): number {
+  const value = Number(input.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function integerInput(input: HTMLInputElement, fallback: number): number {
+  const value = Math.trunc(numberInput(input, fallback));
+  return value > 0 ? value : fallback;
+}
+
+function signedIntegerInput(input: HTMLInputElement, fallback: number): number {
+  return Math.trunc(numberInput(input, fallback));
 }

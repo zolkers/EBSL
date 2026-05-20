@@ -78,6 +78,11 @@ The Java simulator also persists replay JSON files and an `index.json` under `%U
 by default. The Spring Boot server reads that directory through `/api/replays`, so refreshing the page is enough after
 generating new replays.
 
+The web app can also run a Minecraft-world route directly through the Java simulator API. Fill `World`, `Start`, and
+`Goal` in the `Server route` panel, then press `Run route`. The browser posts to `POST /api/simulations/minecraft`;
+Spring delegates to `PathfinderSimApi`, returns the replay JSON, and optionally saves it into the configured replay
+directory.
+
 ## Controls
 
 - desktop left drag / mobile one finger drag: pan

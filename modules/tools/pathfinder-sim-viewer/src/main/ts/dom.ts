@@ -16,6 +16,19 @@ export interface ViewerElements {
   readonly metricStuck: HTMLElement;
   readonly metricNodes: HTMLElement;
   readonly metricDuration: HTMLElement;
+  readonly serverStatus: HTMLElement;
+  readonly routeForm: HTMLFormElement;
+  readonly worldInput: HTMLInputElement;
+  readonly startXInput: HTMLInputElement;
+  readonly startYInput: HTMLInputElement;
+  readonly startZInput: HTMLInputElement;
+  readonly goalSelect: HTMLSelectElement;
+  readonly goalFields: HTMLElement;
+  readonly maxTicksInput: HTMLInputElement;
+  readonly radiusInput: HTMLInputElement;
+  readonly goalSearchInput: HTMLInputElement;
+  readonly saveReplayInput: HTMLInputElement;
+  readonly runRouteButton: HTMLButtonElement;
 }
 
 export function queryViewerElements(): ViewerElements {
@@ -36,7 +49,20 @@ export function queryViewerElements(): ViewerElements {
     metricDistance: query("#metric-distance", HTMLElement),
     metricStuck: query("#metric-stuck", HTMLElement),
     metricNodes: query("#metric-nodes", HTMLElement),
-    metricDuration: query("#metric-duration", HTMLElement)
+    metricDuration: query("#metric-duration", HTMLElement),
+    serverStatus: query("#server-status", HTMLElement),
+    routeForm: query("#route-form", HTMLFormElement),
+    worldInput: query("#world-input", HTMLInputElement),
+    startXInput: query("#start-x-input", HTMLInputElement),
+    startYInput: query("#start-y-input", HTMLInputElement),
+    startZInput: query("#start-z-input", HTMLInputElement),
+    goalSelect: query("#goal-select", HTMLSelectElement),
+    goalFields: query("#goal-fields", HTMLElement),
+    maxTicksInput: query("#max-ticks-input", HTMLInputElement),
+    radiusInput: query("#radius-input", HTMLInputElement),
+    goalSearchInput: query("#goal-search-input", HTMLInputElement),
+    saveReplayInput: query("#save-replay-input", HTMLInputElement),
+    runRouteButton: query("#run-route-button", HTMLButtonElement)
   };
 }
 

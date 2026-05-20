@@ -34,6 +34,11 @@ select {
   font: inherit;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .app-shell {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -222,6 +227,59 @@ button:active,
   background: var(--surface);
   color: var(--text);
   padding: 0 12px;
+}
+
+.route-form {
+  display: grid;
+  gap: 10px;
+}
+
+.route-form label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.route-form input,
+.route-form select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.checkbox-row {
+  display: flex !important;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 8px !important;
+  min-height: 32px;
+  text-transform: none !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.checkbox-row input {
+  width: auto;
+  min-height: 0;
+}
+
+#run-route-button {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
 }
 
 .control-row button:first-child {

@@ -78,6 +78,54 @@
             <dd id="metric-duration">-</dd>
           </div>
         </dl>
+        <div class="panel-heading">
+          <span>Server route</span>
+          <span id="server-status">API</span>
+        </div>
+        <form id="route-form" class="route-form">
+          <label>
+            World
+            <input id="world-input" type="text" spellcheck="false" autocomplete="off" placeholder="run\saves\World">
+          </label>
+          <div class="field-grid">
+            <label>
+              Start X
+              <input id="start-x-input" type="number" step="0.1" value="386.5">
+            </label>
+            <label>
+              Start Y
+              <input id="start-y-input" type="number" step="0.1" value="61.0">
+            </label>
+            <label>
+              Start Z
+              <input id="start-z-input" type="number" step="0.1" value="42.5">
+            </label>
+          </div>
+          <label>
+            Goal
+            <select id="goal-select"></select>
+          </label>
+          <div id="goal-fields" class="field-grid"></div>
+          <div class="field-grid">
+            <label>
+              Max ticks
+              <input id="max-ticks-input" type="number" min="1" step="1" value="600">
+            </label>
+            <label>
+              Radius
+              <input id="radius-input" type="number" min="1" step="1" value="4">
+            </label>
+            <label>
+              Search
+              <input id="goal-search-input" type="number" min="8" step="1" value="96">
+            </label>
+          </div>
+          <label class="checkbox-row">
+            <input id="save-replay-input" type="checkbox" checked>
+            Save replay
+          </label>
+          <button id="run-route-button" type="submit">Run route</button>
+        </form>
       </section>
     </div>
   </main>
