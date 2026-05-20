@@ -30,6 +30,7 @@ export interface ViewerElements {
   readonly startYInput: HTMLInputElement;
   readonly startZInput: HTMLInputElement;
   readonly goalSelect: HTMLSelectElement;
+  readonly goalList: HTMLElement;
   readonly goalFields: HTMLElement;
   readonly maxTicksInput: HTMLInputElement;
   readonly radiusInput: HTMLInputElement;
@@ -71,6 +72,7 @@ export function queryViewerElements(): ViewerElements {
     startYInput: query("#start-y-input", HTMLInputElement),
     startZInput: query("#start-z-input", HTMLInputElement),
     goalSelect: query("#goal-select", HTMLSelectElement),
+    goalList: query("#goal-list", HTMLElement),
     goalFields: query("#goal-fields", HTMLElement),
     maxTicksInput: query("#max-ticks-input", HTMLInputElement),
     radiusInput: query("#radius-input", HTMLInputElement),

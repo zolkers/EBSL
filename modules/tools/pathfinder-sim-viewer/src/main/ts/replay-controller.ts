@@ -32,7 +32,7 @@ export class ReplayController {
   start(): void {
     this.elements.fileInput.addEventListener("change", () => void this.loadSelectedFile());
     this.elements.savedReplaySelect.addEventListener("change", () => void this.loadSelectedCatalogReplay());
-    this.elements.goalSelect.addEventListener("change", () => this.renderGoalFields());
+    this.elements.goalSelect.addEventListener("change", () => this.updateGoalSelection());
     this.elements.routeForm.addEventListener("submit", event => void this.runRoute(event));
     this.elements.browseWorldButton.addEventListener("click", () => void this.openWorldBrowser());
     this.elements.browserCloseButton.addEventListener("click", () => this.closeWorldBrowser());
@@ -95,6 +95,7 @@ export class ReplayController {
   private async loadGoals(): Promise<void> {
     this.goals = await loadSimGoals();
     this.elements.goalSelect.replaceChildren();
+    this.elements.goalList.replaceChildren();
     for (const goal of this.goals) {
       const option = document.createElement("option");
       option.value = goal.id;
@@ -107,10 +108,39 @@ export class ReplayController {
       option.value = "walk";
       option.textContent = "Walk";
       this.elements.goalSelect.append(option);
+      this.elements.goalList.append(this.goalButton("walk", "Walk", "Fallback goal while the Java API is offline."));
       this.elements.serverStatus.textContent = "offline";
     } else {
-      this.elements.serverStatus.textContent = "ready";
+      this.renderGoalList();
+      this.elements.serverStatus.textContent = `${this.goals.length} goals`;
     }
+    this.updateGoalSelection();
+  }
+
+  private renderGoalList(): void {
+    this.elements.goalList.replaceChildren();
+    for (const goal of this.goals) {
+      this.elements.goalList.append(this.goalButton(goal.id, goal.label, goal.description));
+    }
+  }
+
+  private goalButton(id: string, label: string, description: string): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.goal = id;
+    button.textContent = label;
+    button.title = description;
+    button.addEventListener("click", () => {
+      this.elements.goalSelect.value = id;
+      this.updateGoalSelection();
+    });
+    return button;
+  }
+
+  private updateGoalSelection(): void {
+    this.elements.goalList.querySelectorAll("button").forEach(button => {
+      button.classList.toggle("selected", button.dataset.goal === this.elements.goalSelect.value);
+    });
     this.renderGoalFields();
   }
 
