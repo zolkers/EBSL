@@ -53,7 +53,7 @@ public final class EvaluationContextImpl implements EvaluationContext {
 
     @Override public PathPosition getCurrentPathPosition() { return engineNode.position; }
     @Override public PathPosition getPreviousPathPosition() { return parentEngineNode == null ? null : parentEngineNode.position; }
-    @Override public int getCurrentNodeDepth() { return engineNode.depth; }
+    @Override public int getCurrentNodeDepth() { return engineNode.depth(); }
     @Override public double getCurrentNodeHeuristicValue() { return engineNode.heuristic; }
     @Override public double getPathCostToPreviousPosition() { return parentEngineNode == null ? 0.0 : parentEngineNode.gCost(); }
     @Override public SearchContext getSearchContext() { return searchContext; }

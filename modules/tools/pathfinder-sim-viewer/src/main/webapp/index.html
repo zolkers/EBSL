@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#151a20">
+  <title>EBSL Pathfinder Viewer</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="top-bar">
+      <div>
+        <p class="eyebrow">EBSL</p>
+        <h1>Pathfinder Replay</h1>
+      </div>
+      <label class="file-button">
+        <input id="file-input" type="file" accept="application/json,.json">
+        Open JSON
+      </label>
+    </header>
+
+    <section class="status-strip" aria-live="polite">
+      <span id="scenario-label">No replay loaded</span>
+      <span id="frame-label">tick 0</span>
+    </section>
+
+    <div class="workspace">
+      <section class="viewport-panel" id="drop-zone">
+        <canvas id="replay-canvas"></canvas>
+        <div id="empty-state" class="empty-state">
+          Export a JSON replay from tools:pathfinder-sim, then open or drop it here.
+        </div>
+      </section>
+
+      <section class="controls-panel">
+        <div class="control-row">
+          <button id="play-button" type="button">Play</button>
+          <button id="reset-view-button" type="button">View</button>
+          <button id="mode-button" type="button">3D</button>
+        </div>
+        <input id="timeline" type="range" min="0" max="0" value="0">
+        <dl class="metrics-grid">
+          <div>
+            <dt>Status</dt>
+            <dd id="metric-status">-</dd>
+          </div>
+          <div>
+            <dt>Move</dt>
+            <dd id="metric-move">-</dd>
+          </div>
+          <div>
+            <dt>Distance</dt>
+            <dd id="metric-distance">-</dd>
+          </div>
+          <div>
+            <dt>Stuck</dt>
+            <dd id="metric-stuck">-</dd>
+          </div>
+          <div>
+            <dt>Nodes</dt>
+            <dd id="metric-nodes">-</dd>
+          </div>
+          <div>
+            <dt>Duration</dt>
+            <dd id="metric-duration">-</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="dist/app.js"></script>
+</body>
+</html>

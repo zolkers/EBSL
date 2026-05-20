@@ -1,0 +1,129 @@
+plugins {
+    id 'base'
+}
+
+def staticAppDir = layout.projectDirectory.dir('src/main/webapp')
+def typeScriptSourceDir = layout.projectDirectory.dir('src/main/ts')
+def compiledJsDir = layout.projectDirectory.dir('build/compiled-js')
+def generatedAppDir = layout.buildDirectory.dir('webapp')
+def packageDir = layout.buildDirectory.dir('dist')
+def typeScriptVersion = '5.9.3'
+def typeScriptArchive = layout.buildDirectory.file("tools/typescript-${typeScriptVersion}.tgz")
+def typeScriptCompiler = layout.buildDirectory.file("tools/typescript/package/lib/tsc.js")
+def nodeExecutable = providers.gradleProperty('viewer.nodeExecutable')
+    .orElse(providers.environmentVariable('NODE_EXECUTABLE'))
+    .orElse('node')
+
+tasks.register('downloadTypeScriptCompiler') {
+    group = 'build setup'
+    description = 'Downloads the TypeScript compiler used by the viewer build.'
+
+    outputs.file(typeScriptArchive)
+
+    doLast {
+        def archive = typeScriptArchive.get().asFile
+        if (!archive.isFile()) {
+            archive.parentFile.mkdirs()
+            new URL("https://registry.npmjs.org/typescript/-/typescript-${typeScriptVersion}.tgz")
+                .withInputStream { input -> archive.withOutputStream { output -> output << input } }
+        }
+    }
+}
+
+tasks.register('extractTypeScriptCompiler', Copy) {
+    group = 'build setup'
+    description = 'Extracts the TypeScript compiler.'
+    dependsOn tasks.named('downloadTypeScriptCompiler')
+
+    from tarTree(resources.gzip(typeScriptArchive))
+    into layout.buildDirectory.dir('tools/typescript')
+}
+
+tasks.register('compileViewerTypeScript', Exec) {
+    group = 'build'
+    description = 'Compiles the responsive replay viewer TypeScript sources.'
+    dependsOn tasks.named('extractTypeScriptCompiler')
+
+    inputs.dir(typeScriptSourceDir)
+    inputs.file(layout.projectDirectory.file('tsconfig.json'))
+    outputs.dir(compiledJsDir)
+
+    commandLine nodeExecutable.get(), typeScriptCompiler.get().asFile.path, '--project',
+        layout.projectDirectory.file('tsconfig.json').asFile.path
+}
+
+tasks.register('syncViewerApp', Sync) {
+    group = 'build'
+    description = 'Builds a runnable static viewer webapp.'
+    dependsOn tasks.named('compileViewerTypeScript')
+
+    from(staticAppDir) {
+        exclude 'dist/**'
+    }
+    from(compiledJsDir) {
+        into 'dist'
+    }
+    into generatedAppDir
+}
+
+tasks.register('validateViewerApp') {
+    group = 'verification'
+    description = 'Validates the static responsive replay viewer assets.'
+    dependsOn tasks.named('syncViewerApp')
+
+    inputs.dir(generatedAppDir)
+    inputs.dir(typeScriptSourceDir)
+
+    doLast {
+        def requiredFiles = [
+            'index.html',
+            'manifest.webmanifest',
+            'sw.js',
+            'dist/app.js',
+            'src/styles.css'
+        ]
+        def missing = requiredFiles.findAll { !generatedAppDir.get().file(it).asFile.isFile() }
+        if (!missing.isEmpty()) {
+            throw new GradleException('Missing replay viewer assets: ' + missing.join(', '))
+        }
+
+        def checkedFiles = files(
+            fileTree(generatedAppDir).matching {
+                include '**/*.html'
+                include '**/*.css'
+                include '**/*.js'
+                include '**/*.webmanifest'
+            },
+            fileTree(typeScriptSourceDir).matching {
+                include '**/*.ts'
+            }
+        )
+        def badWhitespace = checkedFiles.findAll { file ->
+            file.readLines('UTF-8').any { line -> line.contains('\t') || line.endsWith(' ') }
+        }
+        if (!badWhitespace.isEmpty()) {
+            throw new GradleException(
+                'Replay viewer assets must not contain tabs or trailing spaces: '
+                    + badWhitespace.collect { relativePath(it) }.join(', ')
+            )
+        }
+    }
+}
+
+tasks.register('packageViewerApp', Zip) {
+    group = 'distribution'
+    description = 'Packages the static responsive replay viewer.'
+    dependsOn tasks.named('validateViewerApp')
+
+    archiveBaseName = 'pathfinder-sim-viewer'
+    destinationDirectory = packageDir
+    from generatedAppDir
+}
+
+tasks.named('assemble') {
+    dependsOn tasks.named('packageViewerApp')
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('validateViewerApp')
+}

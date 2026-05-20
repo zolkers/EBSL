@@ -1,0 +1,9 @@
+{
+  "name": "EBSL Pathfinder Replay",
+  "short_name": "EBSL Replay",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#151a20",
+  "theme_color": "#151a20",
+  "icons": []
+}

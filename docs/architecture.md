@@ -10,6 +10,8 @@ EBSL is organized around platform-independent contracts first, then Minecraft/Fa
 - `modules/common/navigation`: service-level navigation API and runtime adapters.
 - `modules/minecraft-1-21-11/common`: Minecraft-specific world and player adapters shared by loaders.
 - `modules/minecraft-1-21-11/fabric`: Fabric entrypoint, metadata, and packaging only.
+- `modules/tools/pathfinder-sim`: Java headless and Swing simulator used to run scenarios, import worlds, and export replay JSON.
+- `modules/tools/pathfinder-sim-viewer`: static responsive PWA for desktop and Android/mobile replay inspection.
 
 ## Pathfinder Contracts
 
@@ -27,4 +29,15 @@ Pathfinder behavior should be extended through explicit contracts instead of sta
 - Keep Fabric and Minecraft imports out of platform-independent modules.
 - Prefer adding or replacing a contract implementation over branching inside core algorithms.
 - When a new movement behavior is added, update classification, validation, execution, quality scoring, and tests together.
+
+## Simulator Viewer Compatibility
+
+The web simulator viewer is a viewer first. The Java simulator remains the authoritative runtime for Minecraft save
+import, physics, pathfinding, metrics, and replay generation. Desktop and Android/mobile clients consume exported replay
+JSON so they stay compatible with the same runs used by the Swing UI and headless regression checks.
+
+Do not duplicate A*, Anvil loading, movement classification, or physics rules in the web viewer. If the viewer needs
+live simulation controls, add a small server bridge around `tools:pathfinder-sim` and keep browsers as remote UIs.
+Render metadata that depends on Minecraft or simulator semantics, including terrain category colors, should be emitted
+by the Java replay export rather than reclassified in TypeScript.
 - If two classes need the same movement decision, extract it into a shared contract instead of copying the rule.

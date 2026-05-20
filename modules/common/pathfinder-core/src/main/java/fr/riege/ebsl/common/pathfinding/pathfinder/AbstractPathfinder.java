@@ -247,7 +247,7 @@ abstract class AbstractPathfinder implements Pathfinder {
 
     private boolean hasReachedPathLengthLimit(Node node) {
         return pathfinderConfiguration.maxLength > 0
-                && node.depth >= pathfinderConfiguration.maxLength;
+                && node.depth() >= pathfinderConfiguration.maxLength;
     }
 
     private int earlyFallbackCheckInterval() {
@@ -281,15 +281,15 @@ abstract class AbstractPathfinder implements Pathfinder {
                 && hasExceededCalculationTime(startedAtNanos)
                 && fallbackNode != null
                 && fallbackNode != startNode
-                && fallbackNode.depth > 0;
+                && fallbackNode.depth() > 0;
     }
 
     private boolean isUsableEarlyFallback(Node startNode, Node fallbackNode) {
-        if (fallbackNode == null || fallbackNode == startNode || fallbackNode.depth <= 0) {
+        if (fallbackNode == null || fallbackNode == startNode || fallbackNode.depth() <= 0) {
             return false;
         }
         int minNodes = Math.max(2, pathfinderConfiguration.earlyFallbackMinPathNodes);
-        if (fallbackNode.depth + 1 < minNodes) {
+        if (fallbackNode.depth() + 1 < minNodes) {
             return false;
         }
         double startHeuristic = Math.max(0.0, startNode.heuristic);
@@ -351,7 +351,7 @@ abstract class AbstractPathfinder implements Pathfinder {
     }
 
     protected Path reconstructPath(PathPosition start, PathPosition target, Node endNode) {
-        if (endNode.parent() == null && endNode.depth == 0) {
+        if (endNode.parent() == null && endNode.depth() == 0) {
             return Paths.of(start, target, List.of(endNode.position));
         }
         List<PathPosition> positions = tracePathPositions(endNode);

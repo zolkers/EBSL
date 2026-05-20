@@ -215,7 +215,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
 
     private void updateCandidate(Node candidate, Node currentNode, double gCost, PathfindingSession session) {
         candidate.setParent(currentNode);
-        candidate.setDepth(currentNode.depth + 1);
+        candidate.setDepth(currentNode.depth() + 1);
         candidate.setGCost(gCost);
         candidate.setInClosed(false);
         session.recordFallbackCandidate(candidate);
@@ -254,7 +254,7 @@ final class AStarPathfinder extends AbstractPathfinder implements InspectablePat
         return new Node(position, start, target,
                 pathfinderConfiguration.heuristicWeights,
                 pathfinderConfiguration.heuristicStrategy,
-                parent.depth + 1);
+                parent.depth() + 1);
     }
 
     private boolean isValidByProcessors(EvaluationContext context) {
