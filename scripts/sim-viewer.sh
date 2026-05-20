@@ -52,7 +52,14 @@ url="http://localhost:$port"
 echo "Serving pathfinder sim viewer at $url"
 echo "Bound to $bind_address for LAN/mobile testing."
 echo "Serving Java replay API from $replay_dir"
+echo "Building and syncing viewer assets before launch."
 echo "Press Ctrl+C to stop the viewer server."
+
+./gradlew :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-server:processResources \
+    "-Pviewer.port=$port" \
+    "-Pviewer.bindAddress=$bind_address" \
+    "-Pviewer.replayDir=$replay_dir" \
+    --console=plain
 
 if [ "$open_browser" = true ]; then
     if command -v xdg-open >/dev/null 2>&1; then
@@ -65,4 +72,5 @@ fi
 ./gradlew :tools:pathfinder-sim-server:bootRun \
     "-Pviewer.port=$port" \
     "-Pviewer.bindAddress=$bind_address" \
-    "-Pviewer.replayDir=$replay_dir"
+    "-Pviewer.replayDir=$replay_dir" \
+    --console=plain
