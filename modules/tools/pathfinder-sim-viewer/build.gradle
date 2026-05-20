@@ -10,9 +10,19 @@ def packageDir = layout.buildDirectory.dir('dist')
 def typeScriptVersion = '5.9.3'
 def typeScriptArchive = layout.buildDirectory.file("tools/typescript-${typeScriptVersion}.tgz")
 def typeScriptCompiler = layout.buildDirectory.file("tools/typescript/package/lib/tsc.js")
+def javaExecutable = providers.provider {
+    def executableName = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'java.exe' : 'java'
+    new File(System.getProperty('java.home'), "bin/${executableName}").absolutePath
+}
 def nodeExecutable = providers.gradleProperty('viewer.nodeExecutable')
     .orElse(providers.environmentVariable('NODE_EXECUTABLE'))
     .orElse('node')
+def viewerPort = providers.gradleProperty('viewer.port')
+    .orElse(providers.environmentVariable('VIEWER_PORT'))
+    .orElse('8087')
+def viewerBindAddress = providers.gradleProperty('viewer.bindAddress')
+    .orElse(providers.environmentVariable('VIEWER_BIND_ADDRESS'))
+    .orElse('0.0.0.0')
 
 tasks.register('downloadTypeScriptCompiler') {
     group = 'build setup'
@@ -118,6 +128,21 @@ tasks.register('packageViewerApp', Zip) {
     archiveBaseName = 'pathfinder-sim-viewer'
     destinationDirectory = packageDir
     from generatedAppDir
+}
+
+tasks.register('serve', Exec) {
+    group = 'application'
+    description = 'Builds and serves the static replay viewer on http://localhost:8087 by default.'
+    dependsOn tasks.named('syncViewerApp')
+
+    doFirst {
+        logger.lifecycle("Serving pathfinder sim viewer at http://localhost:${viewerPort.get()}")
+        logger.lifecycle("Bound to ${viewerBindAddress.get()} for LAN/mobile testing.")
+        logger.lifecycle('Press Ctrl+C to stop the viewer server.')
+    }
+
+    commandLine javaExecutable.get(), '-m', 'jdk.httpserver', '-b', viewerBindAddress.get(), '-p', viewerPort.get(), '-d',
+        generatedAppDir.get().asFile.absolutePath
 }
 
 tasks.named('assemble') {

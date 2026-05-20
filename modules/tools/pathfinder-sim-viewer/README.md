@@ -17,13 +17,34 @@ Package and validate the app:
 .\gradlew.bat :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-viewer:assemble
 ```
 
-Serve it from the repo:
+Build and serve it from the repo:
 
 ```powershell
-python -m http.server 8087 -d build\tools\pathfinder-sim-viewer\webapp
+.\scripts\sim-viewer.ps1
+```
+
+The script configures the bundled JDK and Node runtime when they are available locally, opens the browser, and serves
+the viewer on `0.0.0.0` so Android devices on the same network can connect.
+
+You can also call the Gradle task directly when your environment is already configured:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim-viewer:serve
 ```
 
 Open `http://localhost:8087` on desktop, or `http://<pc-lan-ip>:8087` from an Android phone on the same network.
+
+Use another port when needed:
+
+```powershell
+.\scripts\sim-viewer.ps1 -Port 8090
+```
+
+Limit the server to this PC only when needed:
+
+```powershell
+.\scripts\sim-viewer.ps1 -BindAddress 127.0.0.1
+```
 
 ## Workflow
 
