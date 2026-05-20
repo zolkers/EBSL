@@ -45,6 +45,12 @@ final class MetricsCanvas extends JPanel {
     private static final Color SPEED = new Color(104, 211, 145);
     private static final Color STUCK = new Color(248, 113, 113);
     private static final int PAD = 48;
+    private static final int LEFT_AXIS = 62;
+    private static final int RIGHT_PAD = 14;
+    private static final int TITLE_HEIGHT = 24;
+    private static final int BOTTOM_AXIS = 30;
+    private static final int GRID_LINES = 4;
+    private static final int X_TICKS = 3;
 
     private transient SimulationResult result;
 
@@ -78,65 +84,86 @@ final class MetricsCanvas extends JPanel {
 
     private void paintCharts(Graphics2D g) {
         int topHeight = (getHeight() - PAD * 3) / 2;
-        drawChartFrame(g, "Distance to goal", PAD, PAD, getWidth() - PAD * 2, topHeight);
-        drawChartFrame(g, "Horizontal speed", PAD, PAD * 2 + topHeight, getWidth() - PAD * 2, topHeight);
-        drawDistance(g, PAD, PAD, getWidth() - PAD * 2, topHeight);
-        drawSpeed(g, PAD, PAD * 2 + topHeight, getWidth() - PAD * 2, topHeight);
+        List<SimulationTick> ticks = result.ticksTrace();
+        double maxDistance = upperBound(ticks.stream().mapToDouble(SimulationTick::distanceToGoal).max().orElse(1.0));
+        double maxSpeed = upperBound(ticks.stream().mapToDouble(tick -> horizontalSpeed(tick.velocity())).max().orElse(0.01));
+        ChartArea distance = drawChartFrame(g, new ChartSpec(
+            "Distance to goal", PAD, PAD, getWidth() - PAD * 2, topHeight, maxDistance, lastTick(ticks)));
+        ChartArea speed = drawChartFrame(g, new ChartSpec(
+            "Horizontal speed", PAD, PAD * 2 + topHeight, getWidth() - PAD * 2, topHeight, maxSpeed, lastTick(ticks)));
+        drawDistance(g, distance, maxDistance);
+        drawSpeed(g, speed, maxSpeed);
         drawLegend(g);
     }
 
-    private void drawChartFrame(Graphics2D g, String title, int x, int y, int width, int height) {
+    private ChartArea drawChartFrame(Graphics2D g, ChartSpec spec) {
+        ChartArea area = new ChartArea(
+            spec.x + LEFT_AXIS,
+            spec.y + TITLE_HEIGHT,
+            Math.max(32, spec.width - LEFT_AXIS - RIGHT_PAD),
+            Math.max(32, spec.height - TITLE_HEIGHT - BOTTOM_AXIS));
         g.setColor(GRID);
-        for (int i = 0; i <= 4; i++) {
-            int yy = y + Math.toIntExact(Math.round(height * (i / 4.0)));
-            g.drawLine(x, yy, x + width, yy);
+        g.setFont(g.getFont().deriveFont(Font.PLAIN, 11f));
+        for (int i = 0; i <= GRID_LINES; i++) {
+            double ratio = i / (double) GRID_LINES;
+            int yy = area.y + Math.toIntExact(Math.round(area.height * ratio));
+            g.drawLine(area.x, yy, area.x + area.width, yy);
+            drawRightAligned(g, formatAxisValue(spec.maxValue * (1.0 - ratio)), area.x - 8, yy + 4);
         }
-        g.drawRect(x, y, width, height);
+        for (int i = 0; i < X_TICKS; i++) {
+            double ratio = i / (double) (X_TICKS - 1);
+            int xx = area.x + Math.toIntExact(Math.round(area.width * ratio));
+            g.drawLine(xx, area.y, xx, area.y + area.height + 4);
+            String tick = Integer.toString(Math.toIntExact(Math.round(spec.lastTick * ratio)));
+            drawCentered(g, tick, xx, area.y + area.height + 20);
+        }
+        g.drawRect(area.x, area.y, area.width, area.height);
         g.setColor(TEXT);
         g.setFont(g.getFont().deriveFont(Font.BOLD, 14f));
-        g.drawString(title, x, y - 12);
+        g.drawString(spec.title, spec.x, spec.y + 14);
+        g.setFont(g.getFont().deriveFont(Font.PLAIN, 11f));
+        drawCentered(g, "tick", area.x + area.width / 2, area.y + area.height + 30);
+        return area;
     }
 
-    private void drawDistance(Graphics2D g, int x, int y, int width, int height) {
+    private void drawDistance(Graphics2D g, ChartArea area, double max) {
         List<SimulationTick> ticks = result.ticksTrace();
-        double max = ticks.stream().mapToDouble(SimulationTick::distanceToGoal).max().orElse(1.0);
         g.setColor(DISTANCE);
-        drawSeries(g, ticks.size(), x, y, width, height, index -> ticks.get(index).distanceToGoal() / max);
+        drawSeries(g, ticks.size(), area, max, index -> ticks.get(index).distanceToGoal());
         g.setColor(STUCK);
-        drawStuckMarkers(g, ticks, x, y, width, height);
+        drawStuckMarkers(g, ticks, area);
     }
 
-    private void drawSpeed(Graphics2D g, int x, int y, int width, int height) {
+    private void drawSpeed(Graphics2D g, ChartArea area, double max) {
         List<SimulationTick> ticks = result.ticksTrace();
-        double max = Math.max(0.01, ticks.stream().mapToDouble(tick -> horizontalSpeed(tick.velocity())).max().orElse(0.01));
         g.setColor(SPEED);
-        drawSeries(g, ticks.size(), x, y, width, height, index -> horizontalSpeed(ticks.get(index).velocity()) / max);
+        drawSeries(g, ticks.size(), area, max, index -> horizontalSpeed(ticks.get(index).velocity()));
         g.setColor(STUCK);
-        drawStuckMarkers(g, ticks, x, y, width, height);
+        drawStuckMarkers(g, ticks, area);
     }
 
-    private void drawSeries(Graphics2D g, int count, int x, int y, int width, int height, ValueAt valueAt) {
+    private void drawSeries(Graphics2D g, int count, ChartArea area, double max, ValueAt valueAt) {
         if (count < 2) {
             return;
         }
         g.setStroke(new BasicStroke(2.0f));
         for (int i = 1; i < count; i++) {
-            double px = x + (i - 1) / (double) (count - 1) * width;
-            double cx = x + i / (double) (count - 1) * width;
-            double py = y + height - Math.clamp(valueAt.value(i - 1), 0.0, 1.0) * height;
-            double cy = y + height - Math.clamp(valueAt.value(i), 0.0, 1.0) * height;
+            double px = area.x + (i - 1) / (double) (count - 1) * area.width;
+            double cx = area.x + i / (double) (count - 1) * area.width;
+            double py = yForValue(area, valueAt.value(i - 1), max);
+            double cy = yForValue(area, valueAt.value(i), max);
             g.draw(new Line2D.Double(px, py, cx, cy));
         }
     }
 
-    private void drawStuckMarkers(Graphics2D g, List<SimulationTick> ticks, int x, int y, int width, int height) {
+    private void drawStuckMarkers(Graphics2D g, List<SimulationTick> ticks, ChartArea area) {
         if (ticks.size() < 2) {
             return;
         }
         for (int i = 0; i < ticks.size(); i++) {
             if (ticks.get(i).stuck()) {
-                int markerX = x + Math.toIntExact(Math.round(i / (double) (ticks.size() - 1) * width));
-                g.drawLine(markerX, y, markerX, y + height);
+                int markerX = area.x + Math.toIntExact(Math.round(i / (double) (ticks.size() - 1) * area.width));
+                g.drawLine(markerX, area.y, markerX, area.y + area.height);
             }
         }
     }
@@ -156,6 +183,45 @@ final class MetricsCanvas extends JPanel {
 
     private static double horizontalSpeed(Vec3d velocity) {
         return Math.hypot(velocity.x(), velocity.z());
+    }
+
+    private static double yForValue(ChartArea area, double value, double max) {
+        double ratio = max <= 0.0 ? 0.0 : Math.clamp(value / max, 0.0, 1.0);
+        return area.y + area.height - ratio * area.height;
+    }
+
+    private static double upperBound(double value) {
+        double sanitized = Math.max(0.01, value);
+        double scale = Math.pow(10.0, Math.floor(Math.log10(sanitized)));
+        return Math.ceil(sanitized / scale) * scale;
+    }
+
+    private static int lastTick(List<SimulationTick> ticks) {
+        return ticks.isEmpty() ? 0 : ticks.getLast().tick();
+    }
+
+    private static void drawRightAligned(Graphics2D g, String text, int x, int y) {
+        g.drawString(text, x - g.getFontMetrics().stringWidth(text), y);
+    }
+
+    private static void drawCentered(Graphics2D g, String text, int x, int y) {
+        g.drawString(text, x - g.getFontMetrics().stringWidth(text) / 2, y);
+    }
+
+    private static String formatAxisValue(double value) {
+        if (value >= 10.0) {
+            return String.format(Locale.ROOT, "%.0f", value);
+        }
+        if (value >= 1.0) {
+            return String.format(Locale.ROOT, "%.1f", value);
+        }
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
+    private record ChartArea(int x, int y, int width, int height) {
+    }
+
+    private record ChartSpec(String title, int x, int y, int width, int height, double maxValue, int lastTick) {
     }
 
     @FunctionalInterface
