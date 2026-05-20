@@ -25,6 +25,23 @@ export interface MinecraftRouteRequest {
   readonly saveReplay: boolean;
 }
 
+export interface DirectoryRoot {
+  readonly name: string;
+  readonly path: string;
+}
+
+export interface DirectoryEntry {
+  readonly name: string;
+  readonly path: string;
+  readonly world: boolean;
+}
+
+export interface DirectoryListing {
+  readonly path: string;
+  readonly parent: string | null;
+  readonly entries: readonly DirectoryEntry[];
+}
+
 export async function loadSimGoals(): Promise<readonly SimGoalDescriptor[]> {
   const response = await fetch("api/goals", { cache: "no-store" });
   if (!response.ok) {
@@ -44,4 +61,22 @@ export async function runMinecraftRoute(request: MinecraftRouteRequest): Promise
     throw new Error(`Simulation failed: HTTP ${response.status}`);
   }
   return response.text();
+}
+
+export async function loadDirectoryRoots(): Promise<readonly DirectoryRoot[]> {
+  const response = await fetch("api/files/roots", { cache: "no-store" });
+  if (!response.ok) {
+    return [];
+  }
+  const roots = await response.json() as readonly DirectoryRoot[];
+  return Array.isArray(roots) ? roots : [];
+}
+
+export async function loadDirectories(path: string): Promise<DirectoryListing> {
+  const query = new URLSearchParams({ path });
+  const response = await fetch(`api/files/directories?${query}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Browse failed: HTTP ${response.status}`);
+  }
+  return await response.json() as DirectoryListing;
 }

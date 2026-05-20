@@ -3,7 +3,16 @@ import { clamp, normalizeRadians } from "./math-utils.js";
 import { loadCatalogReplay, loadReplayCatalog, ReplayCatalogEntry } from "./replay-catalog.js";
 import { parseReplay } from "./replay-model.js";
 import { ReplayRenderer } from "./replay-renderer.js";
-import { loadSimGoals, MinecraftRouteRequest, runMinecraftRoute, SimGoalDescriptor } from "./sim-api.js";
+import {
+  DirectoryEntry,
+  DirectoryRoot,
+  loadDirectories,
+  loadDirectoryRoots,
+  loadSimGoals,
+  MinecraftRouteRequest,
+  runMinecraftRoute,
+  SimGoalDescriptor
+} from "./sim-api.js";
 import { createViewerState, maxFrame, resetCamera, TICK_MS, ViewerState } from "./viewer-state.js";
 
 const WHEEL_ZOOM_FACTOR = 1.12;
@@ -14,6 +23,7 @@ export class ReplayController {
   private readonly renderer: ReplayRenderer;
   private catalog: readonly ReplayCatalogEntry[] = [];
   private goals: readonly SimGoalDescriptor[] = [];
+  private browserPath = "";
 
   constructor(private readonly elements: ViewerElements) {
     this.renderer = new ReplayRenderer(elements.canvas);
@@ -24,6 +34,10 @@ export class ReplayController {
     this.elements.savedReplaySelect.addEventListener("change", () => void this.loadSelectedCatalogReplay());
     this.elements.goalSelect.addEventListener("change", () => this.renderGoalFields());
     this.elements.routeForm.addEventListener("submit", event => void this.runRoute(event));
+    this.elements.browseWorldButton.addEventListener("click", () => void this.openWorldBrowser());
+    this.elements.browserCloseButton.addEventListener("click", () => this.closeWorldBrowser());
+    this.elements.selectWorldButton.addEventListener("click", () => this.applyWorldPath(this.browserPath));
+    this.elements.worldBrowser.addEventListener("click", event => this.closeBrowserBackdrop(event));
     this.elements.timeline.addEventListener("input", () => this.setFrame(Number(this.elements.timeline.value)));
     this.elements.playButton.addEventListener("click", () => this.togglePlayback());
     this.elements.resetViewButton.addEventListener("click", () => this.resetView());
@@ -114,6 +128,90 @@ export class ReplayController {
       label.append(input);
       this.elements.goalFields.append(label);
     }
+  }
+
+  private async openWorldBrowser(): Promise<void> {
+    this.elements.worldBrowser.classList.remove("hidden");
+    this.elements.serverStatus.textContent = "browsing";
+    const roots = await loadDirectoryRoots();
+    this.renderBrowserRoots(roots);
+    const current = this.elements.worldInput.value.trim();
+    const fallback = roots[0]?.path ?? "";
+    if (current !== "" || fallback !== "") {
+      await this.loadBrowserPath(current || fallback);
+    }
+  }
+
+  private closeWorldBrowser(): void {
+    this.elements.worldBrowser.classList.add("hidden");
+    this.elements.serverStatus.textContent = this.goals.length === 0 ? "offline" : "ready";
+  }
+
+  private closeBrowserBackdrop(event: MouseEvent): void {
+    if (event.target === this.elements.worldBrowser) {
+      this.closeWorldBrowser();
+    }
+  }
+
+  private renderBrowserRoots(roots: readonly DirectoryRoot[]): void {
+    this.elements.browserRoots.replaceChildren();
+    for (const root of roots) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = root.name;
+      button.title = root.path;
+      button.addEventListener("click", () => void this.loadBrowserPath(root.path));
+      this.elements.browserRoots.append(button);
+    }
+  }
+
+  private async loadBrowserPath(path: string): Promise<void> {
+    try {
+      const listing = await loadDirectories(path);
+      this.browserPath = listing.path;
+      this.elements.browserCurrent.textContent = listing.path;
+      this.renderBrowserEntries(listing.parent, listing.entries);
+      this.elements.serverStatus.textContent = "browse ready";
+    } catch (error) {
+      this.elements.serverStatus.textContent = error instanceof Error ? error.message : "browse failed";
+    }
+  }
+
+  private renderBrowserEntries(parent: string | null, entries: readonly DirectoryEntry[]): void {
+    this.elements.browserList.replaceChildren();
+    if (parent !== null) {
+      this.elements.browserList.append(this.browserRow("..", parent, false));
+    }
+    for (const entry of entries) {
+      this.elements.browserList.append(this.browserRow(entry.name, entry.path, entry.world));
+    }
+  }
+
+  private browserRow(name: string, path: string, world: boolean): HTMLElement {
+    const row = document.createElement("div");
+    row.className = world ? "browser-row world" : "browser-row";
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "browser-open";
+    openButton.textContent = world ? `${name} world` : name;
+    openButton.title = path;
+    openButton.addEventListener("click", () => void this.loadBrowserPath(path));
+    const chooseButton = document.createElement("button");
+    chooseButton.type = "button";
+    chooseButton.className = "browser-choose";
+    chooseButton.textContent = "Use";
+    chooseButton.title = path;
+    chooseButton.addEventListener("click", () => this.applyWorldPath(path));
+    row.append(openButton, chooseButton);
+    return row;
+  }
+
+  private applyWorldPath(path: string): void {
+    if (path === "") {
+      return;
+    }
+    this.elements.worldInput.value = path;
+    this.closeWorldBrowser();
   }
 
   private async runRoute(event: Event): Promise<void> {
@@ -311,6 +409,10 @@ export class ReplayController {
   }
 
   private handleKeyboard(event: KeyboardEvent): void {
+    if (!this.elements.worldBrowser.classList.contains("hidden") && event.key === "Escape") {
+      this.closeWorldBrowser();
+      return;
+    }
     if (event.target instanceof HTMLInputElement) {
       return;
     }

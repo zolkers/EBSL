@@ -85,7 +85,10 @@
         <form id="route-form" class="route-form">
           <label>
             World
-            <input id="world-input" type="text" spellcheck="false" autocomplete="off" placeholder="run\saves\World">
+            <span class="world-field">
+              <input id="world-input" type="text" spellcheck="false" autocomplete="off" placeholder="C:\path\to\world">
+              <button id="browse-world-button" type="button">Browse</button>
+            </span>
           </label>
           <div class="field-grid">
             <label>
@@ -129,6 +132,23 @@
       </section>
     </div>
   </main>
+  <div id="world-browser" class="world-browser hidden" role="dialog" aria-modal="true" aria-labelledby="browser-title">
+    <section class="world-browser-panel">
+      <header class="browser-heading">
+        <div>
+          <p class="eyebrow">Local filesystem</p>
+          <h2 id="browser-title">Choose world folder</h2>
+        </div>
+        <button id="browser-close-button" type="button" aria-label="Close browser">Close</button>
+      </header>
+      <div id="browser-current" class="browser-current"></div>
+      <div id="browser-roots" class="browser-roots"></div>
+      <div id="browser-list" class="browser-list"></div>
+      <footer class="browser-actions">
+        <button id="select-world-button" type="button">Use current folder</button>
+      </footer>
+    </section>
+  </div>
   <script type="module" src="dist/app.js"></script>
 </body>
 </html>

@@ -19,6 +19,13 @@ export interface ViewerElements {
   readonly serverStatus: HTMLElement;
   readonly routeForm: HTMLFormElement;
   readonly worldInput: HTMLInputElement;
+  readonly browseWorldButton: HTMLButtonElement;
+  readonly worldBrowser: HTMLElement;
+  readonly browserCloseButton: HTMLButtonElement;
+  readonly browserCurrent: HTMLElement;
+  readonly browserRoots: HTMLElement;
+  readonly browserList: HTMLElement;
+  readonly selectWorldButton: HTMLButtonElement;
   readonly startXInput: HTMLInputElement;
   readonly startYInput: HTMLInputElement;
   readonly startZInput: HTMLInputElement;
@@ -53,6 +60,13 @@ export function queryViewerElements(): ViewerElements {
     serverStatus: query("#server-status", HTMLElement),
     routeForm: query("#route-form", HTMLFormElement),
     worldInput: query("#world-input", HTMLInputElement),
+    browseWorldButton: query("#browse-world-button", HTMLButtonElement),
+    worldBrowser: query("#world-browser", HTMLElement),
+    browserCloseButton: query("#browser-close-button", HTMLButtonElement),
+    browserCurrent: query("#browser-current", HTMLElement),
+    browserRoots: query("#browser-roots", HTMLElement),
+    browserList: query("#browser-list", HTMLElement),
+    selectWorldButton: query("#select-world-button", HTMLButtonElement),
     startXInput: query("#start-x-input", HTMLInputElement),
     startYInput: query("#start-y-input", HTMLInputElement),
     startZInput: query("#start-z-input", HTMLInputElement),
