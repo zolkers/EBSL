@@ -260,14 +260,18 @@ button:active,
 
 .world-field {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(118px, auto);
   gap: 8px;
 }
 
 .world-field button {
   min-height: 38px;
   border-radius: 10px;
-  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .field-grid {
