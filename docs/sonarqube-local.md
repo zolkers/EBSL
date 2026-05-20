@@ -2,6 +2,26 @@
 
 EBSL expects local SonarQube at `http://localhost:9000` by default.
 
+## Start SonarQube
+
+Start the local server from the repository root:
+
+```powershell
+docker compose up -d sonarqube
+```
+
+Stop it without deleting its persisted data:
+
+```powershell
+docker compose stop sonarqube
+```
+
+Reset the local SonarQube data if you intentionally want a fresh instance:
+
+```powershell
+docker compose down -v
+```
+
 ## One-time token setup
 
 Create a SonarQube token from the local web UI, then run:
