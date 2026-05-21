@@ -21,14 +21,44 @@
 
 package fr.riege.ebsl.common.feature.scripting.manager;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public record EbslGraphDocument(
     Map<String, EbslGraphNodePosition> positions,
-    List<EbslGraphConnection> connections
+    List<EbslGraphConnection> connections,
+    Map<String, EbslGraphNode> nodes
 ) {
+    public EbslGraphDocument(Map<String, EbslGraphNodePosition> positions,
+                             List<EbslGraphConnection> connections) {
+        this(positions, connections, Map.of());
+    }
+
+    public EbslGraphDocument {
+        positions = Map.copyOf(positions == null ? Map.of() : positions);
+        connections = List.copyOf(connections == null ? List.of() : connections);
+        nodes = Map.copyOf(nodes == null ? Map.of() : nodes);
+    }
+
     public static EbslGraphDocument empty() {
-        return new EbslGraphDocument(Map.of(), List.of());
+        return new EbslGraphDocument(Map.of(), List.of(), Map.of());
+    }
+
+    public EbslGraphDocument withNode(EbslGraphNode node) {
+        Map<String, EbslGraphNode> updated = new LinkedHashMap<>(nodes);
+        updated.put(node.id(), node);
+        return new EbslGraphDocument(positions, connections, updated);
+    }
+
+    public EbslGraphDocument withConnection(EbslGraphConnection connection) {
+        return new EbslGraphDocument(positions, append(connections, connection), nodes);
+    }
+
+    private static List<EbslGraphConnection> append(List<EbslGraphConnection> values, EbslGraphConnection value) {
+        ArrayList<EbslGraphConnection> updated = new ArrayList<>(values);
+        updated.add(value);
+        return List.copyOf(updated);
     }
 }

@@ -28,6 +28,24 @@ public final class EbslGraphExecutionPlanner {
     private EbslGraphExecutionPlanner() {
     }
 
+    public static EbslGraphExecutionPlan plan(EbslGraphDocument document) {
+        if (document.nodes().isEmpty()) {
+            return new EbslGraphExecutionPlan(List.of(), List.of(), Map.of(), Map.of(), List.of());
+        }
+        List<EbslGraphValidationIssue> issues = new ArrayList<>(EbslGraphValidator.validate(document));
+        GraphPlanEdges edges = buildGraphPlanEdges(document);
+        List<String> ordered = topologicalOrder(document, edges.incomingCounts(), edges.outgoingByNode());
+        if (ordered.size() != document.nodes().size()) {
+            issues.add(new EbslGraphValidationIssue(EbslGraphValidationSeverity.ERROR, "", "Graph contains a flow cycle."));
+        }
+        return new EbslGraphExecutionPlan(
+            roots(document, edges.incomingCounts()),
+            ordered,
+            edges.outgoingByNode(),
+            edges.outgoingByPort(),
+            issues);
+    }
+
     public static String plan(String fileName, String source, EbslGraphDocument document) {
         if (source == null || source.isBlank() || document.connections().isEmpty() || hasBlockSyntax(source)) {
             return source == null ? "" : source;
@@ -52,6 +70,62 @@ public final class EbslGraphExecutionPlanner {
             }
         }
         return joinLines(materializeEachInputEdges(ordered, lineByKey, document.connections()));
+    }
+
+    private static GraphPlanEdges buildGraphPlanEdges(EbslGraphDocument document) {
+        Map<String, List<EbslGraphConnection>> outgoingByNode = new LinkedHashMap<>();
+        Map<String, List<EbslGraphConnection>> outgoingByPort = new LinkedHashMap<>();
+        Map<String, Integer> incomingCounts = new LinkedHashMap<>();
+        for (String nodeId : document.nodes().keySet()) {
+            outgoingByNode.put(nodeId, new ArrayList<>());
+            incomingCounts.put(nodeId, 0);
+        }
+        for (EbslGraphConnection connection : document.connections()) {
+            if (!document.nodes().containsKey(connection.fromKey()) || !document.nodes().containsKey(connection.toKey())) {
+                continue;
+            }
+            outgoingByNode.computeIfAbsent(connection.fromKey(), ignored -> new ArrayList<>()).add(connection);
+            outgoingByPort.computeIfAbsent(
+                EbslGraphExecutionPlan.portKey(connection.fromKey(), connection.fromPort()),
+                ignored -> new ArrayList<>()).add(connection);
+            incomingCounts.compute(connection.toKey(), (ignored, count) -> count == null ? 1 : count + 1);
+        }
+        return new GraphPlanEdges(copyLists(outgoingByNode), copyLists(outgoingByPort), incomingCounts);
+    }
+
+    private static List<String> roots(EbslGraphDocument document, Map<String, Integer> incomingCounts) {
+        return document.nodes().keySet().stream()
+            .filter(nodeId -> incomingCounts.getOrDefault(nodeId, 0) == 0)
+            .toList();
+    }
+
+    private static List<String> topologicalOrder(EbslGraphDocument document,
+                                                 Map<String, Integer> incomingCounts,
+                                                 Map<String, List<EbslGraphConnection>> outgoingByNode) {
+        Map<String, Integer> remainingInputs = new LinkedHashMap<>(incomingCounts);
+        ArrayDeque<String> queue = new ArrayDeque<>(roots(document, remainingInputs));
+        List<String> ordered = new ArrayList<>();
+        while (!queue.isEmpty()) {
+            String nodeId = queue.removeFirst();
+            ordered.add(nodeId);
+            for (EbslGraphConnection connection : outgoingByNode.getOrDefault(nodeId, List.of())) {
+                int count = remainingInputs.compute(
+                    connection.toKey(),
+                    (ignored, value) -> Math.max(0, (value == null ? 0 : value) - 1));
+                if (count == 0) {
+                    queue.add(connection.toKey());
+                }
+            }
+        }
+        return ordered;
+    }
+
+    private static Map<String, List<EbslGraphConnection>> copyLists(Map<String, List<EbslGraphConnection>> values) {
+        Map<String, List<EbslGraphConnection>> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, List<EbslGraphConnection>> entry : values.entrySet()) {
+            copy.put(entry.getKey(), List.copyOf(entry.getValue()));
+        }
+        return copy;
     }
 
     private static boolean hasEachInputEdges(Map<String, GraphLine> lines, List<EbslGraphConnection> connections) {
@@ -203,6 +277,13 @@ public final class EbslGraphExecutionPlanner {
         Map<String, List<String>> outgoing,
         Map<String, Integer> incomingCounts,
         boolean usedGraph
+    ) {
+    }
+
+    private record GraphPlanEdges(
+        Map<String, List<EbslGraphConnection>> outgoingByNode,
+        Map<String, List<EbslGraphConnection>> outgoingByPort,
+        Map<String, Integer> incomingCounts
     ) {
     }
 }

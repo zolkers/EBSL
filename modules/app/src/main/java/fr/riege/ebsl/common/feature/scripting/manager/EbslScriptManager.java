@@ -40,7 +40,9 @@ public final class EbslScriptManager {
         message "EBSL ready"
         """;
     private static final String JSON_CONNECTIONS = "connections";
+    private static final String JSON_FIELDS = "fields";
     private static final String JSON_LABEL = "label";
+    private static final String JSON_NODES = "nodes";
     private static final String JSON_POSITIONS = "positions";
 
     private final IStorageLayer storage;
@@ -139,12 +141,15 @@ public final class EbslScriptManager {
             positions.add(entry.getKey(), node);
         }
         root.add(JSON_POSITIONS, positions);
+        root.add(JSON_NODES, serializeGraphNodes(document.nodes()));
         JsonArray connections = new JsonArray();
         for (EbslGraphConnection connection : document.connections()) {
             JsonObject edge = new JsonObject();
             edge.addProperty("id", connection.id());
             edge.addProperty("from", connection.fromKey());
+            edge.addProperty("fromPort", connection.fromPort());
             edge.addProperty("to", connection.toKey());
+            edge.addProperty("toPort", connection.toPort());
             edge.addProperty("mode", connection.mode().id());
             if (!connection.label().isBlank()) {
                 edge.addProperty(JSON_LABEL, connection.label());
@@ -166,10 +171,46 @@ public final class EbslScriptManager {
             JsonObject positionRoot = root.has(JSON_POSITIONS) && root.get(JSON_POSITIONS).isJsonObject()
                 ? root.getAsJsonObject(JSON_POSITIONS)
                 : root;
-            return new EbslGraphDocument(parseGraphPositions(positionRoot), parseGraphConnections(root));
+            return new EbslGraphDocument(parseGraphPositions(positionRoot), parseGraphConnections(root), parseGraphNodes(root));
         } catch (RuntimeException exception) {
             return EbslGraphDocument.empty();
         }
+    }
+
+    private JsonArray serializeGraphNodes(Map<String, EbslGraphNode> nodes) {
+        JsonArray values = new JsonArray();
+        for (EbslGraphNode node : nodes.values()) {
+            JsonObject value = new JsonObject();
+            value.addProperty("id", node.id());
+            value.addProperty("type", node.type());
+            value.add(JSON_FIELDS, serializeStringMap(node.fields()));
+            value.add("inputs", serializeGraphPorts(node.inputs()));
+            value.add("outputs", serializeGraphPorts(node.outputs()));
+            values.add(value);
+        }
+        return values;
+    }
+
+    private JsonObject serializeStringMap(Map<String, String> values) {
+        JsonObject root = new JsonObject();
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            root.addProperty(entry.getKey(), entry.getValue());
+        }
+        return root;
+    }
+
+    private JsonArray serializeGraphPorts(List<EbslGraphPort> ports) {
+        JsonArray values = new JsonArray();
+        for (EbslGraphPort port : ports) {
+            JsonObject value = new JsonObject();
+            value.addProperty("id", port.id());
+            value.addProperty(JSON_LABEL, port.label());
+            value.addProperty("direction", port.direction().id());
+            value.addProperty("kind", port.kind().id());
+            value.addProperty("multiple", port.multiple());
+            values.add(value);
+        }
+        return values;
     }
 
     private Map<String, EbslGraphNodePosition> parseGraphPositions(JsonObject root) {
@@ -225,7 +266,85 @@ public final class EbslScriptManager {
             ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
             : EbslGraphConnectionMode.FLOW;
         String label = edge.has(JSON_LABEL) ? edge.get(JSON_LABEL).getAsString() : "";
-        return new EbslGraphConnection(id, from, to, mode, label);
+        String fromPort = edge.has("fromPort") ? edge.get("fromPort").getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
+        String toPort = edge.has("toPort") ? edge.get("toPort").getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
+        return new EbslGraphConnection(id, from, fromPort, to, toPort, mode, label);
+    }
+
+    private Map<String, EbslGraphNode> parseGraphNodes(JsonObject root) {
+        if (!root.has(JSON_NODES) || !root.get(JSON_NODES).isJsonArray()) {
+            return Map.of();
+        }
+        Map<String, EbslGraphNode> nodes = new LinkedHashMap<>();
+        for (JsonElement element : root.getAsJsonArray(JSON_NODES)) {
+            EbslGraphNode node = parseGraphNode(element);
+            if (node != null) {
+                nodes.put(node.id(), node);
+            }
+        }
+        return nodes;
+    }
+
+    private EbslGraphNode parseGraphNode(JsonElement element) {
+        if (!element.isJsonObject()) {
+            return null;
+        }
+        JsonObject node = element.getAsJsonObject();
+        if (!node.has("id") || !node.has("type")) {
+            return null;
+        }
+        return new EbslGraphNode(
+            node.get("id").getAsString(),
+            node.get("type").getAsString(),
+            parseStringMap(node, JSON_FIELDS),
+            parseGraphPorts(node, "inputs", EbslGraphPortDirection.INPUT),
+            parseGraphPorts(node, "outputs", EbslGraphPortDirection.OUTPUT));
+    }
+
+    private Map<String, String> parseStringMap(JsonObject root, String name) {
+        if (!root.has(name) || !root.get(name).isJsonObject()) {
+            return Map.of();
+        }
+        Map<String, String> values = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject(name).entrySet()) {
+            if (entry.getValue().isJsonPrimitive()) {
+                values.put(entry.getKey(), entry.getValue().getAsString());
+            }
+        }
+        return values;
+    }
+
+    private List<EbslGraphPort> parseGraphPorts(JsonObject root, String name, EbslGraphPortDirection direction) {
+        if (!root.has(name) || !root.get(name).isJsonArray()) {
+            return List.of();
+        }
+        List<EbslGraphPort> ports = new ArrayList<>();
+        for (JsonElement element : root.getAsJsonArray(name)) {
+            EbslGraphPort port = parseGraphPort(element, direction);
+            if (port != null) {
+                ports.add(port);
+            }
+        }
+        return ports;
+    }
+
+    private EbslGraphPort parseGraphPort(JsonElement element, EbslGraphPortDirection fallbackDirection) {
+        if (!element.isJsonObject()) {
+            return null;
+        }
+        JsonObject port = element.getAsJsonObject();
+        if (!port.has("id")) {
+            return null;
+        }
+        EbslGraphPortDirection direction = port.has("direction")
+            ? EbslGraphPortDirection.byId(port.get("direction").getAsString())
+            : fallbackDirection;
+        EbslGraphPortKind kind = port.has("kind")
+            ? EbslGraphPortKind.byId(port.get("kind").getAsString())
+            : EbslGraphPortKind.FLOW;
+        String label = port.has(JSON_LABEL) ? port.get(JSON_LABEL).getAsString() : port.get("id").getAsString();
+        boolean multiple = port.has("multiple") && port.get("multiple").getAsBoolean();
+        return new EbslGraphPort(port.get("id").getAsString(), label, direction, kind, multiple);
     }
 
     private static String graphLayoutPath(String fileName) {
