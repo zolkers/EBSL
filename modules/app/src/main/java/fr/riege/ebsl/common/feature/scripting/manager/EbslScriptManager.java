@@ -92,23 +92,11 @@ public final class EbslScriptManager {
     }
 
     public static String normalizeFileName(String fileName) {
-        String normalized = fileName == null ? "" : fileName.trim().replace('\\', '/');
-        int slash = normalized.lastIndexOf('/');
-        if (slash >= 0) {
-            normalized = normalized.substring(slash + 1);
-        }
-        normalized = normalized.toLowerCase(Locale.ROOT);
-        if (normalized.isBlank()) {
-            normalized = DEFAULT_FILE;
-        }
-        return normalized.endsWith(EXTENSION) ? normalized : normalized + EXTENSION;
+        return EbslScriptFileNames.normalize(fileName);
     }
 
     public static String stripExtension(String fileName) {
-        String normalized = normalizeFileName(fileName);
-        return normalized.endsWith(EXTENSION)
-            ? normalized.substring(0, normalized.length() - EXTENSION.length())
-            : normalized;
+        return EbslScriptFileNames.stripExtension(fileName);
     }
 
     public static String path(String fileName) {

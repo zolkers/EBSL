@@ -33,6 +33,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class EbslScriptManagerGraphDocumentTest {
     @Test
+    void persistsGraphFirstNodesWithFieldsAndNamedPorts() {
+        MemoryStorage storage = new MemoryStorage();
+        EbslScriptManager manager = new EbslScriptManager(storage);
+        EbslGraphNode switchNode = EbslGraphNode.switchNode(
+            "switch-1",
+            Map.of("expression", "$health < 10"),
+            List.of(
+                EbslGraphPort.output("true", "True"),
+                EbslGraphPort.output("false", "False")));
+        EbslGraphNode healNode = EbslGraphNode.action("heal-1", "use_item", Map.of("item", "minecraft:golden_apple"));
+        EbslGraphConnection connection = new EbslGraphConnection(
+            "edge-true",
+            "switch-1",
+            "true",
+            "heal-1",
+            "main",
+            EbslGraphConnectionMode.FLOW,
+            "low health");
+        EbslGraphDocument document = new EbslGraphDocument(
+            Map.of("switch-1", new EbslGraphNodePosition(10.0f, 12.0f)),
+            List.of(connection),
+            Map.of(switchNode.id(), switchNode, healNode.id(), healNode));
+
+        manager.saveGraphDocument("main.ebsl", document);
+        EbslGraphDocument loaded = manager.loadGraphDocument("main.ebsl");
+
+        assertEquals(document.nodes(), loaded.nodes());
+        assertEquals(document.connections(), loaded.connections());
+        assertEquals(document.positions(), loaded.positions());
+    }
+
+    @Test
     void persistsEditableConnectionMetadata() {
         MemoryStorage storage = new MemoryStorage();
         EbslScriptManager manager = new EbslScriptManager(storage);

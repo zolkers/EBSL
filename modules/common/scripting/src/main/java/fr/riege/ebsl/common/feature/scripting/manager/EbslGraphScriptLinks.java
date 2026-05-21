@@ -32,7 +32,7 @@ final class EbslGraphScriptLinks {
     }
 
     static List<EbslGraphConnection> parse(String fileName, String source) {
-        String normalized = EbslScriptManager.normalizeFileName(fileName);
+        String normalized = EbslScriptFileNames.normalize(fileName);
         List<EbslGraphConnection> connections = new ArrayList<>();
         for (String line : (source == null ? "" : source).split("\\R")) {
             LinkDirective directive = parseDirective(line);
@@ -168,7 +168,7 @@ final class EbslGraphScriptLinks {
     }
 
     private static int lineNumber(String fileName, String key) {
-        String prefix = EbslScriptManager.normalizeFileName(fileName) + ":";
+        String prefix = EbslScriptFileNames.normalize(fileName) + ":";
         if (!key.startsWith(prefix)) {
             return -1;
         }

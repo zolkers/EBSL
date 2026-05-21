@@ -21,13 +21,10 @@
 
 package fr.riege.ebsl.common.feature.scripting.manager;
 
-import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,38 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class EbslGraphModelTest {
-    @Test
-    void persistsGraphFirstNodesWithFieldsAndNamedPorts() {
-        MemoryStorage storage = new MemoryStorage();
-        EbslScriptManager manager = new EbslScriptManager(storage);
-        EbslGraphNode switchNode = EbslGraphNode.switchNode(
-            "switch-1",
-            Map.of("expression", "$health < 10"),
-            List.of(
-                EbslGraphPort.output("true", "True"),
-                EbslGraphPort.output("false", "False")));
-        EbslGraphNode healNode = EbslGraphNode.action("heal-1", "use_item", Map.of("item", "minecraft:golden_apple"));
-        EbslGraphConnection connection = new EbslGraphConnection(
-            "edge-true",
-            "switch-1",
-            "true",
-            "heal-1",
-            "main",
-            EbslGraphConnectionMode.FLOW,
-            "low health");
-        EbslGraphDocument document = new EbslGraphDocument(
-            Map.of("switch-1", new EbslGraphNodePosition(10.0f, 12.0f)),
-            List.of(connection),
-            Map.of(switchNode.id(), switchNode, healNode.id(), healNode));
-
-        manager.saveGraphDocument("main.ebsl", document);
-        EbslGraphDocument loaded = manager.loadGraphDocument("main.ebsl");
-
-        assertEquals(document.nodes(), loaded.nodes());
-        assertEquals(document.connections(), loaded.connections());
-        assertEquals(document.positions(), loaded.positions());
-    }
-
     @Test
     void validatesMultiOutputSwitchAndRejectsDuplicateSingleInput() {
         EbslGraphNode switchNode = EbslGraphNode.switchNode(
@@ -178,23 +143,4 @@ final class EbslGraphModelTest {
         assertEquals(EbslGraphConnectionMode.FLOW, EbslGraphConnectionMode.byId("teleport"));
     }
 
-    private static final class MemoryStorage implements IStorageLayer {
-        private final Map<String, String> text = new HashMap<>();
-
-        @Override public void saveJson(String key, String json) {
-            text.put(key, json);
-        }
-
-        @Override public Optional<String> loadJson(String key) {
-            return Optional.ofNullable(text.get(key));
-        }
-
-        @Override public void saveText(String path, String text) {
-            this.text.put(path, text);
-        }
-
-        @Override public Optional<String> loadText(String path) {
-            return Optional.ofNullable(text.get(path));
-        }
-    }
 }

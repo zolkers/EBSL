@@ -1,0 +1,52 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * Copyright (C) 2026 Victor Riegert and EBSL contributors
+ *
+ * This file is part of EBSL.
+ *
+ * EBSL is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * EBSL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package fr.riege.ebsl.common.feature.scripting.manager;
+
+import java.util.Locale;
+
+public final class EbslScriptFileNames {
+    public static final String EXTENSION = ".ebsl";
+    public static final String DEFAULT_FILE = "main.ebsl";
+
+    private EbslScriptFileNames() {
+    }
+
+    public static String normalize(String fileName) {
+        String normalized = fileName == null ? "" : fileName.trim().replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        if (slash >= 0) {
+            normalized = normalized.substring(slash + 1);
+        }
+        normalized = normalized.toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            normalized = DEFAULT_FILE;
+        }
+        return normalized.endsWith(EXTENSION) ? normalized : normalized + EXTENSION;
+    }
+
+    public static String stripExtension(String fileName) {
+        String normalized = normalize(fileName);
+        return normalized.endsWith(EXTENSION)
+            ? normalized.substring(0, normalized.length() - EXTENSION.length())
+            : normalized;
+    }
+}

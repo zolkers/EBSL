@@ -23,6 +23,7 @@ dependencies {
     api project(':common:world-api')
     api project(':common:render-api')
     api project(':common:platform-api')
+    api project(':common:scripting')
     api project(':common:pathfinder-core')
     api project(':common:pathfinder-execution')
     api project(':common:pathfinder-debug')
