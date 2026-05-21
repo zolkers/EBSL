@@ -4,4 +4,10 @@ dependencies {
     api project(':common:platform-api')
     api project(':common:pathfinder-core')
     api project(':common:pathfinder-execution')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

@@ -32,6 +32,7 @@ import java.util.Objects;
 public final class EntityPathFollower {
     private static final double PARKOUR_JUMP_TRIGGER_DISTANCE = 4.35;
     private static final double PARKOUR_TAKEOFF_PREP_DISTANCE = 0.85;
+    private static final double CORNER_SLOWDOWN_DOT = 0.35;
 
     private final NavigationActor actor;
     private final NavigationMotor motor;
@@ -98,12 +99,13 @@ public final class EntityPathFollower {
 
         Node waypoint = path.get(waypointIndex);
         currentMoveType = waypoint.moveType() == null ? Node.MoveType.WALK : waypoint.moveType();
-        Vec3d target = targetCenter(waypoint);
+        Vec3d waypointTarget = targetCenter(waypoint);
+        Vec3d target = steeringTarget(position, waypointTarget);
         double dx = target.x() - position.x();
         double dy = target.y() - position.y();
         double dz = target.z() - position.z();
         double horizontal = Math.sqrt(dx * dx + dz * dz);
-        double speed = speedFor(currentMoveType);
+        double speed = speedFor(currentMoveType) * cornerSpeedScale(position, waypointTarget);
         Vec3d velocity = horizontal <= 1.0e-6
             ? new Vec3d(0.0, verticalVelocity(dy, horizontal, currentMoveType), 0.0)
             : new Vec3d(dx / horizontal * speed, verticalVelocity(dy, horizontal, currentMoveType), dz / horizontal * speed);
@@ -165,6 +167,41 @@ public final class EntityPathFollower {
         return options.sprint() ? options.sprintSpeed() : options.walkSpeed();
     }
 
+    private Vec3d steeringTarget(Vec3d position, Vec3d waypointTarget) {
+        if (options.lookAheadDistance() <= 0.0 || !canLookAhead(currentMoveType)) {
+            return waypointTarget;
+        }
+        double remaining = options.lookAheadDistance();
+        Vec3d cursor = position;
+        for (int index = waypointIndex; index < path.size(); index++) {
+            Node node = path.get(index);
+            Vec3d point = targetCenter(node);
+            double horizontal = horizontalDistance(cursor, point);
+            if (horizontal >= remaining) {
+                return interpolateHorizontal(cursor, point, remaining / horizontal);
+            }
+            if (isPrecisionBoundary(node, cursor, point, index)) {
+                return point;
+            }
+            remaining -= horizontal;
+            cursor = point;
+        }
+        return targetCenter(path.getLast());
+    }
+
+    private double cornerSpeedScale(Vec3d position, Vec3d waypointTarget) {
+        if (options.cornerSlowdownDistance() <= 0.0 || waypointIndex + 1 >= path.size()) {
+            return 1.0;
+        }
+        double distanceToWaypoint = horizontalDistance(position, waypointTarget);
+        if (distanceToWaypoint > options.cornerSlowdownDistance()) {
+            return 1.0;
+        }
+        Vec3d nextTarget = targetCenter(path.get(waypointIndex + 1));
+        double dot = horizontalDot(position, waypointTarget, nextTarget);
+        return dot < CORNER_SLOWDOWN_DOT ? options.cornerSlowdownScale() : 1.0;
+    }
+
     private double verticalVelocity(double dy, double horizontal, Node.MoveType moveType) {
         if (moveType == Node.MoveType.SWIM || moveType == Node.MoveType.CLIMB) {
             return Math.clamp(dy * 0.25, -speedFor(moveType), speedFor(moveType));
@@ -197,6 +234,46 @@ public final class EntityPathFollower {
         }
         Node.MoveType moveType = path.get(nextIndex).moveType();
         return moveType == null ? Node.MoveType.WALK : moveType;
+    }
+
+    private boolean isPrecisionBoundary(Node node, Vec3d previous, Vec3d point, int index) {
+        Node.MoveType moveType = node.moveType() == null ? Node.MoveType.WALK : node.moveType();
+        return !canLookAhead(moveType)
+            || Math.abs(point.y() - previous.y()) > options.verticalReachDistance()
+            || index == path.size() - 1;
+    }
+
+    private static boolean canLookAhead(Node.MoveType moveType) {
+        return moveType == Node.MoveType.WALK
+            || moveType == Node.MoveType.WALK_DIAGONAL
+            || moveType == Node.MoveType.STEP_DOWN;
+    }
+
+    private static double horizontalDistance(Vec3d a, Vec3d b) {
+        double dx = b.x() - a.x();
+        double dz = b.z() - a.z();
+        return Math.sqrt(dx * dx + dz * dz);
+    }
+
+    private static Vec3d interpolateHorizontal(Vec3d from, Vec3d to, double progress) {
+        double clampedProgress = Math.clamp(progress, 0.0, 1.0);
+        return new Vec3d(
+            from.x() + (to.x() - from.x()) * clampedProgress,
+            to.y(),
+            from.z() + (to.z() - from.z()) * clampedProgress);
+    }
+
+    private static double horizontalDot(Vec3d before, Vec3d corner, Vec3d after) {
+        double inX = corner.x() - before.x();
+        double inZ = corner.z() - before.z();
+        double outX = after.x() - corner.x();
+        double outZ = after.z() - corner.z();
+        double inLength = Math.sqrt(inX * inX + inZ * inZ);
+        double outLength = Math.sqrt(outX * outX + outZ * outZ);
+        if (inLength <= 1.0e-6 || outLength <= 1.0e-6) {
+            return 1.0;
+        }
+        return (inX * outX + inZ * outZ) / (inLength * outLength);
     }
 
     private static Vec3d targetCenter(Node node) {

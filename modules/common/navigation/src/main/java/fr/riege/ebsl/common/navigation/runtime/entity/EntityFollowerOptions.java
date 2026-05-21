@@ -29,6 +29,9 @@ public record EntityFollowerOptions(
     double waypointReachDistance,
     double verticalReachDistance,
     double finalReachDistance,
+    double lookAheadDistance,
+    double cornerSlowdownDistance,
+    double cornerSlowdownScale,
     boolean sprint,
     boolean lookAtWaypoint
 ) {
@@ -48,6 +51,9 @@ public record EntityFollowerOptions(
         private double waypointReachDistance = 0.55;
         private double verticalReachDistance = 1.1;
         private double finalReachDistance = 0.75;
+        private double lookAheadDistance = 1.6;
+        private double cornerSlowdownDistance = 1.15;
+        private double cornerSlowdownScale = 0.7;
         private boolean sprint = true;
         private boolean lookAtWaypoint = true;
 
@@ -86,6 +92,21 @@ public record EntityFollowerOptions(
             return this;
         }
 
+        public Builder lookAheadDistance(double value) {
+            this.lookAheadDistance = value;
+            return this;
+        }
+
+        public Builder cornerSlowdownDistance(double value) {
+            this.cornerSlowdownDistance = value;
+            return this;
+        }
+
+        public Builder cornerSlowdownScale(double value) {
+            this.cornerSlowdownScale = value;
+            return this;
+        }
+
         public Builder sprint(boolean value) {
             this.sprint = value;
             return this;
@@ -105,6 +126,9 @@ public record EntityFollowerOptions(
                 Math.clamp(waypointReachDistance, 0.05, Double.MAX_VALUE),
                 Math.clamp(verticalReachDistance, 0.05, Double.MAX_VALUE),
                 Math.clamp(finalReachDistance, 0.05, Double.MAX_VALUE),
+                Math.clamp(lookAheadDistance, 0.0, Double.MAX_VALUE),
+                Math.clamp(cornerSlowdownDistance, 0.0, Double.MAX_VALUE),
+                Math.clamp(cornerSlowdownScale, 0.1, 1.0),
                 sprint,
                 lookAtWaypoint);
         }
