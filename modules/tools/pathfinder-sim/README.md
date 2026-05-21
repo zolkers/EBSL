@@ -8,6 +8,8 @@ The simulator runs scripted Minecraft-like worlds against the shared pathfinder/
 - tick count
 - planned node counts
 - stuck ticks and stuck events
+- recovery attempts
+- backward ticks and lateral path error
 - final distance to goal
 - sampled per-tick traces in JSON
 
@@ -98,6 +100,26 @@ Import the repo `run` save and let the simulator choose a valid player-side star
 ```
 
 The Minecraft importer resolves relative world paths from the simulator module and its parent folders. It also tolerates a truncated save folder prefix such as `run\saves\New` when the actual save is named `New World`, which keeps PowerShell/Gradle quoting friction out of normal use.
+
+Run the real-world regression matrix captured from historical failures:
+
+```powershell
+.\scripts\sim-mc-regression.bat -Runs 1 -NoReplay
+```
+
+The default matrix covers:
+
+- `383,61,44 -> 500,62,40`
+- `384,63,43 -> 500,62,40`
+- `385,62,42 -> 500,62,40`
+- `386,61,42 -> 500,61,40`
+
+Each route is passed as `id@startX,startY,startZ@goalX,goalY,goalZ` to avoid Windows command-pipe issues. Override the
+matrix with `-Routes "case_a@386,61,42@500,61,40;case_b@384,63,43@500,62,40"`.
+
+Regression failure thresholds include final distance, stuck events, recovery attempts, backward ticks, and average
+lateral error. The Windows script exposes them as `-MaxFinalDistance`, `-MaxStuckEvents`, `-MaxRecoveryAttempts`,
+`-MaxBackwardTicks`, and `-MaxAverageLateralError`.
 
 ## Synthetic Smoke Scenarios
 
