@@ -26,7 +26,6 @@ import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.core.threading.EbslThreadDomain;
 import fr.riege.ebsl.common.core.threading.EbslThreading;
-import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 
 import java.util.Collection;
@@ -48,11 +47,10 @@ public final class BotTaskRegistry {
     }
 
     public static void bootstrap() {
-        registerIfAbsent(EbslScriptTask.INSTANCE);
         registerIfAbsent(SpaceMobTask.INSTANCE);
     }
 
-    private static void registerIfAbsent(BotTask task) {
+    public static void registerIfAbsent(BotTask task) {
         if (TASKS.get(task.id()) == null) {
             register(task);
         }

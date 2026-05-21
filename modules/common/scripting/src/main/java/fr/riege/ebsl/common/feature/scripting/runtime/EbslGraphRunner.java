@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.runtime;
 
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;

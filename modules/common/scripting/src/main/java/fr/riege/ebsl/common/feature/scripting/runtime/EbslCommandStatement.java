@@ -23,7 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.runtime;
 
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import java.util.List;
 
 public final class EbslCommandStatement implements EbslStatement {

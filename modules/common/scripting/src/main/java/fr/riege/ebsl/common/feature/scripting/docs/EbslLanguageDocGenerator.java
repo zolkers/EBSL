@@ -29,7 +29,7 @@ import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
 import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 
 import java.util.*;

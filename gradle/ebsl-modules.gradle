@@ -4,7 +4,9 @@ ext {
         ':common:events',
         ':common:world-api',
         ':common:render-api',
-        ':common:platform-api'
+        ':common:platform-api',
+        ':common:terminal',
+        ':common:automation'
     ]
 
     ebslPathfinderModules = [
@@ -14,7 +16,8 @@ ext {
     ]
 
     ebslNavigationModules = [
-        ':common:navigation'
+        ':common:navigation',
+        ':common:scripting'
     ]
 
     ebslRuntimeClassModules =

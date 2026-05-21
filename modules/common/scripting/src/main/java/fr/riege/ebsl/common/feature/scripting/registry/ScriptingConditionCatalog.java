@@ -19,15 +19,16 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.registry;
+package fr.riege.ebsl.common.feature.scripting.registry;
 
-public final class ScriptingRegistries {
-    private static final ScriptingCatalog SCRIPTING = new ScriptingCatalog();
+import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorRegistry;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 
-    private ScriptingRegistries() {
+public final class ScriptingConditionCatalog {
+    ScriptingConditionCatalog() {
     }
 
-    public static ScriptingCatalog scripting() {
-        return SCRIPTING;
+    public boolean evaluate(String token, EbslScriptRuntime runtime, Object left, Object right) {
+        return EbslConditionOperatorRegistry.evaluate(token, runtime, left, right);
     }
 }

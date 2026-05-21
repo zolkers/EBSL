@@ -21,11 +21,13 @@
 
 package fr.riege.ebsl.common.feature.registry;
 
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingCatalog;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
+
 public final class FeatureRegistries {
     private static final CommandCatalog COMMANDS = new CommandCatalog();
     private static final ModuleCatalog MODULES = new ModuleCatalog();
     private static final TaskCatalog TASKS = new TaskCatalog();
-    private static final ScriptingCatalog SCRIPTING = new ScriptingCatalog();
     private static final UiCatalog UI = new UiCatalog();
 
     private FeatureRegistries() {
@@ -44,7 +46,7 @@ public final class FeatureRegistries {
     }
 
     public static ScriptingCatalog scripting() {
-        return SCRIPTING;
+        return ScriptingRegistries.scripting();
     }
 
     public static UiCatalog ui() {

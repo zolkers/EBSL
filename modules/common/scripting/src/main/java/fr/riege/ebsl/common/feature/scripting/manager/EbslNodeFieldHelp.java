@@ -24,7 +24,7 @@ package fr.riege.ebsl.common.feature.scripting.manager;
 import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 
 import java.util.List;
 import java.util.Locale;

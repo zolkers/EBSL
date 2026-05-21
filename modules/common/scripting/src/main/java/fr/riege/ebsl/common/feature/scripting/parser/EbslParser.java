@@ -23,7 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.parser;
 
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementInvocation;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementResult;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslCommandStatement;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslStatement;
 

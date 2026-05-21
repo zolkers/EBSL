@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.runtime;
 
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.goal.*;

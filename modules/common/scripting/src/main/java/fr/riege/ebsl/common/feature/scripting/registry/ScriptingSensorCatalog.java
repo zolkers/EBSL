@@ -19,34 +19,27 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.registry;
+package fr.riege.ebsl.common.feature.scripting.registry;
 
-import fr.riege.ebsl.common.feature.scripting.EbslNode;
-import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
+import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 
 import java.util.Collection;
+import java.util.List;
 
-public final class ScriptingNodeCatalog {
-    ScriptingNodeCatalog() {
+public final class ScriptingSensorCatalog {
+    ScriptingSensorCatalog() {
     }
 
-    public EbslNode get(String id) {
-        return EbslNodeRegistry.get(id);
+    public boolean evaluate(String id, EbslScriptRuntime runtime, List<String> args) {
+        return EbslSensorRegistry.evaluate(id, runtime, args);
     }
 
-    public EbslNode create(String id) {
-        return EbslNodeRegistry.create(id);
+    public EbslSensorRegistry.SensorDefinition definition(String id) {
+        return EbslSensorRegistry.definition(id);
     }
 
-    public Collection<EbslNode> nodes() {
-        return EbslNodeRegistry.nodes();
-    }
-
-    public Collection<EbslNode> canonicalNodes() {
-        return EbslNodeRegistry.canonicalNodes();
-    }
-
-    public Collection<EbslNode> canonical() {
-        return canonicalNodes();
+    public Collection<EbslSensorRegistry.SensorDefinition> definitions() {
+        return EbslSensorRegistry.definitions();
     }
 }

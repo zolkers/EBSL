@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.feature.registry;
 
 import fr.riege.ebsl.common.core.settings.Setting;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.task.BotTask;
 import fr.riege.ebsl.common.feature.task.BotTaskRegistry;
 import fr.riege.ebsl.common.platform.EbslPlatform;
@@ -34,6 +35,7 @@ public final class TaskCatalog {
 
     public void bootstrap() {
         BotTaskRegistry.bootstrap();
+        BotTaskRegistry.registerIfAbsent(EbslScriptTask.INSTANCE);
     }
 
     public Collection<BotTask> all() {

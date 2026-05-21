@@ -26,7 +26,7 @@ import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
 import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 
 import java.util.Locale;
 import java.util.regex.Pattern;

@@ -19,17 +19,15 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.registry;
+package fr.riege.ebsl.common.feature.scripting.registry;
 
-import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementInvocation;
-import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementRegistry;
-import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementResult;
+public final class ScriptingRegistries {
+    private static final ScriptingCatalog SCRIPTING = new ScriptingCatalog();
 
-public final class ScriptingBlockCatalog {
-    ScriptingBlockCatalog() {
+    private ScriptingRegistries() {
     }
 
-    public EbslBlockStatementResult parse(EbslBlockStatementInvocation invocation) {
-        return EbslBlockStatementRegistry.parse(invocation);
+    public static ScriptingCatalog scripting() {
+        return SCRIPTING;
     }
 }

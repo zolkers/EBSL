@@ -25,7 +25,7 @@ import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
-import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
+import fr.riege.ebsl.common.feature.scripting.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.terminal.*;
 

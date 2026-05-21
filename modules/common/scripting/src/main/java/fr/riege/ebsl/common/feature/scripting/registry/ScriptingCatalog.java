@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.registry;
+package fr.riege.ebsl.common.feature.scripting.registry;
 
 public final class ScriptingCatalog {
     private final ScriptingNodeCatalog nodes = new ScriptingNodeCatalog();
