@@ -42,6 +42,8 @@ import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathVector;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +86,38 @@ class AStarPathfinderTest {
         Node child = new Node(next, start, next, HeuristicWeights.DEFAULT_WEIGHTS, new InvalidTransitionHeuristic(), 1);
         EvaluationContextImpl context = new EvaluationContextImpl(null, child, parent, new InvalidTransitionHeuristic());
 
+        assertEquals(1, context.getCurrentNodeDepth());
         assertThrows(IllegalStateException.class, context::getBaseTransitionCost);
+    }
+
+    @Test
+    void openRawCostAccountingIgnoresMissingAndNonFiniteCosts() throws Exception {
+        Class<?> sessionType = Class.forName(AStarPathfinder.class.getName() + "$PathfindingSession");
+        Constructor<?> constructor = sessionType.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Object session = constructor.newInstance();
+
+        Method addOpenRawFCost = sessionType.getDeclaredMethod("addOpenRawFCost", double.class);
+        Method removeOpenRawFCost = sessionType.getDeclaredMethod("removeOpenRawFCost", double.class);
+        Method minOpenRawFCost = sessionType.getDeclaredMethod("minOpenRawFCost");
+        addOpenRawFCost.setAccessible(true);
+        removeOpenRawFCost.setAccessible(true);
+        minOpenRawFCost.setAccessible(true);
+
+        assertEquals(Double.POSITIVE_INFINITY, (double) minOpenRawFCost.invoke(session));
+
+        removeOpenRawFCost.invoke(session, Double.POSITIVE_INFINITY);
+        removeOpenRawFCost.invoke(session, 12.0);
+        addOpenRawFCost.invoke(session, 3.0);
+        addOpenRawFCost.invoke(session, 3.0);
+
+        assertEquals(3.0, (double) minOpenRawFCost.invoke(session));
+
+        removeOpenRawFCost.invoke(session, 3.0);
+        assertEquals(3.0, (double) minOpenRawFCost.invoke(session));
+
+        removeOpenRawFCost.invoke(session, 3.0);
+        assertEquals(Double.POSITIVE_INFINITY, (double) minOpenRawFCost.invoke(session));
     }
 
     @Test
