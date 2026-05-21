@@ -21,6 +21,11 @@
 
 package fr.riege.ebsl.common.feature.scripting.manager;
 
+import fr.riege.ebsl.common.feature.scripting.definition.EbslNodeDefinition;
+import fr.riege.ebsl.common.feature.scripting.definition.EbslNodeDefinitionRegistry;
+import fr.riege.ebsl.common.feature.scripting.definition.EbslNodeFieldDefinition;
+import fr.riege.ebsl.common.feature.scripting.definition.EbslNodePortDefinition;
+import fr.riege.ebsl.common.feature.scripting.definition.EbslValueType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -97,6 +102,45 @@ final class EbslGraphModelTest {
 
         assertEquals(false, plan.executable());
         assertTrue(plan.issues().stream().anyMatch(issue -> issue.message().contains("cycle")));
+    }
+
+    @Test
+    void validatesGraphAgainstNodeRegistryMetadata() {
+        EbslNodeDefinition number = new EbslNodeDefinition(
+            "number",
+            "Number",
+            "",
+            null,
+            List.of(),
+            List.of(EbslNodePortDefinition.flowInput("main", "In")),
+            List.of(EbslNodePortDefinition.output("value", EbslValueType.NUMBER)),
+            Map.of());
+        EbslNodeDefinition message = new EbslNodeDefinition(
+            "message",
+            "Message",
+            "",
+            null,
+            List.of(EbslNodeFieldDefinition.required("text", EbslValueType.STRING)),
+            List.of(
+                EbslNodePortDefinition.flowInput("main", "In"),
+                EbslNodePortDefinition.input("text", EbslValueType.STRING)),
+            List.of(EbslNodePortDefinition.flowOutput("main", "Out")),
+            Map.of());
+        EbslGraphNode numberNode = number.createNode("number-1", Map.of());
+        EbslGraphNode messageNode = message.createNode("message-1", Map.of("unknown", "oops"));
+        EbslGraphDocument document = new EbslGraphDocument(
+            Map.of(),
+            List.of(new EbslGraphConnection("data", "number-1", "value", "message-1", "text", EbslGraphConnectionMode.FLOW, "")),
+            Map.of(numberNode.id(), numberNode, messageNode.id(), messageNode));
+
+        EbslGraphExecutionPlan plan = EbslGraphExecutionPlanner.plan(
+            document,
+            EbslNodeDefinitionRegistry.of(number, message));
+
+        assertEquals(false, plan.executable());
+        assertTrue(plan.issues().stream().anyMatch(issue -> issue.message().contains("unknown")));
+        assertTrue(plan.issues().stream().anyMatch(issue -> issue.message().contains("Required field")));
+        assertTrue(plan.issues().stream().anyMatch(issue -> issue.message().contains("type mismatch")));
     }
 
     @Test

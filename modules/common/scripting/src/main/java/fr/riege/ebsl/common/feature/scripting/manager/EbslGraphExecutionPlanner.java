@@ -21,6 +21,8 @@
 
 package fr.riege.ebsl.common.feature.scripting.manager;
 
+import fr.riege.ebsl.common.feature.scripting.definition.EbslNodeDefinitionRegistry;
+
 import java.util.*;
 import java.util.function.IntFunction;
 
@@ -29,10 +31,14 @@ public final class EbslGraphExecutionPlanner {
     }
 
     public static EbslGraphExecutionPlan plan(EbslGraphDocument document) {
+        return plan(document, null);
+    }
+
+    public static EbslGraphExecutionPlan plan(EbslGraphDocument document, EbslNodeDefinitionRegistry registry) {
         if (document.nodes().isEmpty()) {
             return new EbslGraphExecutionPlan(List.of(), List.of(), Map.of(), Map.of(), List.of());
         }
-        List<EbslGraphValidationIssue> issues = new ArrayList<>(EbslGraphValidator.validate(document));
+        List<EbslGraphValidationIssue> issues = new ArrayList<>(EbslGraphValidator.validate(document, registry));
         GraphPlanEdges edges = buildGraphPlanEdges(document);
         List<String> ordered = topologicalOrder(document, edges.incomingCounts(), edges.outgoingByNode());
         if (ordered.size() != document.nodes().size()) {
