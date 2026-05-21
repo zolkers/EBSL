@@ -38,12 +38,19 @@ public record SimCliOptions(
     Path replayDirectory,
     boolean replaySaveEnabled,
     boolean headless,
+    int repeatRuns,
+    boolean failOnRegression,
+    double regressionMaxFinalDistance,
+    int regressionMaxStuckEvents,
     MinecraftWorldImportOptions minecraftWorldImportOptions,
     MinecraftStressGrid minecraftStressGrid
 ) {
     private static final int DEFAULT_MAX_TICKS = 600;
     private static final int DEFAULT_STUCK_WINDOW = 25;
     private static final double DEFAULT_STUCK_EPSILON = 0.015;
+    private static final int DEFAULT_REPEAT_RUNS = 1;
+    private static final double DEFAULT_REGRESSION_MAX_FINAL_DISTANCE = 1.25;
+    private static final int DEFAULT_REGRESSION_MAX_STUCK_EVENTS = 5;
 
     public static SimCliOptions parse(String[] args) {
         ParseState state = new ParseState();
@@ -59,6 +66,10 @@ public record SimCliOptions(
             state.replayDirectory,
             state.replaySaveEnabled,
             state.headless,
+            state.repeatRuns,
+            state.failOnRegression,
+            state.regressionMaxFinalDistance,
+            state.regressionMaxStuckEvents,
             state.minecraftWorld.buildOrNull(),
             state.minecraftStressGrid);
     }
@@ -77,6 +88,10 @@ public record SimCliOptions(
         private Path replayDirectory = defaultReplayDirectory();
         private boolean replaySaveEnabled = true;
         private boolean headless;
+        private int repeatRuns = DEFAULT_REPEAT_RUNS;
+        private boolean failOnRegression;
+        private double regressionMaxFinalDistance = DEFAULT_REGRESSION_MAX_FINAL_DISTANCE;
+        private int regressionMaxStuckEvents = DEFAULT_REGRESSION_MAX_STUCK_EVENTS;
         private MinecraftStressGrid minecraftStressGrid;
         private final MinecraftWorldImportOptions.Builder minecraftWorld = MinecraftWorldImportOptions.builder();
 
@@ -106,6 +121,22 @@ public record SimCliOptions(
             }
             if (arg.startsWith("--json=")) {
                 json = Path.of(value(arg));
+                return true;
+            }
+            if (arg.startsWith("--repeat=") || arg.startsWith("--regression-runs=")) {
+                repeatRuns = parsePositiveInt(value(arg), DEFAULT_REPEAT_RUNS);
+                return true;
+            }
+            if ("--fail-on-regression".equals(arg)) {
+                failOnRegression = true;
+                return true;
+            }
+            if (arg.startsWith("--regression-max-final-distance=") || arg.startsWith("--max-final-distance=")) {
+                regressionMaxFinalDistance = parsePositiveDouble(value(arg), DEFAULT_REGRESSION_MAX_FINAL_DISTANCE);
+                return true;
+            }
+            if (arg.startsWith("--regression-max-stuck-events=")) {
+                regressionMaxStuckEvents = parseNonNegativeInt(value(arg), DEFAULT_REGRESSION_MAX_STUCK_EVENTS);
                 return true;
             }
             if (arg.startsWith("--replay-dir=")) {
@@ -159,6 +190,14 @@ public record SimCliOptions(
         private static int parsePositiveInt(String value, int fallback) {
             try {
                 return Math.max(1, Integer.parseInt(value));
+            } catch (NumberFormatException ignored) {
+                return fallback;
+            }
+        }
+
+        private static int parseNonNegativeInt(String value, int fallback) {
+            try {
+                return Math.max(0, Integer.parseInt(value));
             } catch (NumberFormatException ignored) {
                 return fallback;
             }

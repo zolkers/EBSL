@@ -22,6 +22,7 @@
 package fr.riege.ebsl.tools.pathfindersim.app;
 
 import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
+import fr.riege.ebsl.tools.pathfindersim.core.SimulationRegressionReport;
 import fr.riege.ebsl.tools.pathfindersim.core.SimulationSuite;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayRepository;
 import fr.riege.ebsl.tools.pathfindersim.replay.SimulationReport;
@@ -58,6 +59,13 @@ public final class PathfinderSimApp {
         List<SimulationResult> results = suite.run(options);
         String report = SimulationReport.render(results);
         LOGGER.info(() -> System.lineSeparator() + report.stripTrailing());
+        SimulationRegressionReport regressionReport = SimulationRegressionReport.evaluate(results, options);
+        if (options.repeatRuns() > 1 || options.failOnRegression()) {
+            LOGGER.info(regressionReport::render);
+        }
+        if (options.failOnRegression() && !regressionReport.passed()) {
+            throw new IllegalStateException(regressionReport.render());
+        }
         if (!options.headless()) {
             SimulationFrame.show(results, options);
         }

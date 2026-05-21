@@ -39,9 +39,13 @@ public final class SimulationSuite {
         SimCliOptions effectiveOptions = options == null ? SimCliOptions.parse(new String[0]) : options;
         List<SimulationResult> results = new ArrayList<>();
         SimulationRunner runner = new SimulationRunner();
+        int repeatRuns = Math.max(1, effectiveOptions.repeatRuns());
         for (SimulationScenario scenario : scenarios) {
             if (effectiveOptions.accepts(scenario)) {
-                results.add(runner.run(scenario, effectiveOptions));
+                for (int run = 1; run <= repeatRuns; run++) {
+                    SimulationResult result = runner.run(scenario, effectiveOptions);
+                    results.add(repeatRuns == 1 ? result : result.withScenarioId(result.scenarioId() + "#run-" + run));
+                }
             }
         }
         return List.copyOf(results);

@@ -43,4 +43,20 @@ public record SimulationResult(
         terrain = terrain == null ? List.of() : List.copyOf(terrain);
         ticksTrace = ticksTrace == null ? List.of() : List.copyOf(ticksTrace);
     }
+
+    public SimulationResult withScenarioId(String newScenarioId) {
+        return new SimulationResult(
+            newScenarioId,
+            description,
+            status,
+            reached,
+            ticks,
+            elapsedNanos,
+            navigationNodes,
+            rawNodes,
+            completePlan,
+            metrics,
+            terrain,
+            ticksTrace);
+    }
 }

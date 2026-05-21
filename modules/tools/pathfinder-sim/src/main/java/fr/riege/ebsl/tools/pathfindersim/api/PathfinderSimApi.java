@@ -76,6 +76,10 @@ public final class PathfinderSimApi {
             replayDirectory(request),
             request.saveReplay(),
             true,
+            1,
+            false,
+            1.25,
+            5,
             routeOptions,
             null);
         List<SimulationResult> results = new SimulationSuite(scenarios).run(options);

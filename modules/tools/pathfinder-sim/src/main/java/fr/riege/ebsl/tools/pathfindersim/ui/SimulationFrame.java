@@ -398,6 +398,10 @@ public final class SimulationFrame extends JFrame {
             selectedReplayDirectory(source),
             saveReplay.isSelected(),
             true,
+            source.repeatRuns(),
+            source.failOnRegression(),
+            source.regressionMaxFinalDistance(),
+            source.regressionMaxStuckEvents(),
             routeOptions,
             null);
     }
