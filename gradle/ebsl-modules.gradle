@@ -24,5 +24,9 @@ ext {
     ]
 
     ebslRuntimeClassModules =
-        ebslContractModules + ebslPathfinderModules + ebslNavigationModules + [':app']
+        ebslContractModules + ebslPathfinderModules + ebslNavigationModules
+
+    ebslApplicationModules = [
+        ':app'
+    ]
 }

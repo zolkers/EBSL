@@ -23,7 +23,6 @@ package fr.riege.ebsl.loader;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
-import fr.riege.ebsl.common.EbslCore;
 import fr.riege.ebsl.common.core.event.*;
 import fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent;
 import fr.riege.ebsl.common.core.log.AppLog;
@@ -74,7 +73,8 @@ public final class ModloaderCommonBootstrap {
                                   IPhysicsLayer physics,
                                   ICommandLayer commands,
                                   IImGuiLayer imgui,
-                                  IInputLayer input) {
+                                  IInputLayer input,
+                                  ModloaderApplicationBridge applicationBridge) {
         McPlatformLayers mcLayers = McPlatformLayers.create(client, configDir);
         events = new ModloaderEventBus();
         navigation = new ModloaderNavigationService(mcLayers.world(), mcLayers.player(), physics, input);
@@ -95,9 +95,9 @@ public final class ModloaderCommonBootstrap {
             .build();
 
         bootstrapAppLog();
-        new EbslCore(platform, navigation, ui);
+        applicationBridge.bootstrap(platform, navigation, ui);
         if (ModloaderCommonBootstrap.imgui != null) {
-            docking = DockingInputHandler.register(events, client, ui, ModloaderCommonBootstrap.imgui);
+            docking = DockingInputHandler.register(events, client, ui, ModloaderCommonBootstrap.imgui, applicationBridge);
         }
     }
 

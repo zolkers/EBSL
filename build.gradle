@@ -417,12 +417,80 @@ tasks.register('javaAlignmentWhitespaceVerification') {
     }
 }
 
+tasks.register('architectureBoundaryVerification') {
+    group = 'verification'
+    description = 'Fails when platform adapters depend on app-owned runtime code or common code imports Minecraft.'
+
+    inputs.files(javaSourceFiles)
+    inputs.files(fileTree('modules/mc') { include '**/build.gradle' })
+    inputs.file(rootProject.file('gradle/ebsl-modules.gradle'))
+
+    doLast {
+        def violations = []
+        def mcCommonForbiddenImports = [
+            'fr.riege.ebsl.common.EbslCore',
+            'fr.riege.ebsl.common.feature.module.',
+            'fr.riege.ebsl.common.feature.registry.',
+            'fr.riege.ebsl.common.feature.settings.',
+            'fr.riege.ebsl.common.feature.terminal.commands.',
+            'fr.riege.ebsl.common.feature.ui.'
+        ]
+        def commonForbiddenImports = [
+            'net.fabricmc.',
+            'net.minecraft.',
+            'com.mojang.blaze3d.'
+        ]
+
+        javaSourceFiles.get().each { sourceFile ->
+            def relativePath = rootProject.relativePath(sourceFile).replace('\\', '/')
+            def lines = sourceFile.readLines('UTF-8')
+            lines.eachWithIndex { line, index ->
+                if (relativePath.startsWith('modules/mc/') && relativePath.contains('/common/src/main/java/')) {
+                    mcCommonForbiddenImports.each { forbidden ->
+                        if (line.contains("import ${forbidden}")) {
+                            violations << "${relativePath}:${index + 1}: mc common must use loader contracts instead of app-owned ${forbidden}"
+                        }
+                    }
+                }
+                if (relativePath.startsWith('modules/common/')) {
+                    commonForbiddenImports.each { forbidden ->
+                        if (line.contains("import ${forbidden}")) {
+                            violations << "${relativePath}:${index + 1}: common modules must not import Minecraft/Fabric ${forbidden}"
+                        }
+                    }
+                }
+            }
+        }
+
+        def moduleCatalog = rootProject.file('gradle/ebsl-modules.gradle').getText('UTF-8')
+        def runtimeStart = moduleCatalog.indexOf('ebslRuntimeClassModules')
+        def applicationStart = moduleCatalog.indexOf('ebslApplicationModules')
+        def runtimeBlock = runtimeStart >= 0 && applicationStart > runtimeStart
+            ? moduleCatalog.substring(runtimeStart, applicationStart)
+            : ''
+        if (runtimeBlock.contains("':app'")) {
+            violations << 'gradle/ebsl-modules.gradle: ebslRuntimeClassModules must stay platform-only and must not include :app'
+        }
+
+        fileTree('modules/mc') { include '**/common/build.gradle' }.files.each { buildFile ->
+            if (buildFile.getText('UTF-8').contains("project(':app')")) {
+                violations << "${rootProject.relativePath(buildFile)}: mc common modules must not depend on :app"
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException('Architecture boundary violations:\n' + violations.join('\n'))
+        }
+    }
+}
+
 tasks.register('localQuality') {
     group = 'verification'
     description = 'Runs local quality gates: tests, aggregate coverage, and source hygiene checks.'
     dependsOn tasks.named('verifyJavaLicenseHeaders')
     dependsOn tasks.named('hardcodedQualifierVerification')
     dependsOn tasks.named('javaAlignmentWhitespaceVerification')
+    dependsOn tasks.named('architectureBoundaryVerification')
     dependsOn tasks.named('jacocoCoverageVerification')
     dependsOn tasks.named('sonarCoverageVerification')
 }

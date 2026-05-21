@@ -28,7 +28,6 @@ import fr.riege.ebsl.common.core.event.KeyPressEvent;
 import fr.riege.ebsl.common.core.event.MouseButtonEvent;
 import fr.riege.ebsl.common.core.event.ScaledMousePosEvent;
 import fr.riege.ebsl.common.core.event.events.input.GrabMouseEvent;
-import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
 import fr.riege.ebsl.loader.layer.MinecraftImGuiLayer;
 import fr.riege.ebsl.loader.layer.ModloaderEventBus;
 import fr.riege.ebsl.loader.layer.ModloaderUiService;
@@ -41,18 +40,22 @@ public final class DockingInputHandler {
     private final Minecraft client;
     private final ModloaderUiService ui;
     private final MinecraftImGuiLayer imgui;
+    private final ModloaderUiBridge uiBridge;
 
-    private DockingInputHandler(Minecraft client, ModloaderUiService ui, MinecraftImGuiLayer imgui) {
+    private DockingInputHandler(Minecraft client, ModloaderUiService ui,
+                                MinecraftImGuiLayer imgui, ModloaderUiBridge uiBridge) {
         this.client = client;
         this.ui = ui;
         this.imgui = imgui;
+        this.uiBridge = uiBridge;
     }
 
     public static DockingInputHandler register(ModloaderEventBus bus,
                                                Minecraft client,
                                                ModloaderUiService ui,
-                                               MinecraftImGuiLayer imgui) {
-        DockingInputHandler handler = new DockingInputHandler(client, ui, imgui);
+                                               MinecraftImGuiLayer imgui,
+                                               ModloaderUiBridge uiBridge) {
+        DockingInputHandler handler = new DockingInputHandler(client, ui, imgui, uiBridge);
         bus.subscribe(GrabMouseEvent.class, handler::onGrabMouse);
         bus.subscribe(MouseButtonEvent.class, handler::onMouseButton);
         bus.subscribe(KeyPressEvent.class, handler::onKeyPress);
@@ -65,16 +68,16 @@ public final class DockingInputHandler {
         if (target != client.getMainRenderTarget() || !ui.isVisible()) {
             return;
         }
-        DockedMinecraftCompositor.compose(target);
+        DockedMinecraftCompositor.compose(target, uiBridge);
         imgui.drawFrame();
     }
 
     public boolean shouldSuppressImGuiInput() {
-        return CommonImGuiOverlay.shouldConfineMinecraftMouse(ui) && client.mouseHandler.isMouseGrabbed();
+        return uiBridge.shouldConfineMinecraftMouse(ui) && client.mouseHandler.isMouseGrabbed();
     }
 
     private void onGrabMouse(GrabMouseEvent event) {
-        if (ui.isVisible() && !CommonImGuiOverlay.shouldConfineMinecraftMouse(ui)) {
+        if (ui.isVisible() && !uiBridge.shouldConfineMinecraftMouse(ui)) {
             event.cancel();
         }
     }
@@ -88,7 +91,7 @@ public final class DockingInputHandler {
         GLFW.glfwGetCursorPos(event.windowHandle(), x, y);
 
         if (client.screen != null) {
-            if (!CommonImGuiOverlay.acceptsMinecraftFocusAt(
+            if (!uiBridge.acceptsMinecraftFocusAt(
                 x[0], y[0], window.getScreenWidth(), window.getScreenHeight(), ui)) {
                 event.cancel();
             } else if (client.mouseHandler.isMouseGrabbed()) {
@@ -98,7 +101,7 @@ public final class DockingInputHandler {
         }
 
         if (client.mouseHandler.isMouseGrabbed()) return;
-        if (!CommonImGuiOverlay.acceptsMinecraftFocusAt(
+        if (!uiBridge.acceptsMinecraftFocusAt(
             x[0], y[0], window.getScreenWidth(), window.getScreenHeight(), ui)) {
             client.mouseHandler.releaseMouse();
             event.cancel();
@@ -122,9 +125,9 @@ public final class DockingInputHandler {
     private void onScaledMousePos(ScaledMousePosEvent event) {
         Window window = client.getWindow();
         if (event.axis() == ScaledMousePosEvent.Axis.X) {
-            event.setScaledPos(DockedMouseCoordinates.remapScaledX(window, event.rawPos(), event.scaledPos(), ui));
+            event.setScaledPos(DockedMouseCoordinates.remapScaledX(window, event.rawPos(), event.scaledPos(), ui, uiBridge));
         } else {
-            event.setScaledPos(DockedMouseCoordinates.remapScaledY(window, event.rawPos(), event.scaledPos(), ui));
+            event.setScaledPos(DockedMouseCoordinates.remapScaledY(window, event.rawPos(), event.scaledPos(), ui, uiBridge));
         }
     }
 

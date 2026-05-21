@@ -22,9 +22,9 @@
 package fr.riege.ebsl.loader.viewport;
 
 import com.mojang.blaze3d.platform.Window;
-import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
-import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.common.platform.service.UiService;
+import fr.riege.ebsl.loader.ui.ModloaderUiBridge;
+import fr.riege.ebsl.loader.ui.ModloaderViewportRect;
 import net.minecraft.client.Minecraft;
 
 public final class DockedMouseCoordinates {
@@ -33,11 +33,12 @@ public final class DockedMouseCoordinates {
     private DockedMouseCoordinates() {
     }
 
-    public static double remapScaledX(Window window, double rawX, double vanillaScaledX, UiService ui) {
+    public static double remapScaledX(Window window, double rawX, double vanillaScaledX,
+                                      UiService ui, ModloaderUiBridge uiBridge) {
         if (!shouldRemap(ui)) {
             return vanillaScaledX;
         }
-        UiRect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+        ModloaderViewportRect viewport = uiBridge.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         if (rawX < viewport.x() || rawX > viewport.right()) {
             return OUTSIDE_VIEWPORT;
         }
@@ -45,11 +46,12 @@ public final class DockedMouseCoordinates {
         return t * window.getGuiScaledWidth();
     }
 
-    public static double remapScaledY(Window window, double rawY, double vanillaScaledY, UiService ui) {
+    public static double remapScaledY(Window window, double rawY, double vanillaScaledY,
+                                      UiService ui, ModloaderUiBridge uiBridge) {
         if (!shouldRemap(ui)) {
             return vanillaScaledY;
         }
-        UiRect viewport = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+        ModloaderViewportRect viewport = uiBridge.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         if (rawY < viewport.y() || rawY > viewport.bottom()) {
             return OUTSIDE_VIEWPORT;
         }

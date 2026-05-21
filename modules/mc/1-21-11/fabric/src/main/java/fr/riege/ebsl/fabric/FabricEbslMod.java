@@ -21,8 +21,16 @@
 
 package fr.riege.ebsl.fabric;
 
+import fr.riege.ebsl.common.EbslCore;
+import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
+import fr.riege.ebsl.common.feature.ui.layout.UiRect;
+import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
+import fr.riege.ebsl.common.platform.service.UiService;
+import fr.riege.ebsl.loader.ModloaderApplicationBridge;
 import fr.riege.ebsl.loader.ModloaderCommonBootstrap;
 import fr.riege.ebsl.loader.layer.MinecraftPhysicsLayer;
+import fr.riege.ebsl.loader.ui.ModloaderViewportRect;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -41,8 +49,33 @@ public class FabricEbslMod implements ClientModInitializer {
             new MinecraftPhysicsLayer(client),
             new FabricCommandLayer(),
             new FabricImGuiLayer(client),
-            new FabricInputLayer(client));
+            new FabricInputLayer(client),
+            new FabricApplicationBridge());
 
         ClientTickEvents.END_CLIENT_TICK.register(ignored -> ModloaderCommonBootstrap.tick());
+    }
+
+    private static final class FabricApplicationBridge implements ModloaderApplicationBridge {
+        @Override
+        public void bootstrap(EbslPlatform platform, NavigationService navigationService, UiService uiService) {
+            new EbslCore(platform, navigationService, uiService);
+        }
+
+        @Override
+        public ModloaderViewportRect gameViewportRect(int width, int height) {
+            UiRect rect = CommonImGuiOverlay.gameViewportRect(width, height);
+            return new ModloaderViewportRect(rect.x(), rect.y(), rect.width(), rect.height());
+        }
+
+        @Override
+        public boolean acceptsMinecraftFocusAt(double x, double y, int width, int height,
+                                               UiService ui) {
+            return CommonImGuiOverlay.acceptsMinecraftFocusAt(x, y, width, height, ui);
+        }
+
+        @Override
+        public boolean shouldConfineMinecraftMouse(UiService ui) {
+            return CommonImGuiOverlay.shouldConfineMinecraftMouse(ui);
+        }
     }
 }

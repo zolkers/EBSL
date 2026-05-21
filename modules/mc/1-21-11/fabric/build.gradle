@@ -34,8 +34,11 @@ sourceSets {
 }
 
 dependencies {
-    compileOnly project(':app')
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
+        compileOnly project(modulePath)
+        runtimeOnly files(project(modulePath).sourceSets.main.output.classesDirs)
+    }
+    rootProject.ext.ebslApplicationModules.each { modulePath ->
         compileOnly project(modulePath)
         runtimeOnly files(project(modulePath).sourceSets.main.output.classesDirs)
     }
@@ -133,6 +136,9 @@ tasks.withType(JavaCompile).configureEach {
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
         dependsOn project(modulePath).tasks.named('classes')
     }
+    rootProject.ext.ebslApplicationModules.each { modulePath ->
+        dependsOn project(modulePath).tasks.named('classes')
+    }
 }
 
 tasks.named('test') {
@@ -146,6 +152,9 @@ java {
 jar {
     inputs.property "projectName", archiveProjectName
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
+        from(project(modulePath).sourceSets.main.output.classesDirs)
+    }
+    rootProject.ext.ebslApplicationModules.each { modulePath ->
         from(project(modulePath).sourceSets.main.output.classesDirs)
     }
     from(mcCommonProject.sourceSets.main.output.classesDirs)

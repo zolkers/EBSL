@@ -34,9 +34,9 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
-import fr.riege.ebsl.common.feature.ui.layout.UiRect;
 import fr.riege.ebsl.loader.render.EbslRenderPipelines;
+import fr.riege.ebsl.loader.ui.ModloaderUiBridge;
+import fr.riege.ebsl.loader.ui.ModloaderViewportRect;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
@@ -55,7 +55,7 @@ public final class DockedMinecraftCompositor {
     private DockedMinecraftCompositor() {
     }
 
-    public static void compose(RenderTarget target) {
+    public static void compose(RenderTarget target, ModloaderUiBridge uiBridge) {
         if (composing || target.getColorTexture() == null || target.getColorTextureView() == null) {
             return;
         }
@@ -65,7 +65,7 @@ public final class DockedMinecraftCompositor {
             ensureSourceCopy(target.width, target.height);
             copyFrame(target, sourceCopy);
             clearTarget(target);
-            drawCopyIntoViewport(target, sourceCopy);
+            drawCopyIntoViewport(target, sourceCopy, uiBridge);
         } finally {
             composing = false;
         }
@@ -94,9 +94,9 @@ public final class DockedMinecraftCompositor {
         RenderSystem.getDevice().createCommandEncoder().clearColorTexture(target.getColorTexture(), 0xFF080B10);
     }
 
-    private static void drawCopyIntoViewport(RenderTarget target, RenderTarget source) {
+    private static void drawCopyIntoViewport(RenderTarget target, RenderTarget source, ModloaderUiBridge uiBridge) {
         Window window = Minecraft.getInstance().getWindow();
-        UiRect viewport = minecraftGuiRectForImGuiViewport(window);
+        ModloaderViewportRect viewport = minecraftGuiRectForImGuiViewport(window, uiBridge);
         var sourceTextureView = source.getColorTextureView();
         if (sourceTextureView == null) {
             return;
@@ -124,15 +124,15 @@ public final class DockedMinecraftCompositor {
         }
     }
 
-    private static UiRect minecraftGuiRectForImGuiViewport(Window window) {
-        UiRect physical = CommonImGuiOverlay.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
+    private static ModloaderViewportRect minecraftGuiRectForImGuiViewport(Window window, ModloaderUiBridge uiBridge) {
+        ModloaderViewportRect physical = uiBridge.gameViewportRect(window.getScreenWidth(), window.getScreenHeight());
         float scaleX = (float) window.getScreenWidth() / (float) window.getGuiScaledWidth();
         float scaleY = (float) window.getScreenHeight() / (float) window.getGuiScaledHeight();
         int x = Math.round(physical.x() / scaleX);
         int y = Math.round(physical.y() / scaleY);
         int right = Math.round(physical.right() / scaleX);
         int bottom = Math.round(physical.bottom() / scaleY);
-        return new UiRect(x, y, Math.max(1, right - x), Math.max(1, bottom - y));
+        return new ModloaderViewportRect(x, y, Math.max(1, right - x), Math.max(1, bottom - y));
     }
 
     private static void drawMesh(RenderTarget target, GpuTextureView sourceTextureView, MeshData mesh) {

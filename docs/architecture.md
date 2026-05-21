@@ -16,9 +16,23 @@ EBSL is organized around platform-independent contracts first, then Minecraft/Fa
 - `modules/common/pathfinder-execution`: movement executors and runtime path following helpers.
 - `modules/common/navigation`: service-level navigation API and runtime adapters.
 - `modules/mc/<minecraft-version>/common`: Minecraft-specific world and player adapters shared by loaders.
-- `modules/mc/<minecraft-version>/fabric`: Fabric entrypoint, metadata, and packaging only.
+- `modules/mc/<minecraft-version>/fabric`: Fabric entrypoint, metadata, packaging, and final composition of the
+  app runtime into the Minecraft adapter.
 - `modules/tools/pathfinder-sim`: Java headless and Swing simulator used to run scenarios, import worlds, and export replay JSON.
 - `modules/tools/pathfinder-sim-viewer`: static responsive PWA for desktop and Android/mobile replay inspection.
+
+## Platform Shape
+
+Minecraft version modules follow the same shape so new targets can be added without copying the EBSL platform:
+
+- `mc/<version>/common` may depend on common contracts and Minecraft APIs, but not on `:app` or app-owned UI/registry
+  packages. It exposes loader-side contracts such as application factories and UI bridges.
+- `mc/<version>/fabric` is the loader composition layer. It is allowed to connect `EbslCore`, the ImGui overlay, Fabric
+  APIs, and Minecraft version adapters because this module is the final packaged product.
+- `gradle/ebsl-modules.gradle` keeps runtime common modules separate from application modules. The Fabric jar embeds
+  both, but shared Minecraft code compiles only against the common runtime list.
+- `localQuality` runs `architectureBoundaryVerification`, which fails if `mc/<version>/common` starts depending on app
+  classes again or if common modules import Minecraft/Fabric classes.
 
 ## Pathfinder Contracts
 
