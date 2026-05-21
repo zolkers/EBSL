@@ -19,3 +19,20 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.named('compileJava') {
+    doLast {
+        def misplacedPackages = [
+            'package fr.riege.ebsl.common.feature.aim;',
+            'package fr.riege.ebsl.common.feature.task;',
+            'package fr.riege.ebsl.common.feature.registry;'
+        ]
+        fileTree('src/main/java').matching { include '**/*.java' }.each { file ->
+            def content = file.text
+            def misplacedPackage = misplacedPackages.find { content.contains(it) }
+            if (misplacedPackage != null) {
+                throw new GradleException("Misplaced scripting source '${misplacedPackage}' in ${file.path}")
+            }
+        }
+    }
+}
