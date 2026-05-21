@@ -35,7 +35,7 @@ public final class EntityPathFollower {
 
     private final NavigationActor actor;
     private final NavigationMotor motor;
-    private final EntityFollowerOptions options;
+    private EntityFollowerOptions options;
 
     private List<Node> path = List.of();
     private int waypointIndex;
@@ -124,6 +124,14 @@ public final class EntityPathFollower {
 
     public Node.MoveType currentMoveType() {
         return currentMoveType;
+    }
+
+    public EntityFollowerOptions options() {
+        return options;
+    }
+
+    public void updateOptions(EntityFollowerOptions options) {
+        this.options = options == null ? EntityFollowerOptions.defaults() : options;
     }
 
     public int waypointIndex() {

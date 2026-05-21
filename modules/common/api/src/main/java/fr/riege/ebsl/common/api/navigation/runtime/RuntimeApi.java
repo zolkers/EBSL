@@ -97,7 +97,7 @@ public final class RuntimeApi {
 
     @EbslApiOperation("Create a server/entity navigation agent over custom adapters.")
     public EntityNavigationAgent entityNavigationAgent(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
-        return EntityNavigationFactory.create(world, actor, motor);
+        return EntityNavigationFactory.builder(world, actor, motor).build();
     }
 
     @EbslApiOperation("Create a server/entity navigation agent with settings over custom adapters.")
@@ -105,7 +105,7 @@ public final class RuntimeApi {
                                                       NavigationActor actor,
                                                       NavigationMotor motor,
                                                       EntityNavigationSettings settings) {
-        return EntityNavigationFactory.create(world, actor, motor, settings);
+        return EntityNavigationFactory.builder(world, actor, motor).settings(settings).build();
     }
 
     @EbslApiOperation("Get the EBSL navigation workflow for an entity agent.")

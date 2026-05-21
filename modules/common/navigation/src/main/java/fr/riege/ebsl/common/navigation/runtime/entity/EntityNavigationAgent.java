@@ -39,4 +39,12 @@ public record EntityNavigationAgent(
         Objects.requireNonNull(navigation, "navigation");
         Objects.requireNonNull(workflow, "workflow");
     }
+
+    public EntityNavigationSettings settings() {
+        return navigation.settings();
+    }
+
+    public void updateSettings(EntityNavigationSettings settings) {
+        navigation.updateSettings(settings);
+    }
 }

@@ -32,6 +32,10 @@ public final class EntityNavigationFactory {
     private EntityNavigationFactory() {
     }
 
+    public static Builder builder(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
+        return new Builder(world, actor, motor);
+    }
+
     public static EntityNavigationAgent create(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
         return create(world, actor, motor, EntityNavigationSettings.defaults(), Runnable::run);
     }
@@ -73,5 +77,43 @@ public final class EntityNavigationFactory {
             callbackThread);
         navigation.setPlannerOptions(plannerOptions);
         return new EntityNavigationAgent(planner, actor, motor, navigation, new EntityNavigationWorkflow(navigation));
+    }
+
+    public static final class Builder {
+        private final IWorldLayer world;
+        private final NavigationActor actor;
+        private final NavigationMotor motor;
+        private EntityNavigationSettings settings = EntityNavigationSettings.defaults();
+        private Consumer<Runnable> callbackThread = Runnable::run;
+
+        private Builder(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
+            this.world = Objects.requireNonNull(world, "world");
+            this.actor = Objects.requireNonNull(actor, "actor");
+            this.motor = Objects.requireNonNull(motor, "motor");
+        }
+
+        public Builder settings(EntityNavigationSettings settings) {
+            this.settings = settings == null ? EntityNavigationSettings.defaults() : settings;
+            return this;
+        }
+
+        public Builder followerOptions(EntityFollowerOptions options) {
+            settings = settings.withFollowerOptions(options);
+            return this;
+        }
+
+        public Builder plannerOptions(PathPlannerOptions options) {
+            settings = settings.withPlannerOptions(options);
+            return this;
+        }
+
+        public Builder callbackThread(Consumer<Runnable> callbackThread) {
+            this.callbackThread = callbackThread == null ? Runnable::run : callbackThread;
+            return this;
+        }
+
+        public EntityNavigationAgent build() {
+            return create(world, actor, motor, settings, callbackThread);
+        }
     }
 }

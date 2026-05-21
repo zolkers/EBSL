@@ -71,6 +71,16 @@ public class EntityNavigationService implements NavigationService {
         this.options = options == null ? PathPlannerOptions.defaults() : options;
     }
 
+    public EntityNavigationSettings settings() {
+        return new EntityNavigationSettings(follower.options(), options);
+    }
+
+    public void updateSettings(EntityNavigationSettings settings) {
+        EntityNavigationSettings checkedSettings = settings == null ? EntityNavigationSettings.defaults() : settings;
+        follower.updateOptions(checkedSettings.followerOptions());
+        setPlannerOptions(checkedSettings.plannerOptions());
+    }
+
     @Override public void startNavigation(NavigationRequest request) {
         configure(request);
         Vec3d pos = actor.position();

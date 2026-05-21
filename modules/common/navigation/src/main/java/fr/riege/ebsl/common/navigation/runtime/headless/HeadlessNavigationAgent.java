@@ -22,6 +22,7 @@
 package fr.riege.ebsl.common.navigation.runtime.headless;
 
 import fr.riege.ebsl.common.navigation.PathPlanningService;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationWorkflow;
 
@@ -42,5 +43,13 @@ public record HeadlessNavigationAgent(
         Objects.requireNonNull(motor, "motor");
         Objects.requireNonNull(navigation, "navigation");
         Objects.requireNonNull(workflow, "workflow");
+    }
+
+    public EntityNavigationSettings settings() {
+        return navigation.settings();
+    }
+
+    public void updateSettings(EntityNavigationSettings settings) {
+        navigation.updateSettings(settings);
     }
 }

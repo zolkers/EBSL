@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.MovementIntent;
@@ -103,6 +104,30 @@ class HeadlessNavigationApiTest {
 
         assertTrue(agent.workflow().active(), "workflow should start entity navigation");
         assertTrue(agent.motor().lastIntent().velocity().x() > 0.0, "workflow should drive the entity motor");
+    }
+
+    @Test
+    void entityNavigationAgentAppliesRuntimeSettingsPerEntity() {
+        HeadlessWorldLayer world = HeadlessWorldLayer.flat(63);
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        EntityNavigationSettings settings = EntityNavigationSettings.defaults()
+            .withPlannerOptions(PathPlannerOptions.defaults().toBuilder().async(false).build())
+            .withFollowerOptions(EntityFollowerOptions.builder()
+                .sprint(false)
+                .walkSpeed(0.12)
+                .waypointReachDistance(0.2)
+                .build());
+        HeadlessNavigationAgent agent = HeadlessNavigationFactory.create(world, actor, settings);
+
+        assertSame(settings.followerOptions(), agent.settings().followerOptions());
+
+        EntityFollowerOptions fasterOptions = EntityFollowerOptions.builder()
+            .sprint(true)
+            .walkSpeed(0.44)
+            .build();
+        agent.updateSettings(agent.settings().withFollowerOptions(fasterOptions));
+
+        assertSame(fasterOptions, agent.settings().followerOptions());
     }
 
     @Test

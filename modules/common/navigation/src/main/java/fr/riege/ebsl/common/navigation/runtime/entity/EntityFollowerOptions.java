@@ -102,9 +102,9 @@ public record EntityFollowerOptions(
                 Math.max(0.0, swimSpeed),
                 Math.max(0.0, sprintSpeed),
                 Math.max(0.0, jumpVelocity),
-                Math.max(0.05, waypointReachDistance),
-                Math.max(0.05, verticalReachDistance),
-                Math.max(0.05, finalReachDistance),
+                Math.clamp(waypointReachDistance, 0.05, Double.MAX_VALUE),
+                Math.clamp(verticalReachDistance, 0.05, Double.MAX_VALUE),
+                Math.clamp(finalReachDistance, 0.05, Double.MAX_VALUE),
                 sprint,
                 lookAtWaypoint);
         }
