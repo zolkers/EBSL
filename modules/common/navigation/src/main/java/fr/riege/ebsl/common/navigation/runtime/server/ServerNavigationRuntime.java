@@ -27,6 +27,7 @@ import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationFactory;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationActor;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationMotor;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
@@ -78,6 +79,11 @@ public final class ServerNavigationRuntime {
     }
 
     public EntityNavigationAgent entityAgent(NavigationActor actor, NavigationMotor motor) {
-        return EntityNavigationFactory.create(world, actor, motor, followerOptions, plannerOptions, callbackThread);
+        return EntityNavigationFactory.create(
+            world,
+            actor,
+            motor,
+            new EntityNavigationSettings(followerOptions, plannerOptions),
+            callbackThread);
     }
 }

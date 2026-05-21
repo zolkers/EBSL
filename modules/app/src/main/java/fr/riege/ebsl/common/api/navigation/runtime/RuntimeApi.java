@@ -27,6 +27,8 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationFactory;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationWorkflow;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationActor;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationMotor;
@@ -74,6 +76,11 @@ public final class RuntimeApi {
         return HeadlessNavigationFactory.create(world, actor);
     }
 
+    @EbslApiOperation("Create default per-entity navigation settings.")
+    public EntityNavigationSettings entityNavigationSettings() {
+        return EntityNavigationSettings.defaults();
+    }
+
     @EbslApiOperation("Create a server/entity navigation service over custom adapters.")
     public EntityNavigationService entityNavigation(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
         return entityNavigationAgent(world, actor, motor).navigation();
@@ -84,18 +91,26 @@ public final class RuntimeApi {
                                                     NavigationActor actor,
                                                     NavigationMotor motor,
                                                     EntityFollowerOptions options) {
-        return EntityNavigationFactory.create(
-            world,
-            actor,
-            motor,
-            options,
-            null,
-            Runnable::run).navigation();
+        return entityNavigationAgent(world, actor, motor, EntityNavigationSettings.defaults().withFollowerOptions(options))
+            .navigation();
     }
 
     @EbslApiOperation("Create a server/entity navigation agent over custom adapters.")
     public EntityNavigationAgent entityNavigationAgent(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
         return EntityNavigationFactory.create(world, actor, motor);
+    }
+
+    @EbslApiOperation("Create a server/entity navigation agent with settings over custom adapters.")
+    public EntityNavigationAgent entityNavigationAgent(IWorldLayer world,
+                                                      NavigationActor actor,
+                                                      NavigationMotor motor,
+                                                      EntityNavigationSettings settings) {
+        return EntityNavigationFactory.create(world, actor, motor, settings);
+    }
+
+    @EbslApiOperation("Get the EBSL navigation workflow for an entity agent.")
+    public EntityNavigationWorkflow entityNavigationWorkflow(EntityNavigationAgent agent) {
+        return agent.workflow();
     }
 
     @EbslApiOperation("Create a server-only navigation runtime without terminal, rendering or client input.")

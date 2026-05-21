@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationFactory;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
 
 import java.util.Objects;
 
@@ -33,14 +34,24 @@ public final class HeadlessNavigationFactory {
     }
 
     public static HeadlessNavigationAgent create(HeadlessWorldLayer world, HeadlessActor actor) {
-        return create(world, actor, new HeadlessMotor(actor), EntityFollowerOptions.defaults(), PathPlannerOptions.defaults());
+        return create(world, actor, new HeadlessMotor(actor), EntityNavigationSettings.defaults());
+    }
+
+    public static HeadlessNavigationAgent create(HeadlessWorldLayer world,
+                                                HeadlessActor actor,
+                                                EntityNavigationSettings settings) {
+        return create(world, actor, new HeadlessMotor(actor), settings);
     }
 
     public static HeadlessNavigationAgent create(HeadlessWorldLayer world,
                                                 HeadlessActor actor,
                                                 EntityFollowerOptions followerOptions,
                                                 PathPlannerOptions plannerOptions) {
-        return create(world, actor, new HeadlessMotor(actor), followerOptions, plannerOptions);
+        return create(
+            world,
+            actor,
+            new HeadlessMotor(actor),
+            new EntityNavigationSettings(followerOptions, plannerOptions));
     }
 
     public static HeadlessNavigationAgent create(HeadlessWorldLayer world,
@@ -48,6 +59,13 @@ public final class HeadlessNavigationFactory {
                                                 HeadlessMotor motor,
                                                 EntityFollowerOptions followerOptions,
                                                 PathPlannerOptions plannerOptions) {
+        return create(world, actor, motor, new EntityNavigationSettings(followerOptions, plannerOptions));
+    }
+
+    public static HeadlessNavigationAgent create(HeadlessWorldLayer world,
+                                                HeadlessActor actor,
+                                                HeadlessMotor motor,
+                                                EntityNavigationSettings settings) {
         HeadlessWorldLayer checkedWorld = Objects.requireNonNull(world, "world");
         HeadlessActor checkedActor = Objects.requireNonNull(actor, "actor");
         HeadlessMotor checkedMotor = Objects.requireNonNull(motor, "motor").world(checkedWorld);
@@ -55,9 +73,14 @@ public final class HeadlessNavigationFactory {
             checkedWorld,
             checkedActor,
             checkedMotor,
-            followerOptions,
-            plannerOptions,
+            settings,
             Runnable::run);
-        return new HeadlessNavigationAgent(agent.planner(), checkedWorld, checkedActor, checkedMotor, agent.navigation());
+        return new HeadlessNavigationAgent(
+            agent.planner(),
+            checkedWorld,
+            checkedActor,
+            checkedMotor,
+            agent.navigation(),
+            agent.workflow());
     }
 }

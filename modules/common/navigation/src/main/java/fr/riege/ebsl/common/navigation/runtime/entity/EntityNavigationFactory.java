@@ -33,7 +33,29 @@ public final class EntityNavigationFactory {
     }
 
     public static EntityNavigationAgent create(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
-        return create(world, actor, motor, EntityFollowerOptions.defaults(), PathPlannerOptions.defaults(), Runnable::run);
+        return create(world, actor, motor, EntityNavigationSettings.defaults(), Runnable::run);
+    }
+
+    public static EntityNavigationAgent create(IWorldLayer world,
+                                               NavigationActor actor,
+                                               NavigationMotor motor,
+                                               EntityNavigationSettings settings) {
+        return create(world, actor, motor, settings, Runnable::run);
+    }
+
+    public static EntityNavigationAgent create(IWorldLayer world,
+                                               NavigationActor actor,
+                                               NavigationMotor motor,
+                                               EntityNavigationSettings settings,
+                                               Consumer<Runnable> callbackThread) {
+        EntityNavigationSettings checkedSettings = settings == null ? EntityNavigationSettings.defaults() : settings;
+        return create(
+            world,
+            actor,
+            motor,
+            checkedSettings.followerOptions(),
+            checkedSettings.plannerOptions(),
+            callbackThread);
     }
 
     public static EntityNavigationAgent create(IWorldLayer world,
@@ -50,6 +72,6 @@ public final class EntityNavigationFactory {
             followerOptions,
             callbackThread);
         navigation.setPlannerOptions(plannerOptions);
-        return new EntityNavigationAgent(planner, actor, motor, navigation);
+        return new EntityNavigationAgent(planner, actor, motor, navigation, new EntityNavigationWorkflow(navigation));
     }
 }

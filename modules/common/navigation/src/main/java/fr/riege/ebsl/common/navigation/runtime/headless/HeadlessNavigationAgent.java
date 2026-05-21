@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.navigation.runtime.headless;
 
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationWorkflow;
 
 import java.util.Objects;
 
@@ -31,7 +32,8 @@ public record HeadlessNavigationAgent(
     HeadlessWorldLayer world,
     HeadlessActor actor,
     HeadlessMotor motor,
-    EntityNavigationService navigation
+    EntityNavigationService navigation,
+    EntityNavigationWorkflow workflow
 ) {
     public HeadlessNavigationAgent {
         Objects.requireNonNull(planner, "planner");
@@ -39,5 +41,6 @@ public record HeadlessNavigationAgent(
         Objects.requireNonNull(actor, "actor");
         Objects.requireNonNull(motor, "motor");
         Objects.requireNonNull(navigation, "navigation");
+        Objects.requireNonNull(workflow, "workflow");
     }
 }

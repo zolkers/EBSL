@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationSettings;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.MovementIntent;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
@@ -86,6 +87,22 @@ class HeadlessNavigationApiTest {
         assertNotSame(firstAgent.planner(), secondAgent.planner());
         assertNotSame(firstAgent.motor(), secondAgent.motor());
         assertNotSame(firstAgent.navigation(), secondAgent.navigation());
+        assertNotSame(firstAgent.workflow(), secondAgent.workflow());
+    }
+
+    @Test
+    void entityNavigationWorkflowStartsConfiguredEbslNavigationRequest() {
+        HeadlessWorldLayer world = HeadlessWorldLayer.flat(63);
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        EntityNavigationSettings settings = EntityNavigationSettings.defaults()
+            .withPlannerOptions(PathPlannerOptions.defaults().toBuilder().async(false).build());
+        HeadlessNavigationAgent agent = HeadlessNavigationFactory.create(world, actor, settings);
+
+        agent.workflow().walkToBlock(4, 64, 0);
+        agent.workflow().tick();
+
+        assertTrue(agent.workflow().active(), "workflow should start entity navigation");
+        assertTrue(agent.motor().lastIntent().velocity().x() > 0.0, "workflow should drive the entity motor");
     }
 
     @Test
