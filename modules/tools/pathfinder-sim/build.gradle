@@ -31,13 +31,19 @@ tasks.register('regression', JavaExec) {
     def maxTicks = providers.gradleProperty('simRegressionMaxTicks').orElse('600')
     def maxFinalDistance = providers.gradleProperty('simRegressionMaxFinalDistance').orElse('1.25')
     def maxStuckEvents = providers.gradleProperty('simRegressionMaxStuckEvents').orElse('5')
+    def maxRecoveryAttempts = providers.gradleProperty('simRegressionMaxRecoveryAttempts').orElse('6')
+    def maxBackwardTicks = providers.gradleProperty('simRegressionMaxBackwardTicks').orElse('80')
+    def maxAverageLateralError = providers.gradleProperty('simRegressionMaxAverageLateralError').orElse('0.25')
     def saveReplay = providers.gradleProperty('simRegressionSaveReplay').map { it.toBoolean() }.orElse(false)
     args '--headless',
         "--repeat=${runs.get()}",
         '--fail-on-regression',
         "--max-ticks=${maxTicks.get()}",
         "--regression-max-final-distance=${maxFinalDistance.get()}",
-        "--regression-max-stuck-events=${maxStuckEvents.get()}"
+        "--regression-max-stuck-events=${maxStuckEvents.get()}",
+        "--regression-max-recovery-attempts=${maxRecoveryAttempts.get()}",
+        "--regression-max-backward-ticks=${maxBackwardTicks.get()}",
+        "--regression-max-average-lateral-error=${maxAverageLateralError.get()}"
     if (!saveReplay.get()) {
         args '--no-replay-save'
     }
@@ -53,12 +59,20 @@ tasks.register('minecraftRegression', JavaExec) {
     def worldDir = providers.gradleProperty('simMinecraftWorld').orElse('run/saves/New World')
     def start = providers.gradleProperty('simMinecraftStart').orElse('386,61,42')
     def goal = providers.gradleProperty('simMinecraftGoal').orElse('500,61,40')
+    def routes = providers.gradleProperty('simMinecraftRoutes').orElse(
+        'crash_383_61_44_to_500_62_40@383,61,44@500,62,40;' +
+            'crash_384_63_43_to_500_62_40@384,63,43@500,62,40;' +
+            'crash_385_62_42_to_500_62_40@385,62,42@500,62,40;' +
+            'crash_386_61_42_to_500_61_40@386,61,42@500,61,40')
     def runs = providers.gradleProperty('simMinecraftRuns').orElse('3')
     def maxTicks = providers.gradleProperty('simMinecraftMaxTicks').orElse('1200')
     def radius = providers.gradleProperty('simMinecraftRadiusChunks').orElse('8')
     def goalSearch = providers.gradleProperty('simMinecraftGoalSearchBlocks').orElse('160')
     def maxFinalDistance = providers.gradleProperty('simMinecraftMaxFinalDistance').orElse('2.0')
     def maxStuckEvents = providers.gradleProperty('simMinecraftMaxStuckEvents').orElse('12')
+    def maxRecoveryAttempts = providers.gradleProperty('simMinecraftMaxRecoveryAttempts').orElse('6')
+    def maxBackwardTicks = providers.gradleProperty('simMinecraftMaxBackwardTicks').orElse('80')
+    def maxAverageLateralError = providers.gradleProperty('simMinecraftMaxAverageLateralError').orElse('0.25')
     def saveReplay = providers.gradleProperty('simMinecraftSaveReplay').map { it.toBoolean() }.orElse(true)
     def worldPath = rootProject.layout.projectDirectory.file(worldDir.get()).asFile
     onlyIf {
@@ -78,7 +92,13 @@ tasks.register('minecraftRegression', JavaExec) {
         '--fail-on-regression',
         "--max-ticks=${maxTicks.get()}",
         "--regression-max-final-distance=${maxFinalDistance.get()}",
-        "--regression-max-stuck-events=${maxStuckEvents.get()}"
+        "--regression-max-stuck-events=${maxStuckEvents.get()}",
+        "--regression-max-recovery-attempts=${maxRecoveryAttempts.get()}",
+        "--regression-max-backward-ticks=${maxBackwardTicks.get()}",
+        "--regression-max-average-lateral-error=${maxAverageLateralError.get()}"
+    routes.get().split(';')
+        .findAll { it != null && !it.isBlank() }
+        .each { route -> args "--mc-route=${route.trim()}" }
     if (!saveReplay.get()) {
         args '--no-replay-save'
     }

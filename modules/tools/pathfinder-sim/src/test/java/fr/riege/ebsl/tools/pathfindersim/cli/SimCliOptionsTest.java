@@ -33,13 +33,19 @@ class SimCliOptionsTest {
             "--repeat=12",
             "--fail-on-regression",
             "--regression-max-final-distance=0.75",
-            "--regression-max-stuck-events=2"
+            "--regression-max-stuck-events=2",
+            "--regression-max-recovery-attempts=3",
+            "--regression-max-backward-ticks=24",
+            "--regression-max-average-lateral-error=0.12"
         });
 
         assertEquals(12, options.repeatRuns());
         assertTrue(options.failOnRegression());
         assertEquals(0.75, options.regressionMaxFinalDistance());
         assertEquals(2, options.regressionMaxStuckEvents());
+        assertEquals(3, options.regressionMaxRecoveryAttempts());
+        assertEquals(24, options.regressionMaxBackwardTicks());
+        assertEquals(0.12, options.regressionMaxAverageLateralError());
     }
 
     @Test
@@ -51,5 +57,19 @@ class SimCliOptionsTest {
 
         assertEquals(1, options.repeatRuns());
         assertEquals(0, options.regressionMaxStuckEvents());
+    }
+
+    @Test
+    void parsesMinecraftRouteMatrix() {
+        SimCliOptions options = SimCliOptions.parse(new String[] {
+            "--mc-route=crash_386|386,61,42|500,61,40",
+            "--mc-route=nearby high@384,63,43@500,62,40"
+        });
+
+        assertEquals(2, options.minecraftRoutes().size());
+        assertEquals("crash_386", options.minecraftRoutes().getFirst().id());
+        assertEquals(386.0, options.minecraftRoutes().getFirst().start().x());
+        assertEquals(61, options.minecraftRoutes().getFirst().goalY());
+        assertEquals("nearby_high", options.minecraftRoutes().get(1).id());
     }
 }

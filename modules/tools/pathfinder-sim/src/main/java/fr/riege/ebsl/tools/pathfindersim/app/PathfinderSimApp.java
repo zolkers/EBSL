@@ -51,7 +51,10 @@ public final class PathfinderSimApp {
         List<SimulationScenario> scenarios = new ArrayList<>();
         MinecraftWorldImportOptions importOptions = options.minecraftWorldImportOptions();
         if (importOptions != null) {
-            scenarios.addAll(MinecraftWorldScenarioFactory.create(importOptions, options.minecraftStressGrid()));
+            scenarios.addAll(MinecraftWorldScenarioFactory.create(
+                importOptions,
+                options.minecraftStressGrid(),
+                options.minecraftRoutes()));
         } else if (options.headless()) {
             scenarios.addAll(SyntheticScenarioCatalog.smokeScenarios());
         }

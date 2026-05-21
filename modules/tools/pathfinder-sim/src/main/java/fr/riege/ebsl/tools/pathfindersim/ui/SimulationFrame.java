@@ -402,7 +402,11 @@ public final class SimulationFrame extends JFrame {
             source.failOnRegression(),
             source.regressionMaxFinalDistance(),
             source.regressionMaxStuckEvents(),
+            source.regressionMaxRecoveryAttempts(),
+            source.regressionMaxBackwardTicks(),
+            source.regressionMaxAverageLateralError(),
             routeOptions,
+            List.of(),
             null);
     }
 

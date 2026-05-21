@@ -56,6 +56,12 @@ public final class MinecraftWorldScenarioFactory {
 
     public static List<SimulationScenario> create(MinecraftWorldImportOptions options,
                                                   MinecraftStressGrid stressGrid) throws IOException {
+        return create(options, stressGrid, List.of());
+    }
+
+    public static List<SimulationScenario> create(MinecraftWorldImportOptions options,
+                                                  MinecraftStressGrid stressGrid,
+                                                  List<MinecraftRouteSpec> routes) throws IOException {
         MinecraftWorldImportOptions effectiveOptions = effectiveOptions(options);
         ImportedMinecraftWorld importedWorld = new AnvilWorldLoader().load(effectiveOptions);
         HeadlessWorldLayer world = importedWorld.world();
@@ -68,10 +74,36 @@ public final class MinecraftWorldScenarioFactory {
             .maxCalculationTimeMs(5_000)
             .build();
         PathPlanningService planner = new PathPlanningService(world);
+        if (routes != null && !routes.isEmpty()) {
+            return routeScenarios(effectiveOptions, importedWorld, planner, plannerOptions, routes);
+        }
         if (stressGrid == null) {
             return List.of(scenario(effectiveOptions, importedWorld, planner, plannerOptions, "minecraft_world"));
         }
         return stressScenarios(effectiveOptions, importedWorld, planner, plannerOptions, stressGrid);
+    }
+
+    private static List<SimulationScenario> routeScenarios(MinecraftWorldImportOptions options,
+                                                           ImportedMinecraftWorld importedWorld,
+                                                           PathPlanningService planner,
+                                                           PathPlannerOptions plannerOptions,
+                                                           List<MinecraftRouteSpec> routes) {
+        List<SimulationScenario> scenarios = new ArrayList<>(routes.size());
+        for (MinecraftRouteSpec route : routes) {
+            MinecraftWorldImportOptions routeOptions = new MinecraftWorldImportOptions(
+                options.worldDirectory(),
+                route.start(),
+                true,
+                route.goalX(),
+                route.goalY(),
+                route.goalZ(),
+                true,
+                options.radiusChunks(),
+                options.goalSearchBlocks(),
+                options.diagnostics());
+            scenarios.add(scenario(routeOptions, importedWorld, planner, plannerOptions, route.id()));
+        }
+        return List.copyOf(scenarios);
     }
 
     private static List<SimulationScenario> stressScenarios(MinecraftWorldImportOptions options,

@@ -87,6 +87,28 @@ public record SimulationRegressionReport(List<SimulationRegressionIssue> issues)
                 result.scenarioId(),
                 "stuck events " + stuckEvents + " exceeded " + options.regressionMaxStuckEvents()));
         }
+        int recoveryAttempts = result.metrics().recoveryAttempts();
+        if (recoveryAttempts > options.regressionMaxRecoveryAttempts()) {
+            issues.add(new SimulationRegressionIssue(
+                result.scenarioId(),
+                "recovery attempts " + recoveryAttempts + " exceeded " + options.regressionMaxRecoveryAttempts()));
+        }
+        int backwardTicks = result.metrics().backwardTicks();
+        if (backwardTicks > options.regressionMaxBackwardTicks()) {
+            issues.add(new SimulationRegressionIssue(
+                result.scenarioId(),
+                "backward ticks " + backwardTicks + " exceeded " + options.regressionMaxBackwardTicks()));
+        }
+        double averageLateralError = result.metrics().averageLateralError();
+        if (averageLateralError > options.regressionMaxAverageLateralError()) {
+            issues.add(new SimulationRegressionIssue(
+                result.scenarioId(),
+                String.format(
+                    Locale.ROOT,
+                    "average lateral error %.3f exceeded %.3f",
+                    averageLateralError,
+                    options.regressionMaxAverageLateralError())));
+        }
     }
 
     public record SimulationRegressionIssue(String scenarioId, String reason) {

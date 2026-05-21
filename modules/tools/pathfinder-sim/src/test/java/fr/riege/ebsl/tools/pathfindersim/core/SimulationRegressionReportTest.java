@@ -57,7 +57,33 @@ class SimulationRegressionReportTest {
         assertTrue(report.render().contains("stuck events"));
     }
 
+    @Test
+    void failsExecutionQualityRegressions() {
+        SimulationRegressionReport report = SimulationRegressionReport.evaluate(
+            List.of(result(true, 0, 0.5, 4, 25, 0.2)),
+            SimCliOptions.parse(new String[] {
+                "--fail-on-regression",
+                "--regression-max-recovery-attempts=2",
+                "--regression-max-backward-ticks=10",
+                "--regression-max-average-lateral-error=0.1"
+            }));
+
+        assertFalse(report.passed());
+        assertTrue(report.render().contains("recovery attempts"));
+        assertTrue(report.render().contains("backward ticks"));
+        assertTrue(report.render().contains("average lateral error"));
+    }
+
     private static SimulationResult result(boolean reached, int stuckEvents, double finalDistance) {
+        return result(reached, stuckEvents, finalDistance, 0, 0, 0.0);
+    }
+
+    private static SimulationResult result(boolean reached,
+                                           int stuckEvents,
+                                           double finalDistance,
+                                           int recoveryAttempts,
+                                           int backwardTicks,
+                                           double averageLateralError) {
         return new SimulationResult(
             "case",
             "test case",
@@ -68,8 +94,19 @@ class SimulationRegressionReportTest {
             10,
             12,
             true,
-            new SimMetrics(20, stuckEvents, stuckEvents, stuckEvents, 0, 0, 0.0, 0.0, 0.0, 0.0,
-                finalDistance, finalDistance),
+            new SimMetrics(
+                20,
+                stuckEvents,
+                stuckEvents,
+                stuckEvents,
+                recoveryAttempts,
+                backwardTicks,
+                averageLateralError,
+                averageLateralError,
+                0.0,
+                0.0,
+                finalDistance,
+                finalDistance),
             List.of(),
             List.of());
     }

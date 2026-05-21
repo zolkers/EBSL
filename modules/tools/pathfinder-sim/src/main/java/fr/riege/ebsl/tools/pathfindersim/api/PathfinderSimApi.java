@@ -80,7 +80,11 @@ public final class PathfinderSimApi {
             false,
             1.25,
             5,
+            6,
+            80,
+            0.25,
             routeOptions,
+            List.of(),
             null);
         List<SimulationResult> results = new SimulationSuite(scenarios).run(options);
         if (options.replaySaveEnabled() && !results.isEmpty()) {
