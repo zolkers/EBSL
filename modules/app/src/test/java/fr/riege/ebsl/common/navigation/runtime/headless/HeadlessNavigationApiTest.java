@@ -25,8 +25,11 @@ import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
+import fr.riege.ebsl.common.navigation.runtime.entity.MovementIntent;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -78,5 +81,46 @@ class HeadlessNavigationApiTest {
         assertEquals(65.0, actor.position().y(), 1.0e-6);
         assertTrue(actor.onGround(), "stepping onto a ledge should keep the actor grounded");
         assertTrue(actor.velocity().x() > 0.0, "horizontal intent should survive the step-up");
+    }
+
+    @Test
+    void headlessMotorAcceleratesTowardRequestedVelocity() {
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        HeadlessMotor motor = new HeadlessMotor(actor).world(HeadlessWorldLayer.flat(63));
+
+        motor.apply(MovementIntent.builder()
+            .velocity(new Vec3d(0.36, 0.0, 0.0))
+            .sprint(true)
+            .build());
+
+        assertEquals(0.12, actor.velocity().x(), 1.0e-6);
+    }
+
+    @Test
+    void headlessMotorUsesAirAccelerationWhenUngrounded() {
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 65.0, 0.5))
+            .onGround(false);
+        HeadlessMotor motor = new HeadlessMotor(actor).world(HeadlessWorldLayer.flat(63));
+
+        motor.apply(MovementIntent.builder()
+            .velocity(new Vec3d(0.36, 0.0, 0.0))
+            .build());
+
+        assertEquals(0.05, actor.velocity().x(), 1.0e-6);
+    }
+
+    @Test
+    void trajectorySimulatorKeepsSourceActorUntouched() {
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        List<HeadlessTrajectorySimulator.TrajectoryState> states = HeadlessTrajectorySimulator.simulate(
+            actor,
+            HeadlessWorldLayer.flat(63),
+            List.of(
+                MovementIntent.builder().velocity(new Vec3d(0.36, 0.0, 0.0)).build(),
+                MovementIntent.builder().velocity(new Vec3d(0.36, 0.0, 0.0)).build()));
+
+        assertEquals(2, states.size());
+        assertEquals(0.5, actor.position().x(), 1.0e-6);
+        assertTrue(states.getLast().position().x() > states.getFirst().position().x());
     }
 }

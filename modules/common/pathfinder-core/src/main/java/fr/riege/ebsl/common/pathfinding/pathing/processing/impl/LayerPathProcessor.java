@@ -62,6 +62,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     private double fullStepAscentBaseCost;
     private double fallDyCost;
     private double parkourCost;
+    private double constrainedParkourLandingCost;
     private double cardinalWallCost;
     private double diagonalWallCost;
     private double partialAscentEdgeCost;
@@ -124,7 +125,8 @@ public final class LayerPathProcessor implements NodeProcessor {
             return hasJumpSupport(previousPoint) || currentPoint.isClimbable();
         }
         return currentPoint.hasFloor()
-            || previousPoint.hasFloor()
+            || currentPoint.isLiquid()
+            || previousPoint.isLiquid()
             || currentPoint.isClimbable()
             || previousPoint.isClimbable();
     }
@@ -216,6 +218,9 @@ public final class LayerPathProcessor implements NodeProcessor {
         int moveDz = cz - pz;
         if (isParkourOffset(moveDx, moveDz)) {
             additionalCost += parkourCost;
+            if (hasConstrainedParkourLanding(context, cx, cy, cz, moveDx, moveDz)) {
+                additionalCost += constrainedParkourLandingCost;
+            }
         }
 
         for (int i = 2; i <= 3; i++) {
@@ -395,6 +400,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         fullStepAscentBaseCost = settings.fullStepAscentBaseCost.value();
         fallDyCost = settings.fallDyCost.value();
         parkourCost = settings.parkourCost.value();
+        constrainedParkourLandingCost = settings.constrainedParkourLandingCost.value();
         cardinalWallCost = settings.cardinalWallCost.value();
         diagonalWallCost = settings.diagonalWallCost.value();
         partialAscentEdgeCost = settings.partialAscentEdgeCost.value();
@@ -496,6 +502,19 @@ public final class LayerPathProcessor implements NodeProcessor {
 
     private static boolean isCardinalMove(int moveDx, int moveDz) {
         return (moveDx == 0) != (moveDz == 0);
+    }
+
+    private static boolean hasConstrainedParkourLanding(EvaluationContext context, int x, int y, int z,
+                                                        int moveDx, int moveDz) {
+        int stepX = Math.abs(moveDx) >= Math.abs(moveDz) ? Integer.signum(moveDx) : 0;
+        int stepZ = stepX == 0 ? Integer.signum(moveDz) : 0;
+        if (stepX == 0 && stepZ == 0) {
+            return false;
+        }
+        int aheadX = x + stepX;
+        int aheadZ = z + stepZ;
+        return isFullWallBlock(context, aheadX, y, aheadZ)
+            || isFullWallBlock(context, aheadX, y + 1, aheadZ);
     }
 
     private static int detectPartialAscentAhead(EvaluationContext context, int bx, int by, int bz,

@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Objects;
 
 public final class EntityPathFollower {
+    private static final double PARKOUR_JUMP_TRIGGER_DISTANCE = 4.35;
+    private static final double PARKOUR_TAKEOFF_PREP_DISTANCE = 0.85;
+
     private final NavigationActor actor;
     private final NavigationMotor motor;
     private final EntityFollowerOptions options;
@@ -103,12 +106,12 @@ public final class EntityPathFollower {
         double speed = speedFor(currentMoveType);
         Vec3d velocity = horizontal <= 1.0e-6
             ? new Vec3d(0.0, actor.velocity().y(), 0.0)
-            : new Vec3d(dx / horizontal * speed, verticalVelocity(dy, currentMoveType), dz / horizontal * speed);
+            : new Vec3d(dx / horizontal * speed, verticalVelocity(dy, horizontal, currentMoveType), dz / horizontal * speed);
 
         motor.apply(MovementIntent.builder()
             .velocity(velocity)
             .lookTarget(options.lookAtWaypoint() ? target : null)
-            .jump(shouldJump(dy, currentMoveType))
+            .jump(shouldJump(dy, horizontal, currentMoveType))
             .sprint(options.sprint() && currentMoveType != Node.MoveType.SWIM && currentMoveType != Node.MoveType.CLIMB)
             .sneak(false)
             .moveType(currentMoveType)
@@ -154,23 +157,39 @@ public final class EntityPathFollower {
         return options.sprint() ? options.sprintSpeed() : options.walkSpeed();
     }
 
-    private double verticalVelocity(double dy, Node.MoveType moveType) {
+    private double verticalVelocity(double dy, double horizontal, Node.MoveType moveType) {
         if (moveType == Node.MoveType.SWIM || moveType == Node.MoveType.CLIMB) {
             return Math.clamp(dy * 0.25, -speedFor(moveType), speedFor(moveType));
         }
-        if (shouldJump(dy, moveType)) {
+        if (shouldJump(dy, horizontal, moveType)) {
             return options.jumpVelocity();
         }
         return actor.velocity().y();
     }
 
-    private boolean shouldJump(double dy, Node.MoveType moveType) {
-        return actor.onGround()
-            && dy > 0.15
+    private boolean shouldJump(double dy, double horizontal, Node.MoveType moveType) {
+        if (!actor.onGround()) {
+            return false;
+        }
+        if (moveType == Node.MoveType.PARKOUR) {
+            return horizontal <= PARKOUR_JUMP_TRIGGER_DISTANCE;
+        }
+        if (nextMoveType() == Node.MoveType.PARKOUR && horizontal <= PARKOUR_TAKEOFF_PREP_DISTANCE) {
+            return true;
+        }
+        return dy > 0.15
             && (moveType == Node.MoveType.STEP_UP
                 || moveType == Node.MoveType.JUMP
-                || moveType == Node.MoveType.PARKOUR
                 || moveType == Node.MoveType.CLIMB);
+    }
+
+    private Node.MoveType nextMoveType() {
+        int nextIndex = waypointIndex + 1;
+        if (nextIndex >= path.size()) {
+            return Node.MoveType.WALK;
+        }
+        Node.MoveType moveType = path.get(nextIndex).moveType();
+        return moveType == null ? Node.MoveType.WALK : moveType;
     }
 
     private static Vec3d targetCenter(Node node) {

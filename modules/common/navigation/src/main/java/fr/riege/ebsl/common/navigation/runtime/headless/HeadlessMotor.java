@@ -45,21 +45,57 @@ public final class HeadlessMotor implements NavigationMotor {
 
     @Override public void apply(MovementIntent intent) {
         lastIntent = intent == null ? MovementIntent.stop() : intent;
-        Vec3d velocity = lastIntent.velocity();
+        HeadlessPhysicsProfile profile = movementProfile();
+        Vec3d requestedVelocity = lastIntent.sneak()
+            ? scaleHorizontal(lastIntent.velocity(), profile.sneakVelocityScale())
+            : lastIntent.velocity();
+        Vec3d velocity = accelerate(actor.velocity(), requestedVelocity, acceleration(profile));
         if (lastIntent.jump() && actor.onGround()) {
-            HeadlessPhysicsProfile profile = jumpProfile();
             velocity = new Vec3d(velocity.x(), Math.max(velocity.y(), profile.jumpVelocity()), velocity.z());
         }
         actor.velocity(velocity);
     }
 
-    private HeadlessPhysicsProfile jumpProfile() {
+    private HeadlessPhysicsProfile movementProfile() {
         if (world == null) {
             return HeadlessPhysicsProfile.DEFAULT;
         }
         int x = (int) Math.floor(actor.position().x());
-        int y = (int) Math.floor(actor.position().y()) - 1;
+        int y = (int) Math.floor(actor.position().y()) + (actor.onGround() ? -1 : 0);
         int z = (int) Math.floor(actor.position().z());
         return world.physicsAt(x, y, z);
+    }
+
+    private double acceleration(HeadlessPhysicsProfile profile) {
+        if (world != null && isInFluid()) {
+            return profile.fluidAcceleration();
+        }
+        return actor.onGround() ? profile.groundAcceleration() : profile.airAcceleration();
+    }
+
+    private boolean isInFluid() {
+        int x = (int) Math.floor(actor.position().x());
+        int y = (int) Math.floor(actor.position().y());
+        int z = (int) Math.floor(actor.position().z());
+        return world.isWater(x, y, z) || world.isLava(x, y, z);
+    }
+
+    private static Vec3d scaleHorizontal(Vec3d value, double scale) {
+        return new Vec3d(value.x() * scale, value.y(), value.z() * scale);
+    }
+
+    private static Vec3d accelerate(Vec3d current, Vec3d target, double maxDelta) {
+        return new Vec3d(
+            approach(current.x(), target.x(), maxDelta),
+            target.y(),
+            approach(current.z(), target.z(), maxDelta));
+    }
+
+    private static double approach(double current, double target, double maxDelta) {
+        double delta = target - current;
+        if (Math.abs(delta) <= maxDelta) {
+            return target;
+        }
+        return current + Math.signum(delta) * maxDelta;
     }
 }

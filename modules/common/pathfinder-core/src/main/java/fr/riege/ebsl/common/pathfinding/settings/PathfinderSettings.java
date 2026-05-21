@@ -81,6 +81,8 @@ public final class PathfinderSettings extends Settingable {
         "partial_ascent_cost", "Slab/stair ascent", 0.0, 0.0, 10.0));
     public final DoubleSetting jumpCost = registerSetting(new DoubleSetting("jump_cost", "Jump", 0.0, 0.0, 20.0));
     public final DoubleSetting parkourCost = registerSetting(new DoubleSetting("parkour_cost", "Parkour", 0.0, 0.0, 30.0));
+    public final DoubleSetting constrainedParkourLandingCost = registerSetting(new DoubleSetting(
+        "constrained_parkour_landing_cost", "Constrained parkour landing", 4.0, 0.0, 30.0));
     public final DoubleSetting fallDyCost = registerSetting(new DoubleSetting("fall_dy_cost", "Fall height", 0.1, 0.0, 10.0));
     public final DoubleSetting swimCost = registerSetting(new DoubleSetting("swim_cost", "Swim", 1.5, 0.0, 20.0));
     public final DoubleSetting climbCost = registerSetting(new DoubleSetting("climb_cost", "Climb", 2.0, 0.0, 20.0));
@@ -437,6 +439,7 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.partialAscentCost,
             INSTANCE.jumpCost,
             INSTANCE.parkourCost,
+            INSTANCE.constrainedParkourLandingCost,
             INSTANCE.fallDyCost,
             INSTANCE.swimCost,
             INSTANCE.climbCost);

@@ -28,7 +28,11 @@ public record HeadlessPhysicsProfile(
     double gravity,
     double jumpVelocity,
     double maxClimbVelocity,
-    double stepHeight
+    double stepHeight,
+    double groundAcceleration,
+    double airAcceleration,
+    double fluidAcceleration,
+    double sneakVelocityScale
 ) {
     public static final HeadlessPhysicsProfile DEFAULT = builder().build();
     public static final HeadlessPhysicsProfile ICE = builder().slipperiness(0.98).horizontalDrag(0.98).build();
@@ -50,6 +54,10 @@ public record HeadlessPhysicsProfile(
         private double jumpVelocity = 0.42;
         private double maxClimbVelocity = 0.15;
         private double stepHeight = 1.0;
+        private double groundAcceleration = 0.12;
+        private double airAcceleration = 0.05;
+        private double fluidAcceleration = 0.04;
+        private double sneakVelocityScale = 0.3;
 
         public Builder slipperiness(double value) {
             slipperiness = Math.max(0.0, value);
@@ -86,6 +94,26 @@ public record HeadlessPhysicsProfile(
             return this;
         }
 
+        public Builder groundAcceleration(double value) {
+            groundAcceleration = Math.max(0.0, value);
+            return this;
+        }
+
+        public Builder airAcceleration(double value) {
+            airAcceleration = Math.max(0.0, value);
+            return this;
+        }
+
+        public Builder fluidAcceleration(double value) {
+            fluidAcceleration = Math.max(0.0, value);
+            return this;
+        }
+
+        public Builder sneakVelocityScale(double value) {
+            sneakVelocityScale = Math.clamp(value, 0.0, 1.0);
+            return this;
+        }
+
         public HeadlessPhysicsProfile build() {
             return new HeadlessPhysicsProfile(
                 slipperiness,
@@ -94,7 +122,11 @@ public record HeadlessPhysicsProfile(
                 gravity,
                 jumpVelocity,
                 maxClimbVelocity,
-                stepHeight);
+                stepHeight,
+                groundAcceleration,
+                airAcceleration,
+                fluidAcceleration,
+                sneakVelocityScale);
         }
     }
 }
