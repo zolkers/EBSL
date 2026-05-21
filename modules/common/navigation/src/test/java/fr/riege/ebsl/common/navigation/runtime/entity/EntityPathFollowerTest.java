@@ -82,6 +82,22 @@ class EntityPathFollowerTest {
         assertTrue(horizontalSpeed < EntityFollowerOptions.defaults().sprintSpeed());
     }
 
+    @Test
+    void advancesPastWalkWaypointInsteadOfSteeringBackwards() {
+        TestActor actor = new TestActor(new Vec3d(4.22, 64.0, 0.74));
+        CapturingMotor motor = new CapturingMotor();
+        EntityPathFollower follower = new EntityPathFollower(actor, motor);
+
+        follower.start(plan(
+            node(0, 64, 0, Node.MoveType.WALK),
+            node(4, 64, 0, Node.MoveType.WALK),
+            node(8, 64, 0, Node.MoveType.WALK)), null, null);
+        follower.tick();
+
+        assertEquals(2, follower.waypointIndex());
+        assertTrue(motor.intent.velocity().x() > 0.0);
+    }
+
     private static PathPlan plan(Node... nodes) {
         List<Node> path = List.of(nodes);
         return new PathPlan(null, null, List.of(), path, path, 0.0, null);

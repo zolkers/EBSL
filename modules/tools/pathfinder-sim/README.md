@@ -120,6 +120,8 @@ matrix with `-Routes "case_a@386,61,42@500,61,40;case_b@384,63,43@500,62,40"`.
 Regression failure thresholds include final distance, stuck events, recovery attempts, backward ticks, and average
 lateral error. The Windows script exposes them as `-MaxFinalDistance`, `-MaxStuckEvents`, `-MaxRecoveryAttempts`,
 `-MaxBackwardTicks`, and `-MaxAverageLateralError`.
+The real-world matrix defaults are intentionally strict: at most one recovery attempt and twelve backward ticks per
+route.
 
 ## Synthetic Smoke Scenarios
 

@@ -70,8 +70,8 @@ tasks.register('minecraftRegression', JavaExec) {
     def goalSearch = providers.gradleProperty('simMinecraftGoalSearchBlocks').orElse('160')
     def maxFinalDistance = providers.gradleProperty('simMinecraftMaxFinalDistance').orElse('2.0')
     def maxStuckEvents = providers.gradleProperty('simMinecraftMaxStuckEvents').orElse('12')
-    def maxRecoveryAttempts = providers.gradleProperty('simMinecraftMaxRecoveryAttempts').orElse('6')
-    def maxBackwardTicks = providers.gradleProperty('simMinecraftMaxBackwardTicks').orElse('80')
+    def maxRecoveryAttempts = providers.gradleProperty('simMinecraftMaxRecoveryAttempts').orElse('1')
+    def maxBackwardTicks = providers.gradleProperty('simMinecraftMaxBackwardTicks').orElse('12')
     def maxAverageLateralError = providers.gradleProperty('simMinecraftMaxAverageLateralError').orElse('0.25')
     def saveReplay = providers.gradleProperty('simMinecraftSaveReplay').map { it.toBoolean() }.orElse(true)
     def worldPath = rootProject.layout.projectDirectory.file(worldDir.get()).asFile

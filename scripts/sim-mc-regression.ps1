@@ -9,8 +9,8 @@ param(
     [int] $GoalSearchBlocks = 160,
     [double] $MaxFinalDistance = 2.0,
     [int] $MaxStuckEvents = 12,
-    [int] $MaxRecoveryAttempts = 6,
-    [int] $MaxBackwardTicks = 80,
+    [int] $MaxRecoveryAttempts = 1,
+    [int] $MaxBackwardTicks = 12,
     [double] $MaxAverageLateralError = 0.25,
     [string] $MaxHeap = "4g",
     [switch] $NoReplay

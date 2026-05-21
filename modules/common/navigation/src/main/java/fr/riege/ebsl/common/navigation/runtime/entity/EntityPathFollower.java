@@ -33,6 +33,8 @@ public final class EntityPathFollower {
     private static final double PARKOUR_JUMP_TRIGGER_DISTANCE = 4.35;
     private static final double PARKOUR_TAKEOFF_PREP_DISTANCE = 0.85;
     private static final double CORNER_SLOWDOWN_DOT = 0.35;
+    private static final double PASSED_WAYPOINT_PROGRESS = 0.92;
+    private static final double PASSED_WAYPOINT_LATERAL_FACTOR = 1.35;
 
     private final NavigationActor actor;
     private final NavigationMotor motor;
@@ -145,9 +147,15 @@ public final class EntityPathFollower {
     }
 
     private void advanceReachedWaypoints(Vec3d position) {
-        while (waypointIndex < path.size() && reached(position, path.get(waypointIndex), waypointIndex == path.size() - 1)) {
+        while (waypointIndex < path.size()
+            && reachedOrPassed(position, path.get(waypointIndex), waypointIndex == path.size() - 1)) {
             waypointIndex++;
         }
+    }
+
+    private boolean reachedOrPassed(Vec3d position, Node waypoint, boolean finalWaypoint) {
+        return reached(position, waypoint, finalWaypoint)
+            || (!finalWaypoint && passedWaypoint(position, waypoint));
     }
 
     private boolean reached(Vec3d position, Node waypoint, boolean finalWaypoint) {
@@ -158,6 +166,33 @@ public final class EntityPathFollower {
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         double reach = finalWaypoint ? options.finalReachDistance() : options.waypointReachDistance();
         return horizontal <= reach && Math.abs(dy) <= options.verticalReachDistance();
+    }
+
+    private boolean passedWaypoint(Vec3d position, Node waypoint) {
+        if (waypointIndex <= 0 || !canLookAhead(currentMoveType)) {
+            return false;
+        }
+        Node previous = path.get(waypointIndex - 1);
+        double fromX = previous.position.centeredX();
+        double fromZ = previous.position.centeredZ();
+        double dx = waypoint.position.centeredX() - fromX;
+        double dz = waypoint.position.centeredZ() - fromZ;
+        double lenSq = dx * dx + dz * dz;
+        if (lenSq <= 1.0e-6 || Math.abs(waypoint.position.flooredY() - position.y()) > options.verticalReachDistance()) {
+            return false;
+        }
+        double toPlayerX = position.x() - fromX;
+        double toPlayerZ = position.z() - fromZ;
+        double progress = (toPlayerX * dx + toPlayerZ * dz) / lenSq;
+        if (progress < PASSED_WAYPOINT_PROGRESS) {
+            return false;
+        }
+        double projectedX = fromX + dx * Math.clamp(progress, 0.0, 1.0);
+        double projectedZ = fromZ + dz * Math.clamp(progress, 0.0, 1.0);
+        double lateralX = position.x() - projectedX;
+        double lateralZ = position.z() - projectedZ;
+        double lateralReach = options.waypointReachDistance() * PASSED_WAYPOINT_LATERAL_FACTOR;
+        return lateralX * lateralX + lateralZ * lateralZ <= lateralReach * lateralReach;
     }
 
     private double speedFor(Node.MoveType moveType) {
