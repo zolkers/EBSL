@@ -5,6 +5,10 @@ EBSL is organized around platform-independent contracts first, then Minecraft/Fa
 ## Module Boundaries
 
 - `modules/common/*`: reusable Java contracts and implementations with no direct Fabric dependency.
+- `modules/common/api`: shared API surfaces for navigation, runtime, pathfinding, rendering, threading, events, analytics, and common settings.
+- `modules/common/settings`: shared persistence for common pathfinder and scripting editor settings.
+- `modules/common/analytics`: reusable analytics events and snapshots.
+- `modules/common/automation`: bot task and aiming primitives that are not scripting-language concerns.
 - `modules/common/pathfinder-core`: path search, movement classification, quality scoring, path processing, and diagnostics.
 - `modules/common/pathfinder-execution`: movement executors and runtime path following helpers.
 - `modules/common/navigation`: service-level navigation API and runtime adapters.
@@ -27,7 +31,9 @@ Pathfinder behavior should be extended through explicit contracts instead of sta
 ## Contribution Rules
 
 - Keep Fabric and Minecraft imports out of platform-independent modules.
+- Keep app feature registries out of `common:api`, `common:analytics`, and `common:settings`; app-owned modules/tasks adapt through app-side stores.
 - Add new Minecraft targets under `modules/mc/<minecraft-version>` with the same loader submodule shape.
+- Apply `gradle/mc-version.gradle` from each Minecraft target submodule so Java and loader versions stay version-owned.
 - Prefer adding or replacing a contract implementation over branching inside core algorithms.
 - When a new movement behavior is added, update classification, validation, execution, quality scoring, and tests together.
 

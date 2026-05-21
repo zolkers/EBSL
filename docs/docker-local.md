@@ -88,6 +88,9 @@ Then choose `/minecraft-saves/<world>` in the viewer. Replays are persisted on t
 ./run/config/ebsl/replays -> /data/replays
 ```
 
+The same `WorldDir` is also passed to the Spring Boot file browser as `ebsl.sim.world-dir`, so the viewer exposes a
+`Configured worlds` root alongside absolute filesystem roots.
+
 ## What Belongs In Docker
 
 Good candidates:

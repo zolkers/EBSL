@@ -16,6 +16,15 @@ Use it locally with:
 The script builds the viewer, starts a local server, opens the browser, and binds to `0.0.0.0` so an Android device on
 the same network can open `http://<pc-lan-ip>:8087`.
 
+By default replays are saved and served from:
+
+```text
+run/config/ebsl/replays
+```
+
+Use `-WorldDir` / `--world-dir` to choose which absolute Minecraft saves folder appears as the configured world root in
+the web file browser.
+
 This target should not duplicate Anvil world loading, physics, goal resolution, or pathfinding. Those stay in Java.
 
 ## Desktop Simulator App

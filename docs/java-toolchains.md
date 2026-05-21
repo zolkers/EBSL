@@ -28,6 +28,15 @@ That target should set this in `modules/mc/1-26-1/gradle.properties`:
 minecraft_java_version=25
 ```
 
+Each Minecraft submodule should apply the shared convention:
+
+```gradle
+apply from: rootProject.file('gradle/mc-version.gradle')
+```
+
+The convention reads `minecraft_version`, `loader_version`, and `minecraft_java_version` from the version folder so
+Fabric/common submodules share the same Java and modloader properties.
+
 Shared modules should stay on the lowest Java version needed by all active Minecraft targets unless a deliberate architecture decision says otherwise. That keeps common pathfinding, navigation, rendering contracts, and simulator code reusable across targets.
 
 ## Rule Of Thumb
