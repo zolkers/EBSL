@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap'
 }
 
-group = 'fr.riege.ebsl'
+group = rootProject.findProperty('maven_group') ?: 'fr.riege.ebsl'
 version = rootProject.findProperty('mod_version') ?: '1.0.0'
 
 repositories {
