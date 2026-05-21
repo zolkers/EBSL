@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.brain;
 
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphDocument;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslGraphRunner;
+import fr.riege.ebsl.common.feature.scripting.runtime.EbslRunner;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptEngine;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
 import fr.riege.ebsl.common.platform.EbslPlatform;
@@ -44,7 +45,9 @@ public final class EntityBrainFactory {
         private final List<EntityBrainProgram> programs = new ArrayList<>();
         private EntityBrainMemory memory = new EntityBrainMemory();
         private EbslGraphDocument graph;
-        private EbslPlatform platform;
+        private EbslPlatform graphPlatform;
+        private String scriptSource;
+        private EbslPlatform scriptPlatform;
 
         private Builder(EntityNavigationAgent agent) {
             this.agent = Objects.requireNonNull(agent, "agent");
@@ -64,15 +67,24 @@ public final class EntityBrainFactory {
 
         public Builder graph(EbslGraphDocument value, EbslPlatform graphPlatform) {
             graph = value;
-            platform = graphPlatform;
+            this.graphPlatform = graphPlatform;
+            return this;
+        }
+
+        public Builder script(String source, EbslPlatform platform) {
+            scriptSource = source;
+            scriptPlatform = platform;
             return this;
         }
 
         public EntityBrain build() {
-            EbslGraphRunner runner = graph == null
+            EbslGraphRunner graphRunner = graph == null
                 ? null
-                : EbslScriptEngine.graphRunner(graph, platform, agent.navigation());
-            return new EntityBrain(agent, memory, programs, runner);
+                : EbslScriptEngine.graphRunner(graph, graphPlatform, agent.navigation());
+            EbslRunner scriptRunner = scriptSource == null || scriptSource.isBlank()
+                ? null
+                : EbslScriptEngine.runner(EbslScriptEngine.compile(scriptSource), scriptPlatform, agent.navigation());
+            return new EntityBrain(agent, memory, programs, graphRunner, scriptRunner);
         }
     }
 }

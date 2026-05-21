@@ -72,6 +72,20 @@ class EntityBrainTest {
         assertTrue(agent.navigation().lastPathNodeCount() > 0);
     }
 
+    @Test
+    void routesInlineEbslScriptsThroughTheAttachedEntity() {
+        EntityNavigationAgent agent = agent();
+        EntityBrain brain = EntityBrainFactory.create(agent)
+            .script("goto 5 64 0", null)
+            .build();
+
+        brain.tick();
+
+        assertTrue(agent.navigation().isNavigating());
+        assertTrue(agent.navigation().lastPathNodeCount() > 0);
+        assertEquals("running", brain.scriptStatus());
+    }
+
     private static EntityNavigationAgent agent() {
         PathPlannerOptions plannerOptions = PathPlannerOptions.defaults().toBuilder()
             .async(false)
