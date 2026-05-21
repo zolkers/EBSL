@@ -28,8 +28,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class EbslGraphModelTest {
@@ -130,6 +132,50 @@ final class EbslGraphModelTest {
 
         assertEquals(false, plan.executable());
         assertTrue(plan.issues().stream().anyMatch(issue -> issue.message().contains("cycle")));
+    }
+
+    @Test
+    void graphDocumentConveniencesReturnImmutableCopies() {
+        EbslGraphNode node = EbslGraphNode.action("message-1", "message", Map.of("text", "hello"));
+        EbslGraphConnection connection = new EbslGraphConnection("message-1", "message-2");
+
+        EbslGraphDocument document = EbslGraphDocument.empty()
+            .withNode(node)
+            .withConnection(connection);
+
+        assertEquals(Map.of(node.id(), node), document.nodes());
+        assertEquals(List.of(connection), document.connections());
+        assertThrows(UnsupportedOperationException.class, () -> document.connections().add(connection));
+    }
+
+    @Test
+    void graphConnectionHelpersPreservePortAwareIdentity() {
+        EbslGraphConnection connection = new EbslGraphConnection("source", "target")
+            .withPorts("success", "trigger")
+            .withMode(EbslGraphConnectionMode.EACH_INPUT)
+            .withLabel("retry");
+        UnaryOperator<String> remap = key -> "copy-" + key;
+
+        EbslGraphConnection remapped = connection.remap(remap);
+
+        assertEquals("success", remapped.fromPort());
+        assertEquals("trigger", remapped.toPort());
+        assertEquals(EbslGraphConnectionMode.EACH_INPUT, remapped.mode());
+        assertEquals("retry", remapped.label());
+        assertEquals("copy-source:success->copy-target:trigger", remapped.id());
+    }
+
+    @Test
+    void graphNodeAndPortEnumsValidateInvalidDefinitions() {
+        EbslGraphNode node = EbslGraphNode.action("message-1", "message", Map.of("text", "hello"));
+
+        assertTrue(node.hasInput("main"));
+        assertTrue(node.hasOutput("main"));
+        assertEquals(null, node.input("missing"));
+        assertEquals(null, node.output("missing"));
+        assertThrows(IllegalArgumentException.class, () -> EbslGraphPortDirection.byId("sideways"));
+        assertThrows(IllegalArgumentException.class, () -> EbslGraphPortKind.byId("signal"));
+        assertEquals(EbslGraphConnectionMode.FLOW, EbslGraphConnectionMode.byId("teleport"));
     }
 
     private static final class MemoryStorage implements IStorageLayer {

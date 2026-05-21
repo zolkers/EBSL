@@ -24,6 +24,7 @@ package fr.riege.ebsl.common.feature.scripting.runtime;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslParser;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
+import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphDocument;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 
 public final class EbslScriptEngine {
@@ -36,5 +37,9 @@ public final class EbslScriptEngine {
 
     public static EbslRunner runner(EbslProgram program, EbslPlatform platform) {
         return new EbslRunner(program, platform);
+    }
+
+    public static EbslGraphRunner graphRunner(EbslGraphDocument document, EbslPlatform platform) {
+        return new EbslGraphRunner(document, platform);
     }
 }

@@ -33,7 +33,7 @@ public record EbslGraphPort(
     public EbslGraphPort {
         id = id == null || id.isBlank() ? EbslGraphConnection.DEFAULT_FLOW_PORT : id.trim();
         label = label == null || label.isBlank() ? id : label.trim();
-        direction = Objects.requireNonNull(direction, "direction");
+        Objects.requireNonNull(direction, "direction");
         kind = kind == null ? EbslGraphPortKind.FLOW : kind;
     }
 

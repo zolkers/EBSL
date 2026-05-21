@@ -40,10 +40,14 @@ public final class EbslScriptManager {
         message "EBSL ready"
         """;
     private static final String JSON_CONNECTIONS = "connections";
+    private static final String JSON_DIRECTION = "direction";
     private static final String JSON_FIELDS = "fields";
     private static final String JSON_LABEL = "label";
+    private static final String JSON_MULTIPLE = "multiple";
     private static final String JSON_NODES = "nodes";
     private static final String JSON_POSITIONS = "positions";
+    private static final String JSON_FROM_PORT = "fromPort";
+    private static final String JSON_TO_PORT = "toPort";
 
     private final IStorageLayer storage;
 
@@ -147,9 +151,9 @@ public final class EbslScriptManager {
             JsonObject edge = new JsonObject();
             edge.addProperty("id", connection.id());
             edge.addProperty("from", connection.fromKey());
-            edge.addProperty("fromPort", connection.fromPort());
+            edge.addProperty(JSON_FROM_PORT, connection.fromPort());
             edge.addProperty("to", connection.toKey());
-            edge.addProperty("toPort", connection.toPort());
+            edge.addProperty(JSON_TO_PORT, connection.toPort());
             edge.addProperty("mode", connection.mode().id());
             if (!connection.label().isBlank()) {
                 edge.addProperty(JSON_LABEL, connection.label());
@@ -205,9 +209,9 @@ public final class EbslScriptManager {
             JsonObject value = new JsonObject();
             value.addProperty("id", port.id());
             value.addProperty(JSON_LABEL, port.label());
-            value.addProperty("direction", port.direction().id());
+            value.addProperty(JSON_DIRECTION, port.direction().id());
             value.addProperty("kind", port.kind().id());
-            value.addProperty("multiple", port.multiple());
+            value.addProperty(JSON_MULTIPLE, port.multiple());
             values.add(value);
         }
         return values;
@@ -266,8 +270,8 @@ public final class EbslScriptManager {
             ? EbslGraphConnectionMode.byId(edge.get("mode").getAsString())
             : EbslGraphConnectionMode.FLOW;
         String label = edge.has(JSON_LABEL) ? edge.get(JSON_LABEL).getAsString() : "";
-        String fromPort = edge.has("fromPort") ? edge.get("fromPort").getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
-        String toPort = edge.has("toPort") ? edge.get("toPort").getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
+        String fromPort = edge.has(JSON_FROM_PORT) ? edge.get(JSON_FROM_PORT).getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
+        String toPort = edge.has(JSON_TO_PORT) ? edge.get(JSON_TO_PORT).getAsString() : EbslGraphConnection.DEFAULT_FLOW_PORT;
         return new EbslGraphConnection(id, from, fromPort, to, toPort, mode, label);
     }
 
@@ -336,14 +340,14 @@ public final class EbslScriptManager {
         if (!port.has("id")) {
             return null;
         }
-        EbslGraphPortDirection direction = port.has("direction")
-            ? EbslGraphPortDirection.byId(port.get("direction").getAsString())
+        EbslGraphPortDirection direction = port.has(JSON_DIRECTION)
+            ? EbslGraphPortDirection.byId(port.get(JSON_DIRECTION).getAsString())
             : fallbackDirection;
         EbslGraphPortKind kind = port.has("kind")
             ? EbslGraphPortKind.byId(port.get("kind").getAsString())
             : EbslGraphPortKind.FLOW;
         String label = port.has(JSON_LABEL) ? port.get(JSON_LABEL).getAsString() : port.get("id").getAsString();
-        boolean multiple = port.has("multiple") && port.get("multiple").getAsBoolean();
+        boolean multiple = port.has(JSON_MULTIPLE) && port.get(JSON_MULTIPLE).getAsBoolean();
         return new EbslGraphPort(port.get("id").getAsString(), label, direction, kind, multiple);
     }
 
