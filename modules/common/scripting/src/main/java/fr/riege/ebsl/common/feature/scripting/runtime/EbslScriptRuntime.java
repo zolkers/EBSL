@@ -34,13 +34,19 @@ import java.util.*;
 
 public final class EbslScriptRuntime {
     private final EbslPlatform platform;
+    private final NavigationService navigation;
     private final Map<String, Object> variables = new HashMap<>();
     private final Map<String, List<Object>> lists = new HashMap<>();
     private final SecureRandom random = new SecureRandom();
     private boolean stopped;
 
     EbslScriptRuntime(EbslPlatform platform) {
+        this(platform, null);
+    }
+
+    EbslScriptRuntime(EbslPlatform platform, NavigationService navigation) {
         this.platform = platform;
+        this.navigation = navigation;
     }
 
     public EbslPlatform platform() {
@@ -48,7 +54,7 @@ public final class EbslScriptRuntime {
     }
 
     public NavigationService navigation() {
-        return EbslServices.navigation();
+        return navigation == null ? EbslServices.navigation() : navigation;
     }
 
     public boolean stopped() {
@@ -58,7 +64,9 @@ public final class EbslScriptRuntime {
     public void stop() {
         stopped = true;
         navigation().stop(false);
-        platform.input().releaseGameplayKeys();
+        if (platform != null) {
+            platform.input().releaseGameplayKeys();
+        }
     }
 
     public Object variable(String name) {

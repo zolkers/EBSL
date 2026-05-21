@@ -27,6 +27,7 @@ import fr.riege.ebsl.common.feature.scripting.parser.EbslParser;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslTokenizer;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 public final class EbslScriptEngine {
     private EbslScriptEngine() {
@@ -40,11 +41,25 @@ public final class EbslScriptEngine {
         return new EbslRunner(program, platform);
     }
 
+    public static EbslRunner runner(EbslProgram program, EbslPlatform platform, NavigationService navigation) {
+        return new EbslRunner(program, platform, navigation);
+    }
+
     public static EbslGraphRunner graphRunner(EbslGraphDocument document, EbslPlatform platform) {
         return new EbslGraphRunner(document, platform);
     }
 
+    public static EbslGraphRunner graphRunner(EbslGraphDocument document,
+                                              EbslPlatform platform,
+                                              NavigationService navigation) {
+        return new EbslGraphRunner(document, platform, navigation);
+    }
+
     public static EbslGraphRunner flowRunner(String source, EbslPlatform platform) {
         return graphRunner(EbslFlowLanguage.parse(source), platform);
+    }
+
+    public static EbslGraphRunner flowRunner(String source, EbslPlatform platform, NavigationService navigation) {
+        return graphRunner(EbslFlowLanguage.parse(source), platform, navigation);
     }
 }

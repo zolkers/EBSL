@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.runtime;
 
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -39,8 +40,12 @@ public final class EbslRunner {
     private String status = "idle";
 
     EbslRunner(EbslProgram program, EbslPlatform platform) {
+        this(program, platform, null);
+    }
+
+    EbslRunner(EbslProgram program, EbslPlatform platform, NavigationService navigation) {
         this.program = program;
-        this.runtime = new EbslScriptRuntime(platform);
+        this.runtime = new EbslScriptRuntime(platform, navigation);
     }
 
     public void start() {

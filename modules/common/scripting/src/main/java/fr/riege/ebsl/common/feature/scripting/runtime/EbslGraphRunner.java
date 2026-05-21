@@ -31,6 +31,7 @@ import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphExecutionPlan;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphExecutionPlanner;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslGraphNode;
 import fr.riege.ebsl.common.platform.EbslPlatform;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 import java.util.ArrayDeque;
 import java.util.Comparator;
@@ -50,9 +51,13 @@ public final class EbslGraphRunner {
     private String status = "idle";
 
     EbslGraphRunner(EbslGraphDocument document, EbslPlatform platform) {
+        this(document, platform, null);
+    }
+
+    EbslGraphRunner(EbslGraphDocument document, EbslPlatform platform, NavigationService navigation) {
         this.document = document;
         this.plan = EbslGraphExecutionPlanner.plan(document);
-        this.runtime = new EbslScriptRuntime(platform);
+        this.runtime = new EbslScriptRuntime(platform, navigation);
     }
 
     public void start() {
@@ -98,7 +103,9 @@ public final class EbslGraphRunner {
     }
 
     public void stop() {
-        runtime.platform().input().releaseGameplayKeys();
+        if (runtime.platform() != null) {
+            runtime.platform().input().releaseGameplayKeys();
+        }
         queue.clear();
         done = true;
         status = "stopped";
