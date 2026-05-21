@@ -65,7 +65,12 @@ Write-Host "Serving Java replay API from $ReplayDir"
 Write-Host "Building and syncing viewer assets before launch."
 Write-Host "Press Ctrl+C to stop the viewer server."
 
-& .\gradlew.bat :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-server:processResources "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" --console=plain
+if (-not (Test-Path -LiteralPath $WorldDir)) {
+    New-Item -ItemType Directory -Path $WorldDir -Force | Out-Null
+}
+$resolvedWorldDir = (Resolve-Path -LiteralPath $WorldDir).Path
+
+& .\gradlew.bat :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-server:processResources "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" "-Pviewer.worldDir=$resolvedWorldDir" --console=plain
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
@@ -78,4 +83,4 @@ if (-not $NoOpen) {
     } -ArgumentList $url | Out-Null
 }
 
-& .\gradlew.bat :tools:pathfinder-sim-server:bootRun "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" --console=plain
+& .\gradlew.bat :tools:pathfinder-sim-server:bootRun "-Pviewer.port=$Port" "-Pviewer.bindAddress=$BindAddress" "-Pviewer.replayDir=$ReplayDir" "-Pviewer.worldDir=$resolvedWorldDir" --console=plain

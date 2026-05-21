@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.tools.pathfindersim.server.api;
 
+import fr.riege.ebsl.tools.pathfindersim.server.config.PathfinderSimServerProperties;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -43,6 +44,12 @@ public class FileBrowserApiController {
     private static final String APPDATA = "APPDATA";
     private static final String USER_HOME = "user.home";
 
+    private final PathfinderSimServerProperties properties;
+
+    public FileBrowserApiController(PathfinderSimServerProperties properties) {
+        this.properties = properties;
+    }
+
     @GetMapping("/roots")
     public List<DirectoryRoot> roots() {
         Map<Path, String> roots = new LinkedHashMap<>();
@@ -51,6 +58,7 @@ public class FileBrowserApiController {
         }
         addShortcut(roots, Path.of("").toAbsolutePath(), "Project");
         addShortcut(roots, Path.of("run", "saves").toAbsolutePath(), "Project saves");
+        addShortcut(roots, properties.getWorldDir(), "Configured worlds");
         addShortcut(roots, Path.of(System.getProperty(USER_HOME)), "Home");
         String appData = System.getenv(APPDATA);
         if (appData != null && !appData.isBlank()) {

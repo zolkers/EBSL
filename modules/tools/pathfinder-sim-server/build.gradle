@@ -24,6 +24,9 @@ def viewerBindAddress = providers.gradleProperty('viewer.bindAddress')
 def viewerReplayDir = providers.gradleProperty('viewer.replayDir')
     .orElse(providers.environmentVariable('VIEWER_REPLAY_DIR'))
     .orElse('run/config/ebsl/replays')
+def viewerWorldDir = providers.gradleProperty('viewer.worldDir')
+    .orElse(providers.environmentVariable('VIEWER_WORLD_DIR'))
+    .orElse('run/saves')
 def viewerAppDir = rootProject.layout.buildDirectory.dir('tools/pathfinder-sim-viewer/webapp')
 def generatedResourcesDir = layout.buildDirectory.dir('generated-resources')
 
@@ -52,11 +55,13 @@ tasks.named('bootRun') {
     systemProperty 'server.port', viewerPort.get()
     systemProperty 'server.address', viewerBindAddress.get()
     systemProperty 'ebsl.sim.replay-dir', viewerReplayDir.get()
+    systemProperty 'ebsl.sim.world-dir', viewerWorldDir.get()
 
     doFirst {
         logger.lifecycle("Serving pathfinder sim viewer at http://localhost:${viewerPort.get()}")
         logger.lifecycle("Bound to ${viewerBindAddress.get()} for LAN/mobile testing.")
         logger.lifecycle("Serving Java replay API from ${viewerReplayDir.get()}")
+        logger.lifecycle("Browsing Minecraft worlds from ${viewerWorldDir.get()}")
         logger.lifecycle('Press Ctrl+C to stop the viewer server.')
     }
 }

@@ -100,10 +100,17 @@ echo "Serving Java replay API from $replay_dir"
 echo "Building and syncing viewer assets before launch."
 echo "Press Ctrl+C to stop the viewer server."
 
+case "$world_dir" in
+    /*) resolved_world_dir="$world_dir" ;;
+    *) resolved_world_dir="$repo_dir/$world_dir" ;;
+esac
+mkdir -p "$resolved_world_dir"
+
 ./gradlew :tools:pathfinder-sim-viewer:check :tools:pathfinder-sim-server:processResources \
     "-Pviewer.port=$port" \
     "-Pviewer.bindAddress=$bind_address" \
     "-Pviewer.replayDir=$replay_dir" \
+    "-Pviewer.worldDir=$resolved_world_dir" \
     --console=plain
 
 if [ "$open_browser" = true ]; then
@@ -118,4 +125,5 @@ fi
     "-Pviewer.port=$port" \
     "-Pviewer.bindAddress=$bind_address" \
     "-Pviewer.replayDir=$replay_dir" \
+    "-Pviewer.worldDir=$resolved_world_dir" \
     --console=plain

@@ -18,4 +18,4 @@ RUN chmod +x ./gradlew ./scripts/sim-viewer.sh
 
 EXPOSE 8087
 
-CMD ["sh", "./scripts/sim-viewer.sh", "--no-open", "--replay-dir", "/data/replays"]
+CMD ["sh", "./scripts/sim-viewer.sh", "--no-open", "--world-dir", "/workspace/run/saves", "--replay-dir", "/data/replays"]

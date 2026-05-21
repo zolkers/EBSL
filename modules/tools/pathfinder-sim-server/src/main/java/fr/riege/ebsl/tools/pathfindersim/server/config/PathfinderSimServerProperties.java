@@ -29,6 +29,7 @@ import java.nio.file.Path;
 @ConfigurationProperties(prefix = "ebsl.sim")
 public class PathfinderSimServerProperties {
     private Path replayDir = ReplayPaths.defaultReplayDirectory();
+    private Path worldDir = Path.of("run", "saves");
 
     public Path getReplayDir() {
         return replayDir;
@@ -36,5 +37,13 @@ public class PathfinderSimServerProperties {
 
     public void setReplayDir(Path replayDir) {
         this.replayDir = replayDir;
+    }
+
+    public Path getWorldDir() {
+        return worldDir;
+    }
+
+    public void setWorldDir(Path worldDir) {
+        this.worldDir = worldDir;
     }
 }
