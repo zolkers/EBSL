@@ -21,52 +21,52 @@
 
 package fr.riege.ebsl.common.feature.terminal.goal;
 
+import fr.riege.ebsl.common.feature.terminal.CommandParameter;
 import fr.riege.ebsl.common.pathfinding.goal.GoalContext;
 import fr.riege.ebsl.common.pathfinding.goal.GoalParameterSpec;
 import fr.riege.ebsl.common.world.layer.IPlayerLayer;
 
-public record GoalParameter(String id, String label, DefaultProvider defaultProvider) {
-    public int defaultValue(IPlayerLayer player) {
-        return defaultProvider.value(player);
+public record GoalParameter(CommandParameter parameter) {
+    public GoalParameter {
+        if (parameter == null) {
+            throw new IllegalArgumentException("command parameter required");
+        }
     }
 
-    /**
-     * Defines the default provider contract.
+    public String id() {
+        return parameter.id();
+    }
 
-     *
+    public String label() {
+        return parameter.label();
+    }
 
-     * <p>Implementations provide the stable boundary used by EBSL components that depend on default provider behavior.</p>
+    public int defaultValue(IPlayerLayer player) {
+        return parameter.defaultValue(player);
+    }
 
-     */
-    @FunctionalInterface
-    public interface DefaultProvider {
-        /**
-         * Returns the default value for the current player state.
- *
-         * @param player the player abstraction used for the calculation
-         * @return the value defined by this contract
-         */
-        int value(IPlayerLayer player);
+    public CommandParameter commandParameter() {
+        return parameter;
     }
 
     public static GoalParameter constant(String id, String label, int value) {
-        return new GoalParameter(id, label, player -> value);
+        return new GoalParameter(CommandParameter.constant(id, label, value));
     }
 
     public static GoalParameter from(GoalParameterSpec spec) {
-        return new GoalParameter(spec.id(), spec.label(), player -> spec.defaultValue(context(player)));
+        return new GoalParameter(new CommandParameter(spec.id(), spec.label(), player -> spec.defaultValue(context(player))));
     }
 
     public static GoalParameter currentX() {
-        return new GoalParameter("x", "X", p -> (int) Math.floor(p.position().x()));
+        return new GoalParameter(CommandParameter.currentX());
     }
 
     public static GoalParameter currentY() {
-        return new GoalParameter("y", "Y", p -> (int) Math.floor(p.position().y()));
+        return new GoalParameter(CommandParameter.currentY());
     }
 
     public static GoalParameter currentZ() {
-        return new GoalParameter("z", "Z", p -> (int) Math.floor(p.position().z()));
+        return new GoalParameter(CommandParameter.currentZ());
     }
 
     private static GoalContext context(IPlayerLayer player) {

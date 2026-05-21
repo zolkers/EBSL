@@ -6,6 +6,7 @@ ext {
         ':common:render-api',
         ':common:platform-api',
         ':common:terminal',
+        ':common:terminal-navigation',
         ':common:automation'
     ]
 

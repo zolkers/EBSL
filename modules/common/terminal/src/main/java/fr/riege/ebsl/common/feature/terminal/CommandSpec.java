@@ -21,22 +21,20 @@
 
 package fr.riege.ebsl.common.feature.terminal;
 
-import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
-
 import java.util.*;
 
 public final class CommandSpec implements CommandHandler {
     private final CommandMeta meta;
     private final CommandExecutor executor;
     private final CommandCompletion completion;
-    private final List<GoalParameter> params;
+    private final List<CommandParameter> params;
     private final Map<String, CommandHandler> subcommands;
 
     private CommandSpec(CommandMeta meta,
                         List<CommandArgument> arguments,
                         CommandExecutor executor,
                         CommandCompletion completion,
-                        List<GoalParameter> params,
+                        List<CommandParameter> params,
                         Map<String, CommandHandler> subcommands) {
         this.meta = meta;
         this.executor = Objects.requireNonNull(executor, "command executor required");
@@ -59,7 +57,7 @@ public final class CommandSpec implements CommandHandler {
     }
 
     @Override
-    public List<GoalParameter> params() {
+    public List<CommandParameter> params() {
         return params;
     }
 
@@ -100,7 +98,7 @@ public final class CommandSpec implements CommandHandler {
         private CommandExecutor executor;
         private CommandCompletion completion;
         private final List<CommandArgument> arguments = new ArrayList<>();
-        private final List<GoalParameter> params = new ArrayList<>();
+        private final List<CommandParameter> params = new ArrayList<>();
         private final Map<String, CommandHandler> subcommands = new LinkedHashMap<>();
 
         private Builder(String name) {
@@ -152,7 +150,7 @@ public final class CommandSpec implements CommandHandler {
             return argument(CommandArgument.choices(name, choices));
         }
 
-        public Builder params(List<GoalParameter> params) {
+        public Builder params(List<CommandParameter> params) {
             if (params != null) {
                 this.params.addAll(params);
             }

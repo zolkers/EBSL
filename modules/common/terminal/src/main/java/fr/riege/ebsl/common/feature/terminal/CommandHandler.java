@@ -21,8 +21,6 @@
 
 package fr.riege.ebsl.common.feature.terminal;
 
-import fr.riege.ebsl.common.feature.terminal.goal.GoalParameter;
-
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +44,7 @@ public interface CommandHandler {
  *
      * @return the requested values
      */
-    default List<GoalParameter> params() {
+    default List<CommandParameter> params() {
         return List.of();
     }
 
