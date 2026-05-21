@@ -44,6 +44,7 @@ public final class SimulationReport {
                 .append(" complete=").append(result.completePlan())
                 .append(" stuckTicks=").append(metrics.stuckTicks())
                 .append(" stuckEvents=").append(metrics.stuckEvents())
+                .append(" recovery=").append(metrics.recoveryAttempts())
                 .append(" finalDistance=").append(format(metrics.finalDistance()))
                 .append(" elapsedMs=").append(format(result.elapsedNanos() / 1_000_000.0))
                 .append('\n');
@@ -81,6 +82,7 @@ public final class SimulationReport {
             .append("\"stuckTicks\":").append(metrics.stuckTicks()).append(',')
             .append("\"stuckEvents\":").append(metrics.stuckEvents()).append(',')
             .append("\"longestStuckStreak\":").append(metrics.longestStuckStreak()).append(',')
+            .append("\"recoveryAttempts\":").append(metrics.recoveryAttempts()).append(',')
             .append("\"bestDistance\":").append(format(metrics.bestDistance())).append(',')
             .append("\"finalDistance\":").append(format(metrics.finalDistance()))
             .append("},\"terrain\":[");

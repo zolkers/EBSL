@@ -26,12 +26,54 @@ tasks.register('regression', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
+    maxHeapSize = '2g'
     def runs = providers.gradleProperty('simRegressionRuns').orElse('20')
     def maxTicks = providers.gradleProperty('simRegressionMaxTicks').orElse('600')
     def maxFinalDistance = providers.gradleProperty('simRegressionMaxFinalDistance').orElse('1.25')
     def maxStuckEvents = providers.gradleProperty('simRegressionMaxStuckEvents').orElse('5')
     def saveReplay = providers.gradleProperty('simRegressionSaveReplay').map { it.toBoolean() }.orElse(false)
     args '--headless',
+        "--repeat=${runs.get()}",
+        '--fail-on-regression',
+        "--max-ticks=${maxTicks.get()}",
+        "--regression-max-final-distance=${maxFinalDistance.get()}",
+        "--regression-max-stuck-events=${maxStuckEvents.get()}"
+    if (!saveReplay.get()) {
+        args '--no-replay-save'
+    }
+}
+
+tasks.register('minecraftRegression', JavaExec) {
+    group = 'verification'
+    description = 'Runs repeatable pathfinder simulator regressions against the configured Minecraft world.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+    maxHeapSize = providers.gradleProperty('simMinecraftMaxHeap').orElse('4g').get()
+    def worldDir = providers.gradleProperty('simMinecraftWorld').orElse('run/saves/New World')
+    def start = providers.gradleProperty('simMinecraftStart').orElse('386,61,42')
+    def goal = providers.gradleProperty('simMinecraftGoal').orElse('500,61,40')
+    def runs = providers.gradleProperty('simMinecraftRuns').orElse('3')
+    def maxTicks = providers.gradleProperty('simMinecraftMaxTicks').orElse('1200')
+    def radius = providers.gradleProperty('simMinecraftRadiusChunks').orElse('8')
+    def goalSearch = providers.gradleProperty('simMinecraftGoalSearchBlocks').orElse('160')
+    def maxFinalDistance = providers.gradleProperty('simMinecraftMaxFinalDistance').orElse('2.0')
+    def maxStuckEvents = providers.gradleProperty('simMinecraftMaxStuckEvents').orElse('12')
+    def saveReplay = providers.gradleProperty('simMinecraftSaveReplay').map { it.toBoolean() }.orElse(true)
+    def worldPath = rootProject.layout.projectDirectory.file(worldDir.get()).asFile
+    onlyIf {
+        if (!worldPath.isDirectory()) {
+            logger.lifecycle("Skipping minecraftRegression because world directory does not exist: ${worldPath}")
+            return false
+        }
+        true
+    }
+    args '--headless',
+        "--mc-world=${worldDir.get()}",
+        "--mc-start=${start.get()}",
+        "--mc-goal=${goal.get()}",
+        "--mc-radius=${radius.get()}",
+        "--mc-goal-search=${goalSearch.get()}",
         "--repeat=${runs.get()}",
         '--fail-on-regression',
         "--max-ticks=${maxTicks.get()}",

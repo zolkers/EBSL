@@ -486,6 +486,7 @@ public final class SimulationFrame extends JFrame {
             ticks: %d
             nodes: %d / raw %d
             stuck: %d ticks, %d events
+            recovery: %d replans
             final distance: %.4f
 
             %s
@@ -498,6 +499,7 @@ public final class SimulationFrame extends JFrame {
             result.rawNodes(),
             result.metrics().stuckTicks(),
             result.metrics().stuckEvents(),
+            result.metrics().recoveryAttempts(),
             result.metrics().finalDistance(),
             result.description());
     }

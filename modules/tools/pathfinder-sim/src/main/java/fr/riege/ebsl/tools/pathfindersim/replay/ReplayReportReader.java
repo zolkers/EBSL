@@ -75,6 +75,7 @@ public final class ReplayReportReader {
             integer(object, "stuckTicks", 0),
             integer(object, "stuckEvents", 0),
             integer(object, "longestStuckStreak", 0),
+            integer(object, "recoveryAttempts", 0),
             decimal(object, "bestDistance", 0.0),
             decimal(object, "finalDistance", 0.0));
     }

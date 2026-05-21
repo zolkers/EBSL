@@ -21,6 +21,7 @@ export interface ReplayMetrics {
   readonly stuckTicks: number;
   readonly stuckEvents: number;
   readonly longestStuckStreak: number;
+  readonly recoveryAttempts?: number;
   readonly bestDistance: number;
   readonly finalDistance: number;
 }

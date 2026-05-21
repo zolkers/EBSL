@@ -29,6 +29,26 @@ Run the repeatable headless regression suite:
 .\scripts\sim-regression.bat
 ```
 
+Run the real-world Minecraft regression suite, using the current local `run/saves/New World` route by default:
+
+```powershell
+.\scripts\sim-mc-regression.bat
+```
+
+Default route:
+
+```text
+start=386,61,42
+goal=500,61,40
+world=run/saves/New World
+```
+
+Override any route without editing code:
+
+```powershell
+.\scripts\sim-mc-regression.bat -WorldDir "D:\Minecraft\saves\My World" -Start "386,61,42" -Goal "500,62,40" -Runs 5
+```
+
 Useful overrides:
 
 ```powershell

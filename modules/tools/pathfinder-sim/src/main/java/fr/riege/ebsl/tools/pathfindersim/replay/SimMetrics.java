@@ -26,6 +26,7 @@ public record SimMetrics(
     int stuckTicks,
     int stuckEvents,
     int longestStuckStreak,
+    int recoveryAttempts,
     double bestDistance,
     double finalDistance
 ) {

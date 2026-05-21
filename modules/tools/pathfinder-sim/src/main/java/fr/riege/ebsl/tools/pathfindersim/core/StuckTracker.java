@@ -33,6 +33,7 @@ final class StuckTracker {
     private int stuckEvents;
     private int longestStuckStreak;
     private boolean currentlyStuck;
+    private boolean stuckEventPending;
 
     StuckTracker(int windowTicks, double epsilon) {
         this.windowTicks = Math.max(1, windowTicks);
@@ -55,17 +56,31 @@ final class StuckTracker {
             if (!currentlyStuck) {
                 stuckEvents++;
                 currentlyStuck = true;
+                stuckEventPending = true;
             }
         }
         return stuck;
     }
 
-    SimMetrics metrics(int ticks, double finalDistance) {
+    boolean consumeStuckEvent() {
+        boolean pending = stuckEventPending;
+        stuckEventPending = false;
+        return pending;
+    }
+
+    void noteRecoveryAttempt() {
+        stagnantTicks = 0;
+        currentlyStuck = false;
+        stuckEventPending = false;
+    }
+
+    SimMetrics metrics(int ticks, int recoveryAttempts, double finalDistance) {
         return new SimMetrics(
             ticks,
             stuckTicks,
             stuckEvents,
             longestStuckStreak,
+            recoveryAttempts,
             bestDistance,
             finalDistance);
     }

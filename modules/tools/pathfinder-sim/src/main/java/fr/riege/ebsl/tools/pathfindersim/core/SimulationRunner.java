@@ -55,6 +55,7 @@ public final class SimulationRunner {
         List<SimulationTick> samples = new ArrayList<>();
         StuckTracker stuckTracker = new StuckTracker(options.stuckWindowTicks(), options.stuckEpsilon());
         int ticks = 0;
+        int recoveryAttempts = 0;
 
         while (ticks < options.maxTicks() && isActive(service.pathStatus())) {
             service.tick();
@@ -62,12 +63,17 @@ public final class SimulationRunner {
             ticks++;
             double distance = distanceToGoal(actor.position(), scenario);
             boolean stuck = stuckTracker.update(distance);
+            if (stuckTracker.consumeStuckEvent()) {
+                recoveryAttempts++;
+                service.startBlockGoal(scenario.goalX(), scenario.goalY(), scenario.goalZ());
+                stuckTracker.noteRecoveryAttempt();
+            }
             samples.add(SimulationTick.capture(ticks, actor, agent.motor(), service, distance, stuck));
         }
 
         NavigationStatus status = service.pathStatus();
         boolean reached = status == NavigationStatus.FOUND && distanceToGoal(actor.position(), scenario) <= 1.25;
-        SimMetrics metrics = stuckTracker.metrics(ticks, distanceToGoal(actor.position(), scenario));
+        SimMetrics metrics = stuckTracker.metrics(ticks, recoveryAttempts, distanceToGoal(actor.position(), scenario));
         long elapsedNanos = System.nanoTime() - startNanos;
         return new SimulationResult(
             scenario.id(),
