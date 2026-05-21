@@ -42,23 +42,26 @@ final class PathSteering {
     static SteeringVector steer(MovementTerrain checker, List<Node> path, IPlayerLayer player, Vec3d playerPos,
                                 Node targetWp, int pursuitSegment, boolean precisionWindow) {
         if (targetWp == null) {
-            return new SteeringVector(0.0, 0.0, false);
+            return new SteeringVector(0.0, 0.0, false, false);
         }
         SteeringTarget target = steeringTarget(path, player, playerPos, targetWp, pursuitSegment, precisionWindow);
+        Vec3d centerlineCorrection = centerlineCorrection(path, playerPos, pursuitSegment);
+        double correctionLen = horizontalLength(centerlineCorrection.x(), centerlineCorrection.z());
+        boolean lateralCorrection = correctionLen > PathfinderSettings.instance().cornerSteeringCenterlineStart.value();
         double targetX = target.x();
         double targetZ = target.z();
         double desiredX = targetX - playerPos.x();
         double desiredZ = targetZ - playerPos.z();
         double desiredLen = horizontalLength(desiredX, desiredZ);
         if (desiredLen < 1.0e-6) {
-            return new SteeringVector(desiredX, desiredZ, false);
+            return new SteeringVector(desiredX, desiredZ, false, lateralCorrection);
         }
 
         desiredX /= desiredLen;
         desiredZ /= desiredLen;
         PathfinderSettings settings = PathfinderSettings.instance();
         if (!Boolean.TRUE.equals(settings.cornerSteeringEnabled.value())) {
-            return new SteeringVector(desiredX, desiredZ, false);
+            return new SteeringVector(desiredX, desiredZ, false, lateralCorrection);
         }
 
         double scanRadius = settings.cornerSteeringScanRadius.value();
@@ -66,8 +69,6 @@ final class PathSteering {
         double nudgeLen = horizontalLength(obstacleNudge.x(), obstacleNudge.z());
         boolean nearCorner = nudgeLen > 1.0e-6 || target.cornerLimited();
 
-        Vec3d centerlineCorrection = centerlineCorrection(path, playerPos, pursuitSegment);
-        double correctionLen = horizontalLength(centerlineCorrection.x(), centerlineCorrection.z());
         double centerlineStart = settings.cornerSteeringCenterlineStart.value();
         if (correctionLen > centerlineStart && nearCorner) {
             double centerlineMax = Math.max(centerlineStart + 1.0e-6, settings.cornerSteeringCenterlineMax.value());
@@ -85,9 +86,9 @@ final class PathSteering {
 
         double adjustedLen = horizontalLength(desiredX, desiredZ);
         if (adjustedLen < 1.0e-6) {
-            return new SteeringVector(targetX - playerPos.x(), targetZ - playerPos.z(), nearCorner);
+            return new SteeringVector(targetX - playerPos.x(), targetZ - playerPos.z(), nearCorner, lateralCorrection);
         }
-        return new SteeringVector(desiredX / adjustedLen, desiredZ / adjustedLen, nearCorner);
+        return new SteeringVector(desiredX / adjustedLen, desiredZ / adjustedLen, nearCorner, lateralCorrection);
     }
 
     private static Vec3d centerlineCorrection(List<Node> path, Vec3d playerPos, int pursuitSegment) {
@@ -234,7 +235,7 @@ final class PathSteering {
         return Math.sqrt(x * x + z * z);
     }
 
-    record SteeringVector(double x, double z, boolean nearCorner) {
+    record SteeringVector(double x, double z, boolean nearCorner, boolean lateralCorrection) {
     }
 
     private record SteeringTarget(double x, double z, boolean cornerLimited) {

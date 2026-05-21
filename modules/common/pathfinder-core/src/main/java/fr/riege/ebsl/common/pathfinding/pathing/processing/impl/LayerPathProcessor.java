@@ -40,7 +40,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     private static final double PARTIAL_ASCENT_DY_THRESHOLD = 0.2;
     private static final double DESCENT_DY_THRESHOLD = -0.1;
     private static final double PARTIAL_ASCENT_DIAGONAL_EDGE_PENALTY = 0.12;
-    private static final int APPROACH_LOOKAHEAD_DIST = 3;
+    private static final int MIN_APPROACH_LOOKAHEAD_DIST = 3;
     private static final double APPROACH_MULTIPLIER_DIST_1 = 0.85;
     private static final double APPROACH_MULTIPLIER_DIST_2 = 0.55;
     private static final double APPROACH_MULTIPLIER_DIST_3 = 0.30;
@@ -67,6 +67,7 @@ public final class LayerPathProcessor implements NodeProcessor {
     private double partialAscentEdgeCost;
     private double partialAscentEntrySideCost;
     private double openingEntryImbalanceCost;
+    private int corridorLookaheadBlocks;
 
     public LayerPathProcessor() {
         captureSettings();
@@ -244,8 +245,8 @@ public final class LayerPathProcessor implements NodeProcessor {
         additionalCost += cardinalWalls * cardinalWallWeight + diagonalWalls * diagonalWallWeight;
 
         if (cardinalWalls > 0 || diagonalWalls > 0) {
-            int ascentDist = detectPartialAscentAhead(context, cx, cy, cz, moveDx, moveDz);
-            int openingDist = detectOpeningAhead(context, cx, cy, cz, moveDx, moveDz);
+            int ascentDist = detectPartialAscentAhead(context, cx, cy, cz, moveDx, moveDz, corridorLookaheadBlocks);
+            int openingDist = detectOpeningAhead(context, cx, cy, cz, moveDx, moveDz, corridorLookaheadBlocks);
             int transitionDist = (ascentDist > 0 && openingDist > 0)
                 ? Math.min(ascentDist, openingDist)
                 : Math.max(ascentDist, openingDist);
@@ -399,6 +400,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         partialAscentEdgeCost = settings.partialAscentEdgeCost.value();
         partialAscentEntrySideCost = settings.partialAscentEntrySideCost.value();
         openingEntryImbalanceCost = settings.openingEntryImbalanceCost.value();
+        corridorLookaheadBlocks = Math.max(MIN_APPROACH_LOOKAHEAD_DIST, settings.corridorLookaheadBlocks.value());
     }
 
     private static boolean isFullStepSupport(EvaluationContext context, int x, int y, int z) {
@@ -496,7 +498,8 @@ public final class LayerPathProcessor implements NodeProcessor {
         return (moveDx == 0) != (moveDz == 0);
     }
 
-    private static int detectPartialAscentAhead(EvaluationContext context, int bx, int by, int bz, int moveDx, int moveDz) {
+    private static int detectPartialAscentAhead(EvaluationContext context, int bx, int by, int bz,
+                                                int moveDx, int moveDz, int lookaheadBlocks) {
         if (moveDx == 0 && moveDz == 0) return 0;
         int stepX = Integer.signum(moveDx);
         int stepZ = Integer.signum(moveDz);
@@ -506,7 +509,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         var checker = layerProvider.checker();
         int foundDistance = 0;
         boolean blocked = false;
-        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST && foundDistance == 0 && !blocked; dist++) {
+        for (int dist = 1; dist <= lookaheadBlocks && foundDistance == 0 && !blocked; dist++) {
             int ax = bx + stepX * dist;
             int az = bz + stepZ * dist;
             blocked = isFullWallBlock(context, ax, by, az);
@@ -521,14 +524,15 @@ public final class LayerPathProcessor implements NodeProcessor {
         return foundDistance;
     }
 
-    private static int detectOpeningAhead(EvaluationContext context, int bx, int by, int bz, int moveDx, int moveDz) {
+    private static int detectOpeningAhead(EvaluationContext context, int bx, int by, int bz,
+                                          int moveDx, int moveDz, int lookaheadBlocks) {
         if (!isCardinalMove(moveDx, moveDz)) return 0;
         int stepX = Integer.signum(moveDx);
         int stepZ = Integer.signum(moveDz);
         int prevSides = countCardinalSideWalls(context, bx, by, bz, moveDx, moveDz);
         int foundDistance = 0;
         boolean blocked = false;
-        for (int dist = 1; dist <= APPROACH_LOOKAHEAD_DIST && foundDistance == 0 && !blocked; dist++) {
+        for (int dist = 1; dist <= lookaheadBlocks && foundDistance == 0 && !blocked; dist++) {
             int ax = bx + stepX * dist;
             int az = bz + stepZ * dist;
             blocked = isFullWallBlock(context, ax, by, az) || isFullWallBlock(context, ax, by + 1, az);

@@ -44,9 +44,19 @@ export interface ReplayTick {
   readonly jump: boolean;
   readonly sprint: boolean;
   readonly sneak: boolean;
+  readonly pathTelemetry?: ReplayPathTelemetry;
 }
 
 export type Vector3 = readonly [number, number, number];
+
+export interface ReplayPathTelemetry {
+  readonly nearestSegment: number;
+  readonly segmentProgress: number;
+  readonly lateralError: number;
+  readonly verticalError: number;
+  readonly speedAlongPath: number;
+  readonly speedAcrossPath: number;
+}
 
 export function parseReplay(payload: unknown): ReplayResult {
   const candidate = replayCandidate(payload);

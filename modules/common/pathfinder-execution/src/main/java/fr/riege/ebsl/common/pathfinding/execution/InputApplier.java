@@ -62,6 +62,7 @@ final class InputApplier {
 
         double forwardDot = dx * forwardX + dz * forwardZ;
         double strafeDot = dx * rightX + dz * rightZ;
+        boolean lateralCorrection = thresholds.lateralCorrection();
         if (memory != null) {
             forwardDot = memory.smoothForward(forwardDot);
             strafeDot = memory.smoothStrafe(strafeDot);
@@ -77,7 +78,7 @@ final class InputApplier {
         input.setForwardDown(forward);
         input.setBackwardDown(backward);
 
-        boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT;
+        boolean mostlyForward = forwardDot > STRAFE_SUPPRESSION_FORWARD_DOT && !lateralCorrection;
         double effectiveStrafeThreshold = mostlyForward
             ? Math.max(thresholds.strafe(), STRAFE_SUPPRESSION_DOT)
             : thresholds.strafe();
@@ -198,12 +199,20 @@ final class InputApplier {
                         boolean left, boolean right) {
     }
 
-    record MovementThresholds(double forward, double backward, double strafe) {
+    record MovementThresholds(double forward, double backward, double strafe, boolean lateralCorrection) {
+        MovementThresholds(double forward, double backward, double strafe) {
+            this(forward, backward, strafe, false);
+        }
     }
 
     record MovementIntent(double dx, double dz, MovementThresholds thresholds) {
         MovementIntent(double dx, double dz, double forwardThreshold, double backwardThreshold, double strafeThreshold) {
             this(dx, dz, new MovementThresholds(forwardThreshold, backwardThreshold, strafeThreshold));
+        }
+
+        MovementIntent(double dx, double dz, double forwardThreshold, double backwardThreshold,
+                       double strafeThreshold, boolean lateralCorrection) {
+            this(dx, dz, new MovementThresholds(forwardThreshold, backwardThreshold, strafeThreshold, lateralCorrection));
         }
     }
 }

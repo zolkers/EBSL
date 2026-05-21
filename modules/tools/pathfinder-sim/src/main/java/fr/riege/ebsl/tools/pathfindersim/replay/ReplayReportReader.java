@@ -106,9 +106,20 @@ public final class ReplayReportReader {
                 bool(tick, "stuck", false),
                 bool(tick, "jump", false),
                 bool(tick, "sprint", false),
-                bool(tick, "sneak", false)));
+                bool(tick, "sneak", false),
+                pathTelemetry(object(tick, "pathTelemetry"))));
         }
         return ticks;
+    }
+
+    private static SimulationPathTelemetry pathTelemetry(JsonObject object) {
+        return new SimulationPathTelemetry(
+            integer(object, "nearestSegment", 0),
+            decimal(object, "segmentProgress", 0.0),
+            decimal(object, "lateralError", 0.0),
+            decimal(object, "verticalError", 0.0),
+            decimal(object, "speedAlongPath", 0.0),
+            decimal(object, "speedAcrossPath", 0.0));
     }
 
     private static Vec3d vector(JsonArray values) {

@@ -29,6 +29,8 @@ import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessActor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
 import fr.riege.ebsl.common.pathfinding.Node;
 
+import java.util.List;
+
 public record SimulationTick(
     int tick,
     Vec3d position,
@@ -39,11 +41,13 @@ public record SimulationTick(
     boolean stuck,
     boolean jump,
     boolean sprint,
-    boolean sneak
+    boolean sneak,
+    SimulationPathTelemetry pathTelemetry
 ) {
     public static SimulationTick capture(int tick, HeadlessActor actor, HeadlessMotor motor,
                                          EntityNavigationService service, double distanceToGoal, boolean stuck) {
         MovementIntent intent = motor.lastIntent();
+        var plan = service.lastPlan();
         return new SimulationTick(
             tick,
             actor.position(),
@@ -54,6 +58,10 @@ public record SimulationTick(
             stuck,
             intent.jump(),
             intent.sprint(),
-            intent.sneak());
+            intent.sneak(),
+            SimulationPathTelemetry.capture(
+                actor.position(),
+                actor.velocity(),
+                plan == null ? List.of() : plan.navigationNodes()));
     }
 }

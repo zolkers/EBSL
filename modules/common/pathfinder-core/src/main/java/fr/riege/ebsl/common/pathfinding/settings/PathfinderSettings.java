@@ -128,6 +128,8 @@ public final class PathfinderSettings extends Settingable {
         "partial_ascent_entry_side_cost", "Slab/stair entry side", 0.28, 0.0, 5.0));
     public final DoubleSetting openingEntryImbalanceCost = registerSetting(new DoubleSetting(
         "opening_entry_imbalance_cost", "Opening side imbalance", 0.24, 0.0, 5.0));
+    public final IntSetting corridorLookaheadBlocks = registerSetting(new IntSetting(
+        "corridor_lookahead_blocks", "Corridor lookahead blocks", 6, 1, 12));
     public final BooleanSetting cornerSteeringEnabled = registerSetting(new BooleanSetting(
         "corner_steering_enabled", "Corner steering", true));
     public final BooleanSetting cornerSteeringSlowdown = registerSetting(new BooleanSetting(
@@ -490,7 +492,8 @@ public final class PathfinderSettings extends Settingable {
             INSTANCE.diagonalWallCost,
             INSTANCE.partialAscentEdgeCost,
             INSTANCE.partialAscentEntrySideCost,
-            INSTANCE.openingEntryImbalanceCost);
+            INSTANCE.openingEntryImbalanceCost,
+            INSTANCE.corridorLookaheadBlocks);
     }
 
     public static List<Setting<?>> steeringSettings() {

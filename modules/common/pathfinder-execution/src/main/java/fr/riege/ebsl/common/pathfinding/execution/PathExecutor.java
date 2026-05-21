@@ -223,6 +223,9 @@ public final class PathExecutor {
         pathTracker.computeAndTrackPathProgress(playerPos, PathfinderSettings.instance().pathProgressEpsilon.value(), now);
 
         PathProximitySnapshot proximity = pathTracker.analyzePathProximity(playerPos);
+        if (pathTracker.realignToCorridor(proximity, now)) {
+            proximity = pathTracker.analyzePathProximity(playerPos);
+        }
         pathTracker.updateSevereOffPathState(proximity, now);
         if (handlePathChecks(playerPos, path, proximity, now)) return;
         path = pathTracker.getPath();

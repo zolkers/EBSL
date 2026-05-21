@@ -193,7 +193,8 @@ final class WalkMovementController {
                 steering.z(),
                 settings.walkForwardDot.value(),
                 settings.walkBackwardDot.value(),
-                settings.walkStrafeDot.value()));
+                settings.walkStrafeDot.value(),
+                steering.lateralCorrection()));
         input.setSprintDown(axes.forward()
             && distToFinal > 2.0
             && !nearStepUp

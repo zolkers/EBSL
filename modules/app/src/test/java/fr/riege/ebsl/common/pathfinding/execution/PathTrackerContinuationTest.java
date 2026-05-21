@@ -23,12 +23,15 @@ package fr.riege.ebsl.common.pathfinding.execution;
 
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.pathfinding.check.PathProximitySnapshot;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PathTrackerContinuationTest {
     @Test
@@ -81,6 +84,40 @@ class PathTrackerContinuationTest {
         assertEquals(0.0, moved, 1.0e-6);
         assertEquals(started, tracker.getLastProgressTime(),
             "vertical-only jumps must not refresh stuck progress");
+    }
+
+    @Test
+    void realignsToNearbyForwardCorridorSegment() {
+        PathTracker tracker = new PathTracker();
+        tracker.start(List.of(
+            node(0, 64, 0),
+            node(1, 64, 0),
+            node(2, 64, 0),
+            node(3, 64, 0)));
+
+        boolean realigned = tracker.realignToCorridor(
+            new PathProximitySnapshot(2, 2, 0.8, 0.25, 0.0, 0.25, 2.8),
+            System.currentTimeMillis());
+
+        assertTrue(realigned);
+        assertEquals(2, tracker.getPursuitSegment());
+    }
+
+    @Test
+    void doesNotRealignToFarOffCorridorSegment() {
+        PathTracker tracker = new PathTracker();
+        tracker.start(List.of(
+            node(0, 64, 0),
+            node(1, 64, 0),
+            node(2, 64, 0),
+            node(3, 64, 0)));
+
+        boolean realigned = tracker.realignToCorridor(
+            new PathProximitySnapshot(2, 2, 0.8, 2.0, 0.0, 2.0, 2.8),
+            System.currentTimeMillis());
+
+        assertFalse(realigned);
+        assertEquals(0, tracker.getPursuitSegment());
     }
 
     private static Node node(int x, int y, int z) {

@@ -123,9 +123,26 @@ public final class SimulationReport {
                 .append("\"stuck\":").append(tick.stuck()).append(',')
                 .append("\"jump\":").append(tick.jump()).append(',')
                 .append("\"sprint\":").append(tick.sprint()).append(',')
-                .append("\"sneak\":").append(tick.sneak())
+                .append("\"sneak\":").append(tick.sneak()).append(',')
+                .append("\"pathTelemetry\":").append(pathTelemetry(tick.pathTelemetry()))
                 .append('}');
         }
+    }
+
+    private static String pathTelemetry(SimulationPathTelemetry telemetry) {
+        SimulationPathTelemetry effectiveTelemetry = telemetry == null
+            ? new SimulationPathTelemetry(0, 0.0, 0.0, 0.0, 0.0, 0.0)
+            : telemetry;
+        return new StringBuilder()
+            .append('{')
+            .append("\"nearestSegment\":").append(effectiveTelemetry.nearestSegment()).append(',')
+            .append("\"segmentProgress\":").append(format(effectiveTelemetry.segmentProgress())).append(',')
+            .append("\"lateralError\":").append(format(effectiveTelemetry.lateralError())).append(',')
+            .append("\"verticalError\":").append(format(effectiveTelemetry.verticalError())).append(',')
+            .append("\"speedAlongPath\":").append(format(effectiveTelemetry.speedAlongPath())).append(',')
+            .append("\"speedAcrossPath\":").append(format(effectiveTelemetry.speedAcrossPath()))
+            .append('}')
+            .toString();
     }
 
     private static String vec(Vec3d value) {

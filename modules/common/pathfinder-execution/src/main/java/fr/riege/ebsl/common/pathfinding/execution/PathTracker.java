@@ -217,6 +217,23 @@ final class PathTracker {
         return new PathProximitySnapshot(bestSegment, bestNode, bestT, bestHorizontal, bestVertical, bestDist3d, bestProgress);
     }
 
+    boolean realignToCorridor(PathProximitySnapshot proximity, long now) {
+        if (path.size() < 2 || proximity == null) {
+            return false;
+        }
+        if (!LocalPathCorridor.shouldRealign(pursuitSegment, path.size() - 2, proximity)) {
+            return false;
+        }
+        int nearest = proximity.nearestSegmentIndex();
+        pursuitSegment = Math.clamp(nearest, 0, path.size() - 2);
+        lastProgressTime = now;
+        if (bestPathProgress < pursuitSegment) {
+            bestPathProgress = pursuitSegment;
+            lastPathProgressTime = now;
+        }
+        return true;
+    }
+
     Vec3d computeCorrectionToPath(Vec3d pos, PathProximitySnapshot proximity) {
         if (path.size() < 2) return new Vec3d(0.0, 0.0, 0.0);
         int segment = Math.clamp(proximity.nearestSegmentIndex(), 0, path.size() - 2);
