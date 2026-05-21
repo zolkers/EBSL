@@ -19,29 +19,23 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.scripting.command;
+package fr.riege.ebsl.common.feature.terminal.commands;
 
-import java.util.Arrays;
-import java.util.List;
+import fr.riege.ebsl.common.feature.terminal.CommandContext;
+import fr.riege.ebsl.common.feature.terminal.CommandResult;
 
-enum EbslCommandAction {
-    RUN("run"),
-    INLINE("inline"),
-    STOP("stop"),
-    STATUS("status"),
-    TASKS("tasks");
-
-    private final String id;
-
-    EbslCommandAction(String id) {
-        this.id = id;
-    }
-
-    String id() {
-        return id;
-    }
-
-    static List<String> ids() {
-        return Arrays.stream(values()).map(EbslCommandAction::id).toList();
-    }
+/**
+ * Executes one action exposed by the EBSL scripting command bridge.
+ *
+ * <p>Implementations translate terminal context into command results and should avoid retaining invocation-specific state.</p>
+ */
+@FunctionalInterface
+interface EbslCommandActionHandler {
+    /**
+     * Executes the operation represented by this contract.
+ *
+     * @param context the context describing the operation being performed
+     * @return the value defined by this contract
+     */
+    CommandResult execute(CommandContext context);
 }

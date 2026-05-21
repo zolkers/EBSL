@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.scripting.command;
+package fr.riege.ebsl.common.feature.terminal.commands;
 
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;

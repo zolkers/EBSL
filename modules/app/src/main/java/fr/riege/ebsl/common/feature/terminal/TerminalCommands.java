@@ -21,7 +21,6 @@
 
 package fr.riege.ebsl.common.feature.terminal;
 
-import fr.riege.ebsl.common.feature.scripting.command.EbslCommand;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.terminal.commands.*;
 
