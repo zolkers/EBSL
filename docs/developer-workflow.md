@@ -1,0 +1,111 @@
+# EBSL Developer Workflow
+
+This page is the short operational checklist for local maintenance.
+
+## Java
+
+Use the repo scripts first. They pick up the bundled JDK when it exists, and fall back to the local IDE JDK on Windows.
+
+When running Gradle manually from a fresh terminal, set Java first if needed:
+
+```powershell
+$env:JAVA_HOME="$env:USERPROFILE\.jdks\ms-21.0.10"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+```
+
+Minecraft 1.21.x modules currently compile on the shared Java 21 toolchain. Minecraft 1.26.1+ work should use the `modules/mc/<version>` layout and can move that version line to Java 25 without changing the common tool modules.
+
+## Pathfinder Simulator
+
+Launch the desktop/Swing simulator:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:run
+```
+
+Run the repeatable headless regression suite:
+
+```powershell
+.\scripts\sim-regression.bat
+```
+
+Useful overrides:
+
+```powershell
+.\scripts\sim-regression.bat -Runs 50 -MaxTicks 900 -MaxFinalDistance 1.25 -MaxStuckEvents 5
+```
+
+The Gradle task behind the script is:
+
+```powershell
+.\gradlew.bat :tools:pathfinder-sim:regression -PsimRegressionRuns=20 -PsimRegressionMaxTicks=600
+```
+
+The default replay directory is:
+
+```text
+run/config/ebsl/replays
+```
+
+Pass `-SaveReplay` to `sim-regression.bat` only when you want to keep every regression replay.
+
+## Web Viewer
+
+Launch the Java-backed viewer:
+
+```powershell
+.\scripts\sim-viewer.bat
+```
+
+The viewer defaults to:
+
+```text
+http://localhost:8087
+```
+
+Use a custom world root and replay root:
+
+```powershell
+.\scripts\sim-viewer.bat -WorldDir "D:\Minecraft\saves" -ReplayDir "D:\EBSL\replays"
+```
+
+Run the same viewer through Docker:
+
+```powershell
+.\scripts\sim-viewer.bat -Docker -WorldDir "D:\Minecraft\saves"
+```
+
+For mobile/LAN testing, keep the default bind address `0.0.0.0`, then open the machine IP and port from the phone browser.
+
+## Minecraft Build
+
+Build the Fabric 1.21.11 jar:
+
+```powershell
+.\gradlew.bat buildMod121Fabric
+```
+
+Artifacts are written under:
+
+```text
+build/mc/1-21-11/fabric/libs
+```
+
+That is also the GitHub Actions artifact path.
+
+## Quality
+
+Run the local quality bundle:
+
+```powershell
+.\gradlew.bat localQuality
+```
+
+Run local SonarQube after the server and token are configured:
+
+```powershell
+.\scripts\setup-sonar-token.ps1 -Token "squ_..." -HostUrl "http://localhost:9000"
+.\gradlew.bat sonar sonarQualityGate
+```
+
+`localQuality` is the fast local truth. The remote/local SonarQube Quality Gate still needs a live server and a valid token.

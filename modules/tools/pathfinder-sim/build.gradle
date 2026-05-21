@@ -26,13 +26,20 @@ tasks.register('regression', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
+    def runs = providers.gradleProperty('simRegressionRuns').orElse('20')
+    def maxTicks = providers.gradleProperty('simRegressionMaxTicks').orElse('600')
+    def maxFinalDistance = providers.gradleProperty('simRegressionMaxFinalDistance').orElse('1.25')
+    def maxStuckEvents = providers.gradleProperty('simRegressionMaxStuckEvents').orElse('5')
+    def saveReplay = providers.gradleProperty('simRegressionSaveReplay').map { it.toBoolean() }.orElse(false)
     args '--headless',
-        '--repeat=20',
+        "--repeat=${runs.get()}",
         '--fail-on-regression',
-        '--no-replay-save',
-        '--max-ticks=600',
-        '--regression-max-final-distance=1.25',
-        '--regression-max-stuck-events=5'
+        "--max-ticks=${maxTicks.get()}",
+        "--regression-max-final-distance=${maxFinalDistance.get()}",
+        "--regression-max-stuck-events=${maxStuckEvents.get()}"
+    if (!saveReplay.get()) {
+        args '--no-replay-save'
+    }
 }
 
 def javaExecutableName = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'jpackage.exe' : 'jpackage'
