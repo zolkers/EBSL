@@ -68,6 +68,9 @@ public final class LayerPathProcessor implements NodeProcessor {
     private double partialAscentEdgeCost;
     private double partialAscentEntrySideCost;
     private double openingEntryImbalanceCost;
+    private double directionTurnCost;
+    private double directionSharpTurnCost;
+    private double directionStraightBonus;
     private int corridorLookaheadBlocks;
 
     public LayerPathProcessor() {
@@ -406,6 +409,9 @@ public final class LayerPathProcessor implements NodeProcessor {
         partialAscentEdgeCost = settings.partialAscentEdgeCost.value();
         partialAscentEntrySideCost = settings.partialAscentEntrySideCost.value();
         openingEntryImbalanceCost = settings.openingEntryImbalanceCost.value();
+        directionTurnCost = settings.directionTurnCost.value();
+        directionSharpTurnCost = settings.directionSharpTurnCost.value();
+        directionStraightBonus = settings.directionStraightBonus.value();
         corridorLookaheadBlocks = Math.max(MIN_APPROACH_LOOKAHEAD_DIST, settings.corridorLookaheadBlocks.value());
     }
 
@@ -566,7 +572,7 @@ public final class LayerPathProcessor implements NodeProcessor {
         return foundDistance;
     }
 
-    private static double directionCost(EvaluationContext context, PathPosition current, PathPosition previous) {
+    private double directionCost(EvaluationContext context, PathPosition current, PathPosition previous) {
         PathPosition gpPos = context.getGrandparentPathPosition();
         PathPosition ggpPos = context.getGreatGrandparentPathPosition();
         double avgX = 0.0;
@@ -604,7 +610,12 @@ public final class LayerPathProcessor implements NodeProcessor {
         }
         double dot = (cdx / curLen) * averageDirection[0] + (cdz / curLen) * averageDirection[1];
         double angleDeg = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
-        return angleDeg < 5.0 ? -0.3 : (angleDeg / 90.0) * 0.8;
+        if (angleDeg < 5.0) {
+            return -directionStraightBonus;
+        }
+        double normalizedTurn = Math.clamp(angleDeg / 90.0, 0.0, 2.0);
+        double sharpTurn = angleDeg <= 90.0 ? 0.0 : (angleDeg - 90.0) / 90.0;
+        return normalizedTurn * normalizedTurn * directionTurnCost + sharpTurn * directionSharpTurnCost;
     }
 
     private static double[] normalizeWeightedDirection(double x, double z, double weight) {
