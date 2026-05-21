@@ -22,8 +22,6 @@
 package fr.riege.ebsl.common.feature.scripting.registry;
 
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
-import fr.riege.ebsl.common.feature.scripting.registry.EbslNodeRegistry;
-
 import java.util.Collection;
 
 public final class ScriptingNodeCatalog {

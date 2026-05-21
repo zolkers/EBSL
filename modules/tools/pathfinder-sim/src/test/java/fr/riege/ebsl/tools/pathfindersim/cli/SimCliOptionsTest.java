@@ -23,7 +23,10 @@ package fr.riege.ebsl.tools.pathfindersim.cli;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SimCliOptionsTest {
@@ -71,5 +74,53 @@ class SimCliOptionsTest {
         assertEquals(386.0, options.minecraftRoutes().getFirst().start().x());
         assertEquals(61, options.minecraftRoutes().getFirst().goalY());
         assertEquals("nearby_high", options.minecraftRoutes().get(1).id());
+    }
+
+    @Test
+    void parsesReplayAndModeOptions() {
+        SimCliOptions options = SimCliOptions.parse(new String[] {
+            "--scenario=Parkour",
+            "--max-ticks=42",
+            "--stuck-window=9",
+            "--stuck-epsilon=0.05",
+            "--json=out/replay.json",
+            "--replay-dir=out/replays",
+            "--no-replay-save",
+            "--headless",
+            "--ui"
+        });
+
+        assertEquals("parkour", options.scenarioFilter());
+        assertEquals(42, options.maxTicks());
+        assertEquals(9, options.stuckWindowTicks());
+        assertEquals(0.05, options.stuckEpsilon());
+        assertEquals(Path.of("out/replay.json"), options.jsonOutput());
+        assertEquals(Path.of("out/replays"), options.replayDirectory());
+        assertFalse(options.replaySaveEnabled());
+        assertFalse(options.headless());
+    }
+
+    @Test
+    void parsesMinecraftWorldOptions() {
+        SimCliOptions options = SimCliOptions.parse(new String[] {
+            "--mc-world=run/saves/demo",
+            "--mc-start=1.5,65.0,2.5",
+            "--mc-goal=10,66,12",
+            "--mc-radius=3",
+            "--mc-goal-search=48",
+            "--mc-stress-grid=4,2,5,3",
+            "--mc-diagnostics"
+        });
+
+        assertEquals(Path.of("run/saves/demo"), options.minecraftWorldImportOptions().worldDirectory());
+        assertEquals(1.5, options.minecraftWorldImportOptions().start().x());
+        assertEquals(66, options.minecraftWorldImportOptions().goalY());
+        assertEquals(3, options.minecraftWorldImportOptions().radiusChunks());
+        assertEquals(48, options.minecraftWorldImportOptions().goalSearchBlocks());
+        assertEquals(4, options.minecraftStressGrid().radiusX());
+        assertEquals(2, options.minecraftStressGrid().radiusY());
+        assertEquals(5, options.minecraftStressGrid().radiusZ());
+        assertEquals(3, options.minecraftStressGrid().step());
+        assertTrue(options.minecraftWorldImportOptions().diagnostics());
     }
 }

@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Locale;
 
 public record SimulationRegressionReport(List<SimulationRegressionIssue> issues) {
+    private static final String EXCEEDED = " exceeded ";
+
     public SimulationRegressionReport {
         issues = issues == null ? List.of() : List.copyOf(issues);
     }
@@ -85,19 +87,19 @@ public record SimulationRegressionReport(List<SimulationRegressionIssue> issues)
         if (stuckEvents > options.regressionMaxStuckEvents()) {
             issues.add(new SimulationRegressionIssue(
                 result.scenarioId(),
-                "stuck events " + stuckEvents + " exceeded " + options.regressionMaxStuckEvents()));
+                "stuck events " + stuckEvents + EXCEEDED + options.regressionMaxStuckEvents()));
         }
         int recoveryAttempts = result.metrics().recoveryAttempts();
         if (recoveryAttempts > options.regressionMaxRecoveryAttempts()) {
             issues.add(new SimulationRegressionIssue(
                 result.scenarioId(),
-                "recovery attempts " + recoveryAttempts + " exceeded " + options.regressionMaxRecoveryAttempts()));
+                "recovery attempts " + recoveryAttempts + EXCEEDED + options.regressionMaxRecoveryAttempts()));
         }
         int backwardTicks = result.metrics().backwardTicks();
         if (backwardTicks > options.regressionMaxBackwardTicks()) {
             issues.add(new SimulationRegressionIssue(
                 result.scenarioId(),
-                "backward ticks " + backwardTicks + " exceeded " + options.regressionMaxBackwardTicks()));
+                "backward ticks " + backwardTicks + EXCEEDED + options.regressionMaxBackwardTicks()));
         }
         double averageLateralError = result.metrics().averageLateralError();
         if (averageLateralError > options.regressionMaxAverageLateralError()) {

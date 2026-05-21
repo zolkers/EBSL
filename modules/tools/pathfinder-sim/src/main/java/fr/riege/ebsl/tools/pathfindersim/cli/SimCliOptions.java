@@ -127,6 +127,13 @@ public record SimCliOptions(
         }
 
         private boolean applyCore(String arg) {
+            return applyScenarioOption(arg)
+                || applyRegressionOption(arg)
+                || applyReplayOption(arg)
+                || applyModeOption(arg);
+        }
+
+        private boolean applyScenarioOption(String arg) {
             if (arg.startsWith("--scenario=")) {
                 scenario = value(arg);
                 return true;
@@ -151,6 +158,10 @@ public record SimCliOptions(
                 repeatRuns = parsePositiveInt(value(arg), DEFAULT_REPEAT_RUNS);
                 return true;
             }
+            return false;
+        }
+
+        private boolean applyRegressionOption(String arg) {
             if ("--fail-on-regression".equals(arg)) {
                 failOnRegression = true;
                 return true;
@@ -179,6 +190,10 @@ public record SimCliOptions(
                     DEFAULT_REGRESSION_MAX_AVERAGE_LATERAL_ERROR);
                 return true;
             }
+            return false;
+        }
+
+        private boolean applyReplayOption(String arg) {
             if (arg.startsWith("--replay-dir=")) {
                 replayDirectory = Path.of(value(arg));
                 return true;
@@ -187,6 +202,10 @@ public record SimCliOptions(
                 replaySaveEnabled = false;
                 return true;
             }
+            return false;
+        }
+
+        private boolean applyModeOption(String arg) {
             if ("--headless".equals(arg)) {
                 headless = true;
                 return true;

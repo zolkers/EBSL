@@ -51,7 +51,7 @@ public final class CommonSettingsStore {
         }
     }
 
-    public static void loadBotSettings(IStorageLayer storage) {
+    public static void loadBotSettings() {
         // Feature-owned module and task settings are loaded by the application adapter.
     }
 
@@ -125,15 +125,6 @@ public final class CommonSettingsStore {
         }
     }
 
-    private static <T extends Settingable> void loadGroupedSettings(
-        String json,
-        Iterable<T> entries,
-        Function<T, String> id,
-        Consumer<T> afterLoad
-    ) {
-        loadGroupedSettings(json, entries, id, Settingable::settings, afterLoad);
-    }
-
     private static <T> void loadGroupedSettings(
         String json,
         Iterable<T> entries,
@@ -157,10 +148,6 @@ public final class CommonSettingsStore {
             root.add(setting.id(), setting.toJson());
         }
         return root;
-    }
-
-    private static <T extends Settingable> JsonObject saveGroupedSettings(Iterable<T> entries, Function<T, String> id) {
-        return saveGroupedSettings(entries, id, Settingable::settings);
     }
 
     private static <T> JsonObject saveGroupedSettings(

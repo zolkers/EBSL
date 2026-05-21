@@ -21,7 +21,6 @@
 
 package fr.riege.ebsl.common.feature.scripting.registry;
 
-import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;
 
 import java.util.Collection;
