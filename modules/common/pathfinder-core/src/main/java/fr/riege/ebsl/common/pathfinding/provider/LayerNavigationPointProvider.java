@@ -78,7 +78,7 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
         boolean climbable = checker.isClimbable(x, y, z);
         boolean floor = lowPartialFeet || liquid || checker.hasWalkableTop(x, y - 1, z);
         boolean dangerous = checker.isDangerous(x, y, z) || checker.isDangerous(x, y + 1, z);
-        double floorLevel = floorLevel(x, y, z, liquid, lowPartialFeet);
+        double floorLevel = floorLevel(x, y, z, liquid, climbable, lowPartialFeet);
 
         NavigationPoint point = NavigationPoints.of(canPassFeet && canPassHead && !dangerous, floor, floorLevel, climbable, liquid);
         cachePoint(key, point);
@@ -97,8 +97,9 @@ final class LayerNavigationPointProvider implements WorldNavigationPointProvider
         }
     }
 
-    private double floorLevel(int x, int y, int z, boolean liquid, boolean lowPartialFeet) {
+    private double floorLevel(int x, int y, int z, boolean liquid, boolean climbable, boolean lowPartialFeet) {
         if (liquid) return y + 0.5;
+        if (climbable) return y;
         if (lowPartialFeet) return y + checker.getTopY(x, y, z);
         double belowTop = checker.getTopY(x, y - 1, z);
         return belowTop <= 0.0 ? y - 1.0 : y - 1.0 + belowTop;

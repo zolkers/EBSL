@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -87,6 +88,20 @@ class LayerNavigationPointProviderTest {
     }
 
     @Test
+    void usesClimbableCellAsFloorLevel() {
+        FakeWorld world = new FakeWorld();
+        world.solid(0, 63, 0);
+        world.climbable(0, 64, 0);
+        WorldNavigationPointProvider provider = NavigationPointProviders.worldBacked(new WalkabilityChecker(world));
+
+        NavigationPoint point = provider.getNavigationPoint(new PathPosition(0, 64, 0), null);
+
+        assertTrue(point.isTraversable());
+        assertTrue(point.isClimbable());
+        assertEquals(64.0, point.getFloorLevel(), 1.0e-6);
+    }
+
+    @Test
     void handlesConcurrentLookupsAndClears() {
         FakeWorld world = new FakeWorld();
         for (int x = -32; x <= 32; x++) {
@@ -126,6 +141,7 @@ class LayerNavigationPointProviderTest {
 
     private static final class FakeWorld implements IWorldLayer {
         private final Set<String> solids = new HashSet<>();
+        private final Set<String> climbables = new HashSet<>();
         private final Set<String> unloaded = new HashSet<>();
 
         void solid(int x, int y, int z) {
@@ -136,12 +152,16 @@ class LayerNavigationPointProviderTest {
             unloaded.add(key(x, y, z));
         }
 
+        void climbable(int x, int y, int z) {
+            climbables.add(key(x, y, z));
+        }
+
         @Override public BlockId getBlock(int x, int y, int z) {
             return isSolid(x, y, z) ? new BlockId("test", "solid") : BlockId.AIR;
         }
 
         @Override public boolean isAir(int x, int y, int z) {
-            return !isSolid(x, y, z);
+            return !isSolid(x, y, z) && !isClimbable(x, y, z);
         }
 
         @Override public boolean isSolid(int x, int y, int z) {
@@ -154,6 +174,10 @@ class LayerNavigationPointProviderTest {
 
         @Override public boolean isLava(int x, int y, int z) {
             return false;
+        }
+
+        @Override public boolean isClimbable(int x, int y, int z) {
+            return climbables.contains(key(x, y, z));
         }
 
         @Override public boolean isLoaded(int x, int y, int z) {

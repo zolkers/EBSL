@@ -106,7 +106,7 @@ public final class SyntheticScenarioCatalog {
             "two gradual one-block ascents",
             world,
             new Vec3d(0.5, PLAYER_Y, 0.5),
-            9,
+            7,
             PLAYER_Y + 2,
             0);
     }
@@ -115,14 +115,13 @@ public final class SyntheticScenarioCatalog {
         HeadlessWorldLayer world = flatWorld();
         HeadlessBlockState ladder = HeadlessBlockState.climbable(BlockId.of("minecraft:ladder"));
         world.fill(4, FLOOR_Y + 1, 0, 4, FLOOR_Y + 5, 0, ladder);
-        world.set(4, FLOOR_Y + 5, 0, HeadlessBlockState.AIR);
-        world.fill(3, FLOOR_Y + 4, -1, 5, FLOOR_Y + 4, 1, HeadlessBlockState.STONE);
+        world.fill(5, FLOOR_Y + 5, -1, 6, FLOOR_Y + 5, 1, HeadlessBlockState.STONE);
         return scenario(
             "ladder_column",
             "vertical climb to a small upper platform",
             world,
             new Vec3d(4.5, PLAYER_Y, 0.5),
-            4,
+            5,
             PLAYER_Y + 5,
             0);
     }
