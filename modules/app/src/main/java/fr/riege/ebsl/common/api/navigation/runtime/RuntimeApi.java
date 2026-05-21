@@ -24,12 +24,15 @@ package fr.riege.ebsl.common.api.navigation.runtime;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.math.Vec3d;
-import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationFactory;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationActor;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationMotor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessActor;
+import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationAgent;
+import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationFactory;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessWorldLayer;
@@ -66,9 +69,14 @@ public final class RuntimeApi {
         return new HeadlessNavigationService(world, actor);
     }
 
+    @EbslApiOperation("Create a complete headless navigation agent with isolated planner, motor and service.")
+    public HeadlessNavigationAgent headlessNavigationAgent(HeadlessWorldLayer world, HeadlessActor actor) {
+        return HeadlessNavigationFactory.create(world, actor);
+    }
+
     @EbslApiOperation("Create a server/entity navigation service over custom adapters.")
     public EntityNavigationService entityNavigation(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
-        return new EntityNavigationService(new PathPlanningService(world), actor, motor);
+        return entityNavigationAgent(world, actor, motor).navigation();
     }
 
     @EbslApiOperation("Create a server/entity navigation service with follower options.")
@@ -76,7 +84,18 @@ public final class RuntimeApi {
                                                     NavigationActor actor,
                                                     NavigationMotor motor,
                                                     EntityFollowerOptions options) {
-        return new EntityNavigationService(new PathPlanningService(world), actor, motor, options, Runnable::run);
+        return EntityNavigationFactory.create(
+            world,
+            actor,
+            motor,
+            options,
+            null,
+            Runnable::run).navigation();
+    }
+
+    @EbslApiOperation("Create a server/entity navigation agent over custom adapters.")
+    public EntityNavigationAgent entityNavigationAgent(IWorldLayer world, NavigationActor actor, NavigationMotor motor) {
+        return EntityNavigationFactory.create(world, actor, motor);
     }
 
     @EbslApiOperation("Create a server-only navigation runtime without terminal, rendering or client input.")

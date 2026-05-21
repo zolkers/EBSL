@@ -24,6 +24,8 @@ package fr.riege.ebsl.common.navigation.runtime.server;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityFollowerOptions;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationAgent;
+import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationFactory;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationActor;
 import fr.riege.ebsl.common.navigation.runtime.entity.NavigationMotor;
@@ -72,13 +74,10 @@ public final class ServerNavigationRuntime {
     }
 
     public EntityNavigationService entity(NavigationActor actor, NavigationMotor motor) {
-        EntityNavigationService service = new EntityNavigationService(
-            new PathPlanningService(world),
-            actor,
-            motor,
-            followerOptions,
-            callbackThread);
-        service.setPlannerOptions(plannerOptions);
-        return service;
+        return entityAgent(actor, motor).navigation();
+    }
+
+    public EntityNavigationAgent entityAgent(NavigationActor actor, NavigationMotor motor) {
+        return EntityNavigationFactory.create(world, actor, motor, followerOptions, plannerOptions, callbackThread);
     }
 }

@@ -34,6 +34,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeadlessNavigationApiTest {
@@ -68,6 +70,22 @@ class HeadlessNavigationApiTest {
 
         assertTrue(service.isNavigating(), "service should be executing after a usable path is found");
         assertTrue(motor.lastIntent().velocity().x() > 0.0, "server motor should receive a positive X velocity");
+    }
+
+    @Test
+    void headlessNavigationFactoryCreatesOneIsolatedAgentPerEntity() {
+        HeadlessWorldLayer world = HeadlessWorldLayer.flat(63);
+        HeadlessActor firstActor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        HeadlessActor secondActor = new HeadlessActor(new Vec3d(2.5, 64.0, 0.5));
+
+        HeadlessNavigationAgent firstAgent = HeadlessNavigationFactory.create(world, firstActor);
+        HeadlessNavigationAgent secondAgent = HeadlessNavigationFactory.create(world, secondActor);
+
+        assertSame(firstActor, firstAgent.actor());
+        assertSame(secondActor, secondAgent.actor());
+        assertNotSame(firstAgent.planner(), secondAgent.planner());
+        assertNotSame(firstAgent.motor(), secondAgent.motor());
+        assertNotSame(firstAgent.navigation(), secondAgent.navigation());
     }
 
     @Test

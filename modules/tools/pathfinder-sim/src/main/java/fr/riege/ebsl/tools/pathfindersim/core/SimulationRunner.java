@@ -24,11 +24,11 @@ package fr.riege.ebsl.tools.pathfindersim.core;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.navigation.PathPlan;
-import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.navigation.runtime.entity.EntityNavigationService;
+import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationAgent;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessBlockState;
 import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessActor;
-import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessMotor;
+import fr.riege.ebsl.common.navigation.runtime.headless.HeadlessNavigationFactory;
 import fr.riege.ebsl.tools.pathfindersim.cli.SimCliOptions;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlock;
 import fr.riege.ebsl.tools.pathfindersim.replay.ReplayBlockKind;
@@ -44,15 +44,12 @@ public final class SimulationRunner {
     public SimulationResult run(SimulationScenario scenario, SimCliOptions options) {
         long startNanos = System.nanoTime();
         HeadlessActor actor = new HeadlessActor(scenario.start());
-        HeadlessMotor motor = new HeadlessMotor(actor).world(scenario.world());
-        PathPlanningService planner = new PathPlanningService(scenario.world());
-        EntityNavigationService service = new EntityNavigationService(
-            planner,
+        HeadlessNavigationAgent agent = HeadlessNavigationFactory.create(
+            scenario.world(),
             actor,
-            motor,
             scenario.followerOptions(),
-            Runnable::run);
-        service.setPlannerOptions(scenario.plannerOptions());
+            scenario.plannerOptions());
+        EntityNavigationService service = agent.navigation();
         service.startBlockGoal(scenario.goalX(), scenario.goalY(), scenario.goalZ());
         PathPlan plan = service.lastPlan();
         List<SimulationTick> samples = new ArrayList<>();
@@ -65,7 +62,7 @@ public final class SimulationRunner {
             ticks++;
             double distance = distanceToGoal(actor.position(), scenario);
             boolean stuck = stuckTracker.update(distance);
-            samples.add(SimulationTick.capture(ticks, actor, motor, service, distance, stuck));
+            samples.add(SimulationTick.capture(ticks, actor, agent.motor(), service, distance, stuck));
         }
 
         NavigationStatus status = service.pathStatus();
