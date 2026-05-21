@@ -35,17 +35,31 @@ import fr.riege.ebsl.common.platform.render.RenderingSystem;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.platform.service.UiService;
+import fr.riege.ebsl.common.plugin.EbslExtension;
+import fr.riege.ebsl.common.plugin.EbslExtensionContext;
+import fr.riege.ebsl.common.plugin.EbslExtensionRegistry;
+import fr.riege.ebsl.common.plugin.EbslExtensions;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.StringJoiner;
 
 public class EbslCore {
     private final EbslPlatform platform;
+    private final EbslExtensionRegistry extensions;
     private long settingsSaveTick;
 
     public EbslCore(EbslPlatform platform, NavigationService navigationService, UiService uiService) {
+        this(platform, navigationService, uiService, List.of());
+    }
+
+    public EbslCore(EbslPlatform platform, NavigationService navigationService,
+                    UiService uiService, Collection<EbslExtension> runtimeExtensions) {
         this.platform = platform;
+        extensions = new EbslExtensionRegistry();
         EbslServices.installPlatform(platform);
         EbslServices.install(navigationService, uiService);
+        EbslExtensions.bootstrap(new EbslExtensionContext(platform, extensions), runtimeExtensions);
         CommonEventTypes.bootstrap();
         PathfindingDiagnostics.setTelemetrySink(AnalyticsEventLog::recordAnalytics);
         CommonSettingsStore.load(platform.storage());
@@ -92,6 +106,10 @@ public class EbslCore {
 
     public EbslPlatform platform() {
         return platform;
+    }
+
+    public EbslExtensionRegistry extensions() {
+        return extensions;
     }
 
     private static void registerCommands(EbslPlatform platform) {

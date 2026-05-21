@@ -484,6 +484,44 @@ tasks.register('architectureBoundaryVerification') {
     }
 }
 
+tasks.register('minecraftVersionShapeVerification') {
+    group = 'verification'
+    description = 'Fails when Minecraft version modules do not follow the shared common/fabric shape.'
+
+    inputs.dir(rootProject.file('modules/mc'))
+    inputs.file(rootProject.file('settings.gradle'))
+
+    doLast {
+        def violations = []
+        def settingsText = rootProject.file('settings.gradle').getText('UTF-8')
+        def mcRoot = rootProject.file('modules/mc')
+        mcRoot.listFiles()
+            ?.findAll { it.isDirectory() && it.name != 'build' }
+            ?.each { versionDir ->
+                def versionName = versionDir.name
+                ['common', 'fabric'].each { child ->
+                    def childDir = new File(versionDir, child)
+                    def buildFile = new File(childDir, 'build.gradle')
+                    if (!buildFile.exists()) {
+                        violations << "modules/mc/${versionName}/${child}/build.gradle is required."
+                        return
+                    }
+                    def buildText = buildFile.getText('UTF-8')
+                    if (!buildText.contains("apply from: rootProject.file('gradle/mc-version.gradle')")) {
+                        violations << "modules/mc/${versionName}/${child}/build.gradle must apply gradle/mc-version.gradle."
+                    }
+                    if (!settingsText.contains("include('mc:${versionName}:${child}')")) {
+                        violations << "settings.gradle must include mc:${versionName}:${child}."
+                    }
+                }
+            }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException('Minecraft version shape violations:\n' + violations.join('\n'))
+        }
+    }
+}
+
 tasks.register('localQuality') {
     group = 'verification'
     description = 'Runs local quality gates: tests, aggregate coverage, and source hygiene checks.'
@@ -491,6 +529,7 @@ tasks.register('localQuality') {
     dependsOn tasks.named('hardcodedQualifierVerification')
     dependsOn tasks.named('javaAlignmentWhitespaceVerification')
     dependsOn tasks.named('architectureBoundaryVerification')
+    dependsOn tasks.named('minecraftVersionShapeVerification')
     dependsOn tasks.named('jacocoCoverageVerification')
     dependsOn tasks.named('sonarCoverageVerification')
 }
@@ -561,6 +600,16 @@ tasks.register('buildMod121Fabric') {
     group = 'ebsl'
     description = 'Build Minecraft 1.21.11 (Fabric) mod jar'
     dependsOn ':mc:1-21-11:fabric:build'
+}
+
+tasks.register('buildMinecraftMods') {
+    group = 'ebsl'
+    description = 'Build all configured Minecraft loader artifacts.'
+    dependsOn providers.provider {
+        subprojects
+            .findAll { it.path.startsWith(':mc:') && it.path.endsWith(':fabric') }
+            .collect { it.tasks.named('build') }
+    }
 }
 
 sonar {

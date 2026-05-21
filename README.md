@@ -41,14 +41,14 @@ On Windows:
 
 ```powershell
 .\gradlew.bat check
-.\gradlew.bat buildMod121Fabric
+.\gradlew.bat buildMinecraftMods
 ```
 
 On macOS/Linux:
 
 ```bash
 ./gradlew check
-./gradlew buildMod121Fabric
+./gradlew buildMinecraftMods
 ```
 
 Build artifacts are written under `build/`.

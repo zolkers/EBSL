@@ -39,12 +39,12 @@ jobs:
       - name: Check
         run: ./gradlew check
 
-      - name: Build Fabric mod
-        run: ./gradlew buildMod121Fabric
+      - name: Build Minecraft mods
+        run: ./gradlew buildMinecraftMods
 
       - name: Capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ebsl-fabric-artifacts
-          path: build/mc/1-21-11/fabric/libs/*.jar
+          path: build/mc/**/fabric/libs/*.jar
           if-no-files-found: error

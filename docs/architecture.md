@@ -10,6 +10,7 @@ EBSL is organized around platform-independent contracts first, then Minecraft/Fa
 - `modules/common/*`: reusable Java contracts and implementations with no direct Fabric dependency.
 - `modules/common/api`: shared API surfaces for navigation, runtime, pathfinding, rendering, threading, events, analytics, and common settings.
 - `modules/common/settings`: shared persistence for common pathfinder and scripting editor settings.
+- `modules/common/plugin-api`: extension contracts for runtime features, UI panels, scripting, entity brains, and regression suites.
 - `modules/common/analytics`: reusable analytics events and snapshots.
 - `modules/common/automation`: bot task and aiming primitives that are not scripting-language concerns.
 - `modules/common/pathfinder-core`: path search, movement classification, quality scoring, path processing, and diagnostics.
@@ -33,6 +34,25 @@ Minecraft version modules follow the same shape so new targets can be added with
   both, but shared Minecraft code compiles only against the common runtime list.
 - `localQuality` runs `architectureBoundaryVerification`, which fails if `mc/<version>/common` starts depending on app
   classes again or if common modules import Minecraft/Fabric classes.
+- `localQuality` also runs `minecraftVersionShapeVerification`, so every Minecraft target keeps the same `common` +
+  `fabric` shape and applies the shared version convention.
+- CI calls `buildMinecraftMods`, which builds every configured `mc:*:fabric` module and uploads jars from
+  `build/mc/**/fabric/libs`.
+
+## Extension Platform
+
+EBSL exposes a small platform-level extension API in `common:plugin-api`. It is intentionally free of ImGui,
+Minecraft, and concrete app registries. Extensions declare a descriptor, contribute into typed extension points, and
+can be ordered deterministically. The first stable extension points are:
+
+- `ebsl.runtime`: boot-time runtime hooks.
+- `ebsl.ui`: UI panel metadata for current and future frontends.
+- `ebsl.scripting`: scripting/node registry contributions.
+- `ebsl.entity_brain`: entity brain programs and graph templates.
+- `ebsl.pathfinder_regression`: routes and suites that must stay stable across pathfinder changes.
+
+`EbslCore` already accepts runtime extensions, while existing app-owned registries continue to run as the compatibility
+layer. New features should prefer extension contributions first, then adapt into legacy registries only where needed.
 
 ## Pathfinder Contracts
 

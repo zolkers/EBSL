@@ -99,19 +99,19 @@ For mobile/LAN testing, keep the default bind address `0.0.0.0`, then open the m
 
 ## Minecraft Build
 
-Build the Fabric 1.21.11 jar:
+Build every configured Minecraft Fabric jar:
 
 ```powershell
-.\gradlew.bat buildMod121Fabric
+.\gradlew.bat buildMinecraftMods
 ```
 
-Artifacts are written under:
+Artifacts are written under each versioned Fabric module:
 
 ```text
-build/mc/1-21-11/fabric/libs
+build/mc/<minecraft-version>/fabric/libs
 ```
 
-That is also the GitHub Actions artifact path.
+GitHub Actions uploads all matching jars from `build/mc/**/fabric/libs`.
 
 ## Quality
 

@@ -5,7 +5,7 @@
 ## Verification
 
 - [ ] `./gradlew check`
-- [ ] `./gradlew buildMod121Fabric`
+- [ ] `./gradlew buildMinecraftMods`
 - [ ] SonarQube checked when the change is large or architectural
 
 ## Risk

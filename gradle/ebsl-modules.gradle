@@ -5,6 +5,7 @@ ext {
         ':common:world-api',
         ':common:render-api',
         ':common:platform-api',
+        ':common:plugin-api',
         ':common:terminal',
         ':common:automation',
         ':common:analytics',
