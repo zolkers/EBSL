@@ -8,7 +8,8 @@ ext {
         ':common:terminal',
         ':common:terminal-navigation',
         ':common:automation',
-        ':common:analytics'
+        ':common:analytics',
+        ':common:api'
     ]
 
     ebslPathfinderModules = [

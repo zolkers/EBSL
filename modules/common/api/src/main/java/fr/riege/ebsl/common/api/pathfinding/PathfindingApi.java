@@ -21,7 +21,6 @@
 
 package fr.riege.ebsl.common.api.pathfinding;
 
-import fr.riege.ebsl.common.api.EbslApi;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.api.navigation.NavigationSnapshot;
@@ -29,6 +28,8 @@ import fr.riege.ebsl.common.navigation.PathPlan;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
 import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.platform.service.EbslServices;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 import fr.riege.ebsl.common.world.layer.IWorldLayer;
 
 import java.util.concurrent.CompletionStage;
@@ -37,7 +38,7 @@ import java.util.concurrent.CompletionStage;
 public final class PathfindingApi {
     @EbslApiOperation("Read a pathfinding snapshot from the active navigation service.")
     public PathfindingSnapshot snapshot() {
-        NavigationSnapshot snapshot = EbslApi.navigation().snapshot();
+        NavigationSnapshot snapshot = NavigationSnapshot.capture(EbslServices.navigation());
         return new PathfindingSnapshot(
             snapshot.status(),
             snapshot.navigating(),
@@ -58,6 +59,7 @@ public final class PathfindingApi {
 
     @EbslApiOperation("Stop active navigation.")
     public void stop() {
-        EbslApi.navigation().stop();
+        NavigationService navigation = EbslServices.navigation();
+        navigation.stop(true);
     }
 }

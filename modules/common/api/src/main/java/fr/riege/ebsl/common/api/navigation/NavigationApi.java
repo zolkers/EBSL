@@ -38,13 +38,7 @@ public final class NavigationApi {
 
     @EbslApiOperation("Read the current navigation snapshot.")
     public NavigationSnapshot snapshot() {
-        NavigationService nav = service();
-        return new NavigationSnapshot(
-            nav.pathStatus(),
-            nav.isNavigating(),
-            nav.currentMoveType(),
-            nav.isWalkSneakLatched(),
-            nav.lastPathNodeCount());
+        return NavigationSnapshot.capture(service());
     }
 
     @EbslApiOperation("Start navigation to a block goal.")

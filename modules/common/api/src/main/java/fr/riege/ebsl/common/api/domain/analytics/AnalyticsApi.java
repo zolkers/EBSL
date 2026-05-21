@@ -26,7 +26,6 @@ import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEvent;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsSnapshot;
-import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 
 import java.util.List;
@@ -54,11 +53,7 @@ public final class AnalyticsApi {
     }
 
     @EbslApiOperation("Capture a compact analytics snapshot.")
-    public AnalyticsSnapshot snapshot(PathfinderModule selectedModule) {
-        return AnalyticsSnapshot.capture(EbslServices.navigation(), selectedModuleName(selectedModule));
-    }
-
-    private static String selectedModuleName(PathfinderModule selectedModule) {
-        return selectedModule != null ? selectedModule.displayName() : "none";
+    public AnalyticsSnapshot snapshot(String selectedModule) {
+        return AnalyticsSnapshot.capture(EbslServices.navigation(), selectedModule);
     }
 }

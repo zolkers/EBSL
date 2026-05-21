@@ -1,0 +1,11 @@
+apply from: rootProject.file('gradle/java-module.gradle')
+
+dependencies {
+    api project(':common:analytics')
+    api project(':common:base')
+    api project(':common:events')
+    api project(':common:navigation')
+    api project(':common:platform-api')
+    api project(':common:render-api')
+    api project(':common:world-api')
+}

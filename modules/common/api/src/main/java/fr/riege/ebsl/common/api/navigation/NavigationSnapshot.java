@@ -23,6 +23,7 @@ package fr.riege.ebsl.common.api.navigation;
 
 import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.pathfinding.Node;
+import fr.riege.ebsl.common.platform.service.NavigationService;
 
 public record NavigationSnapshot(
     NavigationStatus status,
@@ -31,6 +32,15 @@ public record NavigationSnapshot(
     boolean walkSneakLatched,
     int pathNodeCount
 ) {
+    public static NavigationSnapshot capture(NavigationService nav) {
+        return new NavigationSnapshot(
+            nav.pathStatus(),
+            nav.isNavigating(),
+            nav.currentMoveType(),
+            nav.isWalkSneakLatched(),
+            nav.lastPathNodeCount());
+    }
+
     public String navigationStateLabel() {
         return status == null ? "unknown" : status.name().toLowerCase();
     }
