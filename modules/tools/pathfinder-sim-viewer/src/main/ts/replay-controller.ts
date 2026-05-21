@@ -354,6 +354,12 @@ export class ReplayController {
       ? "-"
       : tick.pathTelemetry.speedAlongPath.toFixed(3);
     this.elements.metricStuck.textContent = tick === undefined ? "-" : String(tick.stuck);
+    this.elements.metricRecovery.textContent = this.state.result === null
+      ? "-"
+      : String(this.state.result.metrics.recoveryAttempts ?? 0);
+    this.elements.metricBacktrack.textContent = this.state.result === null
+      ? "-"
+      : String(this.state.result.metrics.backwardTicks ?? 0);
     this.elements.metricNodes.textContent = this.state.result === null
       ? "-"
       : `${this.state.result.navigationNodes} / ${this.state.result.rawNodes}`;

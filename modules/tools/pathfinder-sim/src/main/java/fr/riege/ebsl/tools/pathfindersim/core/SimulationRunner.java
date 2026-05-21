@@ -62,18 +62,23 @@ public final class SimulationRunner {
             actor.tick(scenario.world());
             ticks++;
             double distance = distanceToGoal(actor.position(), scenario);
-            boolean stuck = stuckTracker.update(distance);
+            SimulationTick sample = SimulationTick.capture(ticks, actor, agent.motor(), service, distance, false);
+            boolean stuck = stuckTracker.update(distance, pathProgress(sample));
             if (stuckTracker.consumeStuckEvent()) {
                 recoveryAttempts++;
                 service.startBlockGoal(scenario.goalX(), scenario.goalY(), scenario.goalZ());
                 stuckTracker.noteRecoveryAttempt();
             }
-            samples.add(SimulationTick.capture(ticks, actor, agent.motor(), service, distance, stuck));
+            samples.add(sample.withStuck(stuck));
         }
 
         NavigationStatus status = service.pathStatus();
         boolean reached = status == NavigationStatus.FOUND && distanceToGoal(actor.position(), scenario) <= 1.25;
-        SimMetrics metrics = stuckTracker.metrics(ticks, recoveryAttempts, distanceToGoal(actor.position(), scenario));
+        SimMetrics metrics = stuckTracker.metrics(
+            ticks,
+            recoveryAttempts,
+            replayAnalytics(samples),
+            distanceToGoal(actor.position(), scenario));
         long elapsedNanos = System.nanoTime() - startNanos;
         return new SimulationResult(
             scenario.id(),
@@ -99,6 +104,38 @@ public final class SimulationRunner {
         double dy = scenario.goalY() - position.y();
         double dz = scenario.goalZ() + 0.5 - position.z();
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    private static StuckTracker.ReplayAnalytics replayAnalytics(List<SimulationTick> samples) {
+        if (samples.isEmpty()) {
+            return new StuckTracker.ReplayAnalytics(0, 0.0, 0.0, 0.0, 0.0);
+        }
+        int backwardTicks = 0;
+        double lateralTotal = 0.0;
+        double maxLateral = 0.0;
+        double speedAlongTotal = 0.0;
+        double maxSpeedAcross = 0.0;
+        for (SimulationTick sample : samples) {
+            var telemetry = sample.pathTelemetry();
+            lateralTotal += telemetry.lateralError();
+            maxLateral = Math.max(maxLateral, telemetry.lateralError());
+            speedAlongTotal += telemetry.speedAlongPath();
+            maxSpeedAcross = Math.max(maxSpeedAcross, Math.abs(telemetry.speedAcrossPath()));
+            if (telemetry.speedAlongPath() < -0.02) {
+                backwardTicks++;
+            }
+        }
+        return new StuckTracker.ReplayAnalytics(
+            backwardTicks,
+            lateralTotal / samples.size(),
+            maxLateral,
+            speedAlongTotal / samples.size(),
+            maxSpeedAcross);
+    }
+
+    private static double pathProgress(SimulationTick sample) {
+        var telemetry = sample.pathTelemetry();
+        return telemetry.nearestSegment() + telemetry.segmentProgress();
     }
 
     private static List<ReplayBlock> terrainSnapshot(SimulationScenario scenario, List<SimulationTick> samples) {

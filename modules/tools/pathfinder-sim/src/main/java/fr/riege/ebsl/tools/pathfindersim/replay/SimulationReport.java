@@ -45,6 +45,8 @@ public final class SimulationReport {
                 .append(" stuckTicks=").append(metrics.stuckTicks())
                 .append(" stuckEvents=").append(metrics.stuckEvents())
                 .append(" recovery=").append(metrics.recoveryAttempts())
+                .append(" lateralAvg=").append(format(metrics.averageLateralError()))
+                .append(" backwardTicks=").append(metrics.backwardTicks())
                 .append(" finalDistance=").append(format(metrics.finalDistance()))
                 .append(" elapsedMs=").append(format(result.elapsedNanos() / 1_000_000.0))
                 .append('\n');
@@ -83,6 +85,11 @@ public final class SimulationReport {
             .append("\"stuckEvents\":").append(metrics.stuckEvents()).append(',')
             .append("\"longestStuckStreak\":").append(metrics.longestStuckStreak()).append(',')
             .append("\"recoveryAttempts\":").append(metrics.recoveryAttempts()).append(',')
+            .append("\"backwardTicks\":").append(metrics.backwardTicks()).append(',')
+            .append("\"averageLateralError\":").append(format(metrics.averageLateralError())).append(',')
+            .append("\"maxLateralError\":").append(format(metrics.maxLateralError())).append(',')
+            .append("\"averageSpeedAlongPath\":").append(format(metrics.averageSpeedAlongPath())).append(',')
+            .append("\"maxSpeedAcrossPath\":").append(format(metrics.maxSpeedAcrossPath())).append(',')
             .append("\"bestDistance\":").append(format(metrics.bestDistance())).append(',')
             .append("\"finalDistance\":").append(format(metrics.finalDistance()))
             .append("},\"terrain\":[");

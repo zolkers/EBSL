@@ -22,6 +22,11 @@ export interface ReplayMetrics {
   readonly stuckEvents: number;
   readonly longestStuckStreak: number;
   readonly recoveryAttempts?: number;
+  readonly backwardTicks?: number;
+  readonly averageLateralError?: number;
+  readonly maxLateralError?: number;
+  readonly averageSpeedAlongPath?: number;
+  readonly maxSpeedAcrossPath?: number;
   readonly bestDistance: number;
   readonly finalDistance: number;
 }

@@ -68,7 +68,8 @@ class SimulationRegressionReportTest {
             10,
             12,
             true,
-            new SimMetrics(20, stuckEvents, stuckEvents, stuckEvents, 0, finalDistance, finalDistance),
+            new SimMetrics(20, stuckEvents, stuckEvents, stuckEvents, 0, 0, 0.0, 0.0, 0.0, 0.0,
+                finalDistance, finalDistance),
             List.of(),
             List.of());
     }

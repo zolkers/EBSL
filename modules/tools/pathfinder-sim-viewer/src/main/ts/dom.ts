@@ -17,6 +17,8 @@ export interface ViewerElements {
   readonly metricLateral: HTMLElement;
   readonly metricSpeed: HTMLElement;
   readonly metricStuck: HTMLElement;
+  readonly metricRecovery: HTMLElement;
+  readonly metricBacktrack: HTMLElement;
   readonly metricNodes: HTMLElement;
   readonly metricDuration: HTMLElement;
   readonly serverStatus: HTMLElement;
@@ -62,6 +64,8 @@ export function queryViewerElements(): ViewerElements {
     metricLateral: query("#metric-lateral", HTMLElement),
     metricSpeed: query("#metric-speed", HTMLElement),
     metricStuck: query("#metric-stuck", HTMLElement),
+    metricRecovery: query("#metric-recovery", HTMLElement),
+    metricBacktrack: query("#metric-backtrack", HTMLElement),
     metricNodes: query("#metric-nodes", HTMLElement),
     metricDuration: query("#metric-duration", HTMLElement),
     serverStatus: query("#server-status", HTMLElement),

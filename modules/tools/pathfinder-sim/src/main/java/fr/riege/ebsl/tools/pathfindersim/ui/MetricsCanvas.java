@@ -172,12 +172,15 @@ final class MetricsCanvas extends JPanel {
         g.setColor(TEXT);
         g.setFont(g.getFont().deriveFont(Font.PLAIN, 13f));
         g.drawString(String.format(Locale.ROOT,
-            "ticks=%d  nodes=%d/%d  stuck=%d ticks  best=%.2f final=%.2f",
+            "ticks=%d  nodes=%d/%d  stuck=%d  recovery=%d  lateral=%.2f/%.2f  backward=%d  final=%.2f",
             result.ticks(),
             result.navigationNodes(),
             result.rawNodes(),
             result.metrics().stuckTicks(),
-            result.metrics().bestDistance(),
+            result.metrics().recoveryAttempts(),
+            result.metrics().averageLateralError(),
+            result.metrics().maxLateralError(),
+            result.metrics().backwardTicks(),
             result.metrics().finalDistance()), PAD, getHeight() - 20);
     }
 

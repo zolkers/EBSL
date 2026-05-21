@@ -64,4 +64,19 @@ public record SimulationTick(
                 actor.velocity(),
                 plan == null ? List.of() : plan.navigationNodes()));
     }
+
+    public SimulationTick withStuck(boolean value) {
+        return new SimulationTick(
+            tick,
+            position,
+            velocity,
+            status,
+            moveType,
+            distanceToGoal,
+            value,
+            jump,
+            sprint,
+            sneak,
+            pathTelemetry);
+    }
 }

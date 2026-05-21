@@ -28,6 +28,7 @@ final class StuckTracker {
     private final double epsilon;
 
     private double bestDistance = Double.POSITIVE_INFINITY;
+    private double bestPathProgress = Double.NEGATIVE_INFINITY;
     private int stagnantTicks;
     private int stuckTicks;
     private int stuckEvents;
@@ -40,7 +41,14 @@ final class StuckTracker {
         this.epsilon = Math.max(0.0, epsilon);
     }
 
-    boolean update(double distanceToGoal) {
+    boolean update(double distanceToGoal, double pathProgress) {
+        if (pathProgress > bestPathProgress + epsilon) {
+            bestPathProgress = pathProgress;
+            bestDistance = Math.min(bestDistance, distanceToGoal);
+            stagnantTicks = 0;
+            currentlyStuck = false;
+            return false;
+        }
         if (distanceToGoal < bestDistance - epsilon) {
             bestDistance = distanceToGoal;
             stagnantTicks = 0;
@@ -72,16 +80,33 @@ final class StuckTracker {
         stagnantTicks = 0;
         currentlyStuck = false;
         stuckEventPending = false;
+        bestPathProgress = Double.NEGATIVE_INFINITY;
     }
 
-    SimMetrics metrics(int ticks, int recoveryAttempts, double finalDistance) {
+    SimMetrics metrics(int ticks, int recoveryAttempts, ReplayAnalytics analytics, double finalDistance) {
+        ReplayAnalytics effectiveAnalytics = analytics == null ? ReplayAnalytics.EMPTY : analytics;
         return new SimMetrics(
             ticks,
             stuckTicks,
             stuckEvents,
             longestStuckStreak,
             recoveryAttempts,
+            effectiveAnalytics.backwardTicks(),
+            effectiveAnalytics.averageLateralError(),
+            effectiveAnalytics.maxLateralError(),
+            effectiveAnalytics.averageSpeedAlongPath(),
+            effectiveAnalytics.maxSpeedAcrossPath(),
             bestDistance,
             finalDistance);
+    }
+
+    record ReplayAnalytics(
+        int backwardTicks,
+        double averageLateralError,
+        double maxLateralError,
+        double averageSpeedAlongPath,
+        double maxSpeedAcrossPath
+    ) {
+        private static final ReplayAnalytics EMPTY = new ReplayAnalytics(0, 0.0, 0.0, 0.0, 0.0);
     }
 }
