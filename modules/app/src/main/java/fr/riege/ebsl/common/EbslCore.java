@@ -25,6 +25,7 @@ import fr.riege.ebsl.common.core.event.CommonEventTypes;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.settings.FeatureSettingsStore;
 import fr.riege.ebsl.common.feature.terminal.*;
 import fr.riege.ebsl.common.feature.ui.CommonImGuiOverlay;
 import fr.riege.ebsl.common.pathfinding.debug.PathVisualizer;
@@ -51,7 +52,7 @@ public class EbslCore {
         TerminalCommands.bootstrap();
         FeatureRegistries.tasks().bootstrap();
         FeatureRegistries.modules().bootstrap(platform.events());
-        CommonSettingsStore.loadBotSettings(platform.storage());
+        FeatureSettingsStore.load(platform.storage());
         registerCommands(platform);
         platform.input().registerUnfocusKeybind(() -> {
             platform.input().releaseMouse();
@@ -126,5 +127,6 @@ public class EbslCore {
         }
         settingsSaveTick = tick;
         CommonSettingsStore.save(platform.storage());
+        FeatureSettingsStore.save(platform.storage());
     }
 }

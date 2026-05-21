@@ -1,0 +1,7 @@
+apply from: rootProject.file('gradle/java-module.gradle')
+
+dependencies {
+    api project(':common:pathfinder-core')
+    api project(':common:platform-api')
+    api project(':common:scripting')
+}

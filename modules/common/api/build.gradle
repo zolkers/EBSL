@@ -7,6 +7,7 @@ dependencies {
     api project(':common:navigation')
     api project(':common:platform-api')
     api project(':common:render-api')
+    api project(':common:settings')
     api project(':common:world-api')
 }
 
@@ -15,7 +16,6 @@ tasks.named('compileJava') {
         def forbiddenImports = [
             'fr.riege.ebsl.common.feature.module.',
             'fr.riege.ebsl.common.feature.registry.',
-            'fr.riege.ebsl.common.core.settings.CommonSettingsStore',
             'net.minecraft.',
             'net.fabricmc.'
         ]

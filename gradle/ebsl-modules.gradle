@@ -9,6 +9,7 @@ ext {
         ':common:terminal-navigation',
         ':common:automation',
         ':common:analytics',
+        ':common:settings',
         ':common:api'
     ]
 

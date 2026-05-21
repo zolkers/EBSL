@@ -23,10 +23,10 @@ package fr.riege.ebsl.common.api.feature.modules;
 
 import fr.riege.ebsl.common.api.core.annotation.EbslApiOperation;
 import fr.riege.ebsl.common.api.core.annotation.EbslApiSurface;
-import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.core.settings.Setting;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.settings.FeatureSettingsStore;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 
 import java.util.Collection;
@@ -45,7 +45,7 @@ public final class ModulesApi {
 
     @EbslApiOperation("Persist module settings through the installed storage layer.")
     public void saveSettings() {
-        CommonSettingsStore.save(EbslServices.platform().storage());
+        FeatureSettingsStore.save(EbslServices.platform().storage());
     }
 
     @EbslApiOperation("Notify module lifecycle after a setting change.")
