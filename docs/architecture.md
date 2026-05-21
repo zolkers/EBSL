@@ -3,6 +3,8 @@
 For day-to-day commands, simulator regression, viewer launch, Docker, Minecraft build artifacts, and Sonar, see
 [developer-workflow.md](developer-workflow.md).
 
+For the remaining platform work and acceptance criteria, see [roadmap.md](roadmap.md).
+
 EBSL is organized around platform-independent contracts first, then Minecraft/Fabric adapters.
 
 ## Module Boundaries

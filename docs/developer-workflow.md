@@ -2,6 +2,8 @@
 
 This page is the short operational checklist for local maintenance.
 
+For the long-form architecture roadmap, use [roadmap.md](roadmap.md).
+
 ## Java
 
 Use the repo scripts first. They pick up the bundled JDK when it exists, and fall back to the local IDE JDK on Windows.
