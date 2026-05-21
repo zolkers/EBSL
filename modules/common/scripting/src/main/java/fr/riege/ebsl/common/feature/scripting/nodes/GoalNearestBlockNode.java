@@ -23,10 +23,10 @@ package fr.riege.ebsl.common.feature.scripting.nodes;
 
 import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
-import fr.riege.ebsl.common.feature.aim.BlockAimTarget;
-import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
-import fr.riege.ebsl.common.feature.aim.BlockInteractionTarget;
-import fr.riege.ebsl.common.feature.aim.BlockInteractionTargeting;
+import fr.riege.ebsl.common.automation.aim.BlockAimTarget;
+import fr.riege.ebsl.common.automation.aim.BlockAimTargeting;
+import fr.riege.ebsl.common.automation.aim.BlockInteractionTarget;
+import fr.riege.ebsl.common.automation.aim.BlockInteractionTargeting;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;

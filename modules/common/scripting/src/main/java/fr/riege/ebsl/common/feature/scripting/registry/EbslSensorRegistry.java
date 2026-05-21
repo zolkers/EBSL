@@ -23,7 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.registry;
 
 import fr.riege.ebsl.common.core.registry.IRegistry;
 import fr.riege.ebsl.common.core.registry.MapRegistry;
-import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
+import fr.riege.ebsl.common.automation.aim.BlockAimTargeting;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslCardinalDirection;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslInputKey;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptRuntime;

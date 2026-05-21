@@ -58,6 +58,8 @@ def sonarTestBinaryDirs = providers.provider {
 def coverageClassExcludes = [
     'fr/riege/ebsl/common/*.class',
     'fr/riege/ebsl/common/api/**',
+    'fr/riege/ebsl/common/automation/aim/**',
+    'fr/riege/ebsl/common/automation/task/**',
     'fr/riege/ebsl/common/core/event/**',
     'fr/riege/ebsl/common/core/log/**',
     'fr/riege/ebsl/common/core/settings/**',

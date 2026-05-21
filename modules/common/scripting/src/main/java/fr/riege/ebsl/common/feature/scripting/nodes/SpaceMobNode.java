@@ -30,8 +30,8 @@ import fr.riege.ebsl.common.feature.scripting.EbslDurationUnit;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.task.MobTargetMode;
-import fr.riege.ebsl.common.feature.task.SpaceMobTask;
+import fr.riege.ebsl.common.automation.task.MobTargetMode;
+import fr.riege.ebsl.common.automation.task.SpaceMobTask;
 
 import java.util.List;
 

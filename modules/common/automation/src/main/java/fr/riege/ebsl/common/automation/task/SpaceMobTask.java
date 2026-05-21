@@ -19,11 +19,11 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.task;
+package fr.riege.ebsl.common.automation.task;
 
 import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.domain.entity.EntitySnapshot;
-import fr.riege.ebsl.common.feature.aim.EntityAimProcessor;
+import fr.riege.ebsl.common.automation.aim.EntityAimProcessor;
 import fr.riege.ebsl.common.pathfinding.goal.GoalBlock;
 import fr.riege.ebsl.common.pathfinding.goal.NavigationRequest;
 import fr.riege.ebsl.common.platform.EbslPlatform;

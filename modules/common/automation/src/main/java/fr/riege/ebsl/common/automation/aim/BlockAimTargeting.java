@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.aim;
+package fr.riege.ebsl.common.automation.aim;
 
 import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.domain.world.BlockSelector;

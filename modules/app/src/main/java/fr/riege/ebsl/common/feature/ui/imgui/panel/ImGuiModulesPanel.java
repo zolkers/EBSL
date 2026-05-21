@@ -26,7 +26,7 @@ import fr.riege.ebsl.common.domain.analytics.AnalyticsEventLog;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.module.PathfinderModuleCategory;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
-import fr.riege.ebsl.common.feature.task.BotTask;
+import fr.riege.ebsl.common.automation.task.BotTask;
 import fr.riege.ebsl.common.feature.ui.imgui.ImGuiPanelUtil;
 import fr.riege.ebsl.common.feature.ui.imgui.settings.ImGuiSettingRenderContext;
 import fr.riege.ebsl.common.feature.ui.layout.ViewportLayout;

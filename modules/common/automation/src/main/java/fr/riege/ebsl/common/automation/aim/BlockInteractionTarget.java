@@ -19,12 +19,9 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.task;
+package fr.riege.ebsl.common.automation.aim;
 
-import fr.riege.ebsl.common.feature.AbstractEnabledFeature;
+import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
 
-public abstract class AbstractBotTask extends AbstractEnabledFeature implements BotTask {
-    protected AbstractBotTask(String id, String displayName, String description) {
-        super(id, displayName, description);
-    }
+public record BlockInteractionTarget(BlockAimTarget block, PathPosition standingPosition) {
 }

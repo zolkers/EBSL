@@ -19,9 +19,9 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.aim;
+package fr.riege.ebsl.common.automation.aim;
 
-import fr.riege.ebsl.common.pathfinding.wrapper.PathPosition;
+import fr.riege.ebsl.common.math.Vec3d;
 
-public record BlockInteractionTarget(BlockAimTarget block, PathPosition standingPosition) {
+public record BlockAimTarget(int x, int y, int z, Vec3d aimPoint) {
 }

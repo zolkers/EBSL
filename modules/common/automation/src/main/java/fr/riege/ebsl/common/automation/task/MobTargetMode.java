@@ -19,7 +19,7 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.task;
+package fr.riege.ebsl.common.automation.task;
 
 public enum MobTargetMode {
     CLOSEST_MOB("Closest mob"),

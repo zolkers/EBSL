@@ -25,7 +25,7 @@ import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptView;
-import fr.riege.ebsl.common.feature.task.BotTask;
+import fr.riege.ebsl.common.automation.task.BotTask;
 
 public final class EbslUiState {
     private MainViewTab mainViewTab = MainViewTab.MAIN;

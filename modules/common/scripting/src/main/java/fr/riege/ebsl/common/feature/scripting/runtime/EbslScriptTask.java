@@ -25,7 +25,7 @@ import fr.riege.ebsl.common.core.settings.BooleanSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslScriptManager;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslProgram;
-import fr.riege.ebsl.common.feature.task.AbstractBotTask;
+import fr.riege.ebsl.common.automation.task.AbstractBotTask;
 import fr.riege.ebsl.common.platform.EbslPlatform;
 import fr.riege.ebsl.common.platform.service.EbslServices;
 

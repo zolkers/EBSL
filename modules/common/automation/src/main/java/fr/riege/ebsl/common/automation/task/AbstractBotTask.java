@@ -19,9 +19,12 @@
  * along with EBSL. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package fr.riege.ebsl.common.feature.aim;
+package fr.riege.ebsl.common.automation.task;
 
-import fr.riege.ebsl.common.math.Vec3d;
+import fr.riege.ebsl.common.feature.AbstractEnabledFeature;
 
-public record BlockAimTarget(int x, int y, int z, Vec3d aimPoint) {
+public abstract class AbstractBotTask extends AbstractEnabledFeature implements BotTask {
+    protected AbstractBotTask(String id, String displayName, String description) {
+        super(id, displayName, description);
+    }
 }

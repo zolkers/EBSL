@@ -24,8 +24,8 @@ tasks.named('test') {
 tasks.named('compileJava') {
     doLast {
         def misplacedPackages = [
-            'package fr.riege.ebsl.common.feature.aim;',
-            'package fr.riege.ebsl.common.feature.task;',
+            'package fr.riege.ebsl.common.automation.aim;',
+            'package fr.riege.ebsl.common.automation.task;',
             'package fr.riege.ebsl.common.feature.registry;',
             'package fr.riege.ebsl.common.feature.scripting.command;'
         ]

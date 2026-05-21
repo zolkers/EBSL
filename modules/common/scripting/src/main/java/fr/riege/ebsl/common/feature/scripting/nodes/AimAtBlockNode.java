@@ -23,9 +23,9 @@ package fr.riege.ebsl.common.feature.scripting.nodes;
 
 import fr.riege.ebsl.common.core.settings.IntSetting;
 import fr.riege.ebsl.common.core.settings.StringSetting;
-import fr.riege.ebsl.common.feature.aim.AimProcessor;
-import fr.riege.ebsl.common.feature.aim.BlockAimTarget;
-import fr.riege.ebsl.common.feature.aim.BlockAimTargeting;
+import fr.riege.ebsl.common.automation.aim.AimProcessor;
+import fr.riege.ebsl.common.automation.aim.BlockAimTarget;
+import fr.riege.ebsl.common.automation.aim.BlockAimTargeting;
 import fr.riege.ebsl.common.feature.scripting.EbslDuration;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
 import fr.riege.ebsl.common.feature.scripting.annotations.EbslNodeDefinition;

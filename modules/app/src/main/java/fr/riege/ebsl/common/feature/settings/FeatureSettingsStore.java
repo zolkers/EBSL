@@ -24,7 +24,7 @@ package fr.riege.ebsl.common.feature.settings;
 import fr.riege.ebsl.common.core.settings.CommonSettingsStore;
 import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
-import fr.riege.ebsl.common.feature.task.BotTask;
+import fr.riege.ebsl.common.automation.task.BotTask;
 import fr.riege.ebsl.common.platform.layer.IStorageLayer;
 
 public final class FeatureSettingsStore {
