@@ -23,7 +23,7 @@ package fr.riege.ebsl.common.feature.scripting.runtime;
 
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 import java.util.List;
 
 public final class EbslCommandStatement implements EbslStatement {
@@ -34,7 +34,7 @@ public final class EbslCommandStatement implements EbslStatement {
 
     public EbslCommandStatement(String command, List<String> args) {
         this.args = List.copyOf(args);
-        this.node = FeatureRegistries.scripting().nodes().create(command);
+        this.node = ScriptingRegistries.scripting().nodes().create(command);
     }
 
     @Override

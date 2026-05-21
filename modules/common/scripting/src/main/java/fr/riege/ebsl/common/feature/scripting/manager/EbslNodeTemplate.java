@@ -25,7 +25,7 @@ import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 
 import java.util.Locale;
 
@@ -55,7 +55,7 @@ public record EbslNodeTemplate(
     }
 
     public static EbslNodeTemplate of(String command) {
-        EbslNode node = FeatureRegistries.scripting().nodes().get(command);
+        EbslNode node = ScriptingRegistries.scripting().nodes().get(command);
         if (node != null) {
             return of(node);
         }

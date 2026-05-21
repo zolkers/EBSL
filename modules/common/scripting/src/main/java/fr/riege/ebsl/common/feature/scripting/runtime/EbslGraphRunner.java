@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.runtime;
 
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeField;
 import fr.riege.ebsl.common.feature.scripting.EbslNodeInvocation;
@@ -152,7 +152,7 @@ public final class EbslGraphRunner {
 
         private NodeExecution(EbslGraphNode graphNode) {
             this.graphNode = graphNode;
-            this.node = FeatureRegistries.scripting().nodes().create(graphNode.type());
+            this.node = ScriptingRegistries.scripting().nodes().create(graphNode.type());
             this.args = node == null ? List.of() : invocationArgs(node, graphNode.fields());
         }
 

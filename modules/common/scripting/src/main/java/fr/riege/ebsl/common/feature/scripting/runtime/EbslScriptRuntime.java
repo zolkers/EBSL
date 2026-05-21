@@ -21,7 +21,7 @@
 
 package fr.riege.ebsl.common.feature.scripting.runtime;
 
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.pathfinding.goal.*;
@@ -115,11 +115,11 @@ public final class EbslScriptRuntime {
             return truthy(value(tokens.get(0)));
         }
         return tokens.size() >= 3
-            && FeatureRegistries.scripting().conditions().evaluate(tokens.get(1), this, value(tokens.get(0)), value(tokens.get(2)));
+            && ScriptingRegistries.scripting().conditions().evaluate(tokens.get(1), this, value(tokens.get(0)), value(tokens.get(2)));
     }
 
     public boolean sensor(String id, List<String> args) {
-        return FeatureRegistries.scripting().sensors().evaluate(id, this, args);
+        return ScriptingRegistries.scripting().sensors().evaluate(id, this, args);
     }
 
     public void startNavigation(List<String> args, boolean precise) {

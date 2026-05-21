@@ -24,7 +24,7 @@ package fr.riege.ebsl.common.feature.scripting.manager;
 import fr.riege.ebsl.common.core.settings.*;
 import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 
 import java.util.List;
 import java.util.Locale;
@@ -109,7 +109,7 @@ public final class EbslNodeFieldHelp {
     }
 
     public static String signature(String command) {
-        EbslNode node = FeatureRegistries.scripting().nodes().get(command);
+        EbslNode node = ScriptingRegistries.scripting().nodes().get(command);
         if (node == null || node.fields().isEmpty()) {
             return "";
         }

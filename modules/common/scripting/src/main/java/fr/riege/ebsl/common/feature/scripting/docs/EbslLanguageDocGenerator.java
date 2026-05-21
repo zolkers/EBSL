@@ -29,7 +29,7 @@ import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
 import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeFieldHelp;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.registry.EbslSensorRegistry;
 
 import java.util.*;
@@ -50,7 +50,7 @@ public final class EbslLanguageDocGenerator {
     }
 
     private static List<EbslLanguageDocEntry> nodeEntries() {
-        return FeatureRegistries.scripting().nodes().canonical().stream()
+        return ScriptingRegistries.scripting().nodes().canonical().stream()
             .map(EbslLanguageDocGenerator::nodeEntry)
             .sorted(Comparator.comparing(EbslLanguageDocEntry::id))
             .toList();
@@ -96,7 +96,7 @@ public final class EbslLanguageDocGenerator {
     }
 
     private static List<EbslLanguageDocEntry> sensorEntries() {
-        return FeatureRegistries.scripting().sensors().definitions().stream()
+        return ScriptingRegistries.scripting().sensors().definitions().stream()
             .map(sensor -> new EbslLanguageDocEntry(
                 sensor.id(),
                 title(sensor.id()),

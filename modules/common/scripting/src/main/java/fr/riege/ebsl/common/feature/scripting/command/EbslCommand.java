@@ -25,7 +25,7 @@ import fr.riege.ebsl.common.feature.scripting.EbslNode;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeCategory;
 import fr.riege.ebsl.common.feature.scripting.enums.EbslNodeType;
 import fr.riege.ebsl.common.feature.scripting.manager.EbslNodeTemplate;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 import fr.riege.ebsl.common.feature.scripting.runtime.EbslScriptTask;
 import fr.riege.ebsl.common.feature.terminal.*;
 
@@ -107,7 +107,7 @@ public final class EbslCommand {
 
     static List<String> taskLines() {
         List<String> lines = new ArrayList<>();
-        lines.add("EBSL executable nodes: " + FeatureRegistries.scripting().nodes().canonical().size());
+        lines.add("EBSL executable nodes: " + ScriptingRegistries.scripting().nodes().canonical().size());
         for (EbslNodeCategory category : EbslNodeCategory.values()) {
             boolean header = appendRegisteredNodes(lines, category, false);
             appendScriptBlocks(lines, category, header);
@@ -117,7 +117,7 @@ public final class EbslCommand {
 
     private static boolean appendRegisteredNodes(List<String> lines, EbslNodeCategory category, boolean header) {
         boolean hasHeader = header;
-        for (EbslNode node : FeatureRegistries.scripting().nodes().canonical()) {
+        for (EbslNode node : ScriptingRegistries.scripting().nodes().canonical()) {
             hasHeader = appendTaskLine(lines, category, EbslNodeTemplate.of(node), hasHeader);
         }
         return hasHeader;
@@ -156,7 +156,7 @@ public final class EbslCommand {
 
     private static List<String> taskIds() {
         List<String> ids = new ArrayList<>();
-        for (EbslNode node : FeatureRegistries.scripting().nodes().canonical()) {
+        for (EbslNode node : ScriptingRegistries.scripting().nodes().canonical()) {
             ids.add(node.id());
         }
         for (EbslNodeType block : SCRIPT_BLOCKS) {

@@ -26,7 +26,7 @@ import fr.riege.ebsl.common.core.registry.MapRegistry;
 import fr.riege.ebsl.common.feature.scripting.blocks.EbslBlockStatementType;
 import fr.riege.ebsl.common.feature.scripting.conditions.EbslConditionOperatorType;
 import fr.riege.ebsl.common.feature.scripting.parser.EbslSyntax;
-import fr.riege.ebsl.common.feature.registry.FeatureRegistries;
+import fr.riege.ebsl.common.feature.registry.ScriptingRegistries;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -44,7 +44,7 @@ public final class EbslTokenClassifierRegistry {
         register((token, firstToken) -> isOperator(token) ? EbslTokenKind.OPERATOR : null);
         register((token, firstToken) -> isControl(token) ? EbslTokenKind.CONTROL : null);
         register((token, firstToken) -> isSensor(token) ? EbslTokenKind.SENSOR : null);
-        register((token, firstToken) -> firstToken && FeatureRegistries.scripting().nodes().get(token) != null ? EbslTokenKind.COMMAND : null);
+        register((token, firstToken) -> firstToken && ScriptingRegistries.scripting().nodes().get(token) != null ? EbslTokenKind.COMMAND : null);
     }
 
     private EbslTokenClassifierRegistry() {
@@ -69,7 +69,7 @@ public final class EbslTokenClassifierRegistry {
     }
 
     private static boolean isSensor(String token) {
-        return FeatureRegistries.scripting().sensors().definition(normalize(token)) != null;
+        return ScriptingRegistries.scripting().sensors().definition(normalize(token)) != null;
     }
 
     private static boolean isControl(String token) {

@@ -1,6 +1,15 @@
 apply from: rootProject.file('gradle/java-module.gradle')
 
 dependencies {
+    api project(':common:base')
+    api project(':common:world-api')
+    api project(':common:render-api')
+    api project(':common:platform-api')
+    api project(':common:pathfinder-core')
+    api project(':common:pathfinder-execution')
+    api project(':common:navigation')
+
+    api 'com.google.code.gson:gson:2.11.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
