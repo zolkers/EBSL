@@ -6,7 +6,6 @@ dependencies {
     api project(':common:render-api')
     api project(':common:platform-api')
     api project(':common:terminal')
-    api project(':common:terminal-navigation')
     api project(':common:automation')
     api project(':common:pathfinder-core')
     api project(':common:pathfinder-execution')
