@@ -105,7 +105,7 @@ public final class EntityPathFollower {
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         double speed = speedFor(currentMoveType);
         Vec3d velocity = horizontal <= 1.0e-6
-            ? new Vec3d(0.0, actor.velocity().y(), 0.0)
+            ? new Vec3d(0.0, verticalVelocity(dy, horizontal, currentMoveType), 0.0)
             : new Vec3d(dx / horizontal * speed, verticalVelocity(dy, horizontal, currentMoveType), dz / horizontal * speed);
 
         motor.apply(MovementIntent.builder()
@@ -179,8 +179,7 @@ public final class EntityPathFollower {
         }
         return dy > 0.15
             && (moveType == Node.MoveType.STEP_UP
-                || moveType == Node.MoveType.JUMP
-                || moveType == Node.MoveType.CLIMB);
+                || moveType == Node.MoveType.JUMP);
     }
 
     private Node.MoveType nextMoveType() {

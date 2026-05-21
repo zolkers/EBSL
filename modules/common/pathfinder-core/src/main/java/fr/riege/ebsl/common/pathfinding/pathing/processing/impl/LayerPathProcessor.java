@@ -122,7 +122,7 @@ public final class LayerPathProcessor implements NodeProcessor {
             return currentPoint.hasFloor() || currentPoint.isLiquid() || currentPoint.isClimbable();
         }
         if (dy > 0.5) {
-            return hasJumpSupport(previousPoint) || currentPoint.isClimbable();
+            return hasJumpSupport(previousPoint) || previousPoint.isClimbable() || currentPoint.isClimbable();
         }
         return currentPoint.hasFloor()
             || currentPoint.isLiquid()

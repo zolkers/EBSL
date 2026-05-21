@@ -21,6 +21,7 @@
 
 package fr.riege.ebsl.common.navigation.runtime.headless;
 
+import fr.riege.ebsl.common.domain.world.BlockId;
 import fr.riege.ebsl.common.math.Vec3d;
 import fr.riege.ebsl.common.navigation.PathPlannerOptions;
 import fr.riege.ebsl.common.navigation.PathPlanningService;
@@ -107,6 +108,27 @@ class HeadlessNavigationApiTest {
             .build());
 
         assertEquals(0.05, actor.velocity().x(), 1.0e-6);
+    }
+
+    @Test
+    void entityNavigationServiceClimbsVerticalLadderWithoutJumpIntent() {
+        HeadlessWorldLayer world = HeadlessWorldLayer.flat(63);
+        HeadlessBlockState ladder = HeadlessBlockState.climbable(BlockId.of("minecraft:ladder"));
+        world.fill(0, 64, 0, 0, 66, 0, ladder);
+        HeadlessActor actor = new HeadlessActor(new Vec3d(0.5, 64.0, 0.5));
+        HeadlessMotor motor = new HeadlessMotor(actor).world(world);
+        EntityNavigationService service = new EntityNavigationService(
+            new PathPlanningService(world),
+            actor,
+            motor);
+        service.setPlannerOptions(PathPlannerOptions.defaults().toBuilder().async(false).build());
+
+        service.startBlockGoal(0, 66, 0);
+        service.tick();
+
+        assertTrue(service.isNavigating(), "ladder route should be executable");
+        assertTrue(motor.lastIntent().velocity().y() > 0.0, "climb should request vertical velocity");
+        assertFalse(motor.lastIntent().jump(), "climb should not be driven by repeated jump intent");
     }
 
     @Test
