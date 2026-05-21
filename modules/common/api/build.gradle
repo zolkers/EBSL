@@ -9,3 +9,22 @@ dependencies {
     api project(':common:render-api')
     api project(':common:world-api')
 }
+
+tasks.named('compileJava') {
+    doLast {
+        def forbiddenImports = [
+            'fr.riege.ebsl.common.feature.module.',
+            'fr.riege.ebsl.common.feature.registry.',
+            'fr.riege.ebsl.common.core.settings.CommonSettingsStore',
+            'net.minecraft.',
+            'net.fabricmc.'
+        ]
+        fileTree('src/main/java').matching { include '**/*.java' }.each { file ->
+            def content = file.text
+            def forbiddenImport = forbiddenImports.find { content.contains(it) }
+            if (forbiddenImport != null) {
+                throw new GradleException("Forbidden common-api import '${forbiddenImport}' in ${file.path}")
+            }
+        }
+    }
+}

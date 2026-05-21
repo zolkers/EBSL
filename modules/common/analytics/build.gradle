@@ -10,3 +10,23 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.named('compileJava') {
+    doLast {
+        def forbiddenImports = [
+            'fr.riege.ebsl.common.api.feature.',
+            'fr.riege.ebsl.common.feature.module.',
+            'fr.riege.ebsl.common.feature.registry.',
+            'fr.riege.ebsl.common.core.settings.CommonSettingsStore',
+            'net.minecraft.',
+            'net.fabricmc.'
+        ]
+        fileTree('src/main/java').matching { include '**/*.java' }.each { file ->
+            def content = file.text
+            def forbiddenImport = forbiddenImports.find { content.contains(it) }
+            if (forbiddenImport != null) {
+                throw new GradleException("Forbidden common-analytics import '${forbiddenImport}' in ${file.path}")
+            }
+        }
+    }
+}
