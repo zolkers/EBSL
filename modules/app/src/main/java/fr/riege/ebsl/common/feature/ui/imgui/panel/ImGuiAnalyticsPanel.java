@@ -40,7 +40,7 @@ public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
         }
         ImGuiPanelUtil.nextFixedWindow(layout.bottom());
         if (ImGui.begin("Analytics##ebsl-bottom", ImGuiPanelUtil.FIXED_PANEL_FLAGS)) {
-            AnalyticsSnapshot snapshot = AnalyticsSnapshot.capture(navigation, state.selectedModule());
+            AnalyticsSnapshot snapshot = AnalyticsSnapshot.capture(navigation, selectedModuleName(state));
             ImGui.text("Analytics");
             ImGui.separator();
             ImGui.columns(2, "ebsl-analytics-columns", false);
@@ -56,5 +56,9 @@ public final class ImGuiAnalyticsPanel implements ImGuiUiPanel {
             ImGui.columns(1);
             ImGui.end();
         }
+    }
+
+    private static String selectedModuleName(EbslUiState state) {
+        return state.selectedModule() != null ? state.selectedModule().displayName() : "none";
     }
 }

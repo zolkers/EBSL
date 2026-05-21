@@ -55,6 +55,10 @@ public final class AnalyticsApi {
 
     @EbslApiOperation("Capture a compact analytics snapshot.")
     public AnalyticsSnapshot snapshot(PathfinderModule selectedModule) {
-        return AnalyticsSnapshot.capture(EbslServices.navigation(), selectedModule);
+        return AnalyticsSnapshot.capture(EbslServices.navigation(), selectedModuleName(selectedModule));
+    }
+
+    private static String selectedModuleName(PathfinderModule selectedModule) {
+        return selectedModule != null ? selectedModule.displayName() : "none";
     }
 }

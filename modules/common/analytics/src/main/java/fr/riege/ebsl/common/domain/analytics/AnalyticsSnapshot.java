@@ -21,7 +21,6 @@
 
 package fr.riege.ebsl.common.domain.analytics;
 
-import fr.riege.ebsl.common.feature.module.PathfinderModule;
 import fr.riege.ebsl.common.navigation.NavigationStatus;
 import fr.riege.ebsl.common.platform.service.NavigationService;
 
@@ -31,10 +30,10 @@ public record AnalyticsSnapshot(
     int jumpHeight,
     boolean visualizerEnabled
 ) {
-    public static AnalyticsSnapshot capture(NavigationService nav, PathfinderModule selectedModule) {
+    public static AnalyticsSnapshot capture(NavigationService nav, String selectedModule) {
         return new AnalyticsSnapshot(
             nav.pathStatus(),
-            selectedModule != null ? selectedModule.displayName() : "none",
+            selectedModule != null ? selectedModule : "none",
             0,
             false);
     }

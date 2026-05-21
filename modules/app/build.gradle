@@ -26,6 +26,7 @@ dependencies {
     api project(':common:terminal')
     api project(':common:terminal-navigation')
     api project(':common:automation')
+    api project(':common:analytics')
     api project(':common:scripting')
     api project(':common:pathfinder-core')
     api project(':common:pathfinder-execution')
