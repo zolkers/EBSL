@@ -21,12 +21,15 @@
 
 package fr.riege.ebsl.common.pathfinding.pathfinder;
 
+import fr.riege.ebsl.common.pathfinding.Node;
 import fr.riege.ebsl.common.pathfinding.pathing.InspectablePathfinder;
 import fr.riege.ebsl.common.pathfinding.pathing.INeighborStrategy;
 import fr.riege.ebsl.common.pathfinding.pathing.configuration.PathfinderConfiguration;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicContext;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.HeuristicWeights;
 import fr.riege.ebsl.common.pathfinding.pathing.heuristic.IHeuristicStrategy;
+import fr.riege.ebsl.common.pathfinding.pathfinder.heap.PrimitiveMinHeap;
+import fr.riege.ebsl.common.pathfinding.pathfinder.processing.EvaluationContextImpl;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.Cost;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessor;
 import fr.riege.ebsl.common.pathfinding.pathing.processing.NodeProcessorRegistry;
@@ -47,6 +50,43 @@ import java.util.concurrent.locks.LockSupport;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AStarPathfinderTest {
+    @Test
+    void startAlreadyAtTargetIsFoundImmediately() throws Exception {
+        InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
+            .async(false)
+            .fallback(false)
+            .build());
+
+        PathfinderResult result = pathfinder.findPath(
+            new PathPosition(4, 64, 4),
+            new PathPosition(4, 64, 4),
+            null
+        ).toCompletableFuture().get(1, TimeUnit.SECONDS);
+
+        assertEquals(PathState.FOUND, result.getPathState());
+        assertEquals(1, result.getPath().length());
+    }
+
+    @Test
+    void emptyOpenSetHasInfiniteRawCostLowerBound() {
+        AStarPathfinder pathfinder = new AStarPathfinder(PathfinderConfiguration.builder().async(false).build());
+
+        double lowerBound = pathfinder.openSetRawFCostLowerBound(new PrimitiveMinHeap(4));
+
+        assertEquals(Double.POSITIVE_INFINITY, lowerBound);
+    }
+
+    @Test
+    void invalidTransitionCostIsRejected() {
+        PathPosition start = new PathPosition(0, 64, 0);
+        PathPosition next = new PathPosition(1, 64, 0);
+        Node parent = new Node(start, start, next, HeuristicWeights.DEFAULT_WEIGHTS, new InvalidTransitionHeuristic(), 0);
+        Node child = new Node(next, start, next, HeuristicWeights.DEFAULT_WEIGHTS, new InvalidTransitionHeuristic(), 1);
+        EvaluationContextImpl context = new EvaluationContextImpl(null, child, parent, new InvalidTransitionHeuristic());
+
+        assertThrows(IllegalStateException.class, context::getBaseTransitionCost);
+    }
+
     @Test
     void canReturnFirstReachWhenGoalRefinementIsDisabled() throws Exception {
         InspectablePathfinder pathfinder = Pathfinders.inspectableAStar(PathfinderConfiguration.builder()
@@ -289,6 +329,18 @@ class AStarPathfinderTest {
         @Override
         public double calculateTransitionCost(PathPosition from, PathPosition to) {
             return from.distance(to);
+        }
+    }
+
+    private static final class InvalidTransitionHeuristic implements IHeuristicStrategy {
+        @Override
+        public double calculate(HeuristicContext context) {
+            return 0.0;
+        }
+
+        @Override
+        public double calculateTransitionCost(PathPosition from, PathPosition to) {
+            return Double.NaN;
         }
     }
 }
