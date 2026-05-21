@@ -1,0 +1,18 @@
+ext {
+    ebslMinecraftVersion = findProperty('minecraft_version') ?: ''
+    ebslMinecraftJavaVersion = (findProperty('minecraft_java_version') ?: '21') as Integer
+    ebslFabricLoaderVersion = findProperty('loader_version') ?: ''
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = ebslMinecraftJavaVersion
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(ebslMinecraftJavaVersion)
+    }
+    sourceCompatibility = JavaVersion.toVersion(ebslMinecraftJavaVersion)
+    targetCompatibility = JavaVersion.toVersion(ebslMinecraftJavaVersion)
+}

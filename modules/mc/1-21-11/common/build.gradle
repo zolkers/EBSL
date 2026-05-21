@@ -2,6 +2,8 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap'
 }
 
+apply from: rootProject.file('gradle/mc-version.gradle')
+
 group = rootProject.findProperty('maven_group') ?: 'fr.riege.ebsl'
 version = rootProject.findProperty('mod_version') ?: '1.0.0'
 
@@ -15,25 +17,13 @@ dependencies {
         compileOnly files(project(modulePath).sourceSets.main.output.classesDirs)
     }
 
-    minecraft "com.mojang:minecraft:${minecraft_version}"
+    minecraft "com.mojang:minecraft:${ebslMinecraftVersion}"
     mappings loom.officialMojangMappings()
-    modCompileOnly "net.fabricmc:fabric-loader:${loader_version}"
+    modCompileOnly "net.fabricmc:fabric-loader:${ebslFabricLoaderVersion}"
 }
 
-def minecraftJavaVersion = (findProperty('minecraft_java_version') ?: '21') as Integer
-
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = minecraftJavaVersion
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
         dependsOn project(modulePath).tasks.named('classes')
     }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(minecraftJavaVersion)
-    }
-    sourceCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
-    targetCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
 }

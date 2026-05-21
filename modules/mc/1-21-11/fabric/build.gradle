@@ -2,12 +2,13 @@ plugins {
     id 'net.fabricmc.fabric-loom-remap'
 }
 
+apply from: rootProject.file('gradle/mc-version.gradle')
+
 version = rootProject.findProperty('mod_version') ?: '1.0.0'
 group = rootProject.findProperty('maven_group') ?: 'fr.riege.ebsl'
 
 def mcCommonProject = project(':mc:1-21-11:common')
 def archiveProjectName = project.name
-def minecraftJavaVersion = (findProperty('minecraft_java_version') ?: '21') as Integer
 
 evaluationDependsOn(mcCommonProject.path)
 
@@ -43,9 +44,9 @@ dependencies {
     compileOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
     runtimeOnly files(mcCommonProject.sourceSets.main.output.classesDirs)
 
-    minecraft "com.mojang:minecraft:${minecraft_version}"
+    minecraft "com.mojang:minecraft:${ebslMinecraftVersion}"
     mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${loader_version}"
+    modImplementation "net.fabricmc:fabric-loader:${ebslFabricLoaderVersion}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     modImplementation "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
     include "cn.enaium:fabric-gui-imgui:${fabric_gui_imgui_version}"
@@ -120,17 +121,15 @@ processResources {
     inputs.property "mod_sources", rootProject.findProperty('mod_sources') ?: ''
     inputs.property "mod_license", rootProject.findProperty('mod_license') ?: 'GPL-3.0-or-later'
     inputs.property "mod_environment", rootProject.findProperty('mod_environment') ?: 'client'
-    inputs.property "loader_version", loader_version
-    inputs.property "minecraft_version", minecraft_version
-    inputs.property "minecraft_java_version", minecraftJavaVersion
+    inputs.property "loader_version", ebslFabricLoaderVersion
+    inputs.property "minecraft_version", ebslMinecraftVersion
+    inputs.property "minecraft_java_version", ebslMinecraftJavaVersion
     filesMatching("fabric.mod.json") {
         expand inputs.properties
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = minecraftJavaVersion
     rootProject.ext.ebslRuntimeClassModules.each { modulePath ->
         dependsOn project(modulePath).tasks.named('classes')
     }
@@ -142,11 +141,6 @@ tasks.named('test') {
 
 java {
     withSourcesJar()
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(minecraftJavaVersion)
-    }
-    sourceCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
-    targetCompatibility = JavaVersion.toVersion(minecraftJavaVersion)
 }
 
 jar {
