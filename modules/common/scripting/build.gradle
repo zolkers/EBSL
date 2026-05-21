@@ -26,7 +26,8 @@ tasks.named('compileJava') {
             'package fr.riege.ebsl.common.automation.aim;',
             'package fr.riege.ebsl.common.automation.task;',
             'package fr.riege.ebsl.common.feature.registry;',
-            'package fr.riege.ebsl.common.feature.scripting.command;'
+            'package fr.riege.ebsl.common.feature.scripting.command;',
+            'package fr.riege.ebsl.common.feature.terminal.commands;'
         ]
         fileTree('src/main/java').matching { include '**/*.java' }.each { file ->
             def content = file.text
