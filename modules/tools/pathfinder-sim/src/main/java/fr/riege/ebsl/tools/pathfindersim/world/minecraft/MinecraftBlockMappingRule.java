@@ -32,6 +32,8 @@ enum MinecraftBlockMappingRule {
     WATER(BlockPathRule.exact("water"), HeadlessBlockState::water),
     LAVA(BlockPathRule.exact("lava"), HeadlessBlockState::lava),
     DANGER(BlockPathRule.exact("fire", "soul_fire", "magma_block"), HeadlessBlockState::danger),
+    PASSABLE_DANGER(BlockPathRule.exact("sweet_berry_bush"), HeadlessBlockState::passableDanger),
+    PASSABLE_SLOW(BlockPathRule.exact("powder_snow", "cobweb"), HeadlessBlockState::passable),
     CLIMBABLE(
         BlockPathRule.exact("ladder", "vine", "weeping_vines", "twisting_vines", "scaffolding"),
         HeadlessBlockState::climbable),

@@ -38,6 +38,20 @@ public record HeadlessPhysicsProfile(
     public static final HeadlessPhysicsProfile ICE = builder().slipperiness(0.98).horizontalDrag(0.98).build();
     public static final HeadlessPhysicsProfile SOUL_SAND = builder().horizontalDrag(0.4).build();
     public static final HeadlessPhysicsProfile HONEY = builder().horizontalDrag(0.4).stepHeight(0.5).build();
+    public static final HeadlessPhysicsProfile POWDER_SNOW = builder()
+        .horizontalDrag(0.75)
+        .verticalDrag(0.75)
+        .gravity(0.02)
+        .groundAcceleration(0.05)
+        .airAcceleration(0.02)
+        .build();
+    public static final HeadlessPhysicsProfile COBWEB = builder()
+        .horizontalDrag(0.25)
+        .verticalDrag(0.25)
+        .gravity(0.01)
+        .groundAcceleration(0.03)
+        .airAcceleration(0.01)
+        .build();
     public static final HeadlessPhysicsProfile WATER = builder().horizontalDrag(0.8).verticalDrag(0.8).gravity(0.02).build();
     public static final HeadlessPhysicsProfile LAVA = builder().horizontalDrag(0.5).verticalDrag(0.5).gravity(0.02).build();
     public static final HeadlessPhysicsProfile CLIMBABLE = builder().maxClimbVelocity(0.2).build();

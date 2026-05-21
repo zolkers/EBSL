@@ -30,6 +30,8 @@ public enum HeadlessPhysicsBlockType {
     ICE(HeadlessPhysicsProfile.ICE, "ice", "packed_ice", "blue_ice", "frosted_ice"),
     SOUL_SAND(HeadlessPhysicsProfile.SOUL_SAND, "soul_sand"),
     HONEY(HeadlessPhysicsProfile.HONEY, "honey_block"),
+    POWDER_SNOW(HeadlessPhysicsProfile.POWDER_SNOW, "powder_snow"),
+    COBWEB(HeadlessPhysicsProfile.COBWEB, "cobweb"),
     WATER(HeadlessPhysicsProfile.WATER, "water"),
     LAVA(HeadlessPhysicsProfile.LAVA, "lava"),
     CLIMBABLE(HeadlessPhysicsProfile.CLIMBABLE, "ladder", "vine", "weeping_vines", "twisting_vines");
